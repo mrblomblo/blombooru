@@ -87,10 +87,6 @@ class Tag(Base):
     albums = relationship('Album', secondary=blombooru_album_tags, back_populates='tags')
     aliases = relationship('TagAlias', foreign_keys='TagAlias.target_tag_id', back_populates='target_tag')
     implications = relationship('TagImplication', foreign_keys='TagImplication.source_tag_id', back_populates='source_tag')
-    
-    __table_args__ = (
-        Index('idx_tag_name_trgm', 'name', postgresql_using='gin', postgresql_ops={'name': 'gin_trgm_ops'}),
-    )
 
 class Album(Base):
     __tablename__ = 'blombooru_albums'
@@ -107,7 +103,7 @@ class Album(Base):
     
     media = relationship('Media', secondary=blombooru_album_media, back_populates='albums')
     tags = relationship('Tag', secondary=blombooru_album_tags, back_populates='albums')
-    cover_media = relationship('Media', foreign_key=[cover_media_id])
+    cover_media = relationship('Media', foreign_keys=[cover_media_id])
 
 class TagAlias(Base):
     __tablename__ = 'blombooru_tag_aliases'

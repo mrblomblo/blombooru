@@ -6,7 +6,7 @@ import re
 
 from ..database import get_db
 from ..models import Media, Tag, blombooru_media_tags
-from ..schemas import RatingEnum
+from ..schemas import RatingEnum, MediaResponse
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -57,7 +57,8 @@ async def search_media(
     db: Session = Depends(get_db)
 ):
     """Search media with tag-based query"""
-    query = db.query(Media).filter(Media.is_shared == False)
+    # Don't filter by is_shared - show all media in your private gallery
+    query = db.query(Media)
     
     # Apply rating filter
     if rating and rating != "explicit":
@@ -104,12 +105,15 @@ async def search_media(
     # Pagination
     offset = (page - 1) * limit
     total = query.count()
-    media = query.offset(offset).limit(limit).all()
+    media_list = query.offset(offset).limit(limit).all()
+    
+    # Convert to response models
+    items = [MediaResponse.model_validate(m) for m in media_list]
     
     return {
-        "items": media,
+        "items": items,
         "total": total,
         "page": page,
-        "pages": (total + limit - 1) // limit,
+        "pages": max(1, (total + limit - 1) // limit),
         "query": q
     }

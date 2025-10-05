@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -33,8 +33,7 @@ class TagResponse(TagBase):
     post_count: int
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Media Schemas
 class MediaBase(BaseModel):
@@ -64,8 +63,7 @@ class MediaResponse(MediaBase):
     share_uuid: Optional[str]
     tags: List[TagResponse] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Album Schemas
 class AlbumBase(BaseModel):
@@ -93,8 +91,7 @@ class AlbumResponse(AlbumBase):
     tags: List[TagResponse] = []
     media_count: int = 0
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Auth Schemas
 class UserCreate(BaseModel):
@@ -128,3 +125,6 @@ class SettingsUpdate(BaseModel):
     default_rating_filter: Optional[RatingEnum] = None
     theme: Optional[str] = None
     items_per_page: Optional[int] = None
+    
+class MediaAlbumUpdate(BaseModel):
+    album_ids: List[int]

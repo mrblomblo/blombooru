@@ -1,17 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup - {{ app_name }}</title>
     
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/pico.min.css">
     <link rel="stylesheet" href="/static/css/main.css">
+    
+    <style>
+        body {
+            background-color: var(--background);
+            color: var(--text);
+        }
+        
+        .setup-container {
+            max-width: 600px;
+            margin: 4rem auto;
+            padding: 2rem;
+            background-color: var(--surface);
+            border-radius: 0.5rem;
+        }
+        
+        h1, h3 {
+            color: var(--text);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+        }
+        
+        .error-message {
+            background-color: var(--danger);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .success-message {
+            background-color: var(--success);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="max-width: 600px; margin-top: 4rem;">
+    <div class="setup-container">
         <h1>Welcome to {{ app_name }}</h1>
         <p>Let's get your personal booru set up!</p>
+        
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
         
         <form id="onboarding-form">
             <div class="form-group">
@@ -55,7 +116,8 @@
             
             <div class="form-group">
                 <label for="admin-password">Password</label>
-                <input type="password" id="admin-password" name="admin_password" required>
+                <input type="password" id="admin-password" name="admin_password" required minlength="6" maxlength="50">
+                <small style="color: var(--text-secondary);">6-50 characters</small>
             </div>
             
             <button type="submit" class="btn">Complete Setup</button>
@@ -63,8 +125,27 @@
     </div>
     
     <script>
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 10000);
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
         document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Setting up...';
             
             const formData = {
                 app_name: document.getElementById('app-name').value,
@@ -79,6 +160,8 @@
                 admin_password: document.getElementById('admin-password').value
             };
             
+            console.log('Sending onboarding data...');
+            
             try {
                 const response = await fetch('/api/admin/onboarding', {
                     method: 'POST',
@@ -88,15 +171,24 @@
                     body: JSON.stringify(formData)
                 });
                 
+                const data = await response.json();
+                
                 if (response.ok) {
-                    alert('Setup complete! Redirecting...');
-                    window.location.href = '/';
+                    showSuccess('Setup complete! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
                 } else {
-                    const error = await response.json();
-                    alert('Error: ' + error.detail);
+                    console.error('Error response:', data);
+                    showError('Error: ' + (data.detail || JSON.stringify(data)));
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Complete Setup';
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Request error:', error);
+                showError('Network error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Complete Setup';
             }
         });
     </script>

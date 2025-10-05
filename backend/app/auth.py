@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import hashlib
+import secrets
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -9,17 +10,46 @@ from .database import get_db
 from .models import User
 from .config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 30 days
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash a password using PBKDF2-SHA256"""
+    # Generate a random salt
+    salt = secrets.token_hex(32)
+    
+    # Hash the password with the salt
+    pwdhash = hashlib.pbkdf2_hmac(
+        'sha256',
+        password.encode('utf-8'),
+        salt.encode('utf-8'),
+        100000  # iterations
+    )
+    
+    # Return salt and hash combined
+    return f"{salt}${pwdhash.hex()}"
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash"""
+    try:
+        # Split the stored password into salt and hash
+        salt, stored_hash = hashed_password.split('$')
+        
+        # Hash the provided password with the same salt
+        pwdhash = hashlib.pbkdf2_hmac(
+            'sha256',
+            plain_password.encode('utf-8'),
+            salt.encode('utf-8'),
+            100000
+        )
+        
+        # Compare the hashes
+        return pwdhash.hex() == stored_hash
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()

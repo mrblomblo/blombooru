@@ -36,169 +36,233 @@
         <p>Loading...</p>
     </div>
 </div>
+
+<!-- Edit Album Modal -->
+<div id="edit-album-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Edit Album</h2>
+        
+        <form id="edit-album-form">
+            <div class="form-group">
+                <label for="album-name-input">Name</label>
+                <input type="text" id="album-name-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="album-description-input">Description</label>
+                <textarea id="album-description-input"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="album-rating-input">Rating</label>
+                <select id="album-rating-input">
+                    <option value="safe">Safe</option>
+                    <option value="questionable">Questionable</option>
+                    <option value="explicit">Explicit</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="album-tags-input">Tags</label>
+                <input type="text" id="album-tags-input" class="tag-input" placeholder="tag1, tag2, tag3">
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="submit" class="btn">Save Changes</button>
+                <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.show {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--surface);
+        padding: 2rem;
+        border-radius: 0.5rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Remove from album button */
+    .remove-from-album-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 2rem;
+        height: 2rem;
+        background-color: var(--danger);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: background-color 0.2s;
+        z-index: 10;
+    }
+    
+    .admin-mode .remove-from-album-btn {
+        display: flex;
+    }
+    
+    .remove-from-album-btn:hover {
+        background-color: #dc2626;
+        transform: scale(1.1);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/tag-autocomplete.js"></script>
 <script>
-    const albumId = "{{ album_id }}";
-    let currentAlbum = null;
-    let currentPage = 1;
-    let hasMore = true;
-    
-    async function loadAlbum() {
-        try {
-            const response = await fetch(`/api/albums/${albumId}`);
-            currentAlbum = await response.json();
-            
-            document.getElementById('album-name').textContent = currentAlbum.name;
-            document.getElementById('album-description').textContent = currentAlbum.description || '';
-            
-            renderTags(currentAlbum.tags);
-            
-            if (app.isAdminMode) {
-                document.getElementById('admin-actions').style.display = 'block';
-            }
-            
-            if (currentAlbum.is_shared) {
-                showShareLink(currentAlbum.share_uuid);
-            }
-            
-            loadMedia();
-        } catch (error) {
-            console.error('Error loading album:', error);
-        }
-    }
-    
-    async function loadMedia() {
-        if (!hasMore) return;
-        
-        document.getElementById('loading-indicator').style.display = 'block';
-        
-        try {
-            const response = await fetch(`/api/albums/${albumId}/media?page=${currentPage}&limit=30`);
-            const data = await response.json();
-            
-            renderMedia(data.items);
-            
-            currentPage++;
-            hasMore = currentPage <= data.pages;
-        } catch (error) {
-            console.error('Error loading media:', error);
-        } finally {
-            document.getElementById('loading-indicator').style.display = 'none';
-        }
-    }
-    
-    function renderTags(tags) {
-        const container = document.getElementById('album-tags');
-        
-        if (tags.length === 0) {
-            container.innerHTML = '';
-            return;
-        }
-        
-        container.innerHTML = `
-            <div class="tag-list">
-                ${tags.map(tag => `
-                    <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category}">
-                        ${tag.name}
-                    </a>
-                `).join('')}
-            </div>
-        `;
-    }
-    
-    function renderMedia(items) {
-        const container = document.getElementById('album-media');
-        
-        items.forEach(item => {
-            const div = document.createElement('a');
-            div.href = `/media/${item.id}`;
-            div.className = `gallery-item ${item.file_type}`;
-            
-            div.innerHTML = `<img src="/api/media/${item.id}/thumbnail" alt="${item.filename}" loading="lazy">`;
-            
-            container.appendChild(div);
+document.addEventListener('DOMContentLoaded', () => {
+  const albumId = "{{ album_id }}";
+  let currentAlbum = null;
+  let currentPage = 1;
+  let hasMore = true;
+
+  const el = id => document.getElementById(id);
+
+  async function loadAlbum() {
+    try {
+      const res = await fetch(`/api/albums/${albumId}`);
+      currentAlbum = await res.json();
+      el('album-name').textContent = currentAlbum.name;
+      el('album-description').textContent = currentAlbum.description || '';
+      renderTags(currentAlbum.tags);
+      if (app.isAdminMode) el('admin-actions').style.display = 'block';
+      if (currentAlbum.is_shared) showShareLink(currentAlbum.share_uuid);
+      loadMedia();
+    } catch (e) { console.error('loadAlbum error', e); }
+  }
+
+  async function loadMedia() {
+    if (!hasMore) return;
+    el('loading-indicator').style.display = 'block';
+    try {
+      const res = await fetch(`/api/albums/${albumId}/media?page=${currentPage}&limit=30`);
+      const data = await res.json();
+      renderMedia(data.items || []);
+      currentPage++; hasMore = currentPage <= data.pages;
+    } catch (e) { console.error('loadMedia error', e); }
+    finally { el('loading-indicator').style.display = 'none'; }
+  }
+
+  function renderTags(tags) {
+    if (!tags?.length) { el('album-tags').innerHTML = ''; return; }
+    el('album-tags').innerHTML = `
+      <div class="tag-list">
+        ${tags.map(tag => `<a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category}">${tag.name}</a>`).join('')}
+      </div>`;
+  }
+
+  function renderMedia(items) {
+    const c = el('album-media');
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = `gallery-item ${item.file_type}`;
+      div.dataset.mediaId = item.id;
+      div.style.position = 'relative';
+
+      const a = document.createElement('a'); a.href = `/media/${item.id}`;
+      const img = document.createElement('img'); img.src = `/api/media/${item.id}/thumbnail`; img.alt = item.filename; img.loading = 'lazy';
+      a.appendChild(img); div.appendChild(a);
+
+      if (app.isAdminMode) {
+        const btn = document.createElement('button');
+        btn.className = 'remove-from-album-btn'; btn.textContent = '×'; btn.title = 'Remove from album';
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (!confirm('Remove this item from the album?')) return;
+          try {
+            await app.apiCall(`/api/albums/${albumId}/media/${item.id}`, { method: 'DELETE' });
+            div.remove();
+          } catch (e) { alert('Error removing media from album: ' + e.message); }
         });
-    }
-    
-    // Share album
-    document.getElementById('share-album-btn').addEventListener('click', async () => {
-        try {
-            const result = await app.apiCall(`/api/albums/${albumId}/share`, {
-                method: 'POST'
-            });
-            
-            showShareLink(result.share_url.split('/').pop());
-        } catch (error) {
-            alert('Error creating share link: ' + error.message);
-        }
+        div.appendChild(btn);
+      }
+
+      c.appendChild(div);
     });
-    
-    function showShareLink(uuid) {
-        const section = document.getElementById('share-link-section');
-        const input = document.getElementById('share-link-input');
-        
-        input.value = `${window.location.origin}/shared/${uuid}`;
-        section.style.display = 'block';
-    }
-    
-    // Copy share link
-    document.getElementById('copy-share-link-btn').addEventListener('click', () => {
-        const input = document.getElementById('share-link-input');
-        input.select();
-        document.execCommand('copy');
-        alert('Link copied to clipboard!');
-    });
-    
-    // Unshare
-    document.getElementById('unshare-btn').addEventListener('click', async () => {
-        try {
-            await app.apiCall(`/api/albums/${albumId}/share`, {
-                method: 'DELETE'
-            });
-            
-            document.getElementById('share-link-section').style.display = 'none';
-            alert('Share link removed!');
-        } catch (error) {
-            alert('Error removing share: ' + error.message);
-        }
-    });
-    
-    // Delete album
-    document.getElementById('delete-album-btn').addEventListener('click', async () => {
-        if (currentAlbum.is_system) {
-            alert('Cannot delete system album!');
-            return;
-        }
-        
-        if (!confirm('Are you sure you want to delete this album?')) return;
-        
-        try {
-            await app.apiCall(`/api/albums/${albumId}`, {
-                method: 'DELETE'
-            });
-            
-            alert('Album deleted!');
-            window.location.href = '/albums';
-        } catch (error) {
-            alert('Error deleting album: ' + error.message);
-        }
-    });
-    
-    // Infinite scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && hasMore) {
-                loadMedia();
-            }
-        });
-    }, {
-        rootMargin: '200px'
-    });
-    
-    observer.observe(document.getElementById('loading-indicator'));
-    
-    loadAlbum();
+  }
+
+  function showEditModal() {
+    const m = el('edit-album-modal');
+    el('album-name-input').value = currentAlbum.name;
+    el('album-description-input').value = currentAlbum.description || '';
+    el('album-rating-input').value = currentAlbum.rating;
+    el('album-tags-input').value = (currentAlbum.tags || []).map(t => t.name).join(', ');
+    el('album-name-input').disabled = !!currentAlbum.is_system;
+    m.classList.add('show');
+  }
+  function hideEditModal() { el('edit-album-modal').classList.remove('show'); }
+
+  el('edit-album-btn')?.addEventListener('click', showEditModal);
+  el('cancel-edit-btn')?.addEventListener('click', hideEditModal);
+
+  el('edit-album-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const updates = {
+      name: el('album-name-input').value,
+      description: el('album-description-input').value,
+      rating: el('album-rating-input').value,
+      tags: el('album-tags-input').value.split(',').map(t => t.trim()).filter(Boolean)
+    };
+    try {
+      await app.apiCall(`/api/albums/${albumId}`, { method: 'PATCH', body: JSON.stringify(updates) });
+      hideEditModal(); alert('Album updated!'); location.reload();
+    } catch (e) { alert('Error updating album: ' + e.message); }
+  });
+
+  el('share-album-btn')?.addEventListener('click', async () => {
+    try {
+      const r = await app.apiCall(`/api/albums/${albumId}/share`, { method: 'POST' });
+      showShareLink(r.share_url.split('/').pop());
+    } catch (e) { alert('Error creating share link: ' + e.message); }
+  });
+  el('copy-share-link-btn')?.addEventListener('click', () => { el('share-link-input').select(); document.execCommand('copy'); alert('Link copied!'); });
+  el('unshare-btn')?.addEventListener('click', async () => {
+    try { await app.apiCall(`/api/albums/${albumId}/share`, { method: 'DELETE' }); el('share-link-section').style.display = 'none'; alert('Share removed!'); }
+    catch (e) { alert('Error removing share: ' + e.message); }
+  });
+
+  function showShareLink(uuid) {
+    el('share-link-input').value = `${window.location.origin}/shared/${uuid}`;
+    el('share-link-section').style.display = 'block';
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => e.isIntersecting && hasMore && loadMedia());
+  }, { rootMargin: '200px' });
+  observer.observe(el('loading-indicator'));
+
+  loadAlbum();
+});
 </script>
 {% endblock %}

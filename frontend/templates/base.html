@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/pico.min.css">
     <link rel="stylesheet" href="/static/css/main.css">
     
@@ -32,7 +33,11 @@
                 <ul>
                     <li><a href="/">Gallery</a></li>
                     <li><a href="/albums">Albums</a></li>
-                    <li><a href="/admin" id="admin-mode-toggle">Admin Mode</a></li>
+                    <li>
+                        <a href="#" id="admin-mode-toggle" class="admin-mode-btn">
+                            <span id="admin-mode-text">Admin Panel</span>
+                        </a>
+                    </li>
                     <li><a href="#" id="logout-btn" style="display: none;">Logout</a></li>
                 </ul>
             </nav>

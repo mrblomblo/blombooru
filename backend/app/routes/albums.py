@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, and_
 from typing import List
 import uuid
-
 from ..database import get_db
 from ..auth import require_admin_mode, get_current_user
 from ..models import Album, Media, User, blombooru_album_media
-from ..schemas import AlbumResponse, AlbumCreate, AlbumUpdate
+from ..schemas import AlbumResponse, AlbumCreate, AlbumUpdate, MediaResponse
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
 
@@ -19,7 +18,7 @@ async def get_albums(db: Session = Depends(get_db)):
     # Add media count to each album
     result = []
     for album in albums:
-        album_dict = AlbumResponse.from_orm(album).dict()
+        album_dict = AlbumResponse.model_validate(album).model_dump()
         album_dict['media_count'] = len(album.media)
         result.append(album_dict)
     
@@ -32,33 +31,29 @@ async def get_album(album_id: int, db: Session = Depends(get_db)):
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
     
-    album_dict = AlbumResponse.from_orm(album).dict()
+    album_dict = AlbumResponse.model_validate(album).model_dump()
     album_dict['media_count'] = len(album.media)
     return album_dict
 
 @router.get("/{album_id}/media")
-async def get_album_media(
-    album_id: int,
-    page: int = 1,
-    limit: int = 30,
-    db: Session = Depends(get_db)
-):
-    """Get media in album"""
+async def get_album_media(album_id: int, page: int = 1, limit: int = 30, db: Session = Depends(get_db)):
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
-    
-    # Get media with pagination
-    offset = (page - 1) * limit
-    total = len(album.media)
-    media = album.media[offset:offset + limit]
-    
+
+    q = db.query(Media).join(blombooru_album_media, Media.id == blombooru_album_media.c.media_id) \
+        .filter(blombooru_album_media.c.album_id == album_id) \
+        .order_by(desc(Media.uploaded_at)) \
+        .distinct(Media.id)  # important
+
+    total = q.count()
+    items = q.offset((page - 1) * limit).limit(limit).all()
     return {
-        "album": album,
-        "items": media,
+        "album": AlbumResponse.model_validate(album),
+        "items": [MediaResponse.model_validate(m) for m in items],
         "total": total,
         "page": page,
-        "pages": (total + limit - 1) // limit
+        "pages": max(1, (total + limit - 1) // limit)
     }
 
 @router.post("/", response_model=AlbumResponse)
@@ -83,7 +78,7 @@ async def create_album(
     db.commit()
     db.refresh(album)
     
-    album_dict = AlbumResponse.from_orm(album).dict()
+    album_dict = AlbumResponse.model_validate(album).model_dump()
     album_dict['media_count'] = 0
     return album_dict
 
@@ -118,7 +113,7 @@ async def update_album(
     db.commit()
     db.refresh(album)
     
-    album_dict = AlbumResponse.from_orm(album).dict()
+    album_dict = AlbumResponse.model_validate(album).model_dump()
     album_dict['media_count'] = len(album.media)
     return album_dict
 
@@ -157,11 +152,31 @@ async def add_media_to_album(
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
     
-    if media not in album.media:
-        album.media.append(media)
-        db.commit()
+    # Check if already in album to prevent duplicates
+    from sqlalchemy import exists
+    already_exists = db.query(
+        exists().where(
+            and_(
+                blombooru_album_media.c.album_id == album_id,
+                blombooru_album_media.c.media_id == media_id
+            )
+        )
+    ).scalar()
     
-    return {"message": "Media added to album"}
+    if already_exists:
+        return {"message": "Media already in album", "added": False}
+    
+    # Use raw insert to ensure no duplicates
+    db.execute(
+        blombooru_album_media.insert().values(
+            album_id=album_id,
+            media_id=media_id,
+            position=0
+        )
+    )
+    db.commit()
+    
+    return {"message": "Media added to album", "added": True}
 
 @router.delete("/{album_id}/media/{media_id}")
 async def remove_media_from_album(
@@ -179,11 +194,13 @@ async def remove_media_from_album(
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
     
+    # Remove from album
     if media in album.media:
         album.media.remove(media)
         db.commit()
-    
-    return {"message": "Media removed from album"}
+        return {"message": "Media removed from album"}
+    else:
+        raise HTTPException(status_code=404, detail="Media not in this album")
 
 @router.post("/{album_id}/share")
 async def share_album(

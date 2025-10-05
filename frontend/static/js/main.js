@@ -25,13 +25,19 @@ class Blombooru {
         // Admin mode toggle
         const adminToggle = document.getElementById('admin-mode-toggle');
         if (adminToggle) {
-            adminToggle.addEventListener('click', () => this.toggleAdminMode());
+            adminToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleAdminToggle();
+            });
         }
         
         // Logout
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.logout());
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.logout();
+            });
         }
         
         // Rating filter
@@ -53,12 +59,23 @@ class Blombooru {
         }
     }
     
-    async toggleAdminMode() {
+    handleAdminToggle() {
+        // If not authenticated, go to admin panel
         if (!this.isAuthenticated) {
             window.location.href = '/admin';
             return;
         }
         
+        // If on admin panel page, don't toggle - it's auto-enabled
+        if (window.location.pathname === '/admin') {
+            return;
+        }
+        
+        // Toggle admin mode
+        this.toggleAdminMode();
+    }
+    
+    async toggleAdminMode() {
         const newMode = !this.isAdminMode;
         
         try {
@@ -69,7 +86,12 @@ class Blombooru {
             if (response.ok) {
                 this.isAdminMode = newMode;
                 this.updateUI();
-                location.reload();
+                
+                // Show notification
+                this.showNotification(
+                    newMode ? 'Admin mode enabled' : 'Admin mode disabled',
+                    newMode ? 'success' : 'info'
+                );
             }
         } catch (error) {
             console.error('Error toggling admin mode:', error);
@@ -87,18 +109,64 @@ class Blombooru {
     
     updateUI() {
         const body = document.body;
+        const adminToggle = document.getElementById('admin-mode-toggle');
+        const adminModeText = document.getElementById('admin-mode-text');
+        const logoutBtn = document.getElementById('logout-btn');
         
+        // Update body class
         if (this.isAdminMode) {
             body.classList.add('admin-mode');
         } else {
             body.classList.remove('admin-mode');
         }
         
-        // Update admin mode button
-        const adminToggle = document.getElementById('admin-mode-toggle');
-        if (adminToggle) {
-            adminToggle.textContent = this.isAdminMode ? 'Exit Admin Mode' : 'Admin Mode';
+        // Update admin toggle button
+        if (adminToggle && adminModeText) {
+            if (!this.isAuthenticated) {
+                adminModeText.textContent = 'Admin Panel';
+                adminToggle.style.color = '';
+            } else if (window.location.pathname === '/admin') {
+                adminModeText.textContent = 'Admin Panel';
+                adminToggle.style.color = 'var(--primary-color)';
+            } else if (this.isAdminMode) {
+                adminModeText.textContent = '✓ Admin Mode';
+                adminToggle.style.color = 'var(--success)';
+            } else {
+                adminModeText.textContent = 'Enable Admin Mode';
+                adminToggle.style.color = '';
+            }
         }
+        
+        // Show/hide logout button
+        if (logoutBtn) {
+            logoutBtn.style.display = this.isAuthenticated ? 'block' : 'none';
+        }
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--primary-color)'};
+            color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
     
     setRatingFilter(rating) {
@@ -147,6 +215,37 @@ class Blombooru {
         return response.json();
     }
 }
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    
+    .admin-mode-btn {
+        font-weight: 500 !important;
+    }
+`;
+document.head.appendChild(style);
 
 // Initialize app
 const app = new Blombooru();

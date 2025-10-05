@@ -29,6 +29,9 @@ def scan_for_new_media(db: Session) -> dict:
     # Get all tracked file hashes
     tracked_hashes = {m.hash for m in db.query(Media.hash).all()}
     
+    print(f"Scanning directory: {original_dir}")
+    print(f"Tracked hashes: {len(tracked_hashes)}")
+    
     # Scan directory
     for file_path in original_dir.rglob('*'):
         if not file_path.is_file() or not is_supported_file(file_path.name):
@@ -40,11 +43,16 @@ def scan_for_new_media(db: Session) -> dict:
             if file_hash in tracked_hashes:
                 continue
             
+            print(f"Processing new file: {file_path.name}")
+            
             # Process new file
             metadata = process_media_file(file_path)
             
+            # Generate a UUID for this media
+            media_uuid = str(uuid.uuid4())
+            
             # Generate thumbnail
-            thumbnail_filename = f"{uuid.uuid4()}.jpg"
+            thumbnail_filename = f"{media_uuid}.jpg"
             thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
             
             thumbnail_generated = generate_thumbnail(
@@ -74,11 +82,16 @@ def scan_for_new_media(db: Session) -> dict:
             new_files.append(file_path.name)
             tracked_hashes.add(file_hash)
             
+            print(f"Added to database: {file_path.name}")
+            
         except Exception as e:
-            errors.append(f"{file_path.name}: {str(e)}")
+            error_msg = f"{file_path.name}: {str(e)}"
+            errors.append(error_msg)
+            print(f"Error processing file: {error_msg}")
     
     if new_files:
         db.commit()
+        print(f"Committed {len(new_files)} new files to database")
     
     return {
         'new_files': len(new_files),

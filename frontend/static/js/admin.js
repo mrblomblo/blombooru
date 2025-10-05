@@ -37,7 +37,14 @@ class AdminPanel {
     
     async loadSettings() {
         try {
-            const settings = await app.apiCall('/api/admin/settings');
+            const response = await fetch('/api/admin/settings');
+            
+            if (!response.ok) {
+                console.log('Not authenticated or settings not available');
+                return;
+            }
+            
+            const settings = await response.json();
             
             // Populate form fields
             if (settings.app_name) {
@@ -128,6 +135,13 @@ class AdminPanel {
     async login() {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('login-error');
+        const submitBtn = document.querySelector('#login-form button[type="submit"]');
+        
+        // Clear previous error
+        errorDiv.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in...';
         
         try {
             const response = await fetch('/api/admin/login', {
@@ -139,12 +153,22 @@ class AdminPanel {
             });
             
             if (response.ok) {
-                window.location.href = '/';
+                console.log('Login successful, redirecting...');
+                window.location.href = '/admin';
             } else {
-                alert('Invalid credentials');
+                const error = await response.json();
+                console.error('Login failed:', error);
+                errorDiv.textContent = error.detail || 'Invalid username or password';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
             }
         } catch (error) {
-            alert('Login error: ' + error.message);
+            console.error('Login error:', error);
+            errorDiv.textContent = 'Network error. Please try again.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Login';
         }
     }
 }

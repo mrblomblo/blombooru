@@ -57,16 +57,42 @@ class Gallery {
             }
             
             const endpoint = params.has('q') ? '/api/search' : '/api/media/';
-            const response = await fetch(`${endpoint}?${params.toString()}`);
+            const url = `${endpoint}?${params.toString()}`;
+            
+            console.log('Loading gallery page:', url);
+            
+            const response = await fetch(url);
+            
+            // Check if response is ok
+            if (!response.ok) {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP ${response.status}`);
+                } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error(`Server returned ${response.status}: ${text.substring(0, 100)}`);
+                }
+            }
+            
             const data = await response.json();
+            console.log('Gallery data loaded:', data);
             
-            this.renderItems(data.items);
-            
-            this.currentPage++;
-            this.hasMore = this.currentPage <= data.pages;
+            if (data.items && data.items.length > 0) {
+                this.renderItems(data.items);
+                this.currentPage++;
+                this.hasMore = this.currentPage <= data.pages;
+            } else {
+                this.hasMore = false;
+                if (this.currentPage === 1) {
+                    this.showEmptyState();
+                }
+            }
             
         } catch (error) {
             console.error('Error loading gallery:', error);
+            this.showError(error.message);
         } finally {
             this.isLoading = false;
             this.hideLoading();
@@ -103,6 +129,10 @@ class Gallery {
         img.src = `/api/media/${media.id}/thumbnail`;
         img.alt = media.filename;
         img.loading = 'lazy';
+        img.onerror = () => {
+            console.error('Failed to load thumbnail for media:', media.id);
+            img.src = '/static/images/no-thumbnail.png'; // Fallback image
+        };
         
         const link = document.createElement('a');
         link.href = `/media/${media.id}`;
@@ -233,6 +263,33 @@ class Gallery {
         if (this.loadingIndicator) {
             this.loadingIndicator.style.display = 'none';
         }
+    }
+    
+    showEmptyState() {
+        this.galleryContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--text-secondary);">
+                <h2>No media found</h2>
+                <p>Upload some images to get started!</p>
+                ${app.isAuthenticated ? '<a href="/admin" class="btn">Go to Admin Panel</a>' : ''}
+            </div>
+        `;
+    }
+    
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            grid-column: 1 / -1;
+            background-color: var(--danger);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        `;
+        errorDiv.innerHTML = `
+            <strong>Error loading gallery:</strong> ${message}
+            <br><small>Check the browser console for more details</small>
+        `;
+        this.galleryContainer.appendChild(errorDiv);
     }
 }
 

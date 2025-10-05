@@ -50,7 +50,7 @@
                         </select>
                     </div>
                     
-                    <button id="add-to-favorites-btn" class="btn btn-sm">Add to Favorites</button>
+                    <button id="manage-albums-btn" class="btn btn-sm">Manage Albums</button>
                     <button id="share-btn" class="btn btn-sm">Share</button>
                     <button id="delete-btn" class="btn btn-sm btn-danger">Delete</button>
                 </div>
@@ -72,281 +72,306 @@
         <div id="related-media" class="gallery-grid"></div>
     </div>
 </div>
+
+<!-- Album Selection Modal -->
+<div id="album-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Manage Albums</h2>
+        <p>Select which albums this media should be in:</p>
+        
+        <div id="album-list" style="max-height: 400px; overflow-y: auto; margin: 1rem 0;">
+            <!-- Album checkboxes will be inserted here -->
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button id="save-albums-btn" class="btn">Save Changes</button>
+            <button id="cancel-albums-btn" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.show {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--surface);
+        padding: 2rem;
+        border-radius: 0.5rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .album-checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .album-checkbox-item:hover {
+        background-color: var(--surface-hover);
+    }
+    
+    .album-checkbox-item input[type="checkbox"] {
+        margin-right: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+    
+    .album-checkbox-item label {
+        cursor: pointer;
+        flex: 1;
+        margin: 0;
+    }
+    
+    .album-system-badge {
+        background-color: var(--warning);
+        color: #000;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="/static/js/tag-autocomplete.js"></script>
 <script>
-    const mediaId = "{{ media_id }}";
-    let currentMedia = null;
-    
-    async function loadMedia() {
-        try {
-            const response = await fetch(`/api/media/${mediaId}`);
-            currentMedia = await response.json();
-            
-            renderMedia(currentMedia);
-            renderInfo(currentMedia);
-            renderTags(currentMedia);
-            
-            if (app.isAdminMode) {
-                document.getElementById('edit-tags-section').style.display = 'block';
-                document.getElementById('admin-actions').style.display = 'block';
-            }
-            
-            if (currentMedia.is_shared) {
-                showShareLink(currentMedia.share_uuid);
-            }
-            
-            loadRelatedMedia();
-            
-        } catch (error) {
-            console.error('Error loading media:', error);
-        }
+document.addEventListener('DOMContentLoaded', () => {
+  const mediaId = "{{ media_id }}";
+  let currentMedia = null;
+  let allAlbums = [];
+  let mediaAlbumIds = new Set();
+
+  const el = id => document.getElementById(id);
+
+  async function loadMedia() {
+    try {
+      const res = await fetch(`/api/media/${mediaId}`);
+      currentMedia = await res.json();
+      renderMedia(currentMedia);
+      renderInfo(currentMedia);
+      renderTags(currentMedia);
+      if (app.isAdminMode) {
+        el('edit-tags-section').style.display = 'block';
+        el('admin-actions').style.display = 'block';
+      }
+      if (currentMedia.is_shared) showShareLink(currentMedia.share_uuid);
+      await loadRelatedMedia();
+    } catch (e) {
+      console.error('loadMedia error', e);
     }
-    
-    function renderMedia(media) {
-        const container = document.getElementById('media-container');
-        
-        if (media.file_type === 'video') {
-            container.innerHTML = `
-                <video controls>
-                    <source src="/api/media/${media.id}/file" type="${media.mime_type}">
-                </video>
-            `;
-        } else {
-            container.innerHTML = `<img src="/api/media/${media.id}/file" alt="${media.filename}">`;
-        }
-        
-        document.getElementById('download-btn').href = `/api/media/${media.id}/file`;
-        document.getElementById('download-btn').download = media.filename;
+  }
+
+  async function loadAlbums() {
+    try {
+      const res = await fetch('/api/albums/');
+      allAlbums = await res.json();
+    } catch (e) {
+      console.error('loadAlbums error', e);
     }
-    
-    function renderInfo(media) {
-        const container = document.getElementById('media-info-content');
-        
-        const info = [
-            { label: 'Filename', value: media.filename },
-            { label: 'Type', value: media.file_type },
-            { label: 'Size', value: formatFileSize(media.file_size) },
-            { label: 'Dimensions', value: `${media.width}x${media.height}` },
-            { label: 'Rating', value: media.rating },
-            { label: 'Uploaded', value: new Date(media.uploaded_at).toLocaleDateString() }
-        ];
-        
-        if (media.duration) {
-            info.push({ label: 'Duration', value: formatDuration(media.duration) });
-        }
-        
-        container.innerHTML = info.map(item => `
-            <div class="info-row">
-                <span>${item.label}</span>
-                <strong>${item.value}</strong>
-            </div>
-        `).join('');
-        
-        // Set rating select
-        const ratingSelect = document.getElementById('rating-select');
-        if (ratingSelect) {
-            ratingSelect.value = media.rating;
-        }
+  }
+
+  async function loadMediaMembership() {
+    try {
+      const res = await fetch(`/api/media/${mediaId}/albums`);
+      const data = await res.json();
+      mediaAlbumIds = new Set(data.album_ids || []);
+    } catch (e) {
+      console.error('loadMediaMembership error', e);
     }
-    
-    function renderTags(media) {
-        const container = document.getElementById('tags-container');
-        
-        // Group tags by category
-        const categorized = {
-            artist: [],
-            character: [],
-            copyright: [],
-            general: [],
-            meta: []
-        };
-        
-        media.tags.forEach(tag => {
-            categorized[tag.category].push(tag);
-        });
-        
-        let html = '';
-        
-        Object.entries(categorized).forEach(([category, tags]) => {
-            if (tags.length === 0) return;
-            
-            // Sort tags alphabetically
-            tags.sort((a, b) => a.name.localeCompare(b.name));
-            
-            html += `
-                <div class="tag-category">
-                    <h4>${category}</h4>
-                    <div class="tag-list">
-                        ${tags.map(tag => `
-                            <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${category}">
-                                ${tag.name}
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html || '<p>No tags</p>';
-        
-        // Populate tags input for editing
-        const tagsInput = document.getElementById('tags-input');
-        if (tagsInput) {
-            tagsInput.value = media.tags.map(t => t.name).join(', ');
-        }
+  }
+
+  function openAlbumModal() {
+    const modal = el('album-modal');
+    const list = el('album-list');
+    list.innerHTML = allAlbums.map(a => `
+      <div class="album-checkbox-item">
+        <input type="checkbox" id="album-${a.id}" value="${a.id}" ${mediaAlbumIds.has(a.id) ? 'checked' : ''}>
+        <label for="album-${a.id}">${a.name} ${a.is_system ? '<span class="album-system-badge">SYSTEM</span>' : ''}</label>
+      </div>
+    `).join('');
+    modal.classList.add('show');
+  }
+
+  function closeAlbumModal() {
+    el('album-modal').classList.remove('show');
+  }
+
+  async function saveAlbumChanges() {
+    const boxes = el('album-list').querySelectorAll('input[type="checkbox"]');
+    const selected = [];
+    boxes.forEach(cb => cb.checked && selected.push(parseInt(cb.value, 10)));
+
+    try {
+      await app.apiCall(`/api/media/${mediaId}/albums`, {
+        method: 'PUT',
+        body: JSON.stringify({ album_ids: selected })
+      });
+      mediaAlbumIds = new Set(selected);
+      closeAlbumModal();
+      alert('Album memberships updated!');
+    } catch (e) {
+      alert('Failed to update albums: ' + e.message);
     }
-    
-    async function loadRelatedMedia() {
-        if (!currentMedia || currentMedia.tags.length === 0) return;
-        
-        // Search for media with similar tags
-        const tagQuery = currentMedia.tags.slice(0, 3).map(t => t.name).join(' ');
-        
-        try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
-            const data = await response.json();
-            
-            // Filter out current media
-            const relatedItems = data.items.filter(item => item.id !== mediaId);
-            
-            const container = document.getElementById('related-media');
-            container.innerHTML = relatedItems.slice(0, 12).map(item => `
-                <a href="/media/${item.id}" class="gallery-item ${item.file_type}">
-                    <img src="/api/media/${item.id}/thumbnail" alt="${item.filename}" loading="lazy">
-                </a>
-            `).join('');
-            
-        } catch (error) {
-            console.error('Error loading related media:', error);
-        }
-    }
-    
-    // Edit tags form
-    document.getElementById('edit-tags-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const tagsInput = document.getElementById('tags-input');
-        const tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
-        
-        try {
-            await app.apiCall(`/api/media/${mediaId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ tags })
-            });
-            
-            alert('Tags updated!');
-            location.reload();
-        } catch (error) {
-            alert('Error updating tags: ' + error.message);
-        }
+  }
+
+  function renderMedia(media) {
+    const c = el('media-container');
+    c.innerHTML = media.file_type === 'video'
+      ? `<video controls><source src="/api/media/${media.id}/file" type="${media.mime_type}"></video>`
+      : `<img src="/api/media/${media.id}/file" alt="${media.filename}">`;
+    el('download-btn').href = `/api/media/${media.id}/file`;
+    el('download-btn').download = media.filename;
+  }
+
+  function renderInfo(m) {
+    el('media-info-content').innerHTML = `
+      <div class="info-row"><span>Filename</span><strong>${m.filename}</strong></div>
+      <div class="info-row"><span>Type</span><strong>${m.file_type}</strong></div>
+      <div class="info-row"><span>Size</span><strong>${formatFileSize(m.file_size)}</strong></div>
+      <div class="info-row"><span>Dimensions</span><strong>${m.width}x${m.height}</strong></div>
+      <div class="info-row"><span>Rating</span><strong>${m.rating}</strong></div>
+      <div class="info-row"><span>Uploaded</span><strong>${new Date(m.uploaded_at).toLocaleDateString()}</strong></div>
+      ${m.duration ? `<div class="info-row"><span>Duration</span><strong>${formatDuration(m.duration)}</strong></div>` : ''}
+    `;
+    const sel = el('rating-select');
+    if (sel) sel.value = m.rating;
+  }
+
+  function renderTags(m) {
+    const c = el('tags-container');
+    const groups = { artist: [], character: [], copyright: [], general: [], meta: [] };
+    (m.tags || []).forEach(t => groups[t.category]?.push(t));
+    let html = '';
+    Object.entries(groups).forEach(([cat, tags]) => {
+      if (!tags.length) return;
+      tags.sort((a, b) => a.name.localeCompare(b.name));
+      html += `
+        <div class="tag-category">
+          <h4>${cat}</h4>
+          <div class="tag-list">
+            ${tags.map(t => `<a href="/?q=${encodeURIComponent(t.name)}" class="tag ${cat}">${t.name}</a>`).join('')}
+          </div>
+        </div>`;
     });
-    
-    // Rating change
-    document.getElementById('rating-select').addEventListener('change', async (e) => {
-        try {
-            await app.apiCall(`/api/media/${mediaId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ rating: e.target.value })
-            });
-            
-            alert('Rating updated!');
-        } catch (error) {
-            alert('Error updating rating: ' + error.message);
-        }
-    });
-    
-    // Add to favorites
-    document.getElementById('add-to-favorites-btn').addEventListener('click', async () => {
-        try {
-            // Favorites is album ID 1 (created during onboarding)
-            await app.apiCall(`/api/albums/1/media/${mediaId}`, {
-                method: 'POST'
-            });
-            
-            alert('Added to favorites!');
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
-    });
-    
-    // Share
-    document.getElementById('share-btn').addEventListener('click', async () => {
-        try {
-            const result = await app.apiCall(`/api/media/${mediaId}/share`, {
-                method: 'POST'
-            });
-            
-            showShareLink(result.share_url.split('/').pop());
-        } catch (error) {
-            alert('Error creating share link: ' + error.message);
-        }
-    });
-    
-    function showShareLink(uuid) {
-        const section = document.getElementById('share-link-section');
-        const input = document.getElementById('share-link-input');
-        
-        input.value = `${window.location.origin}/shared/${uuid}`;
-        section.style.display = 'block';
+    c.innerHTML = html || '<p>No tags</p>';
+    const input = el('tags-input');
+    if (input) input.value = (m.tags || []).map(t => t.name).join(', ');
+  }
+
+  async function loadRelatedMedia() {
+    if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) return;
+    const tagQuery = currentMedia.tags.slice(0, 3).map(t => t.name).join(' ');
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
+      const data = await res.json();
+      const items = (data.items || []).filter(i => i.id !== mediaId);
+      el('related-media').innerHTML = items.map(i =>
+        `<a href="/media/${i.id}" class="gallery-item ${i.file_type}">
+           <img src="/api/media/${i.id}/thumbnail" alt="${i.filename}" loading="lazy">
+         </a>`).join('');
+    } catch (e) {
+      console.error('related error', e);
     }
-    
-    // Copy share link
-    document.getElementById('copy-share-link-btn').addEventListener('click', () => {
-        const input = document.getElementById('share-link-input');
-        input.select();
-        document.execCommand('copy');
-        alert('Link copied to clipboard!');
-    });
-    
-    // Unshare
-    document.getElementById('unshare-btn').addEventListener('click', async () => {
-        try {
-            await app.apiCall(`/api/media/${mediaId}/share`, {
-                method: 'DELETE'
-            });
-            
-            document.getElementById('share-link-section').style.display = 'none';
-            alert('Share link removed!');
-        } catch (error) {
-            alert('Error removing share: ' + error.message);
-        }
-    });
-    
-    // Delete
-    document.getElementById('delete-btn').addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to delete this media?')) return;
-        
-        try {
-            await app.apiCall(`/api/media/${mediaId}`, {
-                method: 'DELETE'
-            });
-            
-            alert('Media deleted!');
-            window.location.href = '/';
-        } catch (error) {
-            alert('Error deleting media: ' + error.message);
-        }
-    });
-    
-    // Utility functions
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  // Utilities
+  function formatFileSize(bytes) {
+    if (!bytes) return '0 Bytes';
+    const k = 1024, sizes = ['Bytes','KB','MB','GB','TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+  }
+  function formatDuration(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  }
+
+  // Event wiring (guard nulls)
+  el('edit-tags-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tags = el('tags-input').value.split(',').map(t => t.trim()).filter(Boolean);
+    try {
+      await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ tags }) });
+      alert('Tags updated!'); location.reload();
+    } catch (e) { alert('Error updating tags: ' + e.message); }
+  });
+
+  el('rating-select')?.addEventListener('change', async (e) => {
+    try {
+      await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ rating: e.target.value }) });
+      alert('Rating updated!');
+    } catch (e) { alert('Error updating rating: ' + e.message); }
+  });
+
+  el('manage-albums-btn')?.addEventListener('click', async () => {
+    try {
+      await loadAlbums();
+      await loadMediaMembership();
+      openAlbumModal();
+    } catch (e) {
+      console.error('manage albums open error', e);
+      alert('Failed to open Manage Albums');
     }
-    
-    function formatDuration(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-    
-    // Load media on page load
-    loadMedia();
+  });
+  el('cancel-albums-btn')?.addEventListener('click', () => closeAlbumModal());
+  el('save-albums-btn')?.addEventListener('click', () => saveAlbumChanges());
+
+  el('share-btn')?.addEventListener('click', async () => {
+    try {
+      const res = await app.apiCall(`/api/media/${mediaId}/share`, { method: 'POST' });
+      showShareLink(res.share_url.split('/').pop());
+    } catch (e) { alert('Error creating share link: ' + e.message); }
+  });
+  el('copy-share-link-btn')?.addEventListener('click', () => {
+    el('share-link-input').select(); document.execCommand('copy'); alert('Link copied to clipboard!');
+  });
+  el('unshare-btn')?.addEventListener('click', async () => {
+    try {
+      await app.apiCall(`/api/media/${mediaId}/share`, { method: 'DELETE' });
+      el('share-link-section').style.display = 'none'; alert('Share link removed!');
+    } catch (e) { alert('Error removing share: ' + e.message); }
+  });
+
+  el('delete-btn')?.addEventListener('click', async () => {
+    if (!confirm('Delete this media?')) return;
+    try {
+      await app.apiCall(`/api/media/${mediaId}`, { method: 'DELETE' });
+      alert('Media deleted!'); window.location.href = '/';
+    } catch (e) { alert('Error deleting media: ' + e.message); }
+  });
+
+  function showShareLink(uuid) {
+    el('share-link-input').value = `${window.location.origin}/shared/${uuid}`;
+    el('share-link-section').style.display = 'block';
+  }
+
+  // Go
+  loadMedia();
+});
 </script>
 {% endblock %}
