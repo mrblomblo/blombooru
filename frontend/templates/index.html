@@ -1,40 +1,52 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
+<div class="container mx-auto px-4 py-4">
     <!-- Rating Filter -->
-    <div class="rating-filter">
-        <label>
-            <input type="radio" name="rating" value="safe">
-            <span class="rating-option">Safe Only</span>
-        </label>
-        <label>
-            <input type="radio" name="rating" value="questionable">
-            <span class="rating-option">Safe + Questionable</span>
-        </label>
-        <label>
-            <input type="radio" name="rating" value="explicit" checked>
-            <span class="rating-option">All Ratings</span>
-        </label>
+    <div class="bg-[#1e293b] p-3 mb-4 border border-[#334155]">
+        <div class="flex gap-2">
+            <label class="flex-1">
+                <input type="radio" name="rating" value="safe" class="hidden rating-filter-input">
+                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors rating-filter-label">Safe Only</span>
+            </label>
+            <label class="flex-1">
+                <input type="radio" name="rating" value="questionable" class="hidden rating-filter-input">
+                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors rating-filter-label">Safe + Questionable</span>
+            </label>
+            <label class="flex-1">
+                <input type="radio" name="rating" value="explicit" class="hidden rating-filter-input">
+                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors rating-filter-label">All Ratings</span>
+            </label>
+        </div>
     </div>
     
     <!-- Bulk Actions (Admin Mode Only) -->
-    <div id="bulk-actions" style="display: none;">
-        <p><span id="selected-count">0</span> items selected</p>
-        <button id="bulk-tag-btn" class="btn btn-sm">Tag Selected</button>
-        <button id="bulk-album-btn" class="btn btn-sm">Add to Album</button>
-        <button id="bulk-delete-btn" class="btn btn-sm btn-danger">Delete Selected</button>
+    <div id="bulk-actions" style="display: none;" class="bg-[#1e293b] p-3 mb-4 border border-[#334155]">
+        <p class="mb-2"><span id="selected-count">0</span> items selected</p>
+        <div class="flex gap-2">
+            <button id="bulk-tag-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Tag Selected</button>
+            <button id="bulk-album-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Add to Album</button>
+            <button id="bulk-delete-btn" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs">Delete Selected</button>
+        </div>
     </div>
     
     <!-- Gallery Grid -->
-    <div id="gallery-grid" class="gallery-grid"></div>
+    <div id="gallery-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2"></div>
     
     <!-- Loading Indicator -->
-    <div id="loading-indicator" class="loading">
+    <div id="loading-indicator" class="text-center py-8">
         <div class="spinner"></div>
-        <p>Loading...</p>
+        <p class="text-[#94a3b8] mt-2">Loading...</p>
     </div>
 </div>
+
+<style>
+    /* Custom radio button styling */
+    input[type="radio"]:checked + span {
+        border-color: #3b82f6;
+        background-color: #3b82f6;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

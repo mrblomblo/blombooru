@@ -6,41 +6,61 @@
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="stylesheet" href="/static/css/pico.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/main.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        'primary-hover': '#2563eb',
+                        background: '#0f172a',
+                        surface: '#1e293b',
+                        'surface-hover': '#334155',
+                        border: '#334155',
+                    }
+                }
+            }
+        }
+    </script>
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="bg-[#0f172a] text-[#f1f5f9] text-xs">
     {% block header %}
-    <header>
-        <div class="header-content">
-            <a href="/" class="logo">{{ app_name }}</a>
-            
-            <div class="search-bar">
-                <form id="search-form">
-                    <input 
-                        type="text" 
-                        id="search-input" 
-                        name="q" 
-                        placeholder="Search tags... (e.g., cat_ears -dog)"
-                        value="{{ request.query_params.get('q', '') }}"
-                    >
-                </form>
+    <header class="bg-[#1e293b] border-b border-[#334155]">
+        <div class="container mx-auto px-4 py-2">
+            <div class="flex items-center justify-between gap-4">
+                <a href="/" class="text-lg font-bold text-blue-500 hover:text-blue-400">{{ app_name }}</a>
+                
+                <div class="flex-1 max-w-2xl">
+                    <form id="search-form">
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            name="q" 
+                            placeholder="Search tags... (e.g., cat_ears -dog)"
+                            value="{{ request.query_params.get('q', '') }}"
+                            class="w-full px-3 py-1 bg-[#0f172a] border border-[#334155] text-[#f1f5f9] text-xs focus:outline-none focus:border-blue-500"
+                        >
+                    </form>
+                </div>
+                
+                <nav>
+                    <ul class="flex items-center gap-4 text-xs">
+                        <li><a href="/" class="text-[#94a3b8] hover:text-[#f1f5f9]">Gallery</a></li>
+                        <li><a href="/albums" class="text-[#94a3b8] hover:text-[#f1f5f9]">Albums</a></li>
+                        <li>
+                            <a href="#" id="admin-mode-toggle" class="text-[#94a3b8] hover:text-[#f1f5f9]">
+                                <span id="admin-mode-text">Admin Panel</span>
+                            </a>
+                        </li>
+                        <li><a href="#" id="logout-btn" style="display: none;" class="text-[#94a3b8] hover:text-[#f1f5f9]">Logout</a></li>
+                    </ul>
+                </nav>
             </div>
-            
-            <nav>
-                <ul>
-                    <li><a href="/">Gallery</a></li>
-                    <li><a href="/albums">Albums</a></li>
-                    <li>
-                        <a href="#" id="admin-mode-toggle" class="admin-mode-btn">
-                            <span id="admin-mode-text">Admin Panel</span>
-                        </a>
-                    </li>
-                    <li><a href="#" id="logout-btn" style="display: none;">Logout</a></li>
-                </ul>
-            </nav>
         </div>
     </header>
     {% endblock %}

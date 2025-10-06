@@ -3,96 +3,108 @@
 {% block title %}Admin Panel - {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Admin Panel</h1>
+<div class="container mx-auto px-4 py-4 max-w-4xl">
+    <h1 class="text-lg font-bold mb-4 pb-3 border-b border-[#334155]">Admin Panel</h1>
     
     <div id="admin-panel">
         <!-- Login Section (if not logged in) -->
         <div id="login-section">
-            <h2>Login</h2>
-            
-            <div id="login-error" class="error-message" style="display: none; background-color: var(--danger); color: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;"></div>
-            
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" required autocomplete="username">
-                </div>
+            <div class="bg-[#1e293b] p-6 border border-[#334155] max-w-md">
+                <h2 class="text-base font-bold mb-4">Login</h2>
                 
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required autocomplete="current-password">
-                </div>
+                <div id="login-error" style="display: none;" class="bg-red-600 text-white p-3 mb-4 text-xs"></div>
                 
-                <button type="submit" class="btn">Login</button>
-            </form>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">Username</label>
+                        <input type="text" id="username" required autocomplete="username" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">Password</label>
+                        <input type="password" id="password" required autocomplete="current-password" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                    </div>
+                    
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Login</button>
+                </form>
+            </div>
         </div>
         
         <!-- Settings Section -->
         <div id="settings-section" style="display: none;">
-            <h2>Settings</h2>
-            
-            <form id="settings-form">
-                <div class="form-group">
-                    <label for="app-name">Application Name</label>
-                    <input type="text" id="app-name" name="app_name">
-                </div>
+            <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Settings</h2>
                 
-                <div class="form-group">
-                    <label>Default Rating Filter</label>
-                    <div class="rating-filter">
-                        <label>
-                            <input type="radio" name="default-rating" value="safe">
-                            <span class="rating-option">Safe Only</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="default-rating" value="questionable">
-                            <span class="rating-option">Safe + Questionable</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="default-rating" value="explicit">
-                            <span class="rating-option">All Ratings</span>
-                        </label>
+                <form id="settings-form">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">Application Name</label>
+                        <input type="text" id="app-name" name="app_name" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="theme-select">Theme</label>
-                    <select id="theme-select"></select>
-                </div>
-                
-                <button type="submit" class="btn">Save Settings</button>
-            </form>
-            
-            <hr>
-            
-            <h2>Media Management</h2>
-            <button id="scan-media-btn" class="btn">Scan for New Media</button>
-            
-            <hr>
-            
-            <h2>Upload Media</h2>
-            <div id="upload-area" class="upload-area">
-                <p>Drop files here or click to browse</p>
-                <input type="file" id="file-input" multiple accept="image/*,video/*">
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">Default Rating Filter</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1">
+                                <input type="radio" name="default-rating" value="safe" class="hidden">
+                                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors text-xs">Safe Only</span>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="default-rating" value="questionable" class="hidden">
+                                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors text-xs">Safe + Questionable</span>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="default-rating" value="explicit" class="hidden">
+                                <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors text-xs">All Ratings</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">Theme</label>
+                        <select id="theme-select" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500"></select>
+                    </div>
+                    
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Settings</button>
+                </form>
             </div>
             
-            <div class="form-group">
-                <label>Upload Rating</label>
-                <select name="upload-rating">
-                    <option value="safe">Safe</option>
-                    <option value="questionable">Questionable</option>
-                    <option value="explicit">Explicit</option>
-                </select>
+            <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Media Management</h2>
+                <button id="scan-media-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Scan for New Media</button>
             </div>
             
-            <div class="form-group">
-                <label for="upload-tags">Tags (comma-separated)</label>
-                <input type="text" id="upload-tags" class="tag-input" placeholder="tag1, tag2, tag3">
+            <div class="bg-[#1e293b] p-6 border border-[#334155]">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Upload Media</h2>
+                
+                <div id="upload-area" class="upload-area mb-4">
+                    <p class="text-xs">Drop files here or click to browse</p>
+                    <input type="file" id="file-input" multiple accept="image/*,video/*">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Upload Rating</label>
+                    <select name="upload-rating" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                        <option value="safe">Safe</option>
+                        <option value="questionable">Questionable</option>
+                        <option value="explicit">Explicit</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Tags (comma-separated)</label>
+                    <input type="text" id="upload-tags" class="tag-input w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500" placeholder="tag1, tag2, tag3">
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    input[type="radio"]:checked + span {
+        border-color: #3b82f6;
+        background-color: #3b82f6;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -101,22 +113,18 @@
 <script src="/static/js/tag-autocomplete.js"></script>
 
 <script>
-    // Check authentication status on load
     async function checkAuth() {
         try {
             const response = await fetch('/api/admin/settings');
             if (response.ok) {
-                // User is authenticated
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('settings-section').style.display = 'block';
                 document.getElementById('logout-btn').style.display = 'block';
                 
-                // Auto-enable admin mode when accessing admin panel
                 await enableAdminMode();
                 
                 return true;
             } else {
-                // User is not authenticated
                 document.getElementById('login-section').style.display = 'block';
                 document.getElementById('settings-section').style.display = 'none';
                 document.getElementById('logout-btn').style.display = 'none';
@@ -146,7 +154,6 @@
         }
     }
     
-    // Run on page load
     checkAuth();
 </script>
 {% endblock %}

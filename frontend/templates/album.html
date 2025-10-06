@@ -3,120 +3,128 @@
 {% block title %}Album - {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div style="margin-bottom: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: start;">
+<div class="container mx-auto px-4 py-4">
+    <div class="mb-4">
+        <div class="flex justify-between items-start mb-3">
             <div>
-                <h1 id="album-name"></h1>
-                <p id="album-description" style="color: var(--text-secondary);"></p>
+                <h1 id="album-name" class="text-lg font-bold"></h1>
+                <p id="album-description" class="text-xs text-[#94a3b8] mt-1"></p>
             </div>
             
-            <div id="admin-actions" style="display: none;">
-                <button id="edit-album-btn" class="btn btn-sm">Edit</button>
-                <button id="share-album-btn" class="btn btn-sm">Share</button>
-                <button id="delete-album-btn" class="btn btn-sm btn-danger">Delete</button>
+            <div id="admin-actions" style="display: none;" class="flex gap-2">
+                <button id="edit-album-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Edit</button>
+                <button id="share-album-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Share</button>
+                <button id="delete-album-btn" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs">Delete</button>
             </div>
         </div>
         
-        <div id="album-tags" style="margin-top: 1rem;"></div>
+        <div id="album-tags"></div>
         
         <!-- Share Link Display -->
-        <div id="share-link-section" style="display: none; margin-top: 1rem;">
-            <h4>Share Link</h4>
-            <input type="text" id="share-link-input" readonly style="width: 100%; max-width: 500px;">
-            <button id="copy-share-link-btn" class="btn btn-sm">Copy Link</button>
-            <button id="unshare-btn" class="btn btn-sm btn-secondary">Remove Share</button>
+        <div id="share-link-section" style="display: none;" class="bg-amber-600 p-3 border border-amber-700 mt-3">
+            <h4 class="text-sm font-bold mb-2 text-black">Share Link</h4>
+            <input type="text" id="share-link-input" readonly class="w-full px-2 py-1 bg-white border border-amber-700 text-xs mb-2 text-black">
+            <div class="flex gap-2">
+                <button id="copy-share-link-btn" class="flex-1 px-3 py-1 bg-black hover:bg-gray-900 text-white text-xs">Copy Link</button>
+                <button id="unshare-btn" class="flex-1 px-3 py-1 bg-gray-700 hover:bg-gray-800 text-white text-xs">Remove Share</button>
+            </div>
         </div>
     </div>
     
-    <div id="album-media" class="gallery-grid"></div>
+    <div id="album-media" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2"></div>
     
-    <div id="loading-indicator" class="loading" style="display: none;">
+    <div id="loading-indicator" class="text-center py-8" style="display: none;">
         <div class="spinner"></div>
-        <p>Loading...</p>
+        <p class="text-[#94a3b8] mt-2">Loading...</p>
     </div>
 </div>
 
 <!-- Edit Album Modal -->
-<div id="edit-album-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <h2>Edit Album</h2>
+<div id="edit-album-modal" class="modal">
+    <div class="bg-[#1e293b] p-6 border border-[#334155] max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 class="text-base font-bold mb-4">Edit Album</h2>
         
         <form id="edit-album-form">
-            <div class="form-group">
-                <label for="album-name-input">Name</label>
-                <input type="text" id="album-name-input" required>
+            <div class="mb-4">
+                <label class="block text-xs font-bold mb-2">Name</label>
+                <input type="text" id="album-name-input" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
             </div>
             
-            <div class="form-group">
-                <label for="album-description-input">Description</label>
-                <textarea id="album-description-input"></textarea>
+            <div class="mb-4">
+                <label class="block text-xs font-bold mb-2">Description</label>
+                <textarea id="album-description-input" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs min-h-[80px] resize-y focus:outline-none focus:border-blue-500"></textarea>
             </div>
             
-            <div class="form-group">
-                <label for="album-rating-input">Rating</label>
-                <select id="album-rating-input">
+            <div class="mb-4">
+                <label class="block text-xs font-bold mb-2">Rating</label>
+                <select id="album-rating-input" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
                     <option value="safe">Safe</option>
                     <option value="questionable">Questionable</option>
                     <option value="explicit">Explicit</option>
                 </select>
             </div>
             
-            <div class="form-group">
-                <label for="album-tags-input">Tags</label>
-                <input type="text" id="album-tags-input" class="tag-input" placeholder="tag1, tag2, tag3">
+            <div class="mb-4">
+                <label class="block text-xs font-bold mb-2">Tags</label>
+                <input type="text" id="album-tags-input" class="tag-input w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500" placeholder="tag1, tag2, tag3">
             </div>
             
-            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                <button type="submit" class="btn">Save Changes</button>
-                <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Changes</button>
+                <button type="button" id="cancel-edit-btn" class="flex-1 px-4 py-2 bg-[#334155] hover:bg-[#475569] text-white text-xs">Cancel</button>
             </div>
         </form>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
 <style>
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .modal.show {
+    .tag-list {
         display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
     }
     
-    .modal-content {
-        background: var(--surface);
-        padding: 2rem;
-        border-radius: 0.5rem;
-        max-width: 600px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
+    .tag {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        text-decoration: none;
+        color: white;
+        transition: opacity 0.2s;
     }
     
-    /* Remove from album button */
+    .tag:hover {
+        opacity: 0.8;
+    }
+    
+    #album-media > div {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+    
+    #album-media > div:hover {
+        border-color: var(--primary-color);
+    }
+    
+    #album-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
     .remove-from-album-btn {
         position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        width: 2rem;
-        height: 2rem;
+        top: 0.25rem;
+        right: 0.25rem;
+        width: 1.5rem;
+        height: 1.5rem;
         background-color: var(--danger);
         color: white;
         border: none;
-        border-radius: 50%;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         line-height: 1;
         cursor: pointer;
         display: none;
@@ -156,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el('album-name').textContent = currentAlbum.name;
       el('album-description').textContent = currentAlbum.description || '';
       renderTags(currentAlbum.tags);
-      if (app.isAdminMode) el('admin-actions').style.display = 'block';
+      if (app.isAdminMode) el('admin-actions').style.display = 'flex';
       if (currentAlbum.is_shared) showShareLink(currentAlbum.share_uuid);
       loadMedia();
     } catch (e) { console.error('loadAlbum error', e); }
@@ -186,9 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const c = el('album-media');
     items.forEach(item => {
       const div = document.createElement('div');
-      div.className = `gallery-item ${item.file_type}`;
       div.dataset.mediaId = item.id;
-      div.style.position = 'relative';
 
       const a = document.createElement('a'); a.href = `/media/${item.id}`;
       const img = document.createElement('img'); img.src = `/api/media/${item.id}/thumbnail`; img.alt = item.filename; img.loading = 'lazy';

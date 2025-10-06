@@ -3,121 +3,139 @@
 {% block title %}Media - {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="media-detail">
-        <div class="media-content">
-            <div id="media-container"></div>
-        </div>
-        
-        <div class="media-sidebar">
-            <div class="media-info">
-                <h3>Information</h3>
-                <div id="media-info-content"></div>
+<div class="container mx-auto px-4 py-4">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <!-- Media Content -->
+        <div class="lg:col-span-3">
+            <div class="bg-[#1e293b] p-4 border border-[#334155]">
+                <div id="media-container" class="text-center"></div>
             </div>
             
-            <div class="tags-section">
-                <h3>Tags</h3>
+            <!-- Related Media -->
+            <div class="mt-6">
+                <h2 class="text-base font-bold mb-3 pb-2 border-b border-[#334155]">Related Media</h2>
+                <div id="related-media" class="grid grid-cols-4 md:grid-cols-6 gap-2"></div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Information -->
+            <div class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Information</h3>
+                <div id="media-info-content" class="text-xs"></div>
+            </div>
+            
+            <!-- Tags -->
+            <div class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Tags</h3>
                 <div id="tags-container"></div>
                 
                 <!-- Edit Tags (Admin Mode Only) -->
-                <div id="edit-tags-section" style="display: none; margin-top: 1rem;">
+                <div id="edit-tags-section" style="display: none;" class="mt-3 pt-3 border-t border-[#334155]">
                     <form id="edit-tags-form">
-                        <div class="form-group">
-                            <label for="tags-input">Edit Tags</label>
-                            <input type="text" id="tags-input" class="tag-input" placeholder="tag1, tag2, tag3">
-                        </div>
-                        <button type="submit" class="btn btn-sm">Save Tags</button>
+                        <label class="block text-xs font-bold mb-2">Edit Tags</label>
+                        <input type="text" id="tags-input" placeholder="tag1, tag2, tag3" class="w-full px-2 py-1 bg-[#0f172a] border border-[#334155] text-xs mb-2 focus:outline-none focus:border-blue-500">
+                        <button type="submit" class="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Tags</button>
                     </form>
                 </div>
             </div>
             
-            <div class="actions-section" style="margin-top: 2rem;">
-                <h3>Actions</h3>
+            <!-- Actions -->
+            <div class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Actions</h3>
                 
-                <!-- Public Actions -->
-                <div class="action-buttons">
-                    <a id="download-btn" href="#" download class="btn btn-secondary btn-sm">Download</a>
-                </div>
-                
-                <!-- Admin Actions -->
-                <div id="admin-actions" style="display: none; margin-top: 1rem;">
-                    <div class="form-group">
-                        <label for="rating-select">Rating</label>
-                        <select id="rating-select">
+                <div class="space-y-2">
+                    <a id="download-btn" href="#" download class="block w-full px-3 py-1 bg-[#334155] hover:bg-[#475569] text-white text-center text-xs">Download</a>
+                    
+                    <!-- Admin Actions -->
+                    <div id="admin-actions" style="display: none;" class="space-y-2 pt-2 border-t border-[#334155]">
+                        <label class="block text-xs font-bold mb-1">Rating</label>
+                        <select id="rating-select" class="w-full px-2 py-1 bg-[#0f172a] border border-[#334155] text-xs mb-2 focus:outline-none focus:border-blue-500">
                             <option value="safe">Safe</option>
                             <option value="questionable">Questionable</option>
                             <option value="explicit">Explicit</option>
                         </select>
+                        
+                        <button id="manage-albums-btn" class="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Manage Albums</button>
+                        <button id="share-btn" class="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Share</button>
+                        <button id="delete-btn" class="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs">Delete</button>
                     </div>
-                    
-                    <button id="manage-albums-btn" class="btn btn-sm">Manage Albums</button>
-                    <button id="share-btn" class="btn btn-sm">Share</button>
-                    <button id="delete-btn" class="btn btn-sm btn-danger">Delete</button>
                 </div>
             </div>
             
             <!-- Share Link Display -->
-            <div id="share-link-section" style="display: none; margin-top: 1rem;">
-                <h4>Share Link</h4>
-                <input type="text" id="share-link-input" readonly style="width: 100%;">
-                <button id="copy-share-link-btn" class="btn btn-sm">Copy Link</button>
-                <button id="unshare-btn" class="btn btn-sm btn-secondary">Remove Share</button>
+            <div id="share-link-section" style="display: none;" class="bg-amber-600 p-3 border border-amber-700 mb-4">
+                <h4 class="text-sm font-bold mb-2 text-black">Share Link</h4>
+                <input type="text" id="share-link-input" readonly class="w-full px-2 py-1 bg-white border border-amber-700 text-xs mb-2 text-black">
+                <div class="space-y-1">
+                    <button id="copy-share-link-btn" class="w-full px-3 py-1 bg-black hover:bg-gray-900 text-white text-xs">Copy Link</button>
+                    <button id="unshare-btn" class="w-full px-3 py-1 bg-gray-700 hover:bg-gray-800 text-white text-xs">Remove Share</button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Related/Similar Media -->
-    <div style="margin-top: 3rem;">
-        <h2>Related Media</h2>
-        <div id="related-media" class="gallery-grid"></div>
     </div>
 </div>
 
 <!-- Album Selection Modal -->
-<div id="album-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <h2>Manage Albums</h2>
-        <p>Select which albums this media should be in:</p>
+<div id="album-modal" class="modal">
+    <div class="bg-[#1e293b] p-6 border border-[#334155] max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 class="text-base font-bold mb-3">Manage Albums</h2>
+        <p class="text-xs text-[#94a3b8] mb-4">Select which albums this media should be in:</p>
         
-        <div id="album-list" style="max-height: 400px; overflow-y: auto; margin: 1rem 0;">
-            <!-- Album checkboxes will be inserted here -->
-        </div>
+        <div id="album-list" class="max-h-96 overflow-y-auto mb-4"></div>
         
-        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-            <button id="save-albums-btn" class="btn">Save Changes</button>
-            <button id="cancel-albums-btn" class="btn btn-secondary">Cancel</button>
+        <div class="flex gap-2">
+            <button id="save-albums-btn" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Changes</button>
+            <button id="cancel-albums-btn" class="flex-1 px-4 py-2 bg-[#334155] hover:bg-[#475569] text-white text-xs">Cancel</button>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
 <style>
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
+    #media-container img,
+    #media-container video {
+        max-width: 100%;
+        max-height: 80vh;
+        margin: 0 auto;
     }
     
-    .modal.show {
+    .info-row {
         display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
     }
     
-    .modal-content {
-        background: var(--surface);
-        padding: 2rem;
-        border-radius: 0.5rem;
-        max-width: 500px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
+    .tag-category {
+        margin-bottom: 1rem;
+    }
+    
+    .tag-category h4 {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+    
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .tag {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        text-decoration: none;
+        color: white;
+        transition: opacity 0.2s;
+    }
+    
+    .tag:hover {
+        opacity: 0.8;
     }
     
     .album-checkbox-item {
@@ -127,6 +145,7 @@
         border-bottom: 1px solid var(--border);
         cursor: pointer;
         transition: background-color 0.2s;
+        font-size: 0.75rem;
     }
     
     .album-checkbox-item:hover {
@@ -135,8 +154,8 @@
     
     .album-checkbox-item input[type="checkbox"] {
         margin-right: 0.75rem;
-        width: 1.25rem;
-        height: 1.25rem;
+        width: 1rem;
+        height: 1rem;
         cursor: pointer;
     }
     
@@ -149,10 +168,26 @@
     .album-system-badge {
         background-color: var(--warning);
         color: #000;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.65rem;
         margin-left: 0.5rem;
+    }
+    
+    #related-media .gallery-item {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+    
+    #related-media .gallery-item:hover {
+        border-color: var(--primary-color);
+    }
+    
+    #related-media .gallery-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 </style>
 {% endblock %}
@@ -278,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>`;
     });
-    c.innerHTML = html || '<p>No tags</p>';
+    c.innerHTML = html || '<p class="text-xs text-[#94a3b8]">No tags</p>';
     const input = el('tags-input');
     if (input) input.value = (m.tags || []).map(t => t.name).join(', ');
   }
@@ -299,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Utilities
   function formatFileSize(bytes) {
     if (!bytes) return '0 Bytes';
     const k = 1024, sizes = ['Bytes','KB','MB','GB','TB'];
@@ -311,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${m}:${String(sec).padStart(2, '0')}`;
   }
 
-  // Event wiring (guard nulls)
   el('edit-tags-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const tags = el('tags-input').value.split(',').map(t => t.trim()).filter(Boolean);
@@ -370,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
     el('share-link-section').style.display = 'block';
   }
 
-  // Go
   loadMedia();
 });
 </script>

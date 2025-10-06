@@ -1,127 +1,89 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup - {{ app_name }}</title>
     
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="stylesheet" href="/static/css/pico.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/main.css">
     
-    <style>
-        body {
-            background-color: var(--background);
-            color: var(--text);
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        'primary-hover': '#2563eb',
+                        background: '#0f172a',
+                        surface: '#1e293b',
+                        'surface-hover': '#334155',
+                        border: '#334155',
+                    }
+                }
+            }
         }
-        
-        .setup-container {
-            max-width: 600px;
-            margin: 4rem auto;
-            padding: 2rem;
-            background-color: var(--surface);
-            border-radius: 0.5rem;
-        }
-        
-        h1, h3 {
-            color: var(--text);
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-        }
-        
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: var(--background);
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            color: var(--text);
-        }
-        
-        .error-message {
-            background-color: var(--danger);
-            color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .success-message {
-            background-color: var(--success);
-            color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            display: none;
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="setup-container">
-        <h1>Welcome to {{ app_name }}</h1>
-        <p>Let's get your personal booru set up!</p>
-        
-        <div id="error-message" class="error-message"></div>
-        <div id="success-message" class="success-message"></div>
-        
-        <form id="onboarding-form">
-            <div class="form-group">
-                <label for="app-name">Application Name</label>
-                <input type="text" id="app-name" name="app_name" value="Blombooru" required>
-            </div>
+<body class="bg-[#0f172a] text-[#f1f5f9] text-xs">
+    <div class="container mx-auto px-4 py-16 max-w-2xl">
+        <div class="bg-[#1e293b] p-8 border border-[#334155]">
+            <h1 class="text-xl font-bold mb-4">Welcome to {{ app_name }}</h1>
+            <p class="text-xs text-[#94a3b8] mb-6">Let's get your personal booru set up!</p>
             
-            <h3>Database Configuration</h3>
+            <div id="error-message" style="display: none;" class="bg-red-600 text-white p-3 mb-4 text-xs"></div>
+            <div id="success-message" style="display: none;" class="bg-green-600 text-white p-3 mb-4 text-xs"></div>
             
-            <div class="form-group">
-                <label for="db-host">Host</label>
-                <input type="text" id="db-host" name="db_host" value="localhost" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="db-port">Port</label>
-                <input type="number" id="db-port" name="db_port" value="5432" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="db-name">Database Name</label>
-                <input type="text" id="db-name" name="db_name" value="blombooru" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="db-user">Username</label>
-                <input type="text" id="db-user" name="db_user" value="postgres" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="db-password">Password</label>
-                <input type="password" id="db-password" name="db_password">
-            </div>
-            
-            <h3>Admin Account</h3>
-            
-            <div class="form-group">
-                <label for="admin-username">Username</label>
-                <input type="text" id="admin-username" name="admin_username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="admin-password">Password</label>
-                <input type="password" id="admin-password" name="admin_password" required minlength="6" maxlength="50">
-                <small style="color: var(--text-secondary);">6-50 characters</small>
-            </div>
-            
-            <button type="submit" class="btn">Complete Setup</button>
-        </form>
+            <form id="onboarding-form">
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">Application Name</label>
+                    <input type="text" id="app-name" name="app_name" value="Blombooru" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Database Configuration</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Host</label>
+                    <input type="text" id="db-host" name="db_host" value="localhost" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Port</label>
+                    <input type="number" id="db-port" name="db_port" value="5432" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Database Name</label>
+                    <input type="text" id="db-name" name="db_name" value="blombooru" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Username</label>
+                    <input type="text" id="db-user" name="db_user" value="postgres" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">Password</label>
+                    <input type="password" id="db-password" name="db_password" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Admin Account</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Username</label>
+                    <input type="text" id="admin-username" name="admin_username" required class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">Password</label>
+                    <input type="password" id="admin-password" name="admin_password" required minlength="6" maxlength="50" class="w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                    <small class="text-[#94a3b8] text-xs">6-50 characters</small>
+                </div>
+                
+                <button type="submit" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Complete Setup</button>
+            </form>
+        </div>
     </div>
     
     <script>
