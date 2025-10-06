@@ -35,7 +35,6 @@ class Settings:
                 "password": ""
             },
             "default_rating_filter": "explicit",
-            "theme": "dark",
             "items_per_page": 30,
             "secret_key": os.urandom(32).hex()
         }

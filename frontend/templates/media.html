@@ -279,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       mediaAlbumIds = new Set(selected);
       closeAlbumModal();
-      alert('Album memberships updated!');
     } catch (e) {
       alert('Failed to update albums: ' + e.message);
     }
@@ -361,14 +360,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tags = el('tags-input').value.split(',').map(t => t.trim()).filter(Boolean);
     try {
       await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ tags }) });
-      alert('Tags updated!'); location.reload();
+      location.reload();
     } catch (e) { alert('Error updating tags: ' + e.message); }
   });
 
   el('rating-select')?.addEventListener('change', async (e) => {
     try {
       await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ rating: e.target.value }) });
-      alert('Rating updated!');
     } catch (e) { alert('Error updating rating: ' + e.message); }
   });
 
@@ -392,12 +390,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { alert('Error creating share link: ' + e.message); }
   });
   el('copy-share-link-btn')?.addEventListener('click', () => {
-    el('share-link-input').select(); document.execCommand('copy'); alert('Link copied to clipboard!');
+    el('share-link-input').select(); document.execCommand('copy');
   });
   el('unshare-btn')?.addEventListener('click', async () => {
     try {
       await app.apiCall(`/api/media/${mediaId}/share`, { method: 'DELETE' });
-      el('share-link-section').style.display = 'none'; alert('Share link removed!');
+      el('share-link-section').style.display = 'none';
     } catch (e) { alert('Error removing share: ' + e.message); }
   });
 
@@ -405,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirm('Delete this media?')) return;
     try {
       await app.apiCall(`/api/media/${mediaId}`, { method: 'DELETE' });
-      alert('Media deleted!'); window.location.href = '/';
+      window.location.href = '/';
     } catch (e) { alert('Error deleting media: ' + e.message); }
   });
 

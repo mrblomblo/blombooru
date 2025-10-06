@@ -6,7 +6,6 @@ class AdminPanel {
     init() {
         this.setupEventListeners();
         this.loadSettings();
-        this.loadThemes();
     }
     
     setupEventListeners() {
@@ -59,44 +58,18 @@ class AdminPanel {
                 if (ratingInput) ratingInput.checked = true;
             }
             
-            if (settings.theme) {
-                const themeSelect = document.getElementById('theme-select');
-                if (themeSelect) themeSelect.value = settings.theme;
-            }
-            
         } catch (error) {
             console.error('Error loading settings:', error);
-        }
-    }
-    
-    async loadThemes() {
-        try {
-            const data = await app.apiCall('/api/admin/themes');
-            const themeSelect = document.getElementById('theme-select');
-            
-            if (themeSelect) {
-                themeSelect.innerHTML = '';
-                data.themes.forEach(theme => {
-                    const option = document.createElement('option');
-                    option.value = theme;
-                    option.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
-                    themeSelect.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading themes:', error);
         }
     }
     
     async saveSettings() {
         const appName = document.getElementById('app-name').value;
         const defaultRating = document.querySelector('input[name="default-rating"]:checked')?.value;
-        const theme = document.getElementById('theme-select')?.value;
         
         const settings = {
             app_name: appName,
             default_rating_filter: defaultRating,
-            theme: theme
         };
         
         try {
@@ -105,7 +78,6 @@ class AdminPanel {
                 body: JSON.stringify(settings)
             });
             
-            alert('Settings saved successfully!');
             location.reload();
         } catch (error) {
             alert('Error saving settings: ' + error.message);

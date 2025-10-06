@@ -282,18 +282,6 @@ async def scan_media(
     result = scan_for_new_media(db)
     return result
 
-@router.get("/themes")
-async def get_available_themes():
-    """Get list of available themes"""
-    theme_dir = settings.BASE_DIR / "frontend" / "static" / "css" / "themes"
-    themes = []
-    
-    if theme_dir.exists():
-        for theme_file in theme_dir.glob("*.css"):
-            themes.append(theme_file.stem)
-    
-    return {"themes": themes}
-
 @router.post("/maintenance/fix-album-memberships")
 async def fix_album_memberships(current_user: User = Depends(require_admin_mode), db: Session = Depends(get_db)):
     # 1) Remove duplicates (keep one)

@@ -235,7 +235,6 @@ class Gallery {
             }
         }
         
-        alert('Tags updated!');
         this.clearSelection();
     }
     
@@ -275,7 +274,6 @@ class Gallery {
             }
         }
         
-        alert('Added to album!');
         this.clearSelection();
     }
     

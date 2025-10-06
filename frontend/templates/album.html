@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     try {
       await app.apiCall(`/api/albums/${albumId}`, { method: 'PATCH', body: JSON.stringify(updates) });
-      hideEditModal(); alert('Album updated!'); location.reload();
+      hideEditModal(); location.reload();
     } catch (e) { alert('Error updating album: ' + e.message); }
   });
 
@@ -252,9 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
       showShareLink(r.share_url.split('/').pop());
     } catch (e) { alert('Error creating share link: ' + e.message); }
   });
-  el('copy-share-link-btn')?.addEventListener('click', () => { el('share-link-input').select(); document.execCommand('copy'); alert('Link copied!'); });
+  el('copy-share-link-btn')?.addEventListener('click', () => { el('share-link-input').select(); document.execCommand('copy'); });
   el('unshare-btn')?.addEventListener('click', async () => {
-    try { await app.apiCall(`/api/albums/${albumId}/share`, { method: 'DELETE' }); el('share-link-section').style.display = 'none'; alert('Share removed!'); }
+    try { await app.apiCall(`/api/albums/${albumId}/share`, { method: 'DELETE' }); el('share-link-section').style.display = 'none'; }
     catch (e) { alert('Error removing share: ' + e.message); }
   });
 
