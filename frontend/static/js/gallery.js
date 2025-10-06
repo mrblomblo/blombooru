@@ -16,6 +16,7 @@ class Gallery {
     init() {
         this.setupInfiniteScroll();
         this.setupBulkActions();
+        this.setupRatingFilter();
         
         // Load initial page if empty
         if (this.galleryContainer.children.length === 0) {
@@ -37,6 +38,40 @@ class Gallery {
         if (this.loadingIndicator) {
             observer.observe(this.loadingIndicator);
         }
+    }
+    
+    setupRatingFilter() {
+        document.querySelectorAll('.rating-filter-input').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const selectedRating = e.target.value;
+                
+                // Store the selected rating in localStorage for persistence
+                localStorage.setItem('selectedRating', selectedRating);
+                
+                this.reloadWithRating(selectedRating);
+            });
+        });
+        
+        const savedRating = localStorage.getItem('selectedRating') || 'explicit';
+        const savedRadio = document.querySelector(`input[value="${savedRating}"]`);
+        
+        if (savedRadio) {
+            savedRadio.checked = true;
+        }
+    }
+    
+    reloadWithRating(rating) {
+        this.galleryContainer.innerHTML = '';
+        
+        this.currentPage = 1;
+        this.hasMore = true;
+        
+        // Update URL with rating parameter
+        const url = new URL(window.location);
+        url.searchParams.set('rating', rating);
+        window.history.replaceState({}, '', url);
+        
+        this.loadPage();
     }
     
     async loadPage() {
@@ -110,6 +145,7 @@ class Gallery {
         const item = document.createElement('div');
         item.className = `gallery-item ${media.file_type}`;
         item.dataset.id = media.id;
+        item.dataset.rating = media.rating;
         
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
