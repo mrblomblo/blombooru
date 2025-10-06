@@ -48,8 +48,6 @@
                 
                 if (data.type === 'media') {
                     renderSharedMedia(data.data);
-                } else if (data.type === 'album') {
-                    renderSharedAlbum(data.data, data.media);
                 }
             } catch (error) {
                 console.error('Error loading shared content:', error);
@@ -112,32 +110,6 @@
                     </div>
                 </div>
             `;
-        }
-        
-        function renderSharedAlbum(album, media) {
-            const container = document.getElementById('shared-content');
-            
-            container.innerHTML = `
-                <div class="mb-4">
-                    <h1 class="text-lg font-bold">${album.name}</h1>
-                    ${album.description ? `<p class="text-xs text-[#94a3b8] mt-1">${album.description}</p>` : ''}
-                    <p class="text-xs mt-2"><strong>${media.length}</strong> items</p>
-                </div>
-                
-                <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2" id="media-grid">
-                    ${media.map(item => `
-                        <div class="gallery-item cursor-pointer" data-media-id="${item.id}">
-                            <img src="/api/media/${item.id}/thumbnail" alt="${item.filename}" loading="lazy">
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            
-            document.querySelectorAll('.gallery-item').forEach((item, index) => {
-                item.addEventListener('click', () => {
-                    showLightbox(media[index]);
-                });
-            });
         }
         
         function showLightbox(media) {

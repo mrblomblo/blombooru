@@ -65,34 +65,6 @@ class MediaResponse(MediaBase):
     
     model_config = ConfigDict(from_attributes=True)
 
-# Album Schemas
-class AlbumBase(BaseModel):
-    name: str
-    description: Optional[str] = None
-    rating: RatingEnum = RatingEnum.safe
-
-class AlbumCreate(AlbumBase):
-    tags: List[str] = []
-
-class AlbumUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    rating: Optional[RatingEnum] = None
-    tags: Optional[List[str]] = None
-    cover_media_id: Optional[int] = None
-
-class AlbumResponse(AlbumBase):
-    id: int
-    cover_media_id: Optional[int]
-    is_system: bool
-    is_shared: bool
-    share_uuid: Optional[str]
-    created_at: datetime
-    tags: List[TagResponse] = []
-    media_count: int = 0
-    
-    model_config = ConfigDict(from_attributes=True)
-
 # Auth Schemas
 class UserCreate(BaseModel):
     username: str
@@ -124,6 +96,3 @@ class SettingsUpdate(BaseModel):
     app_name: Optional[str] = None
     default_rating_filter: Optional[RatingEnum] = None
     items_per_page: Optional[int] = None
-    
-class MediaAlbumUpdate(BaseModel):
-    album_ids: List[int]

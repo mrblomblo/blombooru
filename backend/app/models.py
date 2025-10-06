@@ -29,21 +29,6 @@ blombooru_media_tags = Table(
     Column('tag_id', Integer, ForeignKey('blombooru_tags.id', ondelete='CASCADE'), primary_key=True)
 )
 
-blombooru_album_media = Table(
-    'blombooru_album_media',
-    Base.metadata,
-    Column('album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
-    Column('media_id', Integer, ForeignKey('blombooru_media.id', ondelete='CASCADE'), primary_key=True),
-    Column('position', Integer, default=0)
-)
-
-blombooru_album_tags = Table(
-    'blombooru_album_tags',
-    Base.metadata,
-    Column('album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('blombooru_tags.id', ondelete='CASCADE'), primary_key=True)
-)
-
 class User(Base):
     __tablename__ = 'blombooru_users'
     
@@ -72,7 +57,6 @@ class Media(Base):
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     
     tags = relationship('Tag', secondary=blombooru_media_tags, back_populates='media')
-    albums = relationship('Album', secondary=blombooru_album_media, back_populates='media')
 
 class Tag(Base):
     __tablename__ = 'blombooru_tags'
@@ -84,26 +68,8 @@ class Tag(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     media = relationship('Media', secondary=blombooru_media_tags, back_populates='tags')
-    albums = relationship('Album', secondary=blombooru_album_tags, back_populates='tags')
     aliases = relationship('TagAlias', foreign_keys='TagAlias.target_tag_id', back_populates='target_tag')
     implications = relationship('TagImplication', foreign_keys='TagImplication.source_tag_id', back_populates='source_tag')
-
-class Album(Base):
-    __tablename__ = 'blombooru_albums'
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
-    description = Column(Text)
-    rating = Column(Enum(RatingEnum), default=RatingEnum.safe)
-    cover_media_id = Column(Integer, ForeignKey('blombooru_media.id'), nullable=True)
-    is_system = Column(Boolean, default=False)
-    is_shared = Column(Boolean, default=False, index=True)
-    share_uuid = Column(String(36), unique=True, nullable=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    media = relationship('Media', secondary=blombooru_album_media, back_populates='albums')
-    tags = relationship('Tag', secondary=blombooru_album_tags, back_populates='albums')
-    cover_media = relationship('Media', foreign_keys=[cover_media_id])
 
 class TagAlias(Base):
     __tablename__ = 'blombooru_tag_aliases'

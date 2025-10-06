@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, albums, search, sharing
+from .routes import admin, media, tags, search, sharing
 from .utils.file_scanner import scan_for_new_media
 
 app = FastAPI(title="Blombooru", version="1.0.0")
@@ -23,7 +23,6 @@ templates = Jinja2Templates(directory=str(templates_path))
 app.include_router(admin.router)
 app.include_router(media.router)
 app.include_router(tags.router)
-app.include_router(albums.router)
 app.include_router(search.router)
 app.include_router(sharing.router)
 
@@ -114,23 +113,6 @@ async def media_page(request: Request, media_id: int):
         "request": request,
         "app_name": settings.APP_NAME,
         "media_id": media_id
-    })
-
-@app.get("/albums", response_class=HTMLResponse)
-async def albums_page(request: Request):
-    """Albums page"""
-    return templates.TemplateResponse("albums.html", {
-        "request": request,
-        "app_name": settings.APP_NAME
-    })
-
-@app.get("/albums/{album_id}", response_class=HTMLResponse)
-async def album_page(request: Request, album_id: int):
-    """Album detail page"""
-    return templates.TemplateResponse("album.html", {
-        "request": request,
-        "app_name": settings.APP_NAME,
-        "album_id": album_id
     })
 
 @app.get("/shared/{share_uuid}", response_class=HTMLResponse)

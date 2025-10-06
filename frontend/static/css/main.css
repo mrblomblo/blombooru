@@ -181,10 +181,6 @@ body {
     display: block !important;
 }
 
-.admin-mode .remove-from-album-btn {
-    display: flex !important;
-}
-
 /* Responsive tweaks */
 @media (max-width: 768px) {
     body {

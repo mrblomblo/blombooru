@@ -191,7 +191,6 @@ class Gallery {
     setupBulkActions() {
         const bulkTagBtn = document.getElementById('bulk-tag-btn');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-        const bulkAlbumBtn = document.getElementById('bulk-album-btn');
         
         if (bulkTagBtn) {
             bulkTagBtn.addEventListener('click', () => this.bulkTag());
@@ -199,10 +198,6 @@ class Gallery {
         
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDelete());
-        }
-        
-        if (bulkAlbumBtn) {
-            bulkAlbumBtn.addEventListener('click', () => this.bulkAddToAlbum());
         }
     }
     
@@ -253,24 +248,6 @@ class Gallery {
                 }
             } catch (error) {
                 console.error(`Error deleting media ${id}:`, error);
-            }
-        }
-        
-        this.clearSelection();
-    }
-    
-    async bulkAddToAlbum() {
-        // Show album selector modal
-        const albumId = prompt('Enter album ID:');
-        if (!albumId) return;
-        
-        for (const id of this.selectedItems) {
-            try {
-                await app.apiCall(`/api/albums/${albumId}/media/${id}`, {
-                    method: 'POST'
-                });
-            } catch (error) {
-                console.error(`Error adding media ${id} to album:`, error);
             }
         }
         

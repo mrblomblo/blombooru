@@ -57,7 +57,6 @@
                             <option value="explicit">Explicit</option>
                         </select>
                         
-                        <button id="manage-albums-btn" class="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Manage Albums</button>
                         <button id="share-btn" class="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">Share</button>
                         <button id="delete-btn" class="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs">Delete</button>
                     </div>
@@ -73,21 +72,6 @@
                     <button id="unshare-btn" class="w-full px-3 py-1 bg-gray-700 hover:bg-gray-800 text-white text-xs">Remove Share</button>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Album Selection Modal -->
-<div id="album-modal" class="modal">
-    <div class="bg-[#1e293b] p-6 border border-[#334155] max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 class="text-base font-bold mb-3">Manage Albums</h2>
-        <p class="text-xs text-[#94a3b8] mb-4">Select which albums this media should be in:</p>
-        
-        <div id="album-list" class="max-h-96 overflow-y-auto mb-4"></div>
-        
-        <div class="flex gap-2">
-            <button id="save-albums-btn" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Changes</button>
-            <button id="cancel-albums-btn" class="flex-1 px-4 py-2 bg-[#334155] hover:bg-[#475569] text-white text-xs">Cancel</button>
         </div>
     </div>
 </div>
@@ -138,41 +122,6 @@
         opacity: 0.8;
     }
     
-    .album-checkbox-item {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem;
-        border-bottom: 1px solid var(--border);
-        cursor: pointer;
-        transition: background-color 0.2s;
-        font-size: 0.75rem;
-    }
-    
-    .album-checkbox-item:hover {
-        background-color: var(--surface-hover);
-    }
-    
-    .album-checkbox-item input[type="checkbox"] {
-        margin-right: 0.75rem;
-        width: 1rem;
-        height: 1rem;
-        cursor: pointer;
-    }
-    
-    .album-checkbox-item label {
-        cursor: pointer;
-        flex: 1;
-        margin: 0;
-    }
-    
-    .album-system-badge {
-        background-color: var(--warning);
-        color: #000;
-        padding: 0.2rem 0.4rem;
-        font-size: 0.65rem;
-        margin-left: 0.5rem;
-    }
-    
     #related-media .gallery-item {
         position: relative;
         aspect-ratio: 1;
@@ -198,8 +147,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const mediaId = "{{ media_id }}";
   let currentMedia = null;
-  let allAlbums = [];
-  let mediaAlbumIds = new Set();
 
   const el = id => document.getElementById(id);
 
@@ -218,69 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await loadRelatedMedia();
     } catch (e) {
       console.error('loadMedia error', e);
-    }
-  }
-
-  async function loadAlbums() {
-    try {
-      const res = await fetch('/api/albums/');
-      allAlbums = await res.json();
-    } catch (e) {
-      console.error('loadAlbums error', e);
-    }
-  }
-
-  async function loadMediaMembership() {
-    try {
-      const res = await fetch(`/api/media/${mediaId}/albums`);
-      if (!res.ok) {
-        console.warn('Media membership endpoint returned:', res.status);
-        mediaAlbumIds = new Set();
-        return;
-      }
-      const text = await res.text();
-      if (!text) {
-        mediaAlbumIds = new Set();
-        return;
-      }
-      const data = JSON.parse(text);
-      mediaAlbumIds = new Set(data.album_ids || []);
-    } catch (e) {
-      console.error('loadMediaMembership error', e);
-      mediaAlbumIds = new Set();
-    }
-  }
-
-  function openAlbumModal() {
-    const modal = el('album-modal');
-    const list = el('album-list');
-    list.innerHTML = allAlbums.map(a => `
-      <div class="album-checkbox-item">
-        <input type="checkbox" id="album-${a.id}" value="${a.id}" ${mediaAlbumIds.has(a.id) ? 'checked' : ''}>
-        <label for="album-${a.id}">${a.name} ${a.is_system ? '<span class="album-system-badge">SYSTEM</span>' : ''}</label>
-      </div>
-    `).join('');
-    modal.classList.add('show');
-  }
-
-  function closeAlbumModal() {
-    el('album-modal').classList.remove('show');
-  }
-
-  async function saveAlbumChanges() {
-    const boxes = el('album-list').querySelectorAll('input[type="checkbox"]');
-    const selected = [];
-    boxes.forEach(cb => cb.checked && selected.push(parseInt(cb.value, 10)));
-
-    try {
-      await app.apiCall(`/api/media/${mediaId}/albums`, {
-        method: 'PUT',
-        body: JSON.stringify({ album_ids: selected })
-      });
-      mediaAlbumIds = new Set(selected);
-      closeAlbumModal();
-    } catch (e) {
-      alert('Failed to update albums: ' + e.message);
     }
   }
 
@@ -369,19 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ rating: e.target.value }) });
     } catch (e) { alert('Error updating rating: ' + e.message); }
   });
-
-  el('manage-albums-btn')?.addEventListener('click', async () => {
-    try {
-      await loadAlbums();
-      await loadMediaMembership();
-      openAlbumModal();
-    } catch (e) {
-      console.error('manage albums open error', e);
-      alert('Failed to open Manage Albums');
-    }
-  });
-  el('cancel-albums-btn')?.addEventListener('click', () => closeAlbumModal());
-  el('save-albums-btn')?.addEventListener('click', () => saveAlbumChanges());
 
   el('share-btn')?.addEventListener('click', async () => {
     try {

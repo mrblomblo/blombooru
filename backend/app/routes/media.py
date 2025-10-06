@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 from ..database import get_db
 from ..auth import require_admin_mode, get_current_user
-from ..models import Media, Tag, User, blombooru_media_tags, blombooru_album_media
-from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, MediaAlbumUpdate
+from ..models import Media, Tag, User, blombooru_media_tags
+from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum
 from ..config import settings
 from ..utils.media_processor import process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail
@@ -311,53 +311,3 @@ async def unshare_media(
     db.commit()
     
     return {"message": "Share removed"}
-
-@router.get("/{media_id}/albums")
-async def get_media_albums(media_id: int, db: Session = Depends(get_db)):
-    media = db.query(Media).filter(Media.id == media_id).first()
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
-
-    rows = db.query(blombooru_album_media.c.album_id).filter(
-        blombooru_album_media.c.media_id == media_id
-    ).all()
-    album_ids = [r[0] for r in rows]
-    return {"album_ids": album_ids}
-
-@router.put("/{media_id}/albums")
-async def set_media_albums(
-    media_id: int,
-    payload: MediaAlbumUpdate,
-    current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db)
-):
-    media = db.query(Media).filter(Media.id == media_id).first()
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
-
-    current_rows = db.query(blombooru_album_media.c.album_id).filter(
-        blombooru_album_media.c.media_id == media_id
-    ).all()
-    current = {r[0] for r in current_rows}
-    desired = set(payload.album_ids)
-
-    to_add = desired - current
-    to_remove = current - desired
-
-    for album_id in to_add:
-        db.execute(blombooru_album_media.insert().values(
-            album_id=album_id, media_id=media_id, position=0
-        ))
-
-    if to_remove:
-        db.execute(
-            blombooru_album_media.delete().where(
-                and_(
-                    blombooru_album_media.c.media_id == media_id,
-                    blombooru_album_media.c.album_id.in_(to_remove)
-                )
-            )
-        )
-
-    db.commit()
-    return {"added": list(to_add), "removed": list(to_remove)}

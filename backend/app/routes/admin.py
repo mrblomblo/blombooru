@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import timedelta
 from ..database import get_db, init_db
 from ..auth import get_password_hash, create_access_token, get_current_admin_user, require_admin_mode
-from ..models import User, Album
+from ..models import User
 from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
 from ..config import settings
 from ..utils.file_scanner import scan_for_new_media
@@ -84,8 +84,8 @@ async def complete_onboarding(data: OnboardingData):
         database.Base.metadata.create_all(bind=temp_engine)
         print("✓ Database schema created")
         
-        # Create admin user and favorites album
-        print("3. Creating admin user and favorites album...")
+        # Create admin user
+        print("3. Creating admin user...")
         db = new_session_local()
         try:
             # Hash the password
@@ -102,17 +102,9 @@ async def complete_onboarding(data: OnboardingData):
             )
             db.add(admin)
             
-            # Create favorites album
-            favorites = Album(
-                name="Favorites",
-                description="Your favorite media",
-                is_system=True
-            )
-            db.add(favorites)
-            
             # Commit everything
             db.commit()
-            print("✓ Admin user and favorites album created")
+            print("✓ Admin user created")
             
         except IntegrityError as e:
             db.rollback()
@@ -281,25 +273,3 @@ async def scan_media(
     """Manually trigger media scan"""
     result = scan_for_new_media(db)
     return result
-
-@router.post("/maintenance/fix-album-memberships")
-async def fix_album_memberships(current_user: User = Depends(require_admin_mode), db: Session = Depends(get_db)):
-    # 1) Remove duplicates (keep one)
-    delete_sql = text("""
-        DELETE FROM blombooru_album_media a
-        USING blombooru_album_media b
-        WHERE a.ctid < b.ctid
-          AND a.album_id = b.album_id
-          AND a.media_id = b.media_id
-    """)
-    db.execute(delete_sql)
-
-    # 2) Add a unique index to prevent future duplicates
-    unique_sql = text("""
-        CREATE UNIQUE INDEX IF NOT EXISTS blombooru_album_media_unique
-        ON blombooru_album_media (album_id, media_id)
-    """)
-    db.execute(unique_sql)
-
-    db.commit()
-    return {"message": "Album memberships deduplicated and unique index ensured"}
