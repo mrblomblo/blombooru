@@ -116,9 +116,7 @@
                 
                 <div class="border-t border-[#334155] pt-4">
                     <h3 class="text-sm font-bold mb-3 text-red-500">Danger Zone</h3>
-                    <button id="clear-tags-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs">
-                        Clear All Tags
-                    </button>
+                    <button id="clear-tags-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs">Delete All Tags</button>
                 </div>
             </div>
             
@@ -152,13 +150,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    input[type="radio"]:checked + span {
-        border-color: #3b82f6;
-        background-color: #3b82f6;
-    }
-</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -167,6 +158,19 @@
 <script src="/static/js/tag-autocomplete.js"></script>
 
 <script>
+    const tagsUpload = document.getElementById('upload-tags');
+    const tagsSearch = document.getElementById('tag-search-input');
+    if (tagsUpload) {
+        new TagAutocomplete(tagsUpload, {
+            multipleValues: true
+        });
+    }
+    if (tagsSearch) {
+        new TagAutocomplete(tagsSearch, {
+            multipleValues: true
+        });
+    }
+    
     async function checkAuth() {
         try {
             const response = await fetch('/api/admin/settings');
