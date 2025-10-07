@@ -92,7 +92,8 @@ class Uploader {
         
         const tagsInput = document.getElementById('upload-tags');
         if (tagsInput && tagsInput.value) {
-            formData.append('tags', tagsInput.value);
+            const tags = tagsInput.value.split(/\s+/).filter(tag => tag.length > 0);
+            formData.append('tags', JSON.stringify(tags));
         }
         
         try {

@@ -62,14 +62,80 @@
                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Save Settings</button>
                 </form>
             </div>
+
+            <!-- Tags Management Section -->
+            <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Tags Management</h2>
+                
+                <div id="tag-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Total Tags</div>
+                        <div class="text-lg font-bold" id="total-tags">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Tag Aliases</div>
+                        <div class="text-lg font-bold" id="total-aliases">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Implications</div>
+                        <div class="text-lg font-bold" id="total-implications">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Categories</div>
+                        <div class="text-lg font-bold" id="total-categories">5</div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Import Tags from CSV</h3>
+                    <div class="bg-[#0f172a] p-4 border border-[#334155]">
+                        <p class="text-xs text-[#94a3b8] mb-3">
+                            Upload a CSV file with the following format:<br>
+                            <code>tag_name, category_number, usage_count, "alias1,alias2,alias3"</code><br>
+                            Categories: 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
+                        </p>
+                        
+                        <div id="csv-upload-area" class="border-2 border-dashed border-[#334155] p-6 text-center cursor-pointer hover:bg-[#1e293b] transition-colors mb-3">
+                            <svg class="mx-auto mb-2" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                            </svg>
+                            <p class="text-xs">Drop CSV file here or click to browse</p>
+                            <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+                        </div>
+                        
+                        <div id="csv-import-status" style="display: none;" class="mt-3">
+                            <div class="text-xs">
+                                <div id="csv-import-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Search & Manage Tags</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="tag-search-input" placeholder="Search tags..." 
+                               class="flex-1 px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500">
+                        <button id="tag-search-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Search</button>
+                    </div>
+                    <div id="tag-search-results" class="max-h-64 overflow-y-auto"></div>
+                </div>
+                
+                <div class="border-t border-[#334155] pt-4">
+                    <h3 class="text-sm font-bold mb-3 text-red-500">Danger Zone</h3>
+                    <button id="clear-tags-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs">
+                        Clear All Tags
+                    </button>
+                </div>
+            </div>
             
             <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Media Management</h2>
-                <button id="scan-media-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Scan for New Media</button>
+                <button id="scan-media-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs">Scan for Untracked Media</button>
             </div>
             
             <div class="bg-[#1e293b] p-6 border border-[#334155]">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Upload Media</h2>
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Upload Media (set parameters before uploading media)</h2>
                 
                 <div id="upload-area" class="upload-area mb-4">
                     <p class="text-xs">Drop files here or click to browse</p>
@@ -86,8 +152,8 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">Tags (comma-separated)</label>
-                    <input type="text" id="upload-tags" class="tag-input w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500" placeholder="tag1, tag2, tag3">
+                    <label class="block text-xs font-bold mb-2">Tags (space-separated)</label>
+                    <input type="text" id="upload-tags" class="tag-input w-full px-3 py-2 bg-[#0f172a] border border-[#334155] text-xs focus:outline-none focus:border-blue-500" placeholder="tag1 tag2 tag3">
                 </div>
             </div>
         </div>
