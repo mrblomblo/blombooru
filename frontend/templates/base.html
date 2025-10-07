@@ -72,13 +72,17 @@
     </main>
     
     <script src="/static/js/main.js"></script>
-    {% block extra_js %}
+    <script src="/static/js/tag-autocomplete.js"></script>
+
     <script>
+        // Initialize tag autocomplete
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-            new TagAutocomplete(searchInput);
+            new TagAutocomplete(searchInput, {
+                multipleValues: true
+            });
         }
     </script>
-    {% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
