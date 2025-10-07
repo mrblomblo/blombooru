@@ -36,7 +36,7 @@ class TagAutocomplete {
                 border-top: none;
                 max-height: 200px;
                 overflow-y: auto;
-                width: 100%;
+                width: 338px;
             }
             
             .tag-suggestion {
@@ -97,12 +97,12 @@ class TagAutocomplete {
         const cursorPos = this.input.selectionStart;
         const value = this.input.value;
         const beforeCursor = value.substring(0, cursorPos);
-        const lastComma = beforeCursor.lastIndexOf(',');
+        const lastComma = beforeCursor.lastIndexOf(' ');
         return beforeCursor.substring(lastComma + 1).trim();
     }
     
     async fetchSuggestions(query) {
-        const response = await fetch(`/api/tags/suggest?q=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/tags/autocomplete?q=${encodeURIComponent(query)}`);
         if (!response.ok) throw new Error('Failed to fetch suggestions');
         return response.json();
     }
