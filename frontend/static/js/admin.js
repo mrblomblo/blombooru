@@ -304,7 +304,8 @@ class AdminPanel {
             resultsDiv.innerHTML = data.tags.map(tag => `
                 <div class="bg-[#0f172a] p-3 border-b border-[#334155] flex justify-between items-center">
                     <div>
-                        <span class="tag ${tag.category}">${tag.name}</span>
+                        <button class="text-xs text-[#94a3b8] bg-red-600 hover:bg-red-700 text-white px-2 py-1 mr-2" onclick="if(confirm('Delete tag & alias?')) { app.apiCall('/api/admin/tags/${tag.id}', { method: 'DELETE' }).then(() => { alert('Tag deleted'); location.reload(); }).catch(e => alert('Error deleting tag: ' + e.message)); }">&#x2715;</button>
+                        <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category}">${tag.name}</a>
                         <span class="text-xs text-[#94a3b8] ml-2">(${tag.post_count} posts)</span>
                     </div>
                     <span class="text-xs text-[#94a3b8] uppercase">${tag.category}</span>
