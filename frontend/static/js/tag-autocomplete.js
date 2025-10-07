@@ -97,8 +97,8 @@ class TagAutocomplete {
         const cursorPos = this.input.selectionStart;
         const value = this.input.value;
         const beforeCursor = value.substring(0, cursorPos);
-        const lastComma = beforeCursor.lastIndexOf(' ');
-        return beforeCursor.substring(lastComma + 1).trim();
+        const lastSpace = beforeCursor.lastIndexOf(' ');
+        return beforeCursor.substring(lastSpace + 1).trim();
     }
     
     async fetchSuggestions(query) {
@@ -127,12 +127,18 @@ class TagAutocomplete {
         
         // Add click handlers
         this.suggestionsEl.querySelectorAll('.tag-suggestion').forEach(el => {
-            el.addEventListener('click', () => this.selectSuggestion(el.dataset.name));
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.selectSuggestion(el.dataset.name);
+            });
         });
     }
     
     hideSuggestions() {
         this.suggestionsEl.classList.add('hidden');
+        this.suggestionsEl.querySelectorAll('.tag-suggestion.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
     }
     
     selectSuggestion(tagName) {
@@ -143,13 +149,19 @@ class TagAutocomplete {
             const value = this.input.value;
             const beforeCursor = value.substring(0, cursorPos);
             const afterCursor = value.substring(cursorPos);
-            const lastComma = beforeCursor.lastIndexOf(',');
+            const lastSpace = beforeCursor.lastIndexOf(' ');
             
-            const newValue = lastComma === -1
-                ? tagName + (afterCursor.startsWith(',') ? '' : ', ') + afterCursor
-                : beforeCursor.substring(0, lastComma + 1) + ' ' + tagName + (afterCursor.startsWith(',') ? '' : ', ') + afterCursor;
+            const newValue = lastSpace === -1
+                ? tagName + (afterCursor.startsWith(' ') ? '' : ' ') + afterCursor
+                : beforeCursor.substring(0, lastSpace + 1) + tagName + (afterCursor.startsWith(' ') ? '' : ' ') + afterCursor;
             
             this.input.value = newValue;
+            
+            // Set cursor position after the inserted tag
+            const newCursorPos = lastSpace === -1 
+                ? tagName.length + 1 
+                : lastSpace + 1 + tagName.length + 1;
+            this.input.setSelectionRange(newCursorPos, newCursorPos);
         }
         
         this.hideSuggestions();
@@ -162,37 +174,57 @@ class TagAutocomplete {
     
     onKeydown(e) {
         const suggestions = this.suggestionsEl.querySelectorAll('.tag-suggestion');
+        
+        // If suggestions are not visible, don't handle keyboard events
+        if (this.suggestionsEl.classList.contains('hidden') || suggestions.length === 0) {
+            return;
+        }
+        
         const selected = this.suggestionsEl.querySelector('.tag-suggestion.selected');
         const selectedIndex = selected ? parseInt(selected.dataset.index) : -1;
         
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
-                if (selectedIndex < suggestions.length - 1) {
+                if (suggestions.length > 0) {
                     if (selected) selected.classList.remove('selected');
-                    suggestions[selectedIndex + 1].classList.add('selected');
-                    suggestions[selectedIndex + 1].scrollIntoView({ block: 'nearest' });
+                    const nextIndex = selectedIndex < suggestions.length - 1 ? selectedIndex + 1 : 0;
+                    suggestions[nextIndex].classList.add('selected');
+                    suggestions[nextIndex].scrollIntoView({ block: 'nearest' });
                 }
                 break;
                 
             case 'ArrowUp':
                 e.preventDefault();
-                if (selectedIndex > 0) {
+                if (suggestions.length > 0) {
                     if (selected) selected.classList.remove('selected');
-                    suggestions[selectedIndex - 1].classList.add('selected');
-                    suggestions[selectedIndex - 1].scrollIntoView({ block: 'nearest' });
+                    const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : suggestions.length - 1;
+                    suggestions[prevIndex].classList.add('selected');
+                    suggestions[prevIndex].scrollIntoView({ block: 'nearest' });
                 }
                 break;
                 
             case 'Enter':
+                e.preventDefault();
                 if (selected) {
-                    e.preventDefault();
                     this.selectSuggestion(selected.dataset.name);
+                } else if (suggestions.length > 0) {
+                    // Auto-select first suggestion if none is selected
+                    this.selectSuggestion(suggestions[0].dataset.name);
                 }
                 break;
                 
             case 'Escape':
+                e.preventDefault();
                 this.hideSuggestions();
+                break;
+                
+            case 'Tab':
+                // Allow tab to select the current suggestion
+                if (selected) {
+                    e.preventDefault();
+                    this.selectSuggestion(selected.dataset.name);
+                }
                 break;
         }
     }
