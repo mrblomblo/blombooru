@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-4">
     <!-- Rating Filter -->
     <div class="bg-[#1e293b] p-3 mb-4 border border-[#334155]">
-        <div class="flex gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <label class="flex-1">
                 <input type="radio" name="rating" value="safe" class="hidden rating-filter-input">
                 <span class="block text-center px-3 py-2 border-2 border-[#334155] cursor-pointer hover:bg-[#334155] transition-colors rating-filter-label">Safe Only</span>
@@ -30,7 +30,7 @@
     </div>
     
     <!-- Gallery Grid -->
-    <div id="gallery-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2"></div>
+    <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2"></div>
     
     <!-- Loading Indicator -->
     <div id="loading-indicator" class="text-center py-8">
