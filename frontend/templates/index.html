@@ -20,19 +20,6 @@
         </div>
     </div>
     
-    <!-- Related Tags Section -->
-    <div id="related-tags" class="bg-[#1e293b] p-3 mb-4 border border-[#334155]" style="display: none;">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="font-bold">Related Tags</h3>
-            <button id="toggle-related-tags" class="text-xs text-blue-400 hover:text-blue-300">Show Related Tags</button>
-        </div>
-        <div id="related-tags-content" class="hidden">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                <!-- Related tags will be inserted here -->
-            </div>
-        </div>
-    </div>
-    
     <!-- Bulk Actions (Admin Mode Only) -->
     <div id="bulk-actions" style="display: none;" class="bg-[#1e293b] p-3 mb-4 border border-[#334155]">
         <p class="mb-2"><span id="selected-count">0</span> items selected</p>
@@ -51,56 +38,8 @@
         <p class="text-[#94a3b8] mt-2">Loading...</p>
     </div>
 </div>
-
-<style>
-    /* Custom radio button styling */
-    input[type="radio"]:checked + span {
-        border-color: #3b82f6;
-        background-color: #3b82f6;
-    }
-</style>
 {% endblock %}
 
 {% block extra_js %}
 <script src="/static/js/gallery.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('toggle-related-tags');
-    const content = document.getElementById('related-tags-content');
-    const container = document.getElementById('related-tags');
-    
-    // Show container if we have a search query
-    const searchParams = new URLSearchParams(window.location.search);
-    const query = searchParams.get('q');
-    if (query) {
-        container.style.display = 'block';
-        
-        // Load related tags
-        loadRelatedTags(query);
-    }
-    
-    toggleBtn.addEventListener('click', () => {
-        const isHidden = content.classList.contains('hidden');
-        content.classList.toggle('hidden');
-        toggleBtn.textContent = isHidden ? 'Hide Related Tags' : 'Show Related Tags';
-    });
-    
-    async function loadRelatedTags(query) {
-        try {
-            const response = await fetch(`/api/tags/related?tags=${encodeURIComponent(query)}`);
-            const tags = await response.json();
-            
-            content.querySelector('.grid').innerHTML = tags.map(tag => `
-                <a href="/?q=${encodeURIComponent(tag.name)}" 
-                   class="tag ${tag.category} flex justify-between items-center p-2 bg-[#334155] hover:bg-[#475569]">
-                    <span>${tag.name}</span>
-                    <span class="text-[#94a3b8] text-xs">${tag.frequency}</span>
-                </a>
-            `).join('');
-        } catch (error) {
-            console.error('Error loading related tags:', error);
-        }
-    }
-});
-</script>
 {% endblock %}
