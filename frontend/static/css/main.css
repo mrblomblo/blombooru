@@ -96,8 +96,17 @@ input[type="radio"]:checked + span {
 
 .gallery-item.video,
 .gallery-item.gif {
-    outline: 3px solid var(--primary-color);
+    outline-width: 3px;
+    outline-style:  solid;
     outline-offset: -3px;
+}
+
+.gallery-item.video {
+    outline-color: var(--danger);
+}
+
+.gallery-item.gif {
+    outline-color: var(--warning);
 }
 
 .gallery-item.selected {
