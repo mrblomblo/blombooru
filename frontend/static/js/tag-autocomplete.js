@@ -30,64 +30,6 @@ class TagAutocomplete {
                 this.hideSuggestions();
             }
         });
-        
-        // Add styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .tag-suggestions {
-                position: absolute;
-                z-index: 1000;
-                background: #1e293b;
-                border: 1px solid #334155;
-                border-top: none;
-                max-height: 200px;
-                overflow-y: auto;
-                width: 338px;
-            }
-
-            .tag-suggestion {
-                padding: 0.5rem;
-                cursor: pointer;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid #334155;
-            }
-
-            .tag-suggestion:hover,
-            .tag-suggestion.selected {
-                background: #334155;
-            }
-
-            .tag-suggestion.tag-alias-info {
-                background: #422006;
-                border-left: 3px solid #f59e0b;
-            }
-
-            .tag-suggestion.tag-alias-info:hover,
-            .tag-suggestion.tag-alias-info.selected {
-                background: #78350f;
-            }
-
-            .tag-suggestion .tag-name {
-                color: #f1f5f9;
-            }
-
-            .tag-suggestion .tag-count {
-                color: #94a3b8;
-                font-size: 0.8em;
-            }
-
-            .tag-category {
-                display: inline-block;
-                padding: 0.1rem 0.3rem;
-                border-radius: 2px;
-                margin-right: 0.5rem;
-                font-size: 0.7em;
-                text-transform: uppercase;
-            }
-        `;
-        document.head.appendChild(style);
     }
     
     async onInput() {
