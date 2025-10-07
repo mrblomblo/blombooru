@@ -36,6 +36,23 @@ async def autocomplete_tags(
     db: Session = Depends(get_db)
 ):
     """Autocomplete tag suggestions"""
+    from ..models import TagAlias
+    
+    # Check if query exactly matches an alias
+    alias = db.query(TagAlias).filter(TagAlias.alias_name.ilike(q)).first()
+    
+    if alias:
+        # Get the target tag
+        target_tag = db.query(Tag).filter(Tag.id == alias.target_tag_id).first()
+        if target_tag:
+            return [{
+                "name": target_tag.name,
+                "category": target_tag.category,
+                "count": target_tag.post_count,
+                "is_alias": True,
+                "alias_name": q.lower()
+            }]
+    
     priority = case(
         (Tag.name.ilike(f"{q}%"), 1),
         else_=2

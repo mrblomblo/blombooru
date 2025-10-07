@@ -38,7 +38,7 @@ class TagAutocomplete {
                 overflow-y: auto;
                 width: 338px;
             }
-            
+
             .tag-suggestion {
                 padding: 0.5rem;
                 cursor: pointer;
@@ -47,21 +47,31 @@ class TagAutocomplete {
                 align-items: center;
                 border-bottom: 1px solid #334155;
             }
-            
+
             .tag-suggestion:hover,
             .tag-suggestion.selected {
                 background: #334155;
             }
-            
+
+            .tag-suggestion.tag-alias-info {
+                background: #422006;
+                border-left: 3px solid #f59e0b;
+            }
+
+            .tag-suggestion.tag-alias-info:hover,
+            .tag-suggestion.tag-alias-info.selected {
+                background: #78350f;
+            }
+
             .tag-suggestion .tag-name {
                 color: #f1f5f9;
             }
-            
+
             .tag-suggestion .tag-count {
                 color: #94a3b8;
                 font-size: 0.8em;
             }
-            
+
             .tag-category {
                 display: inline-block;
                 padding: 0.1rem 0.3rem;
@@ -112,19 +122,35 @@ class TagAutocomplete {
             this.hideSuggestions();
             return;
         }
-        
-        this.suggestionsEl.innerHTML = suggestions.map((tag, index) => `
-            <div class="tag-suggestion" data-index="${index}" data-name="${tag.name}">
-                <span>
-                    <span class="tag-category ${tag.category}">${tag.category}</span>
-                    <span class="tag-name">${tag.name}</span>
-                </span>
-                <span class="tag-count">${tag.count}</span>
-            </div>
-        `).join('');
-        
+
+        // Check if this is an alias result
+        if (suggestions.length === 1 && suggestions[0].is_alias) {
+            const tag = suggestions[0];
+            this.suggestionsEl.innerHTML = `
+                <div class="tag-suggestion tag-alias-info" data-index="0" data-name="${tag.name}">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: #94a3b8; font-style: italic;">${tag.alias_name}</span>
+                        <span style="color: #94a3b8;">→</span>
+                        <span class="tag-name">${tag.name}</span>
+                    </span>
+                    <span class="tag-count">${tag.count}</span>
+                </div>
+            `;
+        } else {
+            // Normal suggestions
+            this.suggestionsEl.innerHTML = suggestions.map((tag, index) => `
+                <div class="tag-suggestion" data-index="${index}" data-name="${tag.name}">
+                    <span>
+                        <span class="tag-category ${tag.category}">${tag.category}</span>
+                        <span class="tag-name">${tag.name}</span>
+                    </span>
+                    <span class="tag-count">${tag.count}</span>
+                </div>
+            `).join('');
+        }
+
         this.suggestionsEl.classList.remove('hidden');
-        
+
         // Add click handlers
         this.suggestionsEl.querySelectorAll('.tag-suggestion').forEach(el => {
             el.addEventListener('click', (e) => {
