@@ -39,7 +39,7 @@
                     </span>
                 </a>
                 
-                <div class="flex-1 max-w-2xl">
+                <div class="flex-1 max-w-2xl hidden sm:block">
                     <form id="search-form">
                         <input 
                             type="text" 
@@ -63,6 +63,18 @@
                     </ul>
                 </nav>
             </div>
+            <div class="flex-1 max-w-2xl mt-2 block sm:hidden">
+                <form id="search-form">
+                    <input 
+                        type="text" 
+                        id="search-input-mobile" 
+                        name="q" 
+                        placeholder="Search tags... (e.g., cat_ears -dog)"
+                        value="{{ request.query_params.get('q', '') }}"
+                        class="w-full px-3 py-1 bg-[#0f172a] border border-[#334155] text-[#f1f5f9] text-xs focus:outline-none focus:border-blue-500"
+                    >
+                </form>
+            </div>
         </div>
     </header>
     {% endblock %}
@@ -77,9 +89,16 @@
     <script>
         // Initialize tag autocomplete
         const searchInput = document.getElementById('search-input');
+        const searchInputMobile = document.getElementById('search-input-mobile');
         if (searchInput) {
             new TagAutocomplete(searchInput, {
                 multipleValues: true
+            });
+        }
+        if (searchInputMobile) {
+            new TagAutocomplete(searchInputMobile, {
+                multipleValues: true,
+                containerClasses: 'tag-suggestions-mobile'
             });
         }
     </script>
