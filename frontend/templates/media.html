@@ -215,7 +215,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRelatedMedia() {
     if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) return;
-    const tagQuery = currentMedia.tags.slice(0, 3).map(t => t.name).join(' ');
+    let tags = [...currentMedia.tags];
+    
+    for (let i = tags.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [tags[i], tags[j]] = [tags[j], tags[i]];
+    }
+    
+    const numTags = Math.min(3, Math.max(1, Math.floor(Math.random() * tags.length) + 1));
+    const tagQuery = tags.slice(0, numTags).map(t => t.name).join(' ');
+    
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
       const data = await res.json();
