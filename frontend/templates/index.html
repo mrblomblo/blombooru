@@ -29,13 +29,28 @@
         </div>
     </div>
     
-    <!-- Gallery Grid -->
-    <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2"></div>
-    
-    <!-- Loading Indicator -->
-    <div id="loading-indicator" class="text-center py-8">
-        <div class="spinner"></div>
-        <p class="text-[#94a3b8] mt-2">Loading...</p>
+    <!-- Main Content Grid with Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <!-- Gallery Grid -->
+        <div class="lg:col-span-3">
+            <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"></div>
+            
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="text-center py-8">
+                <div class="spinner"></div>
+                <p class="text-[#94a3b8] mt-2">Loading...</p>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <div class="bg-[#1e293b] p-3 border border-[#334155] sticky top-4">
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Popular Tags</h3>
+                <div id="popular-tags" class="text-xs">
+                    <p class="text-[#94a3b8]">Loading...</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

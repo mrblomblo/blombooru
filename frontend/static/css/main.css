@@ -86,7 +86,7 @@ input[type="radio"]:checked + span {
 .tag.general { background-color: var(--tag-general); }
 .tag.meta { background-color: var(--tag-meta); }
 
-/* Gallery item base styles */
+/* Gallery styling */
 .gallery-item {
     position: relative;
     aspect-ratio: 1;
@@ -122,6 +122,39 @@ input[type="radio"]:checked + span {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.popular-tag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #334155;
+    gap: 0.5rem;
+}
+
+.popular-tag-item:last-child {
+    border-bottom: none;
+}
+
+.popular-tag-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.popular-tag-name:hover {
+    color: var(--primary-color);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.popular-tag-count {
+    color: #94a3b8;
+    font-weight: bold;
+    font-size: 0.7rem;
+    flex-shrink: 0;
 }
 
 /* Media styling */

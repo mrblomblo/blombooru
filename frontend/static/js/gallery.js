@@ -4,9 +4,11 @@ class Gallery {
         this.isLoading = false;
         this.hasMore = true;
         this.selectedItems = new Set();
+        this.tagCounts = new Map(); // Track tag counts
         
         this.galleryContainer = document.getElementById('gallery-grid');
         this.loadingIndicator = document.getElementById('loading-indicator');
+        this.popularTagsContainer = document.getElementById('popular-tags');
         
         if (this.galleryContainer) {
             this.init();
@@ -62,6 +64,7 @@ class Gallery {
     
     reloadWithRating(rating) {
         this.galleryContainer.innerHTML = '';
+        this.tagCounts.clear();
         
         this.currentPage = 1;
         this.hasMore = true;
@@ -115,7 +118,9 @@ class Gallery {
             console.log('Gallery data loaded:', data);
             
             if (data.items && data.items.length > 0) {
+                this.processTagCounts(data.items);
                 this.renderItems(data.items);
+                this.updatePopularTags();
                 this.currentPage++;
                 this.hasMore = this.currentPage <= data.pages;
             } else {
@@ -132,6 +137,71 @@ class Gallery {
             this.isLoading = false;
             this.hideLoading();
         }
+    }
+    
+    processTagCounts(items) {
+        items.forEach(item => {
+            if (item.tags && Array.isArray(item.tags)) {
+                item.tags.forEach(tag => {
+                    const currentCount = this.tagCounts.get(tag.name) || { count: 0, category: tag.category };
+                    this.tagCounts.set(tag.name, {
+                        count: currentCount.count + 1,
+                        category: tag.category
+                    });
+                });
+            }
+        });
+    }
+    
+    updatePopularTags() {
+        if (!this.popularTagsContainer) return;
+        
+        // Convert map to array and sort by count
+        const sortedTags = Array.from(this.tagCounts.entries())
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 20);
+        
+        if (sortedTags.length === 0) {
+            this.popularTagsContainer.innerHTML = '<p class="text-[#94a3b8]">No tags found</p>';
+            return;
+        }
+        
+        // Get current search query
+        const currentParams = new URLSearchParams(window.location.search);
+        const currentQuery = currentParams.get('q') || '';
+        const currentTags = currentQuery.split(/\s+/).filter(t => t.length > 0);
+        
+        this.popularTagsContainer.innerHTML = sortedTags.map(([tagName, data]) => {
+            // Check if this tag is already in the search
+            const isInQuery = currentTags.includes(tagName);
+            
+            // Build the new query
+            let newQuery;
+            if (isInQuery) {
+                // If clicking the same tag that's already searched, don't change anything
+                newQuery = currentQuery;
+            } else if (currentQuery) {
+                // Append to existing query
+                newQuery = currentQuery + ' ' + tagName;
+            } else {
+                // No existing query, just use this tag
+                newQuery = tagName;
+            }
+            
+            const params = new URLSearchParams(window.location.search);
+            params.set('q', newQuery);
+            params.delete('page');
+            
+            // Visual indicator if tag is already in query
+            const activeClass = isInQuery ? 'opacity-50' : '';
+            
+            return `
+                <div class="popular-tag-item ${activeClass}">
+                    <a href="/?${params.toString()}" class="popular-tag-name tag ${data.category}" ${isInQuery ? 'style="pointer-events: none;"' : ''}>${tagName}</a>
+                    <span class="popular-tag-count">${data.count}</span>
+                </div>
+            `;
+        }).join('');
     }
     
     renderItems(items) {
@@ -284,6 +354,10 @@ class Gallery {
                 ${app.isAuthenticated ? '<a href="/admin" class="btn">Go to Admin Panel</a>' : ''}
             </div>
         `;
+        
+        if (this.popularTagsContainer) {
+            this.popularTagsContainer.innerHTML = '<p class="text-[#94a3b8]">No tags found</p>';
+        }
     }
     
     showError(message) {
