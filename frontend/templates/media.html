@@ -40,6 +40,12 @@
                     </form>
                 </div>
             </div>
+
+            <!-- AI Metadata (if present) -->
+            <div id="ai-metadata-section" style="display: none;" class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">AI Generation Data</h3>
+                <div id="ai-metadata-content" class="text-xs"></div>
+            </div>
             
             <!-- Actions -->
             <div class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
@@ -78,6 +84,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/tag-autocomplete.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const mediaId = "{{ media_id }}";
@@ -92,6 +99,7 @@
                 renderMedia(currentMedia);
                 renderInfo(currentMedia);
                 renderTags(currentMedia);
+                await renderAIMetadata(currentMedia);
                 if (app.isAdminMode) {
                     el('edit-tags-section').style.display = 'block';
                     el('admin-actions').style.display = 'block';
@@ -149,34 +157,145 @@
             if (input) input.value = (m.tags || []).map(t => t.name).join(' ');
         }
 
-    async function loadRelatedMedia() {
-        if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) return;
+        async function renderAIMetadata(m) {
+            const section = el('ai-metadata-section');
+            const content = el('ai-metadata-content');
 
-        let generalTags = currentMedia.tags.filter(t => t.category === 'general');
+            try {
+                // Fetch metadata from the file
+                const res = await fetch(`/api/media/${m.id}/metadata`);
+                if (!res.ok) {
+                    section.style.display = 'none';
+                    return;
+                }
 
-        if (!generalTags.length) return;
+                const metadata = await res.json();
 
-        for (let i = generalTags.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [generalTags[i], generalTags[j]] = [generalTags[j], generalTags[i]];
+                // Look for AI parameters in common fields
+                let aiData = null;
+
+                // Check for 'parameters' or 'Parameters' field
+                if (metadata.parameters) {
+                    aiData = typeof metadata.parameters === 'string' 
+                        ? JSON.parse(metadata.parameters) 
+                        : metadata.parameters;
+                } else if (metadata.Parameters) {
+                    aiData = typeof metadata.Parameters === 'string' 
+                        ? JSON.parse(metadata.Parameters) 
+                        : metadata.Parameters;
+                } else if (metadata.prompt) {
+                    aiData = typeof metadata.prompt === 'string' 
+                        ? JSON.parse(metadata.prompt) 
+                        : metadata.prompt;
+                }
+
+                // If no AI data found, hide section
+                if (!aiData || Object.keys(aiData).length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                // Generate HTML
+                let html = '';
+
+                Object.entries(aiData).forEach(([key, value]) => {
+                    const sectionTitle = formatKey(key);
+
+                    html += `<div class="ai-section mb-3">`;
+                    html += `<h4 class="text-xs font-bold text-blue-400 mb-2">${sectionTitle}</h4>`;
+                    
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        html += `<div class="ml-2">`;
+                        Object.entries(value).forEach(([subKey, subValue]) => {
+                            html += `
+                                <div class="ai-data-row">
+                                    <span class="text-[#94a3b8]">${formatKey(subKey)}:</span>
+                                    <strong class="text-[#f1f5f9]">${formatValue(subValue)}</strong>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    } else {
+                        html += `<div class="text-[#f1f5f9] ml-2">${formatValue(value)}</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+
+                content.innerHTML = html;
+                section.style.display = 'block';
+
+            } catch (e) {
+                console.error('Error rendering AI metadata:', e);
+                section.style.display = 'none';
+            }
         }
 
-        const numTags = Math.min(3, Math.max(1, Math.floor(Math.random() * generalTags.length) + 1));
-        const tagQuery = generalTags.slice(0, numTags).map(t => t.name).join(' ');
-
-        try {
-            const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
-            const data = await res.json();
-            const items = (data.items || []).filter(i => i.id !== mediaId);
-            el('related-media').innerHTML = items.map(i =>`
-            <a href="/media/${i.id}" class="gallery-item ${i.file_type}">
-                <img src="/api/media/${i.id}/thumbnail" alt="${i.filename}" loading="lazy">
-            </a>
-            `).join('');
-        } catch (e) {
-            console.error('related error', e);
+        function formatKey(key) {
+            // Convert snake_case or camelCase to Title Case
+            return key
+                .replace(/_/g, ' ')
+                .replace(/([A-Z])/g, ' $1')
+                .trim()
+                .replace(/\b\w/g, c => c.toUpperCase())
+                .replace(/Cfgscale/g, 'CFG Scale')
+                .replace(/Cfg Scale/g, 'CFG Scale')
+                .replace(/Vae/g, 'VAE')
+                .replace(/Aspectratio/g, 'Aspect Ratio')
+                .replace(/Aspect Ratio/g, 'Aspect Ratio')
+                .replace(/Automaticvae/g, 'Automatic VAE')
+                .replace(/Automatic Vae/g, 'Automatic VAE')
+                .replace(/Negativeprompt/g, 'Negative Prompt')
+                .replace(/Negative Prompt/g, 'Negative Prompt');
         }
-    }
+
+        function formatValue(value) {
+            if (typeof value === 'boolean') {
+                return value ? 'Yes' : 'No';
+            }
+            if (typeof value === 'string') {
+                // Escape HTML and handle long strings
+                const escaped = value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                // If it's a long prompt, truncate with expand option
+                if (escaped.length > 100) {
+                    return `<span class="truncate-text" title="${escaped}">${escaped.substring(0, 100)}...</span>`;
+                }
+                return escaped;
+            }
+            if (Array.isArray(value)) {
+                return value.join(', ');
+            }
+            return String(value);
+        }
+
+        async function loadRelatedMedia() {
+            if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) return;
+
+            let generalTags = currentMedia.tags.filter(t => t.category === 'general');
+
+            if (!generalTags.length) return;
+
+            for (let i = generalTags.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [generalTags[i], generalTags[j]] = [generalTags[j], generalTags[i]];
+            }
+
+            const numTags = Math.min(3, Math.max(1, Math.floor(Math.random() * generalTags.length) + 1));
+            const tagQuery = generalTags.slice(0, numTags).map(t => t.name).join(' ');
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
+                const data = await res.json();
+                const items = (data.items || []).filter(i => i.id !== mediaId);
+                el('related-media').innerHTML = items.map(i =>`
+                <a href="/media/${i.id}" class="gallery-item ${i.file_type}">
+                    <img src="/api/media/${i.id}/thumbnail" alt="${i.filename}" loading="lazy">
+                </a>
+                `).join('');
+            } catch (e) {
+                console.error('related error', e);
+            }
+        }
 
         function formatFileSize(bytes) {
             if (!bytes) return '0 Bytes';
