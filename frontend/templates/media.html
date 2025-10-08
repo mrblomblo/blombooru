@@ -299,31 +299,59 @@
         }
 
         async function loadRelatedMedia() {
-            if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) return;
+            if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) {
+                hideRelatedMedia();
+                return;
+            }
 
             let generalTags = currentMedia.tags.filter(t => t.category === 'general');
-
-            if (!generalTags.length) return;
+        
+            if (!generalTags.length) {
+                hideRelatedMedia();
+                return;
+            }
 
             for (let i = generalTags.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [generalTags[i], generalTags[j]] = [generalTags[j], generalTags[i]];
             }
 
-            const numTags = Math.min(3, Math.max(1, Math.floor(Math.random() * generalTags.length) + 1));
+            const numTags = Math.min(2, Math.max(1, Math.floor(Math.random() * generalTags.length) + 1));
             const tagQuery = generalTags.slice(0, numTags).map(t => t.name).join(' ');
 
             try {
                 const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=12`);
                 const data = await res.json();
-                const items = (data.items || []).filter(i => i.id !== mediaId);
-                el('related-media').innerHTML = items.map(i =>`
+                const currentMediaId = parseInt(mediaId);
+                const items = (data.items || []).filter(i => i.id !== currentMediaId);
+                if (items.length === 0) {
+                    hideRelatedMedia();
+                    return;
+                }
+                // Show related media section and populate it
+                const relatedMediaEl = el('related-media');
+                const relatedMediaSection = relatedMediaEl.parentElement;
+
+                relatedMediaSection.style.display = 'block';
+                relatedMediaEl.innerHTML = items.map(i =>`
                 <a href="/media/${i.id}" class="gallery-item ${i.file_type}">
                     <img src="/api/media/${i.id}/thumbnail" alt="${i.filename}" loading="lazy">
                 </a>
                 `).join('');
             } catch (e) {
                 console.error('related error', e);
+                hideRelatedMedia();
+            }
+        }
+
+        function hideRelatedMedia() {
+            const relatedMediaEl = el('related-media');
+            if (relatedMediaEl) {
+                // Hide the entire section (parent div that contains heading and grid)
+                const relatedMediaSection = relatedMediaEl.parentElement;
+                if (relatedMediaSection) {
+                    relatedMediaSection.style.display = 'none';
+                }
             }
         }
 
