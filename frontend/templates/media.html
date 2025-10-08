@@ -72,6 +72,15 @@
             <!-- Share Link Display -->
             <div id="share-link-section" style="display: none;" class="bg-amber-600 p-3 border border-amber-700 mb-4">
                 <h4 class="text-sm font-bold mb-2 text-black">Share Link</h4>
+                <div class="mb-2 p-2 bg-black bg-opacity-20 rounded">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-xs text-black font-medium">Include AI metadata</span>
+                        <div class="relative">
+                            <input type="checkbox" id="share-ai-metadata-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </div>
+                    </label>
+                </div>
                 <input type="text" id="share-link-input" readonly class="w-full px-2 py-1 bg-white border border-amber-700 text-xs mb-2 text-black">
                 <div class="space-y-1">
                     <button id="copy-share-link-btn" class="w-full px-3 py-1 bg-black hover:bg-gray-900 text-white text-xs">Copy Link</button>
@@ -104,7 +113,9 @@
                     el('admin-actions').style.display = 'block';
                     el('unshare-btn').style.display = 'block';
                 }
-                if (currentMedia.is_shared) showShareLink(currentMedia.share_uuid);
+                if (currentMedia.is_shared) {
+                    showShareLink(currentMedia.share_uuid, currentMedia.share_ai_metadata);
+                }
                 await loadRelatedMedia();
             } catch (e) {
                 console.error('loadMedia error', e);
@@ -345,7 +356,7 @@
         el('share-btn')?.addEventListener('click', async () => {
             try {
                 const res = await app.apiCall(`/api/media/${mediaId}/share`, { method: 'POST' });
-                showShareLink(res.share_url.split('/').pop());
+                showShareLink(res.share_url.split('/').pop(), res.share_ai_metadata);
             } catch (e) { alert('Error creating share link: ' + e.message); }
         });
         el('copy-share-link-btn')?.addEventListener('click', () => {
@@ -366,9 +377,29 @@
             } catch (e) { alert('Error deleting media: ' + e.message); }
         });
 
-        function showShareLink(uuid) {
+        el('share-ai-metadata-toggle')?.addEventListener('change', async (e) => {
+            try {
+                await app.apiCall(`/api/media/${mediaId}/share-settings?share_ai_metadata=${e.target.checked}`, { 
+                    method: 'PATCH'
+                });
+                console.log('Share settings updated:', e.target.checked);
+            } catch (err) {
+                console.error('Error updating share settings:', err);
+                alert('Error updating share settings: ' + err.message);
+                // Revert checkbox on error
+                e.target.checked = !e.target.checked;
+            }
+        });
+
+        function showShareLink(uuid, shareAIMetadata) {
             el('share-link-input').value = `${window.location.origin}/shared/${uuid}`;
             el('share-link-section').style.display = 'block';
+
+            // Set checkbox state
+            const aiMetadataToggle = el('share-ai-metadata-toggle');
+            if (aiMetadataToggle) {
+                aiMetadataToggle.checked = shareAIMetadata || false;
+            }
         }
 
         // Initialize tag autocomplete

@@ -116,7 +116,7 @@
                 }, 100);
             });
         }
-        
+
         function renderSharedMedia(media) {
             const container = el('shared-content');
 
@@ -144,7 +144,12 @@
                             <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Tags</h3>
                             <div id="tags-container"></div>
                         </div>
-                        
+
+                        <div id="ai-metadata-section" style="display: none;" class="bg-[#1e293b] p-3 border border-[#334155] mb-4">
+                            <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">AI Generation Data</h3>
+                            <div id="ai-metadata-content" class="text-xs"></div>
+                        </div>
+
                         <div class="bg-[#1e293b] p-3 border border-[#334155]">
                             <h3 class="text-sm font-bold mb-3 pb-2 border-b border-[#334155]">Actions</h3>
                             <div class="space-y-2">
@@ -160,6 +165,7 @@
             // Now render the data into the containers
             renderInfo(media);
             renderTags(media);
+            renderAIMetadata(media);
         }
         
         function renderInfo(m) {
@@ -192,6 +198,137 @@
                 `;
             });
             c.innerHTML = html || '<p class="text-xs text-[#94a3b8]">No tags</p>';
+        }
+
+        async function renderAIMetadata(m) {
+            const section = el('ai-metadata-section');
+            const content = el('ai-metadata-content');
+        
+            // Check if AI metadata sharing is enabled
+            if (!m.share_ai_metadata) {
+                section.style.display = 'none';
+                return;
+            }
+        
+            try {
+                // Fetch metadata from the shared endpoint
+                const res = await fetch(`/api/shared/${shareUuid}/metadata`);
+                if (!res.ok) {
+                    section.style.display = 'none';
+                    return;
+                }
+            
+                const metadata = await res.json();
+            
+                // Look for AI parameters in common fields
+                let aiData = null;
+            
+                if (metadata.parameters) {
+                    aiData = typeof metadata.parameters === 'string' 
+                        ? JSON.parse(metadata.parameters) 
+                        : metadata.parameters;
+                } else if (metadata.Parameters) {
+                    aiData = typeof metadata.Parameters === 'string' 
+                        ? JSON.parse(metadata.Parameters) 
+                        : metadata.Parameters;
+                } else if (metadata.prompt) {
+                    aiData = typeof metadata.prompt === 'string' 
+                        ? JSON.parse(metadata.prompt) 
+                        : metadata.prompt;
+                }
+            
+                if (!aiData || Object.keys(aiData).length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+            
+                let html = '';
+            
+                Object.entries(aiData).forEach(([key, value]) => {
+                    const sectionTitle = formatKey(key);
+                
+                    html += `<div class="ai-section mb-3">`;
+                    html += `<h4 class="text-xs font-bold text-blue-400 mb-2">${sectionTitle}</h4>`;
+                    
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        html += `<div class="ml-2">`;
+                        Object.entries(value).forEach(([subKey, subValue]) => {
+                            html += `
+                                <div class="ai-data-row">
+                                    <span class="text-[#94a3b8]">${formatKey(subKey)}:</span>
+                                    <div class="text-[#f1f5f9]" style="text-align: right; flex: 1;">${formatValue(subValue, true)}</div>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    } else {
+                        html += `<div class="text-[#f1f5f9] ml-2">${formatValue(value, true)}</div>`;
+                    }
+                
+                    html += `</div>`;
+                });
+            
+                content.innerHTML = html;
+                section.style.display = 'block';
+            
+            } catch (e) {
+                console.error('Error rendering AI metadata:', e);
+                section.style.display = 'none';
+            }
+        }
+
+        function formatKey(key) {
+            return key
+                .replace(/_/g, ' ')
+                .replace(/([A-Z])/g, ' $1')
+                .trim()
+                .replace(/\b\w/g, c => c.toUpperCase())
+                .replace(/Cfgscale/g, 'CFG Scale')
+                .replace(/Cfg Scale/g, 'CFG Scale')
+                .replace(/Vae/g, 'VAE')
+                .replace(/Aspectratio/g, 'Aspect Ratio')
+                .replace(/Automaticvae/g, 'Automatic VAE')
+                .replace(/Negativeprompt/g, 'Negative Prompt');
+        }
+
+        function formatValue(value, isExpandable = true) {
+            if (typeof value === 'boolean') {
+                return value ? 'Yes' : 'No';
+            }
+            if (typeof value === 'number') {
+                return value.toLocaleString();
+            }
+            if (typeof value === 'string') {
+                const escaped = value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+                if (isExpandable && escaped.length > 100) {
+                    const id = 'expand-' + Math.random().toString(36).substr(2, 9);
+                    return `
+                        <div class="expandable-text" onclick="toggleExpand('${id}')" id="${id}-container">
+                            <span class="text-truncated" id="${id}-truncated">${escaped.substring(0, 100)}... <span class="expand-indicator">[click to expand]</span></span>
+                            <span class="text-full" id="${id}-full" style="display: none;">${escaped}</span>
+                        </div>
+                    `;
+                }
+                return escaped;
+            }
+            if (Array.isArray(value)) {
+                return value.join(', ');
+            }
+            return String(value);
+        }
+
+        window.toggleExpand = function(id) {
+            const truncated = document.getElementById(id + '-truncated');
+            const full = document.getElementById(id + '-full');
+        
+            if (full.style.display === 'none') {
+                truncated.style.display = 'none';
+                full.style.display = 'inline';
+            } else {
+                truncated.style.display = 'inline';
+                full.style.display = 'none';
+            }
         }
         
         function formatFileSize(bytes) {

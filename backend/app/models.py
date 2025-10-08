@@ -55,6 +55,7 @@ class Media(Base):
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     is_shared = Column(Boolean, default=False, index=True)
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
+    share_ai_metadata = Column(Boolean, default=False)
     
     tags = relationship('Tag', secondary=blombooru_media_tags, back_populates='media')
 

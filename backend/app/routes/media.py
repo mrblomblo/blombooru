@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, text, or_, and_
 from typing import List, Optional
 import uuid
@@ -78,13 +78,16 @@ async def get_media_list(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{media_id}", response_model=MediaResponse)
+@router.get("/{media_id}")
 async def get_media(media_id: int, db: Session = Depends(get_db)):
-    """Get single media item"""
-    media = db.query(Media).filter(Media.id == media_id).first()
+    """Get media by ID"""
+    media = db.query(Media).options(joinedload(Media.tags)).filter(Media.id == media_id).first()
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
-    return MediaResponse.model_validate(media)
+    
+    result = MediaResponse.model_validate(media).model_dump()
+    result['share_ai_metadata'] = media.share_ai_metadata if hasattr(media, 'share_ai_metadata') else False
+    return result
 
 @router.get("/{media_id}/file")
 async def get_media_file(media_id: int, db: Session = Depends(get_db)):
@@ -346,17 +349,25 @@ async def share_media(
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
-    """Create share link for media"""
+    """Create or update share link for media"""
+    from fastapi import Query
+    from ..database import get_db
+    
     media = db.query(Media).filter(Media.id == media_id).first()
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
     
     if not media.is_shared:
-        media.is_shared = True
+        import uuid
         media.share_uuid = str(uuid.uuid4())
-        db.commit()
+        media.is_shared = True
     
-    return {"share_url": f"/shared/{media.share_uuid}"}
+    db.commit()
+    
+    return {
+        "share_url": f"/shared/{media.share_uuid}",
+        "share_ai_metadata": media.share_ai_metadata if hasattr(media, 'share_ai_metadata') else False
+    }
 
 @router.delete("/{media_id}/share")
 async def unshare_media(
@@ -374,6 +385,28 @@ async def unshare_media(
     db.commit()
     
     return {"message": "Share removed"}
+
+@router.patch("/{media_id}/share-settings")
+async def update_share_settings(
+    media_id: int,
+    share_ai_metadata: bool,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Update share settings for media"""
+    media = db.query(Media).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    
+    if not media.is_shared:
+        raise HTTPException(status_code=400, detail="Media is not shared")
+    
+    media.share_ai_metadata = share_ai_metadata
+    db.commit()
+    
+    return {
+        "share_ai_metadata": media.share_ai_metadata
+    }
 
 @router.post("/extract-archive")
 async def extract_archive(
