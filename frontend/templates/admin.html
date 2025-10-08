@@ -63,6 +63,43 @@
                 </form>
             </div>
 
+            <!-- Media Management Section -->
+            <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Media Management</h2>
+                <div id="media-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Total Media</div>
+                        <div class="text-lg font-bold" id="total-media">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Total Images</div>
+                        <div class="text-lg font-bold" id="total-images">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Total GIFs</div>
+                        <div class="text-lg font-bold" id="total-gifs">0</div>
+                    </div>
+                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
+                        <div class="text-xs text-[#94a3b8]">Total Videos</div>
+                        <div class="text-lg font-bold" id="total-videos">0</div>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <h3 class="text-sm font-bold mb-3">Upload Media</h3>
+                    <button id="scan-media-btn" class="px-4 py-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs mb-4">Scan for Untracked Media</button>
+                    <div id="upload-area" class="upload-area bg-[#0f172a] mb-4">
+                        <p class="text-xs">Drop media files here or click to browse</p>
+                        <input type="file" id="file-input" multiple accept="image/*,video/*,.zip,.tar.gz,.tgz">
+                    </div>
+                    <div id="upload-status" style="display: none;" class="mb-4">
+                        <div class="text-xs">
+                            <div id="upload-progress"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tags Management Section -->
             <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Tags Management</h2>
@@ -118,42 +155,6 @@
                 <div class="border-t border-[#334155] pt-4">
                     <h3 class="text-sm font-bold mb-3 text-red-500">Danger Zone</h3>
                     <button id="clear-tags-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs">Delete All Tags</button>
-                </div>
-            </div>
-            
-            <div class="bg-[#1e293b] p-6 border border-[#334155] mb-4">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b border-[#334155]">Media Management</h2>
-                <div id="media-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
-                        <div class="text-xs text-[#94a3b8]">Total Media</div>
-                        <div class="text-lg font-bold" id="total-media">0</div>
-                    </div>
-                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
-                        <div class="text-xs text-[#94a3b8]">Total Images</div>
-                        <div class="text-lg font-bold" id="total-images">0</div>
-                    </div>
-                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
-                        <div class="text-xs text-[#94a3b8]">Total GIFs</div>
-                        <div class="text-lg font-bold" id="total-gifs">0</div>
-                    </div>
-                    <div class="bg-[#0f172a] p-3 border border-[#334155]">
-                        <div class="text-xs text-[#94a3b8]">Total Videos</div>
-                        <div class="text-lg font-bold" id="total-videos">0</div>
-                    </div>
-                </div>
-
-                <div class="pt-4">
-                    <h3 class="text-sm font-bold mb-3">Upload Media</h3>
-                    <button id="scan-media-btn" class="px-4 py-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs mb-4">Scan for Untracked Media</button>
-                    <div id="upload-area" class="upload-area bg-[#0f172a] mb-4">
-                        <p class="text-xs">Drop media files here or click to browse</p>
-                        <input type="file" id="file-input" multiple accept="image/*,video/*,.zip,.tar.gz,.tgz">
-                    </div>
-                    <div id="upload-status" style="display: none;" class="mb-4">
-                        <div class="text-xs">
-                            <div id="upload-progress"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
