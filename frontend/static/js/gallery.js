@@ -259,12 +259,7 @@ class Gallery {
     }
     
     setupBulkActions() {
-        const bulkTagBtn = document.getElementById('bulk-tag-btn');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-        
-        if (bulkTagBtn) {
-            bulkTagBtn.addEventListener('click', () => this.bulkTag());
-        }
         
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDelete());
@@ -281,26 +276,6 @@ class Gallery {
         if (count) {
             count.textContent = this.selectedItems.size;
         }
-    }
-    
-    async bulkTag() {
-        const tags = prompt('Enter tags (comma-separated):');
-        if (!tags) return;
-        
-        const tagList = tags.split(',').map(t => t.trim());
-        
-        for (const id of this.selectedItems) {
-            try {
-                await app.apiCall(`/api/media/${id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ tags: tagList })
-                });
-            } catch (error) {
-                console.error(`Error tagging media ${id}:`, error);
-            }
-        }
-        
-        this.clearSelection();
     }
     
     async bulkDelete() {
