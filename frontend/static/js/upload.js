@@ -102,7 +102,7 @@ class Uploader {
         gridDiv.style.display = 'none';
         gridDiv.innerHTML = `
             <div class="bg-[#0f172a] p-4 border border-[#334155] mb-4">
-                <h3 class="text-sm font-bold mb-3">Uploaded Media (click to edit individual tags/rating)</h3>
+                <h3 class="text-sm font-bold mb-3">Uploaded Media (click to edit individual rating and tags)</h3>
                 <div id="preview-thumbnails" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4"></div>
                 
                 <div id="individual-controls" style="display: none;" class="border-t border-[#334155] pt-4">
