@@ -1,0 +1,30 @@
+:root {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --background: #0f172a;
+    --surface: #1e293b;
+    --surface-light: #334155;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+
+    --white: #ffffff;
+    --black: #000000;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    
+    --tag-artist: #ab2c41;
+    --tag-character: #107452;
+    --tag-copyright: #672e9d;
+    --tag-general: #2559ab;
+    --tag-meta: #a46800;
+    
+    --success: var(--green);
+    --warning: var(--orange);
+    --danger: var(--red);
+
+    --rating-safe: var(--green);
+    --rating-questionable: var(--orange);
+    --rating-explicit: var(--red);
+}

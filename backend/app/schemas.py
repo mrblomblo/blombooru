@@ -96,3 +96,4 @@ class SettingsUpdate(BaseModel):
     app_name: Optional[str] = None
     default_rating_filter: Optional[RatingEnum] = None
     items_per_page: Optional[int] = None
+    theme: Optional[str] = None

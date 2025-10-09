@@ -7,17 +7,51 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/main.css">
+    <link id="theme-stylesheet" rel="stylesheet" href="">
     <script>
-        tailwind.config = {
+        // Load theme on page load
+        (async function loadTheme() {
+            try {
+                const response = await fetch('/api/admin/current-theme');
+                const theme = await response.json();
+
+                const themeLink = document.getElementById('theme-stylesheet');
+                if (themeLink && theme.css_path) {
+                    themeLink.href = theme.css_path;
+                }
+            } catch (error) {
+                console.error('Error loading theme:', error);
+                // Fallback to default dark theme
+                const themeLink = document.getElementById('theme-stylesheet');
+                if (themeLink) {
+                    themeLink.href = '/static/css/themes/default_dark.css';
+                }
+            }
+        })();
+
+        module.exports = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#3b82f6',
-                        'primary-hover': '#2563eb',
-                        background: '#0f172a',
-                        surface: '#1e293b',
-                        'surface-hover': '#334155',
-                        border: '#334155',
+                        primary: {
+                            DEFAULT: 'var(--primary-color)',
+                            hover: 'var(--primary-hover)',
+                        },
+                        background: 'var(--background)',
+                        surface: {
+                            DEFAULT: 'var(--surface)',
+                            light: 'var(--surface-light)',
+                        },
+                        text: {
+                            DEFAULT: 'var(--text)',
+                            secondary: 'var(--text-secondary)',
+                        },
+                        border: 'var(--border)',
+                        white: 'var(--white)',
+                        black: 'var(--black)',
+                        green: 'var(--green)',
+                        orange: 'var(--orange)',
+                        red: 'var(--red)',
                     }
                 }
             }

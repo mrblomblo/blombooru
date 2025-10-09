@@ -12,6 +12,7 @@ from ..models import User, Tag, TagAlias
 from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
 from ..config import settings
 from ..utils.file_scanner import scan_for_new_media
+from ..themes import theme_registry
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -632,3 +633,21 @@ async def delete_tag(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Error deleting tag: {str(e)}")
+    
+@router.get("/themes")
+async def get_themes():
+    """Get all available themes"""
+    themes = theme_registry.get_all_themes()
+    return {
+        "themes": [theme.to_dict() for theme in themes],
+        "current_theme": settings.CURRENT_THEME
+    }
+
+@router.get("/current-theme")
+async def get_current_theme():
+    """Get current theme (public endpoint)"""
+    theme = theme_registry.get_theme(settings.CURRENT_THEME)
+    if theme:
+        return theme.to_dict()
+    # Fallback to default dark
+    return theme_registry.get_theme("default_dark").to_dict()

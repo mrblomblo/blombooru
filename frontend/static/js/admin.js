@@ -9,6 +9,7 @@ class AdminPanel {
         this.setupTagManagement();
         this.loadTagStats();
         this.loadMediaStats();
+        this.loadThemes();
     }
     
     setupEventListeners() {
@@ -69,10 +70,12 @@ class AdminPanel {
     async saveSettings() {
         const appName = document.getElementById('app-name').value;
         const defaultRating = document.querySelector('input[name="default-rating"]:checked')?.value;
-        
+        const theme = document.getElementById('theme-select')?.value;
+
         const settings = {
             app_name: appName,
             default_rating_filter: defaultRating,
+            theme: theme
         };
         
         try {
@@ -354,6 +357,40 @@ class AdminPanel {
             document.getElementById('tag-search-results').innerHTML = '';
         } catch (error) {
             alert('Error clearing tags: ' + error.message);
+        }
+    }
+
+    async loadThemes() {
+        try {
+            const response = await fetch('/api/admin/themes');
+            const data = await response.json();
+
+            const themeSelect = document.getElementById('theme-select');
+            if (!themeSelect) return;
+
+            themeSelect.innerHTML = '';
+
+            data.themes.forEach(theme => {
+                const option = document.createElement('option');
+                option.value = theme.id;
+
+                if (theme.is_dark) {
+                    option.textContent = '🌙 ';
+                } else {
+                    option.textContent = '☀️ ';
+                }
+
+                option.textContent += theme.name;
+
+                if (theme.id === data.current_theme) {
+                    option.selected = true;
+                }
+
+                themeSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading themes:', error);
         }
     }
 }
