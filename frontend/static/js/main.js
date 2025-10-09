@@ -126,23 +126,6 @@ class Blombooru {
             body.classList.remove('admin-mode');
         }
         
-        // Update admin toggle button
-        if (adminToggle && adminModeText) {
-            if (!this.isAuthenticated) {
-                adminModeText.textContent = 'Admin Panel';
-                adminToggle.style.color = '';
-            } else if (window.location.pathname === '/admin') {
-                adminModeText.textContent = 'Admin Panel';
-                adminToggle.style.color = 'var(--primary-color)';
-            } else if (this.isAdminMode) {
-                adminModeText.textContent = '✓ Admin Mode';
-                adminToggle.style.color = 'var(--success)';
-            } else {
-                adminModeText.textContent = 'Enable Admin Mode';
-                adminToggle.style.color = '';
-            }
-        }
-        
         // Show/hide logout button
         if (logoutBtn) {
             logoutBtn.style.display = this.isAuthenticated ? 'block' : 'none';
