@@ -139,11 +139,11 @@ input[type="radio"]:checked + span:hover {
 }
 
 .gallery-item.video {
-    outline-color: var(--red);
+    outline-color: var(--video-outline);
 }
 
 .gallery-item.gif {
-    outline-color: var(--orange);
+    outline-color: var(--gif-outline);
 }
 
 .gallery-item.selected {

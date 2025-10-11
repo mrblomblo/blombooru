@@ -33,6 +33,9 @@
     --danger: var(--red);
     --danger-hover: color-mix(in srgb, var(--danger) 70%, var(--background));
 
+    --video-outline: var(--red);
+    --gif-outline: var(--orange);
+
     --rating-safe: var(--green);
     --rating-questionable: var(--orange);
     --rating-explicit: var(--red);
