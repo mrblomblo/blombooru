@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
     <link rel="stylesheet" href="/static/css/main.css">
     <link id="theme-stylesheet" rel="stylesheet" href="">
     <script>
@@ -28,34 +28,6 @@
                 }
             }
         })();
-
-        tailwind.exports = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: 'var(--primary-color)',
-                            hover: 'var(--primary-hover)',
-                        },
-                        background: 'var(--background)',
-                        surface: {
-                            DEFAULT: 'var(--surface)',
-                            light: 'var(--surface-light)',
-                        },
-                        text: {
-                            DEFAULT: 'var(--text)',
-                            secondary: 'var(--text-secondary)',
-                        },
-                        border: 'var(--border)',
-                        white: 'var(--white)',
-                        black: 'var(--black)',
-                        green: 'var(--green)',
-                        orange: 'var(--orange)',
-                        red: 'var(--red)',
-                    }
-                }
-            }
-        }
     </script>
     {% block extra_css %}{% endblock %}
 </head>
