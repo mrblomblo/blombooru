@@ -769,9 +769,41 @@ class Uploader {
         // Reset file input
         this.fileInput.value = '';
     }
+
+    async addScannedFile(file) {
+        if (this.isValidFile(file)) {
+            // Compute hash for duplicate detection
+            const hash = await this.computeFileHash(file);
+            
+            // Silently ignore duplicates
+            if (this.fileHashes.has(hash)) {
+                return;
+            }
+            
+            this.fileHashes.add(hash);
+            
+            const fileData = {
+                file: file,
+                hash: hash,
+                rating: this.baseRating,
+                additionalTags: [],
+                preview: null
+            };
+            
+            this.uploadedFiles.push(fileData);
+            this.createPreview(fileData, this.uploadedFiles.length - 1);
+            
+            // Show UI sections if not already visible
+            if (this.uploadedFiles.length === 1) {
+                document.getElementById('base-controls').style.display = 'block';
+                document.getElementById('preview-grid').style.display = 'block';
+                document.getElementById('submit-controls').style.display = 'flex';
+            }
+        }
+    }
 }
 
-// Initialize uploader if upload area exists
+// Initialize uploader if upload area exists and expose globally
 if (document.getElementById('upload-area')) {
-    const uploader = new Uploader();
+    window.uploaderInstance = new Uploader();
 }

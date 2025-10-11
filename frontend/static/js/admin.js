@@ -92,6 +92,7 @@ class AdminPanel {
     
     async scanMedia() {
         const scanBtn = document.getElementById('scan-media-btn');
+        const originalText = scanBtn.textContent;
         scanBtn.disabled = true;
         scanBtn.textContent = 'Scanning...';
         
@@ -100,13 +101,72 @@ class AdminPanel {
                 method: 'POST'
             });
             
-            alert(`Scan complete!\nNew files: ${result.new_files}\n${result.files.join('\n')}`);
+            if (result.new_files === 0) {
+                alert('No new untracked media files found.');
+                scanBtn.disabled = false;
+                scanBtn.textContent = originalText;
+                return;
+            }
+            
+            // Show loading message
+            scanBtn.textContent = `Loading ${result.new_files} file(s)...`;
+            
+            // Get the uploader instance
+            const uploader = window.uploaderInstance;
+            if (!uploader) {
+                alert('Uploader not initialized. Please refresh the page and try again.');
+                scanBtn.disabled = false;
+                scanBtn.textContent = originalText;
+                return;
+            }
+            
+            // Fetch and add each file to the uploader
+            let loadedCount = 0;
+            let skippedCount = 0;
+            
+            for (const filePath of result.files) {
+                try {
+                    scanBtn.textContent = `Loading ${loadedCount + 1}/${result.new_files}...`;
+                    
+                    // Fetch the file from the server
+                    const response = await fetch(`/api/admin/get-untracked-file?path=${encodeURIComponent(filePath)}`);
+                    
+                    if (!response.ok) {
+                        console.error(`Failed to fetch file: ${filePath}`);
+                        skippedCount++;
+                        continue;
+                    }
+                    
+                    const blob = await response.blob();
+                    const filename = filePath.split('/').pop().split('\\').pop(); // Handle both Unix and Windows paths
+                    const file = new File([blob], filename, { type: blob.type });
+                    
+                    // Add to uploader
+                    await uploader.addScannedFile(file);
+                    loadedCount++;
+                    
+                } catch (error) {
+                    console.error(`Error loading file ${filePath}:`, error);
+                    skippedCount++;
+                }
+            }
+            
+            // Show results
+            let message = `Loaded ${loadedCount} file(s) into the editor.`;
+            if (skippedCount > 0) {
+                message += `\n${skippedCount} file(s) skipped due to errors.`;
+            }
+            if (loadedCount > 0) {
+                message += '\n\nYou can now edit tags and ratings before submitting.';
+            }
+            alert(message);
             
         } catch (error) {
+            console.error('Scan error:', error);
             alert('Error scanning media: ' + error.message);
         } finally {
             scanBtn.disabled = false;
-            scanBtn.textContent = 'Scan for New Media';
+            scanBtn.textContent = originalText;
         }
     }
     

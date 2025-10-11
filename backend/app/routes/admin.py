@@ -11,7 +11,7 @@ from ..auth import get_password_hash, create_access_token, get_current_admin_use
 from ..models import User, Tag, TagAlias
 from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
 from ..config import settings
-from ..utils.file_scanner import scan_for_new_media
+from ..utils.file_scanner import scan_for_new_media, find_untracked_media
 from ..themes import theme_registry
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -273,9 +273,52 @@ async def scan_media(
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
-    """Manually trigger media scan"""
-    result = scan_for_new_media(db)
-    return result
+    """Find untracked media files"""    
+    result = find_untracked_media(db)
+    
+    return {
+        'new_files': result['new_files'],
+        'files': [f['path'] for f in result['files']]  # Return just the paths
+    }
+    
+@router.get("/get-untracked-file")
+async def get_untracked_file(
+    path: str,
+    current_user: User = Depends(require_admin_mode)
+):
+    """Serve an untracked file for importing"""
+    from pathlib import Path
+    import mimetypes
+    from fastapi.responses import FileResponse
+    
+    file_path = Path(path)
+    
+    # Security check - ensure file exists and is within allowed directories
+    if not file_path.is_absolute():
+        raise HTTPException(status_code=400, detail="Invalid file path")
+    
+    # Check if file is within ORIGINAL_DIR
+    try:
+        file_path = file_path.resolve()
+        settings.ORIGINAL_DIR.resolve()
+        # Make sure it's within the original directory
+        file_path.relative_to(settings.ORIGINAL_DIR.resolve())
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine mime type
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if not mime_type:
+        mime_type = "application/octet-stream"
+    
+    return FileResponse(
+        path=str(file_path),
+        media_type=mime_type,
+        filename=file_path.name
+    )
 
 @router.get("/media-stats")
 async def get_media_stats(

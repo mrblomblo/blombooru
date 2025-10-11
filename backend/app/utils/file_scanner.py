@@ -116,3 +116,41 @@ def scan_for_new_media(db: Session) -> dict:
         'files': new_files,
         'errors': errors
     }
+    
+def find_untracked_media(db: Session) -> dict:
+    """Find untracked media files without processing them"""
+    original_dir = settings.ORIGINAL_DIR
+    untracked_files = []
+    
+    # Get all tracked file hashes
+    tracked_hashes = {m.hash for m in db.query(Media.hash).all()}
+    
+    print(f"Scanning directory: {original_dir}")
+    print(f"Tracked hashes: {len(tracked_hashes)}")
+    
+    # Scan directory
+    for file_path in original_dir.rglob('*'):
+        if not file_path.is_file() or not is_supported_file(file_path.name):
+            continue
+        
+        try:
+            # Check if already tracked
+            file_hash = calculate_file_hash(file_path)
+            if file_hash in tracked_hashes:
+                continue
+            
+            # Add to untracked list with full path
+            untracked_files.append({
+                'path': str(file_path),
+                'filename': file_path.name,
+                'hash': file_hash
+            })
+            
+        except Exception as e:
+            print(f"Error checking file {file_path.name}: {str(e)}")
+            continue
+    
+    return {
+        'new_files': len(untracked_files),
+        'files': untracked_files
+    }
