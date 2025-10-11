@@ -96,9 +96,10 @@
                     <h3 class="text-sm font-bold mb-3">Upload Media</h3>
                     <div class="bg p-4 border">
                         <p class="text-xs text-secondary mb-3">
-                            You can upload images, videos, or compressed archives (ZIP, TAR.GZ) with a max individual file size of 500MB.<br>
+                            You can upload images, videos, or compressed archives (ZIP, TAR.GZ).<br>
                             Supported image formats: JPG/JPEG, PNG, GIF, WEBP.<br>
                             Supported video formats: MP4, WEBM.<br>
+                            Max individual file size: 500MB.<br>
                             Archives will be extracted and all supported media files inside will be processed.
                         </p>
                         <button id="scan-media-btn" class="px-4 py-2 w-full bg-[var(--primary-color)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs mb-4">Scan for Untracked Media</button>
@@ -138,8 +139,8 @@
                     <h3 class="text-sm font-bold mb-3">Import Tags from CSV</h3>
                     <div class="bg p-4 border">
                         <p class="text-xs text-secondary mb-3">
-                            Upload a CSV file with the following format:<br>
-                            <code>tag_name, category_number, usage_count, "alias1,alias2,alias3"</code><br>
+                            Upload a CSV file with the following format: (usage_count/column 3 will always be ignored)<br>
+                            <code class="surface px-1 py-0.5">tag_name, category_number, usage_count, "alias1,alias2,alias3"</code><br>
                             Categories: 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
                         </p>
                         
@@ -169,7 +170,7 @@
                         <form id="add-tags-form">
                             <label class="block text-xs font-bold mb-2">Tags to Add</label>
                             <div style="position: relative;">
-                                <div id="new-tags-input" contenteditable="true" data-placeholder="artist:bingus character:herbert meta:ai-generated copyright:original cool_tag" class="w-full bg px-2 py-1 border text-xs mb-2 focus:outline-none focus:border-[var(--primary-color)]" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                                <div id="new-tags-input" contenteditable="true" data-placeholder="artist:bingus character:herbert meta:ai-generated copyright:original cool_tag" class="w-full surface px-2 py-1 border text-xs mb-2 focus:outline-none focus:border-[var(--primary-color)]" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                             </div>
                             <button type="submit" class="w-full px-4 py-2 bg-[var(--primary-color)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs">Add Tags</button>
                         </form>
