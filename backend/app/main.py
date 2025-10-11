@@ -2,12 +2,10 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from apscheduler.schedulers.background import BackgroundScheduler
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
 from .routes import admin, media, tags, search, sharing
-from .utils.file_scanner import scan_for_new_media
 from datetime import datetime
 
 app = FastAPI(title="Blombooru", version="1.9.2")
@@ -28,27 +26,6 @@ app.include_router(tags.router)
 app.include_router(search.router)
 app.include_router(sharing.router)
 
-# Scheduled tasks
-def scheduled_media_scan():
-    """Scan for new media every 6 hours"""
-    if settings.IS_FIRST_RUN:
-        return
-        
-    from .database import SessionLocal
-    if SessionLocal is None:
-        return
-        
-    db = SessionLocal()
-    try:
-        result = scan_for_new_media(db)
-        print(f"Scheduled scan: {result['new_files']} new files found")
-    except Exception as e:
-        print(f"Error in scheduled scan: {e}")
-    finally:
-        db.close()
-
-scheduler = BackgroundScheduler()
-
 @app.on_event("startup")
 async def startup_event():
     """Run on startup"""
@@ -59,31 +36,12 @@ async def startup_event():
             
             # Initialize database schema
             init_db()
-            
-            # Run initial media scan
-            from .database import SessionLocal
-            db = SessionLocal()
-            try:
-                scan_for_new_media(db)
-            except Exception as e:
-                print(f"Error in startup scan: {e}")
-            finally:
-                db.close()
-            
-            # Start scheduler
-            scheduler.add_job(scheduled_media_scan, 'interval', hours=6)
-            scheduler.start()
+                
             print("Blombooru started successfully")
         except Exception as e:
             print(f"Error during startup: {e}")
     else:
         print("First run detected - please complete onboarding")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on shutdown"""
-    if scheduler.running:
-        scheduler.shutdown()
 
 # HTML Routes
 @app.get("/", response_class=HTMLResponse)
