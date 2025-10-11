@@ -1,1 +1,45 @@
-/* To be filled */
+/* 
+  * Gruvbox Dark Hard color scheme by Pavel Pertsev
+  * Copyright (c) Pavel Pertsev
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/morhetz/gruvbox?tab=readme-ov-file#license
+  */
+
+:root {
+    --primary-color: #d79921;
+    --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+    --background: #1d2021;
+    --surface: #282828;
+    --surface-hover: #504945;
+    --surface-light: #3c3836;
+    --surface-light-hover: #665c54;
+    --text: #ebdbb2;
+    --text-secondary: #d5c4a1;
+    --text-tertiary: #bdae93;
+    --tag-text: #1d2021;
+    --primary-text: #1d2021;
+    --border: #3c3836;
+
+    --white: #fbf1c7;
+    --black: #11111b;
+    --green: #98971a;
+    --orange: #d65d0e;
+    --red: #cc241d;
+    --blue: #458588;
+    
+    --tag-artist: #fb4934;
+    --tag-character: #b8bb26;
+    --tag-copyright: #b16286;
+    --tag-general: #83a598;
+    --tag-meta: #fe8019;
+    
+    --success: var(--green);
+    --success-hover: color-mix(in srgb, var(--success) 70%, var(--background));
+    --warning: var(--orange);
+    --warning-hover: color-mix(in srgb, var(--warning) 70%, var(--background));
+    --danger: var(--red);
+    --danger-hover: color-mix(in srgb, var(--danger) 70%, var(--background));
+
+    --rating-safe: var(--green);
+    --rating-questionable: var(--orange);
+    --rating-explicit: var(--red);
+}

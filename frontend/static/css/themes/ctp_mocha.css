@@ -1,1 +1,45 @@
-/* To be filled */
+/* 
+  * Catppuccin color scheme by Catppuccin
+  * Copyright (c) 2021 Catppuccin
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/catppuccin/palette/blob/main/LICENSE
+  */
+
+:root {
+    --primary-color: #fab387;
+    --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+    --background: #11111b;
+    --surface: #1e1e2e;
+    --surface-hover: #45475a;
+    --surface-light: #313244;
+    --surface-light-hover: #585b70;
+    --text: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-tertiary: #6c7086;
+    --tag-text: #11111b;
+    --primary-text: #11111b;
+    --border: #313244;
+
+    --white: #cdd6f4;
+    --black: #11111b;
+    --green: #a6e3a1;
+    --orange: #fab387;
+    --red: #f38ba8;
+    --blue: #89b4fa;
+    
+    --tag-artist: #f38ba8;
+    --tag-character: #a6e3a1;
+    --tag-copyright: #cba6f7;
+    --tag-general: #89b4fa;
+    --tag-meta: #fab387;
+    
+    --success: var(--green);
+    --success-hover: color-mix(in srgb, var(--success) 70%, var(--background));
+    --warning: var(--orange);
+    --warning-hover: color-mix(in srgb, var(--warning) 70%, var(--background));
+    --danger: var(--red);
+    --danger-hover: color-mix(in srgb, var(--danger) 70%, var(--background));
+
+    --rating-safe: var(--green);
+    --rating-questionable: var(--orange);
+    --rating-explicit: var(--red);
+}
