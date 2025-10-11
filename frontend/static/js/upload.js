@@ -242,7 +242,7 @@ class Uploader {
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">Base Tags (prefixed to all media)</label>
                 <div style="position: relative;">
-                    <div id="base-tags" contenteditable="true" data-placeholder="tag1 tag2 tag3" class="tag-input w-full bg px-2 py-1 border text-xs focus:outline-none focus:border-[var(--primary-color)]" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                    <div id="base-tags" contenteditable="true" data-placeholder="original highres cat_ears" class="tag-input w-full bg px-2 py-1 border text-xs focus:outline-none focus:border-[var(--primary-color)]" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                 </div>
             </div>
         `;
