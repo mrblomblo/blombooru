@@ -192,11 +192,8 @@ class Gallery {
             params.set('q', newQuery);
             params.delete('page');
             
-            // Visual indicator if tag is already in query
-            const activeClass = isInQuery ? 'opacity-50' : '';
-            
             return `
-                <div class="popular-tag-item ${activeClass}">
+                <div class="${isInQuery ? 'popular-tag-item opacity-50' : 'popular-tag-item'}">
                     <a href="/?${params.toString()}" class="popular-tag-name tag ${data.category} tag-text" ${isInQuery ? 'style="pointer-events: none;"' : ''}>${tagName}</a>
                     <span class="popular-tag-count">${data.count}</span>
                 </div>

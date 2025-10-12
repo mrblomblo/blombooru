@@ -17,9 +17,9 @@ class TagAutocomplete {
         this.suggestionsEl = document.createElement('div');
         
         // Build class list with base classes and optional extra classes
-        const baseClasses = 'tag-suggestions hidden';
-        const extraClasses = this.options.containerClasses ? ' ' + this.options.containerClasses : '';
-        this.suggestionsEl.className = baseClasses + extraClasses;
+        this.suggestionsEl.className = this.options.containerClasses 
+            ? `tag-suggestions hidden ${this.options.containerClasses}` 
+            : 'tag-suggestions hidden';
         
         this.input.parentNode.insertBefore(this.suggestionsEl, this.input.nextSibling);
         
