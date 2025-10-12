@@ -48,7 +48,7 @@
                             type="text" 
                             id="search-input" 
                             name="q" 
-                            placeholder="Search tags... (e.g., cat_ears -dog)"
+                            placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
                             value="{{ request.query_params.get('q', '') }}"
                             class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-[var(--primary-color)]"
                         >
@@ -72,7 +72,7 @@
                         type="text" 
                         id="search-input-mobile" 
                         name="q" 
-                        placeholder="Search tags... (e.g., cat_ears -dog)"
+                        placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
                         value="{{ request.query_params.get('q', '') }}"
                         class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-[var(--primary-color)]"
                     >
