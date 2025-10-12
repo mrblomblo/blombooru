@@ -385,9 +385,14 @@ class Gallery {
     
     setupBulkActions() {
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        const selectAllBtn = document.getElementById('select-all-btn');
         
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDelete());
+        }
+        
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => this.selectAll());
         }
     }
     
@@ -422,6 +427,7 @@ class Gallery {
         }
         
         this.clearSelection();
+        this.loadPage();
     }
     
     clearSelection() {
@@ -430,6 +436,20 @@ class Gallery {
             item.classList.remove('selected');
             const checkbox = item.querySelector('.checkbox');
             if (checkbox) checkbox.checked = false;
+        });
+        this.updateBulkActionsUI();
+    }
+
+    selectAll() {
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            const id = parseInt(item.dataset.id);
+            const checkbox = item.querySelector('.checkbox');
+            
+            if (checkbox && !checkbox.checked) {
+                checkbox.checked = true;
+                this.selectedItems.add(id);
+                item.classList.add('selected');
+            }
         });
         this.updateBulkActionsUI();
     }
