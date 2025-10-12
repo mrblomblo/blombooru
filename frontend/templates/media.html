@@ -561,21 +561,21 @@
                 });
                 location.reload();
             } catch (e) { 
-                alert('Error updating tags: ' + e.message); 
+                app.showNotification(e.message, 'error', 'Error updating tags'); 
             }
         });
 
         el('rating-select')?.addEventListener('change', async (e) => {
             try {
                 await app.apiCall(`/api/media/${mediaId}`, { method: 'PATCH', body: JSON.stringify({ rating: e.target.value }) });
-            } catch (e) { alert('Error updating rating: ' + e.message); }
+            } catch (e) { app.showNotification(e.message, 'error', 'Error updating rating'); }
         });
 
         el('share-btn')?.addEventListener('click', async () => {
             try {
                 const res = await app.apiCall(`/api/media/${mediaId}/share`, { method: 'POST' });
                 showShareLink(res.share_url.split('/').pop(), res.share_ai_metadata);
-            } catch (e) { alert('Error creating share link: ' + e.message); }
+            } catch (e) { app.showNotification(e.message, 'error', 'Error creating share link'); }
         });
         el('copy-share-link-btn')?.addEventListener('click', () => {
             el('share-link-input').select(); document.execCommand('copy');
@@ -585,7 +585,7 @@
                 await app.apiCall(`/api/media/${mediaId}/share`, { method: 'DELETE' });
                 el('share-link-section').style.display = 'none';
                 el('share-btn').style.display = 'block';
-            } catch (e) { alert('Error removing share: ' + e.message); }
+            } catch (e) { app.showNotification(e.message, 'error', 'Error removing share'); }
         });
 
         el('delete-btn')?.addEventListener('click', async () => {
@@ -593,7 +593,7 @@
             try {
                 await app.apiCall(`/api/media/${mediaId}`, { method: 'DELETE' });
                 window.location.href = '/';
-            } catch (e) { alert('Error deleting media: ' + e.message); }
+            } catch (e) { app.showNotification(e.message, 'error', 'Error deleting media'); }
         });
 
         el('share-ai-metadata-toggle')?.addEventListener('change', async (e) => {
@@ -604,7 +604,7 @@
                 console.log('Share settings updated:', e.target.checked);
             } catch (err) {
                 console.error('Error updating share settings:', err);
-                alert('Error updating share settings: ' + err.message);
+                app.showNotification(err.message, 'error', 'Error updating share settings');
                 // Revert checkbox on error
                 e.target.checked = !e.target.checked;
             }

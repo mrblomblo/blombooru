@@ -243,7 +243,7 @@ class AdminPanel {
         const tagStrings = text.split(/\s+/).filter(t => t.length > 0);
         
         if (tagStrings.length === 0) {
-            alert('Please enter at least one tag');
+            app.showNotification('Please enter at least one tag!', 'error');
             return;
         }
         
@@ -265,7 +265,7 @@ class AdminPanel {
         }
         
         if (tagsToCreate.length === 0) {
-            alert('All tags already exist or are aliases. Nothing to add.');
+            app.showNotification('All tags already exist or are aliases.', 'error', 'Nothing to add');
             return;
         }
         
@@ -364,6 +364,11 @@ class AdminPanel {
         const defaultRating = document.querySelector('input[name="default-rating"]:checked')?.value;
         const theme = document.getElementById('theme-select')?.value;
 
+        if (!appName || !defaultRating || !theme) {
+            app.showNotification('Please fill in all settings fields!', 'error');
+            return;
+        }
+
         const settings = {
             app_name: appName,
             default_rating_filter: defaultRating,
@@ -378,7 +383,7 @@ class AdminPanel {
             
             location.reload();
         } catch (error) {
-            alert('Error saving settings: ' + error.message);
+            app.showNotification(error.message, 'error', 'Error saving settings');
         }
     }
     
@@ -394,7 +399,7 @@ class AdminPanel {
             });
             
             if (result.new_files === 0) {
-                alert('No new untracked media files found.');
+                app.showNotification('No new untracked media files found.', 'info');
                 scanBtn.disabled = false;
                 scanBtn.textContent = originalText;
                 return;
@@ -406,7 +411,7 @@ class AdminPanel {
             // Get the uploader instance
             const uploader = window.uploaderInstance;
             if (!uploader) {
-                alert('Uploader not initialized. Please refresh the page and try again.');
+                app.showNotification('Please refresh the page and try again.', 'error', 'Uploader not initialized');
                 scanBtn.disabled = false;
                 scanBtn.textContent = originalText;
                 return;
@@ -451,11 +456,11 @@ class AdminPanel {
             if (loadedCount > 0) {
                 message += '\n\nYou can now edit tags and ratings before submitting.';
             }
-            alert(message);
+            app.showNotification(message, 'success');
             
         } catch (error) {
             console.error('Scan error:', error);
-            alert('Error scanning media: ' + error.message);
+            app.showNotification(error.message, 'error', 'Error scanning media');
         } finally {
             scanBtn.disabled = false;
             scanBtn.textContent = originalText;
@@ -682,7 +687,7 @@ class AdminPanel {
             resultsDiv.innerHTML = data.tags.map(tag => `
                 <div class="bg p-3 border-b flex justify-between items-center">
                     <div>
-                        <button class="text-xs text-secondary bg-danger hover:bg-danger tag-text px-2 py-1 mr-2" onclick="if(confirm('Delete tag & alias?')) { app.apiCall('/api/admin/tags/${tag.id}', { method: 'DELETE' }).then(() => { alert('Tag deleted'); location.reload(); }).catch(e => alert('Error deleting tag: ' + e.message)); }">&#x2715;</button>
+                        <button class="text-xs text-secondary bg-danger hover:bg-danger tag-text px-2 py-1 mr-2" onclick="if(confirm('Delete tag & alias?')) { app.apiCall('/api/admin/tags/${tag.id}', { method: 'DELETE' }).then(() => { app.showNotification('Tag deleted', 'success'); location.reload(); }).catch(e => app.showNotification(e.message, 'error', 'Error deleting tag')); }">&#x2715;</button>
                         <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text">${tag.name}</a>
                         <span class="text-xs text-secondary ml-2">(${tag.post_count} posts)</span>
                     </div>
@@ -707,11 +712,11 @@ class AdminPanel {
         
         try {
             await app.apiCall('/api/admin/clear-tags', { method: 'DELETE' });
-            alert('All tags cleared successfully');
+            app.showNotification('All tags cleared successfully', 'success');
             await this.loadTagStats();
             document.getElementById('tag-search-results').innerHTML = '';
         } catch (error) {
-            alert('Error clearing tags: ' + error.message);
+            app.showNotification(error.message, 'error', 'Error clearing tags');
         }
     }
 

@@ -710,7 +710,7 @@ class Uploader {
             message += ` ${failCount} failed.`;
         }
 
-        alert(message);
+        app.showNotification(message, 'success');
 
         // Reset
         this.cancelAll();
