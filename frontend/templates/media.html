@@ -642,126 +642,126 @@
             }
         });
 
-el('append-ai-tags-btn')?.addEventListener('click', async () => {
-    try {
-        // Fetch metadata
-        const res = await fetch(`/api/media/${mediaId}/metadata`);
-        if (!res.ok) {
-            app.showNotification('Could not load AI metadata', 'error');
-            return;
-        }
-
-        const metadata = await res.json();
-        
-        let aiPrompt = null;
-
-        // Check for prompt in various common structures
-        if (metadata.parameters) {
-            const params = typeof metadata.parameters === 'string' 
-                ? JSON.parse(metadata.parameters) 
-                : metadata.parameters;
+        el('append-ai-tags-btn')?.addEventListener('click', async () => {
+            try {
+                // Fetch metadata
+                const res = await fetch(`/api/media/${mediaId}/metadata`);
+                if (!res.ok) {
+                    app.showNotification('Could not load AI metadata', 'error');
+                    return;
+                }
             
-            // Check if it's SwarmUI format nested in parameters
-            if (params.sui_image_params && params.sui_image_params.prompt) {
-                aiPrompt = params.sui_image_params.prompt;
-            } else if (params.prompt) {
-                aiPrompt = params.prompt;
-            } else if (params.Prompt) {
-                aiPrompt = params.Prompt;
-            }
-        } else if (metadata.Parameters) {
-            const params = typeof metadata.Parameters === 'string' 
-                ? JSON.parse(metadata.Parameters) 
-                : metadata.Parameters;
+                const metadata = await res.json();
+                
+                let aiPrompt = null;
             
-            // Check if it's SwarmUI format nested in Parameters
-            if (params.sui_image_params && params.sui_image_params.prompt) {
-                aiPrompt = params.sui_image_params.prompt;
-            } else if (params.prompt) {
-                aiPrompt = params.prompt;
-            } else if (params.Prompt) {
-                aiPrompt = params.Prompt;
-            }
-        } else if (metadata.sui_image_params && metadata.sui_image_params.prompt) {
-            // Direct SwarmUI format
-            aiPrompt = metadata.sui_image_params.prompt;
-        } else if (metadata.prompt) {
-            aiPrompt = metadata.prompt;
-        } else if (metadata.Prompt) {
-            aiPrompt = metadata.Prompt;
-        }
-
-        // Fallback: search through all nested objects for a prompt field
-        if (!aiPrompt) {
-            for (const [key, value] of Object.entries(metadata)) {
-                if (typeof value === 'object' && value !== null) {
-                    if (value.prompt) {
-                        aiPrompt = value.prompt;
-                        break;
-                    } else if (value.Prompt) {
-                        aiPrompt = value.Prompt;
-                        break;
-                    } else if (value.sui_image_params && value.sui_image_params.prompt) {
-                        aiPrompt = value.sui_image_params.prompt;
-                        break;
+                // Check for prompt in various common structures
+                if (metadata.parameters) {
+                    const params = typeof metadata.parameters === 'string' 
+                        ? JSON.parse(metadata.parameters) 
+                        : metadata.parameters;
+                    
+                    // Check if it's SwarmUI format nested in parameters
+                    if (params.sui_image_params && params.sui_image_params.prompt) {
+                        aiPrompt = params.sui_image_params.prompt;
+                    } else if (params.prompt) {
+                        aiPrompt = params.prompt;
+                    } else if (params.Prompt) {
+                        aiPrompt = params.Prompt;
+                    }
+                } else if (metadata.Parameters) {
+                    const params = typeof metadata.Parameters === 'string' 
+                        ? JSON.parse(metadata.Parameters) 
+                        : metadata.Parameters;
+                    
+                    // Check if it's SwarmUI format nested in Parameters
+                    if (params.sui_image_params && params.sui_image_params.prompt) {
+                        aiPrompt = params.sui_image_params.prompt;
+                    } else if (params.prompt) {
+                        aiPrompt = params.prompt;
+                    } else if (params.Prompt) {
+                        aiPrompt = params.Prompt;
+                    }
+                } else if (metadata.sui_image_params && metadata.sui_image_params.prompt) {
+                    // Direct SwarmUI format
+                    aiPrompt = metadata.sui_image_params.prompt;
+                } else if (metadata.prompt) {
+                    aiPrompt = metadata.prompt;
+                } else if (metadata.Prompt) {
+                    aiPrompt = metadata.Prompt;
+                }
+            
+                // Fallback: search through all nested objects for a prompt field
+                if (!aiPrompt) {
+                    for (const [key, value] of Object.entries(metadata)) {
+                        if (typeof value === 'object' && value !== null) {
+                            if (value.prompt) {
+                                aiPrompt = value.prompt;
+                                break;
+                            } else if (value.Prompt) {
+                                aiPrompt = value.Prompt;
+                                break;
+                            } else if (value.sui_image_params && value.sui_image_params.prompt) {
+                                aiPrompt = value.sui_image_params.prompt;
+                                break;
+                            }
+                        }
                     }
                 }
+            
+                if (!aiPrompt || typeof aiPrompt !== 'string') {
+                    app.showNotification('No AI prompt found in metadata', 'error');
+                    return;
+                }
+            
+                // Parse the prompt: split by comma, replace spaces with underscores in each tag
+                const promptTags = aiPrompt
+                    .split(',')
+                    .map(tag => tag.trim().replace(/\s+/g, '_'))
+                    .filter(tag => tag.length > 0);
+            
+                // Validate each tag and get the correct tag name (handling aliases)
+                const validTags = [];
+                for (const tag of promptTags) {
+                    const validTag = await getTagOrAlias(tag);
+                    if (validTag) {
+                        validTags.push(validTag);
+                    }
+                }
+            
+                if (validTags.length === 0) {
+                    app.showNotification('No valid tags found in AI prompt', 'error');
+                    return;
+                }
+            
+                // Get current tags from input
+                const tagsInput = el('tags-input');
+                const currentText = getPlainTextFromDiv(tagsInput).trim();
+                const currentTags = currentText ? currentText.split(/\s+/) : [];
+            
+                // Merge: add only new tags that aren't already present
+                const existingTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
+                const newTags = validTags.filter(tag => !existingTagsSet.has(tag.toLowerCase()));
+            
+                if (newTags.length === 0) {
+                    app.showNotification('All AI tags are already present', 'info');
+                    return;
+                }
+            
+                // Append new tags
+                const allTags = [...currentTags, ...newTags];
+                tagsInput.textContent = allTags.join(' ');
+            
+                // Trigger validation
+                await validateAndStyleTags();
+            
+                app.showNotification(`Appended ${newTags.length} tag(s) from AI prompt`, 'success');
+            
+            } catch (e) {
+                console.error('Error appending AI tags:', e);
+                app.showNotification('Error processing AI tags: ' + e.message, 'error');
             }
-        }
-
-        if (!aiPrompt || typeof aiPrompt !== 'string') {
-            app.showNotification('No AI prompt found in metadata', 'error');
-            return;
-        }
-
-        // Parse the prompt: split by comma, replace spaces with underscores in each tag
-        const promptTags = aiPrompt
-            .split(',')
-            .map(tag => tag.trim().replace(/\s+/g, '_'))
-            .filter(tag => tag.length > 0);
-
-        // Validate each tag and get the correct tag name (handling aliases)
-        const validTags = [];
-        for (const tag of promptTags) {
-            const validTag = await getTagOrAlias(tag);
-            if (validTag) {
-                validTags.push(validTag);
-            }
-        }
-
-        if (validTags.length === 0) {
-            app.showNotification('No valid tags found in AI prompt', 'error');
-            return;
-        }
-
-        // Get current tags from input
-        const tagsInput = el('tags-input');
-        const currentText = getPlainTextFromDiv(tagsInput).trim();
-        const currentTags = currentText ? currentText.split(/\s+/) : [];
-
-        // Merge: add only new tags that aren't already present
-        const existingTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
-        const newTags = validTags.filter(tag => !existingTagsSet.has(tag.toLowerCase()));
-
-        if (newTags.length === 0) {
-            app.showNotification('All AI tags are already present', 'info');
-            return;
-        }
-
-        // Append new tags
-        const allTags = [...currentTags, ...newTags];
-        tagsInput.textContent = allTags.join(' ');
-
-        // Trigger validation
-        await validateAndStyleTags();
-
-        app.showNotification(`Appended ${newTags.length} tag(s) from AI prompt`, 'success');
-
-    } catch (e) {
-        console.error('Error appending AI tags:', e);
-        app.showNotification('Error processing AI tags: ' + e.message, 'error');
-    }
-});
+        });
 
         function showShareLink(uuid, shareAIMetadata) {
             el('share-link-input').value = `${window.location.origin}/shared/${uuid}`;
