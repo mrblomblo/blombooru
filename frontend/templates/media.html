@@ -74,7 +74,7 @@
             <!-- Share Link Display -->
             <div id="share-link-section" style="display: none;" class="bg-primary primary-text p-3 border border-primary mb-4">
                 <h4 class="text-sm font-bold mb-2 primary-text">Share Actions</h4>
-                <div class="mb-2 p-2 surface border">
+                <div id="ai-metadata-share-toggle" class="mb-2 p-2 surface border" style="display: none;">
                     <label class="flex items-center justify-between cursor-pointer">
                         <span class="text-xs text font-medium">Include AI metadata</span>
                         <div class="relative">
@@ -263,6 +263,7 @@
                 if (app.isAdminMode) {
                     el('edit-tags-section').style.display = 'block';
                     el('admin-actions').style.display = 'block';
+                    el('ai-metadata-share-toggle').style.display = 'block';
                     el('unshare-btn').style.display = 'block';
                     setupTagInput();
                     
