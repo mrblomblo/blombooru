@@ -2,8 +2,8 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    <!-- Rating Filter -->
-    <div class="surface p-3 mb-4 border">
+    <!-- Rating Filter (on small displays) -->
+    <div class="surface p-3 mb-4 border block lg:hidden">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <label class="flex-1">
                 <input type="radio" name="rating" value="safe" class="hidden rating-filter-input">
@@ -51,7 +51,26 @@
         <!-- Sidebar -->
         <div class="lg:col-span-1">
             <div class="surface p-3 border sticky top-4">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">Popular Tags</h3>
+                <!-- Rating Filter (on large displays) -->
+                <div class="hidden lg:block">
+                    <h3 class="text-sm font-bold mb-3 pb-1 border-b">Rating Filter</h3>
+                    <div class="grid grid-cols-1 gap-2 mb-3">
+                        <label class="flex-1">
+                            <input type="radio" name="rating" value="safe" class="hidden rating-filter-input">
+                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe Only</span>
+                        </label>
+                        <label class="flex-1">
+                            <input type="radio" name="rating" value="questionable" class="hidden rating-filter-input">
+                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe + Questionable</span>
+                        </label>
+                        <label class="flex-1">
+                            <input type="radio" name="rating" value="explicit" class="hidden rating-filter-input">
+                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">All Ratings</span>
+                        </label>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold mb-2 pb-1 border-b">Popular Tags</h3>
                 <div id="popular-tags" class="text-xs">
                     <p class="text-secondary">Loading...</p>
                 </div>
