@@ -1,0 +1,13 @@
+venv
+tailwind
+data
+media
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.git
+.gitignore
+.env
+node_modules
