@@ -558,10 +558,22 @@ class AdminPanel {
         // Tag search
         const searchBtn = document.getElementById('tag-search-btn');
         const searchInput = document.getElementById('tag-search-input');
-        
+
+        searchInput?.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\s+/g, '_');
+        });
+
+        searchInput?.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                e.preventDefault();
+                e.target.value += '_';
+            }
+        });
+
         searchBtn?.addEventListener('click', () => this.searchTags());
         searchInput?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                e.target.value = e.target.value.replace(/\s+/g, '_').trim();
                 this.searchTags();
             }
         });
