@@ -57,15 +57,15 @@
                     <div class="grid grid-cols-1 gap-2 mb-3">
                         <label class="flex-1">
                             <input type="radio" name="rating" value="safe" class="hidden rating-filter-input">
-                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe Only</span>
+                            <span class="block text-center px-3 py-1 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe Only</span>
                         </label>
                         <label class="flex-1">
                             <input type="radio" name="rating" value="questionable" class="hidden rating-filter-input">
-                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe + Questionable</span>
+                            <span class="block text-center px-3 py-1 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">Safe + Questionable</span>
                         </label>
                         <label class="flex-1">
                             <input type="radio" name="rating" value="explicit" class="hidden rating-filter-input">
-                            <span class="block text-center px-3 py-2 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">All Ratings</span>
+                            <span class="block text-center px-3 py-1 border-2 cursor-pointer surface hover:surface transition-colors rating-filter-label">All Ratings</span>
                         </label>
                     </div>
                 </div>
@@ -94,4 +94,21 @@
 
 {% block extra_js %}
 <script src="/static/js/gallery.js"></script>
+
+<script>
+    document.querySelectorAll('input[name="rating"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const selectedValue = e.target.value;
+
+            document.querySelectorAll('.rating-filter-label').forEach(label => {
+                label.classList.remove('checked');
+            });
+
+            document.querySelectorAll(`input[name="rating"][value="${selectedValue}"]`).forEach(radio => {
+                radio.checked = true;
+                radio.nextElementSibling.classList.add('checked');
+            });
+        });
+    });
+</script>
 {% endblock %}

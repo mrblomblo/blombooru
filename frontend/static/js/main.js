@@ -181,10 +181,14 @@ class Blombooru {
     }
     
     setRatingFilter(rating) {
-        const input = document.querySelector(`input[name="rating"][value="${rating}"]`);
-        if (input) {
+        document.querySelectorAll('.rating-filter-label').forEach(label => {
+            label.classList.remove('checked');
+        });
+
+        document.querySelectorAll(`input[name="rating"][value="${rating}"]`).forEach(input => {
             input.checked = true;
-        }
+            input.nextElementSibling.classList.add('checked');
+        });
     }
     
     performSearch() {

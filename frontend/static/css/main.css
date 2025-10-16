@@ -1,10 +1,10 @@
-input[type="radio"]:checked + span {
+input[type="radio"]:checked + span, span.checked {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
     color: var(--primary-text);
 }
 
-input[type="radio"]:checked + span:hover {
+input[type="radio"]:checked + span:hover, span.checked:hover {
     background-color: var(--primary-hover);
 }
 
