@@ -11,8 +11,8 @@ services:
     depends_on:
       - db
     volumes:
-      - ./media:/app/media
-      - ./data:/app/data
+      - media:/app/media
+      - data:/app/data
     restart: unless-stopped
 
   db:
@@ -30,3 +30,5 @@ services:
 
 volumes:
   pgdata:
+  media:
+  data:
