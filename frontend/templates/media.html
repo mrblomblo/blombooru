@@ -12,7 +12,7 @@
             </div>
             
             <!-- Related Media -->
-            <div class="mt-6">
+            <div class="surface mt-4 p-4 border">
                 <h2 class="text-base font-bold mb-3 pb-2 border-b">Related Media</h2>
                 <div id="related-media" class="grid grid-cols-4 md:grid-cols-6 gap-2"></div>
             </div>
@@ -32,7 +32,7 @@
                 <div id="tags-container"></div>
                 
                 <!-- Edit Tags (Admin Mode Only) -->
-                <div id="edit-tags-section" style="display: none;" class="mt-3 pt-3 border-t">
+                <div id="edit-tags-section" style="display: none;" class="pt-3 border-t">
                     <form id="edit-tags-form">
                         <label class="block text-xs font-bold mb-2">Edit Tags</label>
                         <div class="mb-2" style="position: relative;">
@@ -646,31 +646,51 @@
                 const tooltipElement = createTooltip();
                 relatedMediaEl.innerHTML = '';
 
-                // Create media items with hover events
-                items.forEach(item => {
-                    const linkElement = document.createElement('a');
-                    linkElement.href = `/media/${item.id}${queryString ? '?' + queryString : ''}`;
-                    linkElement.className = `gallery-item ${item.file_type}`;
+                // Create media items 
+                items.forEach(media => {
+                    // Create parent div container
+                    const item = document.createElement('div');
+                    item.className = `gallery-item ${media.file_type}`;
+                    item.dataset.id = media.id;
+                    item.dataset.rating = media.rating;
 
-                    const imgElement = document.createElement('img');
-                    imgElement.src = `/api/media/${item.id}/thumbnail`;
-                    imgElement.alt = item.filename;
-                    imgElement.loading = 'lazy';
+                    // Create link element
+                    const link = document.createElement('a');
+                    link.href = `/media/${media.id}${queryString ? '?' + queryString : ''}`;
 
-                    linkElement.appendChild(imgElement);
+                    // Create image element
+                    const img = document.createElement('img');
+                    img.src = `/api/media/${media.id}/thumbnail`;
+                    img.alt = media.filename;
+                    img.loading = 'lazy';
+                    img.onerror = () => {
+                        console.error('Failed to load thumbnail for media:', media.id);
+                        img.src = '/static/images/no-thumbnail.png'; // Fallback image
+                    };
 
-                    // Add hover events for tooltip
+                    link.appendChild(img);
+                    item.appendChild(link);
+
+                    // Add share icon if shared
+                    if (media.is_shared) {
+                        const shareIcon = document.createElement('div');
+                        shareIcon.className = 'share-icon';
+                        shareIcon.textContent = 'SHARED';
+                        item.appendChild(shareIcon);
+                    }
+
+                    // Add hover events for tooltip on the parent div
                     let hoverTimeout;
-                    linkElement.addEventListener('mouseenter', () => {
+                    item.addEventListener('mouseenter', () => {
                         // Add a small delay to prevent tooltip from showing on quick mouseovers
                         hoverTimeout = setTimeout(() => {
-                            if (item.tags && item.tags.length > 0) {
-                                showTooltip(linkElement, item.tags, tooltipElement);
+                            if (media.tags && media.tags.length > 0) {
+                                showTooltip(item, media.tags, tooltipElement);
                             }
                         }, 300);
                     });
 
-                    linkElement.addEventListener('mouseleave', () => {
+                    item.addEventListener('mouseleave', () => {
                         clearTimeout(hoverTimeout);
                         hideTooltip(tooltipElement);
                     });
@@ -678,13 +698,13 @@
                     // Update tooltip position on scroll if it's visible
                     window.addEventListener('scroll', () => {
                         if (tooltipElement.style.display === 'block') {
-                            positionTooltip(linkElement, tooltipElement);
+                            positionTooltip(item, tooltipElement);
                         }
                     }, { passive: true });
 
-                    relatedMediaEl.appendChild(linkElement);
+                    // Append the complete item to related media container
+                    relatedMediaEl.appendChild(item);
                 });
-
             } catch (e) {
                 console.error('related error', e);
                 hideRelatedMedia();
