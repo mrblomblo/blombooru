@@ -496,6 +496,82 @@
             }
         }
 
+        function createTooltip() {
+            // Create tooltip element if it doesn't exist
+            if (!document.getElementById('media-tooltip')) {
+                const tooltip = document.createElement('div');
+                tooltip.id = 'media-tooltip';
+                tooltip.style.cssText = `
+                    position: absolute;
+                    background: rgba(0, 0, 0, 0.95);
+                    color: white;
+                    padding: 8px 12px;
+                    font-size: 13px;
+                    pointer-events: none;
+                    z-index: 10000;
+                    max-width: 300px;
+                    word-wrap: break-word;
+                    display: none;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                `;
+                document.body.appendChild(tooltip);
+            }
+            return document.getElementById('media-tooltip');
+        }
+
+        function showTooltip(element, tags, tooltipElement) {
+            if (!tags || tags.length === 0) return;
+
+            // Sort tags alphabetically
+            const sortedTags = tags
+                .map(tag => tag.name || tag)
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+            // Create comma-separated list
+            const tagList = sortedTags.join(', ');
+
+            tooltipElement.textContent = tagList;
+            tooltipElement.style.display = 'block';
+
+            // Position tooltip
+            positionTooltip(element, tooltipElement);
+        }
+
+        function positionTooltip(element, tooltipElement) {
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltipElement.getBoundingClientRect();
+
+            // Calculate position (above the element by default)
+            let top = rect.top - tooltipRect.height - 10;
+            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+            // If tooltip would go off top of screen, show below instead
+            if (top < 10) {
+                top = rect.bottom + 10;
+            }
+
+            // Keep tooltip within viewport horizontally
+            if (left < 10) {
+                left = 10;
+            } else if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+
+            // Add scroll offset
+            top += window.scrollY;
+            left += window.scrollX;
+
+            tooltipElement.style.top = `${top}px`;
+            tooltipElement.style.left = `${left}px`;
+        }
+
+        function hideTooltip(tooltipElement) {
+            if (tooltipElement) {
+                tooltipElement.style.display = 'none';
+            }
+        }
+
         async function loadRelatedMedia() {
             if (!currentMedia || !currentMedia.tags || !currentMedia.tags.length) {
                 hideRelatedMedia();
@@ -522,21 +598,62 @@
                 const data = await res.json();
                 const currentMediaId = parseInt(mediaId);
                 const items = (data.items || []).filter(i => i.id !== currentMediaId);
+
                 if (items.length === 0) {
                     hideRelatedMedia();
                     return;
                 }
+
                 // Show related media section and populate it
                 const relatedMediaEl = el('related-media');
                 const relatedMediaSection = relatedMediaEl.parentElement;
                 const params = new URLSearchParams(window.location.search);
                 const queryString = params.toString();
                 relatedMediaSection.style.display = 'block';
-                relatedMediaEl.innerHTML = items.map(i =>`
-                <a href="/media/${i.id}${queryString ? '?' + queryString : ''}" class="gallery-item ${i.file_type}">
-                    <img src="/api/media/${i.id}/thumbnail" alt="${i.filename}" loading="lazy">
-                </a>
-                `).join('');
+
+                // Create the tooltip element if it doesn't exist
+                const tooltipElement = createTooltip();
+                relatedMediaEl.innerHTML = '';
+
+                // Create media items with hover events
+                items.forEach(item => {
+                    const linkElement = document.createElement('a');
+                    linkElement.href = `/media/${item.id}${queryString ? '?' + queryString : ''}`;
+                    linkElement.className = `gallery-item ${item.file_type}`;
+
+                    const imgElement = document.createElement('img');
+                    imgElement.src = `/api/media/${item.id}/thumbnail`;
+                    imgElement.alt = item.filename;
+                    imgElement.loading = 'lazy';
+
+                    linkElement.appendChild(imgElement);
+
+                    // Add hover events for tooltip
+                    let hoverTimeout;
+                    linkElement.addEventListener('mouseenter', () => {
+                        // Add a small delay to prevent tooltip from showing on quick mouseovers
+                        hoverTimeout = setTimeout(() => {
+                            if (item.tags && item.tags.length > 0) {
+                                showTooltip(linkElement, item.tags, tooltipElement);
+                            }
+                        }, 300);
+                    });
+
+                    linkElement.addEventListener('mouseleave', () => {
+                        clearTimeout(hoverTimeout);
+                        hideTooltip(tooltipElement);
+                    });
+
+                    // Update tooltip position on scroll if it's visible
+                    window.addEventListener('scroll', () => {
+                        if (tooltipElement.style.display === 'block') {
+                            positionTooltip(linkElement, tooltipElement);
+                        }
+                    }, { passive: true });
+
+                    relatedMediaEl.appendChild(linkElement);
+                });
+
             } catch (e) {
                 console.error('related error', e);
                 hideRelatedMedia();

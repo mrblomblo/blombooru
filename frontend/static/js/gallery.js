@@ -4,7 +4,8 @@ class Gallery {
         this.totalPages = 1;
         this.isLoading = false;
         this.selectedItems = new Set();
-        this.tagCounts = new Map(); // Track tag counts
+        this.tagCounts = new Map();
+        this.activeTooltip = null;
         
         this.galleryContainer = document.getElementById('gallery-grid');
         this.loadingIndicator = document.getElementById('loading-indicator');
@@ -20,6 +21,7 @@ class Gallery {
         this.setupBulkActions();
         this.setupRatingFilter();
         this.setupPageJumpModal();
+        this.createTooltip();
         
         // Get page from URL or default to 1
         const params = new URLSearchParams(window.location.search);
@@ -27,6 +29,85 @@ class Gallery {
         
         // Load initial page
         this.loadPage();
+    }
+    
+    createTooltip() {
+        // Create tooltip element if it doesn't exist
+        if (!document.getElementById('gallery-tooltip')) {
+            const tooltip = document.createElement('div');
+            tooltip.id = 'gallery-tooltip';
+            tooltip.style.cssText = `
+                position: absolute;
+                background: rgba(0, 0, 0, 0.95);
+                color: white;
+                padding: 8px 12px;
+                font-size: 13px;
+                pointer-events: none;
+                z-index: 10000;
+                max-width: 300px;
+                word-wrap: break-word;
+                display: none;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            `;
+            document.body.appendChild(tooltip);
+        }
+        this.tooltipElement = document.getElementById('gallery-tooltip');
+    }
+    
+    showTooltip(element, tags) {
+        if (!tags || tags.length === 0) return;
+        
+        // Sort tags alphabetically
+        const sortedTags = tags
+            .map(tag => tag.name || tag)
+            .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        
+        // Create comma-separated list
+        const tagList = sortedTags.join(', ');
+        
+        this.tooltipElement.textContent = tagList;
+        this.tooltipElement.style.display = 'block';
+        
+        // Position tooltip
+        this.positionTooltip(element);
+        
+        this.activeTooltip = element;
+    }
+    
+    positionTooltip(element) {
+        const rect = element.getBoundingClientRect();
+        const tooltipRect = this.tooltipElement.getBoundingClientRect();
+        
+        // Calculate position (above the element by default)
+        let top = rect.top - tooltipRect.height - 10;
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        
+        // If tooltip would go off top of screen, show below instead
+        if (top < 10) {
+            top = rect.bottom + 10;
+        }
+        
+        // Keep tooltip within viewport horizontally
+        if (left < 10) {
+            left = 10;
+        } else if (left + tooltipRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipRect.width - 10;
+        }
+        
+        // Add scroll offset
+        top += window.scrollY;
+        left += window.scrollX;
+        
+        this.tooltipElement.style.top = `${top}px`;
+        this.tooltipElement.style.left = `${left}px`;
+    }
+    
+    hideTooltip() {
+        if (this.tooltipElement) {
+            this.tooltipElement.style.display = 'none';
+        }
+        this.activeTooltip = null;
     }
     
     setupRatingFilter() {
@@ -368,6 +449,30 @@ class Gallery {
         const queryString = params.toString();
         link.href = `/media/${media.id}${queryString ? '?' + queryString : ''}`;
         link.appendChild(img);
+        
+        // Add hover events for tooltip
+        let hoverTimeout;
+        item.addEventListener('mouseenter', (e) => {
+            // Add a small delay to prevent tooltip from showing on quick mouseovers
+            hoverTimeout = setTimeout(() => {
+                if (media.tags && media.tags.length > 0) {
+                    this.showTooltip(item, media.tags);
+                }
+            }, 300);
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            clearTimeout(hoverTimeout);
+            this.hideTooltip();
+        });
+        
+        // Update tooltip position on scroll if it's visible
+        const handleScroll = () => {
+            if (this.activeTooltip === item) {
+                this.positionTooltip(item);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
         
         item.appendChild(checkbox);
         item.appendChild(link);
