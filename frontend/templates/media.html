@@ -277,11 +277,17 @@
                 renderMedia(currentMedia);
                 renderInfo(currentMedia);
                 renderTags(currentMedia);
+
+                // Hide AI metadata toggle by default - will be shown if AI metadata exists
+                const aiMetadataShareToggle = el('ai-metadata-share-toggle');
+                if (aiMetadataShareToggle) {
+                    aiMetadataShareToggle.style.display = 'none';
+                }
+
                 await renderAIMetadata(currentMedia);
                 if (app.isAdminMode) {
                     el('edit-tags-section').style.display = 'block';
                     el('admin-actions').style.display = 'block';
-                    el('ai-metadata-share-toggle').style.display = 'block';
                     el('unshare-btn').style.display = 'block';
                     setupTagInput();
                     
@@ -361,6 +367,7 @@
             const section = el('ai-metadata-section');
             const content = el('ai-metadata-content');
             const appendBtn = el('append-ai-tags-btn');
+            const aiMetadataShareToggle = el('ai-metadata-share-toggle');
 
             try {
                 // Fetch metadata from the file
@@ -368,6 +375,7 @@
                 if (!res.ok) {
                     section.style.display = 'none';
                     if (appendBtn) appendBtn.style.display = 'none';
+                    if (aiMetadataShareToggle) aiMetadataShareToggle.style.display = 'none';
                     return;
                 }
 
@@ -391,11 +399,17 @@
                         : metadata.prompt;
                 }
 
-                // If no AI data found, hide section
+                // If no AI data found, hide section and toggle
                 if (!aiData || Object.keys(aiData).length === 0) {
                     section.style.display = 'none';
                     if (appendBtn) appendBtn.style.display = 'none';
+                    if (aiMetadataShareToggle) aiMetadataShareToggle.style.display = 'none';
                     return;
+                }
+
+                // AI data exists - show the toggle if in admin mode
+                if (app.isAdminMode && aiMetadataShareToggle) {
+                    aiMetadataShareToggle.style.display = 'block';
                 }
 
                 // Show append button if AI prompt exists and admin mode is on
@@ -438,6 +452,7 @@
             } catch (e) {
                 console.error('Error rendering AI metadata:', e);
                 section.style.display = 'none';
+                if (aiMetadataShareToggle) aiMetadataShareToggle.style.display = 'none';
             }
         }
 
