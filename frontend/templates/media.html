@@ -309,7 +309,7 @@
         function renderMedia(media) {
             const c = el('media-container');
             c.innerHTML = media.file_type === 'video'
-                ? `<video controls><source src="/api/media/${media.id}/file" type="${media.mime_type}"></video>`
+                ? `<video controls loop><source src="/api/media/${media.id}/file" type="${media.mime_type}"></video>`
                 : `<img src="/api/media/${media.id}/file" alt="${media.filename}">`;
             el('download-btn').href = `/api/media/${media.id}/file`;
             el('download-btn').download = media.filename;

@@ -131,7 +131,7 @@
                     <div class="lg:col-span-3">
                         <div class="surface p-4 border text-center">
                             ${media.file_type === 'video' ? `
-                                <video controls style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
+                                <video controls loop style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
                                     <source src="/api/shared/${shareUuid}/file" type="${media.mime_type}">
                                 </video>
                             ` : `
