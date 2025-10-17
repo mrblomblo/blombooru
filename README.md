@@ -27,26 +27,80 @@ It is designed for individuals who want a powerful, local, simple to use, and mo
 
 *I am logged in as the admin in the above image, hence the checkbox in the top left corner of all media thumbnails*
 
-## Getting Started
+## Installation & Setup
 
-Follow these steps to get your own Blombooru instance up and running.
+You can choose to either use Blombooru in a docker container *(recommended)* or directly with Python.
 
-### Prerequisites
+**Prerequisites**  
+- `git` *(recommended, but you could also just download the project through the GitHub website)*
 
-- Python 3.10+
-- PostgreSQL 17
-- `git`
+### Docker *(Recommended)*
 
-### Installation
+**Prerequisites**  
+- Docker
 
-1. **Clone the repository:**
+This is the recommended method for using Blombooru.
+
+1. **Clone the repository**
 
     ```bash
     git clone https://github.com/mrblomblo/blombooru.git
     cd blombooru
     ```
 
-2. **Create a Python virtual environment and install dependencies:**
+2. **Customize the environment variables**  
+    Create a copy of the `example.env` file, and name it `.env`. Then open the newly created file with your favorite text editor and edit the values after the "=" on each row. The most important one to change is the example password assigned to `POSTGRES_PASSWORD`. The others *can* stay as they are, unless, for example, port 8000 is already in use by another program.
+
+3. **First-time run & Onboarding**  
+    Start the Docker container *(make sure you are in the root Blombooru folder, the one with the `docker-compose.yml` file)*:
+
+    ```bash
+    docker compose up --build -d
+    ```
+
+    *You may need to use sudo or be in a terminal with elevated privileges to run the above command.*
+
+    Now, open your web browser and navigate to `http://localhost:<port>` *(replace `<port>` with the port you specified in the `.env` file)*. You will be greeted by the onboarding page. Here you will:  
+    - Set your Admin Username and Password.
+    - Enter your PostgreSQL connection details. The server will test the connection before proceeding. Unless you changed `POSTGRES_DB` and/or `POSTGRES_USER`, you only need to fill in the password that you set in the `.env` file. Do not change the DB Host.
+    - Customize the site's Branding Name (defaults to "Blombooru").
+
+    Once submitted, the server will create the database schema and create your admin account.
+
+4. **Running the application again**  
+    After the initial setup, you can run the server with the following command, again, make sure you are in the root Blombooru folder:
+    
+    ```bash
+    docker compose up -d
+    ```
+
+    *Also again, you may need to use sudo or be in a terminal with elevated privileges to run the above command.*
+
+    All settings are saved to a `settings.json` file in the `data` folder, and all uploaded media is saved to the `media/original` folder. Note that these folders will not be easily accessible, and will not be created in the root Blombooru folder.
+
+If you wish to shut the container down, you should run the following command:
+
+```bash
+docker compose down
+```
+
+### Python
+
+**Prerequisites**  
+- Python 3.10+ *(I am using Python 3.13.7)*
+- PostgreSQL 17
+
+> [!NOTE]
+> The python install  is mostly just recommended for development purposes.
+
+1. **Clone the repository**
+
+    ```bash
+    git clone https://github.com/mrblomblo/blombooru.git
+    cd blombooru
+    ```
+
+2. **Create a Python virtual environment and install dependencies**
 
     ```bash
     python -m venv venv
@@ -54,10 +108,10 @@ Follow these steps to get your own Blombooru instance up and running.
     pip install -r requirements.txt
     ```
 
-3. **Create a PostgreSQL database:**  
+3. **Create a PostgreSQL database**  
     Create a new database and a user with permissions for that database. Blombooru will handle creating the necessary tables.
 
-4. **First-Time Run & Onboarding:**  
+4. **First-time run & Onboarding**  
     Start the server:
 
     ```bash
@@ -69,10 +123,10 @@ Follow these steps to get your own Blombooru instance up and running.
     - Enter your PostgreSQL connection details. The server will test the connection before proceeding.
     - Customize the site's Branding Name (defaults to "Blombooru").
 
-    Once submitted, the server will create the database schema, import the initial Danbooru tag set, and create your admin account.
+    Once submitted, the server will create the database schema and create your admin account.
 
-5. **Run the application:**  
-    After the initial setup, you can run the server anytime with the same command. All settings are saved to a `settings.json` file in the `data` folder.
+5. **Running the application again**  
+    After the initial setup, you can run the server anytime with the same command. All settings are saved to a `settings.json` file in the `data` folder, and all uploaded media is saved to the `media/original` folder.
 
 ## Usage Guide
 
