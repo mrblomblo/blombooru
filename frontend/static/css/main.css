@@ -220,6 +220,10 @@ input[type="radio"]:checked + span:hover, span.checked:hover {
     font-size: 0.7rem;
 }
 
+.info-row:last-child {
+    border-bottom: 0;;
+}
+
 .ai-section {
     border-left: 2px solid var(--primary-color);
     padding-left: 0.5rem;
