@@ -429,6 +429,7 @@ class Gallery {
     setupBulkActions() {
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
         const selectAllBtn = document.getElementById('select-all-btn');
+        const deselectAllBtn = document.getElementById('deselect-all-btn');
         
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDelete());
@@ -436,6 +437,10 @@ class Gallery {
         
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => this.selectAll());
+        }
+
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => this.clearSelection());
         }
     }
     
