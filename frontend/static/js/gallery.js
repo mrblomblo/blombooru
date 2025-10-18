@@ -397,6 +397,7 @@ class Gallery {
         img.src = `/api/media/${media.id}/thumbnail`;
         img.alt = media.filename;
         img.loading = 'lazy';
+        img.className = 'transition-colors';
         img.onerror = () => {
             console.error('Failed to load thumbnail for media:', media.id);
             img.src = '/static/images/no-thumbnail.png'; // Fallback image
