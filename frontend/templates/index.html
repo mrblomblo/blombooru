@@ -95,21 +95,4 @@
 {% block extra_js %}
 <script src="/static/js/tooltip-helper.js"></script>
 <script src="/static/js/gallery.js"></script>
-
-<script>
-    document.querySelectorAll('input[name="rating"]').forEach(input => {
-        input.addEventListener('change', (e) => {
-            const selectedValue = e.target.value;
-
-            document.querySelectorAll('.rating-filter-label').forEach(label => {
-                label.classList.remove('checked');
-            });
-
-            document.querySelectorAll(`input[name="rating"][value="${selectedValue}"]`).forEach(radio => {
-                radio.checked = true;
-                radio.nextElementSibling.classList.add('checked');
-            });
-        });
-    });
-</script>
 {% endblock %}

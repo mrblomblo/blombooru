@@ -39,23 +39,53 @@ class Gallery {
     }
     
     setupRatingFilter() {
+        // Setup rating filter change handlers
         document.querySelectorAll('.rating-filter-input').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 const selectedRating = e.target.value;
                 
+                // Update label styling
+                this.updateRatingFilterLabels(selectedRating);
+                
                 // Store the selected rating in localStorage for persistence
                 localStorage.setItem('selectedRating', selectedRating);
                 
+                // Reload gallery with new rating
                 this.reloadWithRating(selectedRating);
             });
         });
         
+        // Also setup for any input[name="rating"] (in case there are duplicates)
+        document.querySelectorAll('input[name="rating"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                this.updateRatingFilterLabels(selectedValue);
+            });
+        });
+        
+        // Set initial state from localStorage
         const savedRating = localStorage.getItem('selectedRating') || 'explicit';
         const savedRadio = document.querySelector(`input[value="${savedRating}"]`);
         
         if (savedRadio) {
             savedRadio.checked = true;
+            this.updateRatingFilterLabels(savedRating);
         }
+    }
+    
+    updateRatingFilterLabels(selectedValue) {
+        // Remove 'checked' class from all labels
+        document.querySelectorAll('.rating-filter-label').forEach(label => {
+            label.classList.remove('checked');
+        });
+        
+        // Add 'checked' class to the selected radio's label
+        document.querySelectorAll(`input[name="rating"][value="${selectedValue}"]`).forEach(radio => {
+            radio.checked = true;
+            if (radio.nextElementSibling) {
+                radio.nextElementSibling.classList.add('checked');
+            }
+        });
     }
     
     reloadWithRating(rating) {
