@@ -1,7 +1,7 @@
 class AdminPanel {
     constructor() {
-        this.tagValidationCache = new Map();
         this.aliasCache = new Set();
+        this.tagInputHelper = new TagInputHelper();
         this.validationTimeout = null;
         this.init();
     }
@@ -51,87 +51,6 @@ class AdminPanel {
     }
     
     // Helper methods for tag validation
-    getPlainTextFromDiv(div) {
-        return div.textContent || '';
-    }
-    
-    getCursorPosition(element) {
-        const selection = window.getSelection();
-        if (selection.rangeCount === 0) return 0;
-        
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(element);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        
-        return preCaretRange.toString().length;
-    }
-    
-    setCursorPosition(element, offset) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        
-        let currentOffset = 0;
-        let found = false;
-        
-        const traverseNodes = (node) => {
-            if (found) return;
-            
-            if (node.nodeType === Node.TEXT_NODE) {
-                const nodeLength = node.textContent.length;
-                if (currentOffset + nodeLength >= offset) {
-                    range.setStart(node, offset - currentOffset);
-                    range.collapse(true);
-                    found = true;
-                    return;
-                }
-                currentOffset += nodeLength;
-            } else {
-                for (let child of node.childNodes) {
-                    traverseNodes(child);
-                    if (found) return;
-                }
-            }
-        };
-        
-        try {
-            traverseNodes(element);
-            if (!found && element.lastChild) {
-                range.setStartAfter(element.lastChild);
-                range.collapse(true);
-            }
-            selection.removeAllRanges();
-            selection.addRange(range);
-        } catch (e) {
-            console.error('Error setting cursor:', e);
-        }
-    }
-    
-    async checkTagOrAliasExists(tagName) {
-        if (!tagName || !tagName.trim()) return false;
-        const normalized = tagName.toLowerCase().trim();
-        
-        try {
-            // Check if it's a tag
-            const tagRes = await fetch(`/api/tags/${encodeURIComponent(normalized)}`);
-            if (tagRes.ok) {
-                return true; // Tag exists
-            }
-            
-            // Check if it's an alias
-            const aliasRes = await fetch(`/api/admin/check-alias?name=${encodeURIComponent(normalized)}`);
-            if (aliasRes.ok) {
-                const data = await aliasRes.json();
-                return data.exists; // Alias exists
-            }
-            
-            return false;
-        } catch (e) {
-            console.error('Error checking tag/alias:', e);
-            return false;
-        }
-    }
-    
     parseTagWithCategory(tagString) {
         const prefixes = ['artist:', 'copyright:', 'character:', 'meta:'];
         const normalized = tagString.trim().toLowerCase();
@@ -152,85 +71,27 @@ class AdminPanel {
         const tagsInput = document.getElementById('new-tags-input');
         if (!tagsInput) return;
         
-        const text = this.getPlainTextFromDiv(tagsInput);
-        const cursorPos = this.getCursorPosition(tagsInput);
-        
-        // Split by whitespace
-        const parts = text.split(/(\s+)/);
-        const tags = [];
-        
-        // Check each non-whitespace part
-        for (let part of parts) {
-            if (part.trim()) {
-                const { tagName } = this.parseTagWithCategory(part);
-                
-                if (!this.tagValidationCache.has(tagName)) {
-                    const exists = await this.checkTagOrAliasExists(tagName);
-                    this.tagValidationCache.set(tagName, exists);
-                }
-                
-                // Reverse logic: strike through if exists
-                tags.push({ text: part, shouldIgnore: this.tagValidationCache.get(tagName) });
-            } else {
-                tags.push({ text: part, isWhitespace: true });
-            }
-        }
-        
-        // Build styled HTML
-        let html = '';
-        for (let tag of tags) {
-            if (tag.isWhitespace) {
-                html += tag.text;
-            } else if (tag.shouldIgnore) {
-                html += `<span class="invalid-tag">${tag.text}</span>`;
-            } else {
-                html += tag.text;
-            }
-        }
-        
-        // Update content if changed
-        if (tagsInput.innerHTML !== html) {
-            tagsInput.innerHTML = html || '';
-            this.setCursorPosition(tagsInput, cursorPos);
-        }
+        await this.tagInputHelper.validateAndStyleTags(tagsInput, {
+            validationCache: this.tagInputHelper.tagValidationCache,
+            checkFunction: (tag) => {
+                const { tagName } = this.parseTagWithCategory(tag);
+                return this.tagInputHelper.checkTagOrAliasExists(tagName);
+            },
+            invertLogic: true
+        });
     }
     
     setupNewTagsInput() {
         const tagsInput = document.getElementById('new-tags-input');
         if (!tagsInput) return;
         
-        // Handle input events
-        tagsInput.addEventListener('input', () => {
-            if (this.validationTimeout) {
-                clearTimeout(this.validationTimeout);
-            }
-            this.validationTimeout = setTimeout(() => {
-                this.validateAndStyleNewTags();
-            }, 300);
-        });
-        
-        // Immediate validation on space
-        tagsInput.addEventListener('keyup', (e) => {
-            if (e.key === ' ') {
-                if (this.validationTimeout) {
-                    clearTimeout(this.validationTimeout);
-                }
-                this.validateAndStyleNewTags();
-            }
-        });
-        
-        // Prevent default Enter behavior
-        tagsInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-            }
-        });
-        
-        // Paste as plain text
-        tagsInput.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
+        this.tagInputHelper.setupTagInput(tagsInput, 'new-tags-input', {
+            onValidate: () => {},
+            checkFunction: (tag) => {
+                const { tagName } = this.parseTagWithCategory(tag);
+                return this.tagInputHelper.checkTagOrAliasExists(tagName);
+            },
+            invertLogic: true
         });
     }
     
@@ -239,7 +100,7 @@ class AdminPanel {
         const statusDiv = document.getElementById('add-tags-status');
         const resultDiv = document.getElementById('add-tags-result');
         
-        const text = this.getPlainTextFromDiv(tagsInput);
+        const text = this.tagInputHelper.getPlainTextFromDiv(tagsInput);
         const tagStrings = text.split(/\s+/).filter(t => t.length > 0);
         
         if (tagStrings.length === 0) {
@@ -253,9 +114,7 @@ class AdminPanel {
         
         for (const tagString of tagStrings) {
             const { tagName, category } = this.parseTagWithCategory(tagString);
-            
-            // Check if should be ignored
-            const shouldIgnore = this.tagValidationCache.get(tagName);
+            const shouldIgnore = this.tagInputHelper.tagValidationCache.get(tagName);
             
             if (shouldIgnore) {
                 ignoredTags.push(tagString);
@@ -316,7 +175,7 @@ class AdminPanel {
             
             // Clear input and cache
             tagsInput.textContent = '';
-            this.tagValidationCache.clear();
+            this.tagInputHelper.clearCache();
             
             // Reload stats
             await this.loadTagStats();

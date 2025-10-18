@@ -2,7 +2,7 @@ class MediaViewer extends MediaViewerBase {
     constructor(mediaId) {
         super();
         this.mediaId = mediaId;
-        this.tagValidationCache = new Map();
+        this.tagInputHelper = new TagInputHelper();
         this.validationTimeout = null;
         this.tooltipHelper = null;
         
@@ -109,28 +109,10 @@ class MediaViewer extends MediaViewerBase {
         const tagsInput = this.el('tags-input');
         if (!tagsInput) return;
         
-        tagsInput.addEventListener('input', () => {
-            clearTimeout(this.validationTimeout);
-            this.validationTimeout = setTimeout(() => this.validateAndStyleTags(), 300);
-        });
-        
-        tagsInput.addEventListener('keyup', (e) => {
-            if (e.key === ' ') {
-                clearTimeout(this.validationTimeout);
-                this.validateAndStyleTags();
-            }
-        });
-        
-        tagsInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-            }
-        });
-        
-        tagsInput.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
+        this.tagInputHelper.setupTagInput(tagsInput, 'media-tags-input', {
+            onValidate: () => {},
+            validationCache: this.tagInputHelper.tagValidationCache,
+            checkFunction: (tag) => this.tagInputHelper.checkTagExists(tag)
         });
     }
 
@@ -138,53 +120,10 @@ class MediaViewer extends MediaViewerBase {
         const tagsInput = this.el('tags-input');
         if (!tagsInput) return;
         
-        const text = this.getPlainTextFromDiv(tagsInput);
-        const cursorPos = this.getCursorPosition(tagsInput);
-        
-        const parts = text.split(/(\s+)/);
-        const tags = [];
-        
-        for (let part of parts) {
-            if (part.trim()) {
-                const normalized = part.trim().toLowerCase();
-                if (!this.tagValidationCache.has(normalized)) {
-                    const exists = await this.checkTagExists(normalized);
-                    this.tagValidationCache.set(normalized, exists);
-                }
-                tags.push({ text: part, isValid: this.tagValidationCache.get(normalized) });
-            } else {
-                tags.push({ text: part, isWhitespace: true });
-            }
-        }
-        
-        let html = '';
-        for (let tag of tags) {
-            if (tag.isWhitespace) {
-                html += tag.text;
-            } else if (tag.isValid === false) {
-                html += `<span class="invalid-tag">${tag.text}</span>`;
-            } else {
-                html += tag.text;
-            }
-        }
-        
-        if (tagsInput.innerHTML !== html) {
-            tagsInput.innerHTML = html || '';
-            this.setCursorPosition(tagsInput, cursorPos);
-        }
-    }
-
-    async checkTagExists(tagName) {
-        if (!tagName || !tagName.trim()) return true;
-        const normalized = tagName.toLowerCase().trim();
-        
-        try {
-            const res = await fetch(`/api/tags/${encodeURIComponent(normalized)}`);
-            return res.ok;
-        } catch (e) {
-            console.error('Error checking tag:', e);
-            return false;
-        }
+        await this.tagInputHelper.validateAndStyleTags(tagsInput, {
+            validationCache: this.tagInputHelper.tagValidationCache,
+            checkFunction: (tag) => this.tagInputHelper.checkTagExists(tag)
+        });
     }
 
     async getTagOrAlias(tagName) {
@@ -347,17 +286,7 @@ class MediaViewer extends MediaViewerBase {
     // Admin action methods
     async saveTags() {
         const tagsInput = this.el('tags-input');
-        const text = this.getPlainTextFromDiv(tagsInput);
-        const allTags = text.split(/\s+/).filter(t => t.length > 0);
-        
-        const validTags = [];
-        for (const tag of allTags) {
-            const normalized = tag.toLowerCase().trim();
-            const isValid = this.tagValidationCache.get(normalized);
-            if (isValid !== false) {
-                validTags.push(tag);
-            }
-        }
+        const validTags = this.tagInputHelper.getValidTagsFromInput(tagsInput);
         
         try {
             await app.apiCall(`/api/media/${this.mediaId}`, { 
@@ -504,7 +433,7 @@ class MediaViewer extends MediaViewerBase {
             }
         
             const tagsInput = this.el('tags-input');
-            const currentText = this.getPlainTextFromDiv(tagsInput).trim();
+            const currentText = this.tagInputHelper.getPlainTextFromDiv(tagsInput).trim();
             const currentTags = currentText ? currentText.split(/\s+/) : [];
         
             const existingTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
@@ -575,6 +504,9 @@ class MediaViewer extends MediaViewerBase {
     destroy() {
         if (this.tooltipHelper) {
             this.tooltipHelper.destroy();
+        }
+        if (this.tagInputHelper) {
+            this.tagInputHelper.destroy();
         }
     }
 }

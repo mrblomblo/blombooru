@@ -256,62 +256,6 @@ class MediaViewerBase {
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${String(secs).padStart(2, '0')}`;
     }
-
-    getPlainTextFromDiv(div) {
-        return div.textContent || '';
-    }
-
-    getCursorPosition(element) {
-        const selection = window.getSelection();
-        if (selection.rangeCount === 0) return 0;
-        
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(element);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        
-        return preCaretRange.toString().length;
-    }
-
-    setCursorPosition(element, offset) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        
-        let currentOffset = 0;
-        let found = false;
-        
-        function traverseNodes(node) {
-            if (found) return;
-            
-            if (node.nodeType === Node.TEXT_NODE) {
-                const nodeLength = node.textContent.length;
-                if (currentOffset + nodeLength >= offset) {
-                    range.setStart(node, offset - currentOffset);
-                    range.collapse(true);
-                    found = true;
-                    return;
-                }
-                currentOffset += nodeLength;
-            } else {
-                for (let child of node.childNodes) {
-                    traverseNodes(child);
-                    if (found) return;
-                }
-            }
-        }
-        
-        try {
-            traverseNodes(element);
-            if (!found && element.lastChild) {
-                range.setStartAfter(element.lastChild);
-                range.collapse(true);
-            }
-            selection.removeAllRanges();
-            selection.addRange(range);
-        } catch (e) {
-            console.error('Error setting cursor:', e);
-        }
-    }
 }
 
 // Global function for expand/collapse functionality

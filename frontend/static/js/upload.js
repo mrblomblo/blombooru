@@ -8,8 +8,7 @@ class Uploader {
         this.baseTags = [];
         this.baseSource = '';
         this.fileHashes = new Set();
-        this.tagValidationCache = new Map();
-        this.validationTimeouts = new Map();
+        this.tagInputHelper = new TagInputHelper();
         
         if (this.uploadArea) {
             this.init();
@@ -22,174 +21,6 @@ class Uploader {
         this.setupBaseControls();
         this.createPreviewGrid();
         this.createSubmitControls();
-    }
-    
-    async checkTagExists(tagName) {
-        if (!tagName || !tagName.trim()) return true;
-        const normalized = tagName.toLowerCase().trim();
-        
-        try {
-            const res = await fetch(`/api/tags/${encodeURIComponent(normalized)}`);
-            return res.ok;
-        } catch (e) {
-            console.error('Error checking tag:', e);
-            return false;
-        }
-    }
-    
-    getPlainTextFromDiv(div) {
-        return div.textContent || '';
-    }
-    
-    getCursorPosition(element) {
-        const selection = window.getSelection();
-        if (selection.rangeCount === 0) return 0;
-        
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(element);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        
-        return preCaretRange.toString().length;
-    }
-    
-    setCursorPosition(element, offset) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        
-        let currentOffset = 0;
-        let found = false;
-        
-        function traverseNodes(node) {
-            if (found) return;
-            
-            if (node.nodeType === Node.TEXT_NODE) {
-                const nodeLength = node.textContent.length;
-                if (currentOffset + nodeLength >= offset) {
-                    range.setStart(node, offset - currentOffset);
-                    range.collapse(true);
-                    found = true;
-                    return;
-                }
-                currentOffset += nodeLength;
-            } else {
-                for (let child of node.childNodes) {
-                    traverseNodes(child);
-                    if (found) return;
-                }
-            }
-        }
-        
-        try {
-            traverseNodes(element);
-            if (!found && element.lastChild) {
-                range.setStartAfter(element.lastChild);
-                range.collapse(true);
-            }
-            selection.removeAllRanges();
-            selection.addRange(range);
-        } catch (e) {
-            console.error('Error setting cursor:', e);
-        }
-    }
-    
-    async validateAndStyleTags(inputElement) {
-        if (!inputElement) return;
-        
-        const text = this.getPlainTextFromDiv(inputElement);
-        const cursorPos = this.getCursorPosition(inputElement);
-        
-        // Split by whitespace
-        const parts = text.split(/(\s+)/);
-        const tags = [];
-        
-        // Check each non-whitespace part
-        for (let part of parts) {
-            if (part.trim()) {
-                const normalized = part.trim().toLowerCase();
-                if (!this.tagValidationCache.has(normalized)) {
-                    const exists = await this.checkTagExists(normalized);
-                    this.tagValidationCache.set(normalized, exists);
-                }
-                tags.push({ text: part, isValid: this.tagValidationCache.get(normalized) });
-            } else {
-                tags.push({ text: part, isWhitespace: true });
-            }
-        }
-        
-        // Build styled HTML
-        let html = '';
-        for (let tag of tags) {
-            if (tag.isWhitespace) {
-                html += tag.text;
-            } else if (tag.isValid === false) {
-                html += `<span class="invalid-tag">${tag.text}</span>`;
-            } else {
-                html += tag.text;
-            }
-        }
-        
-        // Update content if changed
-        if (inputElement.innerHTML !== html) {
-            inputElement.innerHTML = html || '';
-            this.setCursorPosition(inputElement, cursorPos);
-        }
-    }
-    
-    setupTagValidation(inputElement, inputId) {
-        if (!inputElement) return;
-        
-        // Handle input events
-        inputElement.addEventListener('input', () => {
-            if (this.validationTimeouts.has(inputId)) {
-                clearTimeout(this.validationTimeouts.get(inputId));
-            }
-            const timeout = setTimeout(() => {
-                this.validateAndStyleTags(inputElement);
-            }, 300);
-            this.validationTimeouts.set(inputId, timeout);
-        });
-        
-        // Immediate validation on space
-        inputElement.addEventListener('keyup', (e) => {
-            if (e.key === ' ') {
-                if (this.validationTimeouts.has(inputId)) {
-                    clearTimeout(this.validationTimeouts.get(inputId));
-                }
-                this.validateAndStyleTags(inputElement);
-            }
-        });
-        
-        // Prevent default Enter behavior (creating new lines)
-        inputElement.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-            }
-        });
-        
-        // Paste as plain text
-        inputElement.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
-        });
-    }
-    
-    getValidTagsFromInput(inputElement) {
-        const text = this.getPlainTextFromDiv(inputElement);
-        const allTags = text.split(/\s+/).filter(t => t.length > 0);
-        
-        // Filter out invalid tags
-        const validTags = [];
-        for (const tag of allTags) {
-            const normalized = tag.toLowerCase().trim();
-            const isValid = this.tagValidationCache.get(normalized);
-            if (isValid !== false) { // Include if valid or unknown
-                validTags.push(tag);
-            }
-        }
-        
-        return validTags;
     }
     
     setupDragAndDrop() {
@@ -268,12 +99,17 @@ class Uploader {
         
         const baseTagsInput = document.getElementById('base-tags');
         baseTagsInput.addEventListener('input', (e) => {
-            this.baseTags = this.getValidTagsFromInput(e.target);
+            this.baseTags = this.tagInputHelper.getValidTagsFromInput(e.target);
             this.updateAllMediaTags();
         });
         
         // Setup tag validation
-        this.setupTagValidation(baseTagsInput, 'base-tags');
+        this.tagInputHelper.setupTagInput(baseTagsInput, 'base-tags', {
+            onValidate: () => {
+                this.baseTags = this.tagInputHelper.getValidTagsFromInput(baseTagsInput);
+                this.updateAllMediaTags();
+            }
+        });
         
         // Initialize tag autocomplete if available
         if (typeof TagAutocomplete !== 'undefined') {
@@ -281,8 +117,8 @@ class Uploader {
                 multipleValues: true,
                 onSelect: () => {
                     setTimeout(() => {
-                        this.validateAndStyleTags(baseTagsInput);
-                        this.baseTags = this.getValidTagsFromInput(baseTagsInput);
+                        this.tagInputHelper.validateAndStyleTags(baseTagsInput);
+                        this.baseTags = this.tagInputHelper.getValidTagsFromInput(baseTagsInput);
                         this.updateAllMediaTags();
                     }, 100);
                 }
@@ -352,14 +188,23 @@ class Uploader {
         individualTagsInput.addEventListener('input', (e) => {
             if (this.selectedFileIndex !== null) {
                 this.uploadedFiles[this.selectedFileIndex].additionalTags = 
-                    this.getValidTagsFromInput(e.target);
+                    this.tagInputHelper.getValidTagsFromInput(e.target);
                 this.updateFinalTagsPreview();
                 this.updateThumbnailIndicator(this.selectedFileIndex);
             }
         });
         
         // Setup tag validation for individual tags
-        this.setupTagValidation(individualTagsInput, 'individual-tags');
+        this.tagInputHelper.setupTagInput(individualTagsInput, 'individual-tags', {
+            onValidate: () => {
+                if (this.selectedFileIndex !== null) {
+                    this.uploadedFiles[this.selectedFileIndex].additionalTags = 
+                        this.tagInputHelper.getValidTagsFromInput(individualTagsInput);
+                    this.updateFinalTagsPreview();
+                    this.updateThumbnailIndicator(this.selectedFileIndex);
+                }
+            }
+        });
         
         document.getElementById('remove-media-btn').addEventListener('click', () => {
             if (this.selectedFileIndex !== null) {
@@ -373,10 +218,10 @@ class Uploader {
                 multipleValues: true,
                 onSelect: () => {
                     setTimeout(() => {
-                        this.validateAndStyleTags(individualTagsInput);
+                        this.tagInputHelper.validateAndStyleTags(individualTagsInput);
                         if (this.selectedFileIndex !== null) {
                             this.uploadedFiles[this.selectedFileIndex].additionalTags = 
-                                this.getValidTagsFromInput(individualTagsInput);
+                                this.tagInputHelper.getValidTagsFromInput(individualTagsInput);
                             this.updateFinalTagsPreview();
                             this.updateThumbnailIndicator(this.selectedFileIndex);
                         }
@@ -602,7 +447,7 @@ class Uploader {
         individualTagsInput.textContent = fileData.additionalTags.join(' ');
         
         // Validate existing tags
-        setTimeout(() => this.validateAndStyleTags(individualTagsInput), 100);
+        setTimeout(() => this.tagInputHelper.validateAndStyleTags(individualTagsInput), 100);
         
         this.updateFinalTagsPreview();
     }
@@ -806,6 +651,10 @@ class Uploader {
         document.getElementById('base-controls').style.display = 'none';
         document.getElementById('preview-grid').style.display = 'none';
         document.getElementById('submit-controls').style.display = 'none';
+
+        // Clear helper cache
+        this.tagInputHelper.clearCache();
+        this.tagInputHelper.clearTimeouts();
         
         // Reset file input
         this.fileInput.value = '';
