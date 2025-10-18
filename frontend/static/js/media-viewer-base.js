@@ -228,14 +228,8 @@ class MediaViewerBase {
                 const id = 'expand-' + Math.random().toString(36).substr(2, 9);
                 return `
                     <div class="expandable-text" id="${id}-container" style="cursor: pointer; user-select: text;">
-                        <span class="text-truncated" id="${id}-truncated">
-                            ${escaped.substring(0, 100)}...<br>
-                            <span class="expand-indicator" style="user-select: none;">[click to expand]</span>
-                        </span>
-                        <span class="text-full" id="${id}-full" style="display: none;">
-                            ${escaped}<br>
-                            <span class="expand-indicator" style="user-select: none;">[click to collapse]</span>
-                        </span>
+                        <span class="text-truncated" id="${id}-truncated">${escaped.substring(0, 100)}...<br><span class="expand-indicator" style="user-select: none;">[click to expand]</span></span>
+                        <span class="text-full" id="${id}-full" style="display: none;">${escaped}<br><span class="expand-indicator" style="user-select: none;">[click to collapse]</span></span>
                     </div>
                 `;
             }
