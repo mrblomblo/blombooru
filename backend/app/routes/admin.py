@@ -11,7 +11,7 @@ from ..auth import get_password_hash, create_access_token, get_current_admin_use
 from ..models import User, Tag, TagAlias
 from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
 from ..config import settings
-from ..utils.file_scanner import scan_for_new_media, find_untracked_media
+from ..utils.file_scanner import find_untracked_media
 from ..themes import theme_registry
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
