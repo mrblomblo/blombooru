@@ -111,13 +111,12 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/media.js"></script>
 <script src="/static/js/fullscreen-imageviewer.js"></script>
+<script src="/static/js/media.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const mediaId = "{{ media_id }}";
         new MediaViewer(mediaId);
-        new FullscreenImageViewer();
     });
 </script>
 {% endblock %}
