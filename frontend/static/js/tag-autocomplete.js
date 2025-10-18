@@ -12,6 +12,15 @@ class TagAutocomplete {
         this.setupAutocomplete();
     }
     
+    escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    
     setupAutocomplete() {
         // Create suggestions container
         this.suggestionsEl = document.createElement('div');
@@ -150,24 +159,24 @@ class TagAutocomplete {
         if (suggestions.length === 1 && suggestions[0].is_alias) {
             const tag = suggestions[0];
             this.suggestionsEl.innerHTML = `
-                <div class="tag-suggestion tag-alias-info" data-index="0" data-name="${tag.name}">
+                <div class="tag-suggestion tag-alias-info" data-index="0" data-name="${this.escapeHtml(tag.name)}">
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="text-secondary italic">${tag.alias_name}</span>
+                        <span class="text-secondary italic">${this.escapeHtml(tag.alias_name)}</span>
                         <span class="text-secondary">&#8594;</span>
-                        <span class="tag-name">${tag.name}</span>
+                        <span class="tag-name">${this.escapeHtml(tag.name)}</span>
                     </span>
-                    <span class="tag-count">${tag.count}</span>
+                    <span class="tag-count">${this.escapeHtml(String(tag.count))}</span>
                 </div>
             `;
         } else {
             // Normal suggestions
             this.suggestionsEl.innerHTML = suggestions.map((tag, index) => `
-                <div class="tag-suggestion" data-index="${index}" data-name="${tag.name}">
+                <div class="tag-suggestion" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
                     <span>
-                        <span class="tag-category ${tag.category}">${tag.category}</span>
-                        <span class="tag-name">${tag.name}</span>
+                        <span class="tag-category ${this.escapeHtml(tag.category)}">${this.escapeHtml(tag.category)}</span>
+                        <span class="tag-name">${this.escapeHtml(tag.name)}</span>
                     </span>
-                    <span class="tag-count">${tag.count}</span>
+                    <span class="tag-count">${this.escapeHtml(String(tag.count))}</span>
                 </div>
             `).join('');
         }
