@@ -182,6 +182,44 @@
                     <button id="clear-tags-btn" class="px-4 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete All Tags</button>
                 </div>
             </div>
+
+            <!-- Admin Account Management Section -->
+            <div class="surface p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">Admin Account Management</h2>
+               
+                <div class="mb-4">
+                    <form id="change-admin-password-form">
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold mb-2">New Password</label>
+                            <input type="password" id="new-admin-password" required minlength="6" maxlength="50" class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                            <small class="text-secondary text-xs">6-50 characters</small>
+                        </div>
+
+                        <button type="submit" class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Change Password</button>
+                    </form>
+
+                    <div id="change-password-status" style="display: none;" class="mt-3">
+                        <div class="text-xs">
+                            <div id="change-password-result"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="change-admin-username-form" class="mt-6">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2">New Username</label>
+                        <input type="text" id="new-admin-username" required class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                    </div>
+
+                    <button type="submit" class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Change Username</button>
+                </form>
+
+                <div id="change-username-status" style="display: none;" class="mt-3">
+                    <div class="text-xs">
+                        <div id="change-username-result"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
