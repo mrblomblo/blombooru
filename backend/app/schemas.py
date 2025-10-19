@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -80,6 +80,12 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+class ChangePasswordData(BaseModel):
+    new_password: str = Field(..., min_length=6, max_length=50)
+
+class ChangeUsernameData(BaseModel):
+    new_username: str = Field(..., min_length=1)
 
 # Settings Schemas
 class DatabaseSettings(BaseModel):
