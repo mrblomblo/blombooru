@@ -6,13 +6,79 @@ class AdminPanel {
         this.init();
     }
     
-    init() {
+    async init() {
+        await this.checkAuth();
+        await this.hideAdminPanelButton();
+
+        this.setupTagAutocomplete();
         this.setupEventListeners();
         this.loadSettings();
         this.setupTagManagement();
         this.loadTagStats();
         this.loadMediaStats();
         this.loadThemes();
+    }
+    
+    setupTagAutocomplete() {
+        const tagsSearch = document.getElementById('tag-search-input');
+        if (tagsSearch && typeof TagAutocomplete !== 'undefined') {
+            new TagAutocomplete(tagsSearch, {
+                multipleValues: true
+            });
+        }
+    }
+    
+    async checkAuth() {
+        try {
+            const response = await fetch('/api/admin/settings');
+            if (response.ok) {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('settings-section').style.display = 'block';
+                
+                app.updateAuthStatus(true);
+                await this.enableAdminMode();
+                
+                return true;
+            } else {
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('settings-section').style.display = 'none';
+                app.updateAuthStatus(false);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error checking auth:', error);
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('settings-section').style.display = 'none';
+            app.updateAuthStatus(false);
+            return false;
+        }
+    }
+    
+    async enableAdminMode() {
+        try {
+            const response = await fetch('/api/admin/toggle-admin-mode?enabled=true', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                app.isAdminMode = true;
+                app.updateUI();
+            }
+        } catch (error) {
+            console.error('Error enabling admin mode:', error);
+        }
+    }
+
+    async hideAdminPanelButton() {
+        const isAuthenticated = await this.checkAuth();
+        const adminModeToggle = document.getElementById('admin-mode-toggle');
+        if (adminModeToggle && adminModeToggle.parentElement) {
+            if (isAuthenticated) {
+                adminModeToggle.parentElement.style.display = 'none';
+            } else {
+                adminModeToggle.parentElement.style.display = 'block';
+            }
+        }
     }
     
     setupEventListeners() {
@@ -47,6 +113,89 @@ class AdminPanel {
                 e.preventDefault();
                 this.addNewTags();
             });
+        }
+        
+        // Change password form
+        const changePasswordForm = document.getElementById('change-admin-password-form');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.changePassword();
+            });
+        }
+        
+        // Change username form
+        const changeUsernameForm = document.getElementById('change-admin-username-form');
+        if (changeUsernameForm) {
+            changeUsernameForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.changeUsername();
+            });
+        }
+    }
+    
+    async changePassword() {
+        const newPassword = document.getElementById('new-admin-password').value;
+        const statusDiv = document.getElementById('change-password-status');
+        const resultDiv = document.getElementById('change-password-result');
+        
+        try {
+            const result = await app.apiCall('/api/admin/update-admin-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_password: newPassword })
+            });
+            
+            statusDiv.style.display = 'block';
+            resultDiv.className = 'text-success';
+            resultDiv.textContent = '✓ ' + result.message;
+            
+            // Clear the password field
+            document.getElementById('new-admin-password').value = '';
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+            
+        } catch (error) {
+            statusDiv.style.display = 'block';
+            resultDiv.className = 'text-danger';
+            resultDiv.textContent = '✗ ' + error.message;
+        }
+    }
+    
+    async changeUsername() {
+        const newUsername = document.getElementById('new-admin-username').value;
+        const statusDiv = document.getElementById('change-username-status');
+        const resultDiv = document.getElementById('change-username-result');
+        
+        try {
+            const result = await app.apiCall('/api/admin/update-admin-username', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_username: newUsername })
+            });
+            
+            statusDiv.style.display = 'block';
+            resultDiv.className = 'text-success';
+            resultDiv.textContent = '✓ ' + result.message;
+            
+            // Update displayed username if you show it anywhere
+            app.showNotification('Username updated successfully. You are now logged in as: ' + result.new_username, 'success');
+            
+            // Clear the username field
+            document.getElementById('new-admin-username').value = '';
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+            
+        } catch (error) {
+            statusDiv.style.display = 'block';
+            resultDiv.className = 'text-danger';
+            resultDiv.textContent = '✗ ' + error.message;
         }
     }
     
