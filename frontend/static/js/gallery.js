@@ -461,9 +461,9 @@ class Gallery {
         const itemCount = this.selectedItems.size;
         
         const modal = new ModalHelper({
-            id: 'bulk-delete-modal',
+            id: `bulk-delete-modal-${itemCount > 1 ? 'multi-item' : 'single-item'}`,
             type: 'danger',
-            title: 'Delete Multiple Items',
+            title: `Delete ${itemCount > 1 ? 'Multiple' : ''} Item${itemCount > 1 ? 's' : ''}`,
             message: `Are you sure you want to delete ${itemCount} item${itemCount > 1 ? 's' : ''}? This action cannot be undone.`,
             confirmText: 'Yes, Delete',
             cancelText: 'Cancel',
