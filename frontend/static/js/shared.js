@@ -72,6 +72,7 @@ class SharedViewer extends MediaViewerBase {
 
     renderSharedMedia(media) {
         const container = this.el('shared-content');
+        const showAIMetadata = media.share_ai_metadata === true;
 
         container.innerHTML = `
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -92,10 +93,12 @@ class SharedViewer extends MediaViewerBase {
                         <div id="tags-container"></div>
                     </div>
 
-                    <div id="ai-metadata-section" style="display: none;" class="surface p-3 border mb-4">
+                    ${showAIMetadata ? `
+                    <div id="ai-metadata-section" class="surface p-3 border mb-4">
                         <h3 class="text-sm font-bold mb-3 pb-2 border-b">AI Generation Data</h3>
                         <div id="ai-metadata-content" class="text-xs"></div>
                     </div>
+                    ` : ''}
 
                     <div class="surface p-3 border">
                         <h3 class="text-sm font-bold mb-3 pb-2 border-b">Actions</h3>
@@ -113,7 +116,11 @@ class SharedViewer extends MediaViewerBase {
         // Render the data into the containers
         this.renderInfo(media, { isShared: true });
         this.renderTags(media, { clickable: false });
-        this.renderAIMetadata(media, { showControls: false });
+        
+        // Only render AI metadata if sharing is enabled
+        if (showAIMetadata) {
+            this.renderAIMetadata(media, { showControls: false, isShared: true });
+        }
         
         // Add click listener for fullscreen (only for images/GIFs)
         if (media.file_type !== 'video') {
