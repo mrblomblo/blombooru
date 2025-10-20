@@ -147,7 +147,7 @@ async def get_media_metadata(
     
     metadata = {}
     
-    try:        
+    try:
         with Image.open(file_path) as img:
             # Get PNG text chunks (ComfyUI, A1111, SwarmUI often use these)
             if hasattr(img, 'info') and img.info:
@@ -160,6 +160,16 @@ async def get_media_metadata(
                         except (json.JSONDecodeError, ValueError):
                             # Store as string if not valid JSON
                             metadata[key] = value
+                    elif isinstance(value, bytes):
+                        # Handle byte strings
+                        try:
+                            decoded = value.decode('utf-8', errors='ignore')
+                            try:
+                                metadata[key] = json.loads(decoded)
+                            except (json.JSONDecodeError, ValueError):
+                                metadata[key] = decoded
+                        except:
+                            pass
                     else:
                         metadata[key] = value
             
@@ -174,11 +184,13 @@ async def get_media_metadata(
                         if isinstance(user_comment, bytes):
                             try:
                                 user_comment = user_comment.decode('utf-8', errors='ignore')
+                                # Remove any null bytes or special characters
+                                user_comment = user_comment.replace('\x00', '').strip()
                             except:
                                 pass
                         
                         # Try to parse as JSON
-                        if isinstance(user_comment, str):
+                        if isinstance(user_comment, str) and user_comment:
                             try:
                                 metadata['parameters'] = json.loads(user_comment)
                             except (json.JSONDecodeError, ValueError):
@@ -187,7 +199,13 @@ async def get_media_metadata(
                     # ImageDescription tag (0x010E) - sometimes used for metadata
                     if 0x010E in exif:
                         description = exif[0x010E]
-                        if isinstance(description, str):
+                        if isinstance(description, bytes):
+                            try:
+                                description = description.decode('utf-8', errors='ignore').replace('\x00', '').strip()
+                            except:
+                                pass
+                        
+                        if isinstance(description, str) and description:
                             try:
                                 parsed = json.loads(description)
                                 # Merge with metadata
@@ -197,6 +215,44 @@ async def get_media_metadata(
                                     metadata['description'] = parsed
                             except (json.JSONDecodeError, ValueError):
                                 metadata['description'] = description
+                    
+                    # XPComment tag (0x9C9C) - Windows comment field
+                    if 0x9C9C in exif:
+                        xp_comment = exif[0x9C9C]
+                        if isinstance(xp_comment, bytes):
+                            try:
+                                # XPComment is UTF-16LE encoded
+                                decoded = xp_comment.decode('utf-16le', errors='ignore').replace('\x00', '').strip()
+                                if decoded:
+                                    try:
+                                        metadata['parameters'] = json.loads(decoded)
+                                    except (json.JSONDecodeError, ValueError):
+                                        metadata['parameters'] = decoded
+                            except:
+                                pass
+                    
+                    # XPKeywords tag (0x9C9E)
+                    if 0x9C9E in exif:
+                        xp_keywords = exif[0x9C9E]
+                        if isinstance(xp_keywords, bytes):
+                            try:
+                                decoded = xp_keywords.decode('utf-16le', errors='ignore').replace('\x00', '').strip()
+                                if decoded:
+                                    try:
+                                        metadata['keywords'] = json.loads(decoded)
+                                    except (json.JSONDecodeError, ValueError):
+                                        metadata['keywords'] = decoded
+                            except:
+                                pass
+            
+            # For WebP specifically, try to get XMP data
+            if img.format == 'WEBP' and hasattr(img, 'getxmp'):
+                try:
+                    xmp_data = img.getxmp()
+                    if xmp_data:
+                        metadata['xmp'] = xmp_data
+                except:
+                    pass
             
             # Legacy EXIF method (for older PIL versions)
             if hasattr(img, '_getexif') and callable(img._getexif):
@@ -205,8 +261,8 @@ async def get_media_metadata(
                     if legacy_exif and 0x9286 in legacy_exif:
                         user_comment = legacy_exif[0x9286]
                         if isinstance(user_comment, bytes):
-                            user_comment = user_comment.decode('utf-8', errors='ignore')
-                        if isinstance(user_comment, str) and 'parameters' not in metadata:
+                            user_comment = user_comment.decode('utf-8', errors='ignore').replace('\x00', '').strip()
+                        if isinstance(user_comment, str) and user_comment and 'parameters' not in metadata:
                             try:
                                 metadata['parameters'] = json.loads(user_comment)
                             except (json.JSONDecodeError, ValueError):

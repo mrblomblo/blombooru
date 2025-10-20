@@ -100,6 +100,15 @@ async def get_shared_metadata(share_uuid: str, db: Session = Depends(get_db)):
                         except (json.JSONDecodeError, ValueError):
                             # Store as string if not valid JSON
                             metadata[key] = value
+                    elif isinstance(value, bytes):
+                        try:
+                            decoded = value.decode('utf-8', errors='ignore')
+                            try:
+                                metadata[key] = json.loads(decoded)
+                            except (json.JSONDecodeError, ValueError):
+                                metadata[key] = decoded
+                        except:
+                            pass
                     else:
                         metadata[key] = value
             
@@ -113,12 +122,12 @@ async def get_shared_metadata(share_uuid: str, db: Session = Depends(get_db)):
                         # Handle bytes
                         if isinstance(user_comment, bytes):
                             try:
-                                user_comment = user_comment.decode('utf-8', errors='ignore')
+                                user_comment = user_comment.decode('utf-8', errors='ignore').replace('\x00', '').strip()
                             except:
                                 pass
                         
                         # Try to parse as JSON
-                        if isinstance(user_comment, str):
+                        if isinstance(user_comment, str) and user_comment:
                             try:
                                 metadata['parameters'] = json.loads(user_comment)
                             except (json.JSONDecodeError, ValueError):
@@ -127,7 +136,13 @@ async def get_shared_metadata(share_uuid: str, db: Session = Depends(get_db)):
                     # ImageDescription tag (0x010E) - sometimes used for metadata
                     if 0x010E in exif:
                         description = exif[0x010E]
-                        if isinstance(description, str):
+                        if isinstance(description, bytes):
+                            try:
+                                description = description.decode('utf-8', errors='ignore').replace('\x00', '').strip()
+                            except:
+                                pass
+                        
+                        if isinstance(description, str) and description:
                             try:
                                 parsed = json.loads(description)
                                 # Merge with metadata
@@ -137,16 +152,39 @@ async def get_shared_metadata(share_uuid: str, db: Session = Depends(get_db)):
                                     metadata['description'] = parsed
                             except (json.JSONDecodeError, ValueError):
                                 metadata['description'] = description
+                    
+                    # XPComment tag
+                    if 0x9C9C in exif:
+                        xp_comment = exif[0x9C9C]
+                        if isinstance(xp_comment, bytes):
+                            try:
+                                decoded = xp_comment.decode('utf-16le', errors='ignore').replace('\x00', '').strip()
+                                if decoded:
+                                    try:
+                                        metadata['parameters'] = json.loads(decoded)
+                                    except (json.JSONDecodeError, ValueError):
+                                        metadata['parameters'] = decoded
+                            except:
+                                pass
             
-            # Legacy EXIF method (for older PIL versions)
+            # WebP XMP data
+            if img.format == 'WEBP' and hasattr(img, 'getxmp'):
+                try:
+                    xmp_data = img.getxmp()
+                    if xmp_data:
+                        metadata['xmp'] = xmp_data
+                except:
+                    pass
+            
+            # Legacy EXIF
             if hasattr(img, '_getexif') and callable(img._getexif):
                 try:
                     legacy_exif = img._getexif()
                     if legacy_exif and 0x9286 in legacy_exif:
                         user_comment = legacy_exif[0x9286]
                         if isinstance(user_comment, bytes):
-                            user_comment = user_comment.decode('utf-8', errors='ignore')
-                        if isinstance(user_comment, str) and 'parameters' not in metadata:
+                            user_comment = user_comment.decode('utf-8', errors='ignore').replace('\x00', '').strip()
+                        if isinstance(user_comment, str) and user_comment and 'parameters' not in metadata:
                             try:
                                 metadata['parameters'] = json.loads(user_comment)
                             except (json.JSONDecodeError, ValueError):
