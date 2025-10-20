@@ -150,7 +150,6 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
         traceback.print_exc()
         return {}
 
-
 def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from video files."""
     metadata = {}
@@ -175,7 +174,6 @@ def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
     
     return metadata
 
-
 def extract_media_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from any media file (image or video)."""
     # Determine file type
@@ -190,14 +188,12 @@ def extract_media_metadata(file_path: Path) -> Dict[str, Any]:
     # Unknown type, return empty metadata
     return {}
 
-
 def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found") -> FileResponse:
     """Serve a media file with error handling."""
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
     
     return FileResponse(file_path, media_type=mime_type)
-
 
 def sanitize_filename(filename: str, fallback: str = "file") -> str:
     """Sanitize filename to be safe for filesystem and web."""
@@ -221,18 +217,8 @@ def sanitize_filename(filename: str, fallback: str = "file") -> str:
     
     return f"{stem}{ext}"
 
-
 def get_unique_filename(directory: Path, filename: str) -> str:
-    """
-    Get a unique filename in the directory by appending a number if needed.
-    
-    Args:
-        directory: Directory to check for existing files
-        filename: Desired filename (will be sanitized)
-        
-    Returns:
-        Unique filename that doesn't exist in the directory
-    """
+    """Get a unique filename in the directory by appending a number if needed."""
     sanitized = sanitize_filename(filename)
     path = directory / sanitized
     
