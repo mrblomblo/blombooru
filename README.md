@@ -17,7 +17,7 @@ It is designed for individuals who want a powerful, simple to use, and modern so
 
 - **Highly Customizable Theming:** Tailor the look and feel using simple CSS variables. Drop new `.css` files into the `themes` folder, register the themes in `themes.py`, and restart.
 
-- **AI-Friendly:** You can easily view the accompanying AI metadata for *(almost)* any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags from the AI prompt.
+- **AI-Friendly:** You can easily view accompanying AI metadata for *(almost)* any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags to the tag editor from the AI prompt.
 
 - **Secure Media Sharing:** Generate unique, persistent links to share specific media. Shared items are presented in a stripped-down, secure view with optional sharing of AI metadata.
 
