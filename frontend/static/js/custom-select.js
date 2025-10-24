@@ -8,6 +8,7 @@ class CustomSelect {
         this.focusedIndex = -1;
         
         this.init();
+        this.initializeExistingOptions();
     }
     
     init() {
@@ -28,6 +29,22 @@ class CustomSelect {
         
         this.dropdown.addEventListener('wheel', (e) => {
             e.stopPropagation();
+        });
+    }
+    
+    initializeExistingOptions() {
+        const options = this.dropdown.querySelectorAll('.custom-select-option');
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                this.selectOption(option);
+            });
+            
+            if (option.classList.contains('selected') || option.dataset.value === this.selectedValue) {
+                option.classList.add('selected');
+                this.selectedValue = option.dataset.value;
+                this.element.dataset.value = option.dataset.value;
+                this.valueDisplay.textContent = option.textContent;
+            }
         });
     }
     
