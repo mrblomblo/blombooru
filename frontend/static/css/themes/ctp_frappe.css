@@ -1,0 +1,34 @@
+/* 
+  * Catppuccin Frappé color scheme by Catppuccin
+  * Copyright (c) 2021 Catppuccin
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/catppuccin/palette/blob/main/LICENSE
+  */
+
+:root {
+    --primary-color: #ef9f76;
+    --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+    --background: #232634;
+    --surface: #303446;
+    --surface-hover: #51576d;
+    --surface-light: #414559;
+    --surface-light-hover: #626880;
+    --text: #c6d0f5;
+    --text-secondary: #b5bfe2;
+    --text-tertiary: #838ba7;
+    --tag-text: #232634;
+    --primary-text: #232634;
+    --border: #414559;
+
+    --white: #c6d0f5;
+    --black: #232634;
+    --green: #a6d189;
+    --orange: #ef9f76;
+    --red: #e78284;
+    --blue: #8caaee;
+    
+    --tag-artist: #e78284;
+    --tag-character: #a6d189;
+    --tag-copyright: #ca9ee6;
+    --tag-general: #8caaee;
+    --tag-meta: #ef9f76;
+}

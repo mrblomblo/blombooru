@@ -1,0 +1,34 @@
+/* 
+  * Everforest Dark Hard color scheme by sainnhe
+  * Copyright (c) 2019 sainnhe
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/sainnhe/everforest/blob/master/LICENSE
+  */
+
+  :root {
+    --primary-color: #a7c080;
+    --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+    --background: #1e2326;
+    --surface: #272e33;
+    --surface-hover: #414b50;
+    --surface-light: #2e383c;
+    --surface-light-hover: #495156;
+    --text: #d3c6aa;
+    --text-secondary: #9da9a0;
+    --text-tertiary: #859289;
+    --tag-text: #1e2326;
+    --primary-text: #1e2326;
+    --border: #374145;
+
+    --white: #d3c6aa;
+    --black: #1e2326;
+    --green: #a7c080;
+    --orange: #e69875;
+    --red: #e67e80;
+    --blue: #7fbbb3;
+    
+    --tag-artist: #e67e80;
+    --tag-character: #a7c080;
+    --tag-copyright: #d699b6;
+    --tag-general: #7fbbb3;
+    --tag-meta: #dbbc7f;
+}

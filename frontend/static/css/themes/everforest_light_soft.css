@@ -1,0 +1,34 @@
+/* 
+  * Everforest Light Soft color scheme by sainnhe
+  * Copyright (c) 2019 sainnhe
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/sainnhe/everforest/blob/master/LICENSE
+  */
+
+:root {
+    --primary-color: #8da101;
+    --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+    --background: #f3ead3;
+    --surface: #eae4ca;
+    --surface-hover: #bec5b2;
+    --surface-light: #e5dfc5;
+    --surface-light-hover: #d8d3ba;
+    --text: #5c6a72;
+    --text-secondary: #708089;
+    --text-tertiary: #939f91;
+    --tag-text: #f3ead3;
+    --primary-text: #f3ead3;
+    --border: #ddd8be;
+
+    --white: #f3ead3;
+    --black: #5c6a72;
+    --green: #8da101;
+    --orange: #f57d26;
+    --red: #f85552;
+    --blue: #3a94c5;
+    
+    --tag-artist: #f85552;
+    --tag-character: #8da101;
+    --tag-copyright: #df69ba;
+    --tag-general: #3a94c5;
+    --tag-meta: #dfa000;
+}
