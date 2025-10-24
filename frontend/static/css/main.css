@@ -16,6 +16,15 @@
     --rating-explicit: var(--red);
 }
 
+::-moz-selection {
+    color: var(--primary-text);
+    background: var(--primary-color);
+}
+::selection {
+    color: var(--primary-text);
+    background: var(--primary-color);
+}
+
 input[type="radio"]:checked + span, span.checked {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
