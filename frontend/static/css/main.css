@@ -25,6 +25,14 @@
     background: var(--primary-color);
 }
 
+::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+::-ms-input-placeholder {
+  color: var(--text-tertiary);
+}
+
 input[type="radio"]:checked + span, span.checked {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
@@ -39,7 +47,7 @@ input[type="radio"]:checked + span:hover, span.checked:hover {
 #tags-input:empty:before,
 [contenteditable="true"]:empty:before {
     content: attr(data-placeholder);
-    color: var(--surface-light);
+    color: var(--text-tertiary);
 }
 
 #tags-input:focus:before,
