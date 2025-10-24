@@ -1,3 +1,21 @@
+:root {
+    --success: var(--green);
+    --success-hover: color-mix(in srgb, var(--success) 70%, var(--background));
+    --info: var(--blue);
+    --info-hover: color-mix(in srgb, var(--info) 70%, var(--background));
+    --warning: var(--orange);
+    --warning-hover: color-mix(in srgb, var(--warning) 70%, var(--background));
+    --danger: var(--red);
+    --danger-hover: color-mix(in srgb, var(--danger) 70%, var(--background));
+
+    --video-outline: var(--red);
+    --gif-outline: var(--green);
+
+    --rating-safe: var(--green);
+    --rating-questionable: var(--orange);
+    --rating-explicit: var(--red);
+}
+
 input[type="radio"]:checked + span, span.checked {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
