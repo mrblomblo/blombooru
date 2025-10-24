@@ -74,13 +74,21 @@
                     
                     <!-- Admin Actions -->
                     <div id="admin-actions" style="display: none;" class="space-y-2 pt-2 border-t">
-                        <label class="block text-xs font-bold mb-1">Rating</label>
-                        <select id="rating-select" class="w-full bg px-2 py-1 border text-xs mb-2 focus:outline-none focus:border-primary">
-                            <option value="safe">Safe</option>
-                            <option value="questionable">Questionable</option>
-                            <option value="explicit">Explicit</option>
-                        </select>
-                        
+                        <label class="block text-xs font-bold mb-1">Admin Actions</label>
+                        <div id="rating-select" class="custom-select mb-2" data-value="safe">
+                            <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
+                                <span class="custom-select-value text-secondary">Safe</span>
+                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
+                                    <path fill="currentColor" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </button>
+                            <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">Safe</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">Questionable</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">Explicit</div>
+                            </div>
+                        </div>
+
                         <button id="share-btn" class="w-full px-3 py-1 bg-primary transition-colors primary-text hover:bg-primary text-xs">Share</button>
                         <button id="delete-btn" class="w-full px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete</button>
                     </div>
@@ -115,6 +123,7 @@
 <script src="/static/js/tooltip-helper.js"></script>
 <script src="/static/js/modal-helper.js"></script>
 <script src="/static/js/tag-input-helper.js"></script>
+<script src="/static/js/custom-select.js"></script>
 <script src="/static/js/media-viewer-base.js"></script>
 <script src="/static/js/media.js"></script>
 <script>

@@ -5,6 +5,7 @@ class MediaViewer extends MediaViewerBase {
         this.tagInputHelper = new TagInputHelper();
         this.validationTimeout = null;
         this.tooltipHelper = null;
+        this.ratingSelect = null;
         
         this.init();
     }
@@ -81,6 +82,15 @@ class MediaViewer extends MediaViewerBase {
             // Set initial tags
             tagsInput.textContent = (this.currentMedia.tags || []).map(t => t.name).join(' ');
             setTimeout(() => this.validateAndStyleTags(), 100);
+        }
+        
+        // Initialize custom select for rating
+        const ratingSelectElement = this.el('rating-select');
+        if (ratingSelectElement) {
+            this.ratingSelect = new CustomSelect(ratingSelectElement);
+            if (this.currentMedia.rating) {
+                this.ratingSelect.setValue(this.currentMedia.rating);
+            }
         }
     }
 
@@ -254,9 +264,12 @@ class MediaViewer extends MediaViewerBase {
             await this.saveSource();
         });
 
-        this.el('rating-select')?.addEventListener('change', async (e) => {
-            await this.updateRating(e.target.value);
-        });
+        const ratingSelectElement = this.el('rating-select');
+        if (ratingSelectElement) {
+            ratingSelectElement.addEventListener('change', async (e) => {
+                await this.updateRating(e.detail.value);
+            });
+        }
 
         this.el('share-btn')?.addEventListener('click', async () => {
             await this.shareMedia();
