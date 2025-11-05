@@ -195,8 +195,16 @@ Your new theme will automatically appear in the theme-picker dropdown in the Adm
 - **Backend:** FastAPI (Python)
 - **Frontend:** Tailwind CSS (locally built), Vanilla JavaScript, and HTML
 - **Database:** PostgreSQL 17
-- **Media Storage:** Files are stored on the local filesystem, with paths referenced in the database. Original metadata is always preserved.
+- **Media Storage:** Files are stored on the local filesystem, with paths referenced in the database. Original metadata is always preserved, but can optionally be stripped on-the-fly in shared media.
 - **Supported Formats:** JPG, PNG, WEBP, GIF, MP4, and WEBM.
+
+## Disclaimer
+
+This is a self-hosted, single-user application. As the sole administrator, you are exclusively responsible for all content you upload, manage, and share using this software.
+
+Ensure your use complies with all applicable laws, especially regarding copyright and the privacy of any individuals depicted or identified in your media.
+
+The developers and contributors of this project assume **no liability** for any illegal, infringing, or inappropriate content hosted by any user. The software is provided "as is" without warranty. For the full disclaimer, please see our [Disclaimer of Liability](https://github.com/mrblomblo/blombooru/blob/main/DISCLAIMER.md).
 
 ## License
 
