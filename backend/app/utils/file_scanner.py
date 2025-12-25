@@ -76,6 +76,9 @@ def find_untracked_media(db: Session) -> dict:
     print(f"Tracked filenames: {len(tracked_filenames)}")
     
     for file_path in original_dir.rglob('*'):
+        if file_path.is_symlink():
+            continue
+            
         if not file_path.is_file() or not is_supported_file(file_path.name):
             continue
         

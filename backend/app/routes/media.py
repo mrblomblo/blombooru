@@ -461,6 +461,9 @@ async def extract_archive(
             
             # Process extracted files
             for extracted_file in temp_path.rglob('*'):
+                if extracted_file.is_symlink():
+                    continue
+                    
                 if extracted_file.is_file() and extracted_file != archive_path:
                     # Security: check total extracted size
                     file_size = extracted_file.stat().st_size
