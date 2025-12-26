@@ -128,7 +128,7 @@ class Blombooru {
 
         // Show/hide logout button
         if (logoutBtn) {
-            logoutBtn.style.display = this.isAuthenticated ? 'block' : 'none';
+            logoutBtn.style.display = this.isAuthenticated ? 'inline' : 'none';
         }
     }
 
