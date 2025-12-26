@@ -4,7 +4,6 @@ from sqlalchemy import desc, asc, func, text, or_, and_
 from typing import List, Optional
 from datetime import datetime
 import random
-
 from ..database import get_db
 from ..models import Album, Media, RatingEnum, blombooru_album_media, blombooru_album_hierarchy
 from ..schemas import AlbumCreate, AlbumUpdate, AlbumResponse, AlbumListResponse, MediaIds

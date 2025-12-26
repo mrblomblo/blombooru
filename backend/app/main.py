@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums
+from .routes import admin, media, tags, search, sharing, albums, ai_tagger
 from datetime import datetime
 
 app = FastAPI(title="Blombooru", version="1.19.2")
@@ -24,6 +24,7 @@ app.include_router(tags.router)
 app.include_router(search.router)
 app.include_router(sharing.router)
 app.include_router(albums.router)
+app.include_router(ai_tagger.router)
 
 @app.on_event("startup")
 async def startup_event():

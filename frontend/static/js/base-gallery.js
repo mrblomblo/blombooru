@@ -302,7 +302,6 @@ class BaseGallery {
 
     // ==================== Bulk Actions ====================
 
-
     setupBulkActions() {
         const selectAllBtn = document.getElementById('select-all-btn');
         const deselectAllBtn = document.getElementById('deselect-all-btn');
@@ -310,6 +309,7 @@ class BaseGallery {
         const bulkAlbumBtn = document.getElementById('bulk-album-btn');
         const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
         const bulkAITagsBtn = document.getElementById('bulk-ai-tags-btn');
+        const bulkWDTaggerBtn = document.getElementById('bulk-wd-tagger-btn');
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => this.selectAll());
@@ -329,10 +329,23 @@ class BaseGallery {
         if (bulkAITagsBtn) {
             bulkAITagsBtn.addEventListener('click', () => this.openBulkAITagsModal());
         }
+        if (bulkWDTaggerBtn) {
+            bulkWDTaggerBtn.addEventListener('click', () => this.openBulkWDTaggerModal());
+        }
 
-        // Initialize bulk AI tags modal if the class exists
+        // Initialize bulk AI tags modal
         if (typeof BulkAITagsModal !== 'undefined') {
             this.bulkAITagsModal = new BulkAITagsModal({
+                onSave: () => {
+                    this.clearSelection();
+                    this.loadContent();
+                }
+            });
+        }
+
+        // Initialize bulk WD tagger modal
+        if (typeof BulkWDTaggerModal !== 'undefined') {
+            this.bulkWDTaggerModal = new BulkWDTaggerModal({
                 onSave: () => {
                     this.clearSelection();
                     this.loadContent();
@@ -346,6 +359,14 @@ class BaseGallery {
 
         if (this.bulkAITagsModal) {
             this.bulkAITagsModal.show(this.selectedItems);
+        }
+    }
+
+    openBulkWDTaggerModal() {
+        if (this.selectedItems.size === 0) return;
+
+        if (this.bulkWDTaggerModal) {
+            this.bulkWDTaggerModal.show(this.selectedItems);
         }
     }
 

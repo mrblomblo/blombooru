@@ -114,6 +114,12 @@
             Bulk Append AI Tags
         </button>
         {% endif %}
+        {% if 'wd_tagger' in buttons %}
+        <button id="bulk-wd-tagger-btn"
+            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+            Bulk AI Predict Tags
+        </button>
+        {% endif %}
         {% if 'remove' in buttons %}
         <button id="bulk-remove-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
             Remove from Album

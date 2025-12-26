@@ -5,7 +5,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     {{ rating_filter('mobile') }}
-    {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album', 'ai_tags']) }}
+    {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album', 'ai_tags', 'wd_tagger']) }}
 
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Gallery Grid -->
@@ -38,6 +38,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 <script src="/static/js/album-picker.js"></script>
 <script src="/static/js/tag-input-helper.js"></script>
 <script src="/static/js/bulk-ai-tags-modal.js"></script>
+<script src="/static/js/bulk-wd-tagger-modal.js"></script>
 <script src="/static/js/base-gallery.js"></script>
 <script src="/static/js/gallery.js"></script>
 {% endblock %}
