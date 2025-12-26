@@ -103,11 +103,6 @@
             Deselect All
         </button>
         {% endif %}
-        {% if 'delete' in buttons %}
-        <button id="bulk-delete-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
-            Delete Selected
-        </button>
-        {% endif %}
         {% if 'album' in buttons %}
         <button id="bulk-album-btn" class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
             Add to Albums
@@ -116,6 +111,11 @@
         {% if 'remove' in buttons %}
         <button id="bulk-remove-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
             Remove from Album
+        </button>
+        {% endif %}
+        {% if 'delete' in buttons %}
+        <button id="bulk-delete-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
+            Delete Selected
         </button>
         {% endif %}
     </div>
