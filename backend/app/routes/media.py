@@ -17,6 +17,9 @@ from ..config import settings
 from ..utils.media_processor import process_media_file, calculate_file_hash
 from ..utils.thumbnail_generator import generate_thumbnail
 from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename
+from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count
+from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
+from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -77,9 +80,7 @@ async def get_media_list(
         sort_order = order if order else settings.get_default_order()
         
         sort_column = Media.uploaded_at
-        if sort_by == 'created_at':
-            sort_column = Media.created_at
-        elif sort_by == 'filename':
+        if sort_by == 'filename':
             sort_column = Media.filename
         elif sort_by == 'file_size':
             sort_column = Media.file_size
@@ -257,7 +258,6 @@ async def upload_media(
             duration=metadata['duration'],
             rating=rating,
             source=source if source else None,
-            created_at=metadata.get('created_at')
         )
         
         tag_ids = []
@@ -425,6 +425,44 @@ async def update_share_settings(
     return {
         "share_ai_metadata": media.share_ai_metadata
     }
+
+    return {
+        "share_ai_metadata": media.share_ai_metadata
+    }
+
+@router.get("/{media_id}/albums")
+async def get_media_albums(
+    media_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get all albums containing a specific media item"""
+    media = db.query(Media).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    
+    albums = db.query(Album).join(
+        blombooru_album_media,
+        Album.id == blombooru_album_media.c.album_id
+    ).filter(
+        blombooru_album_media.c.media_id == media_id
+    ).all()
+    
+    result = []
+    for album in albums:
+        thumbnails = get_random_thumbnails(album.id, db, count=4)
+        album_rating = get_album_rating(album.id, db)
+        media_count = get_media_count(album.id, db)
+        
+        result.append(AlbumListResponse(
+            id=album.id,
+            name=album.name,
+            last_modified=album.last_modified,
+            thumbnail_paths=thumbnails,
+            rating=album_rating,
+            media_count=media_count
+        ))
+    
+    return {"albums": result}
 
 @router.post("/extract-archive")
 async def extract_archive(

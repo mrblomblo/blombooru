@@ -5,14 +5,13 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     {{ rating_filter('mobile') }}
-    {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album']) }}
 
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
-        <!-- Gallery Grid -->
+        <!-- Albums Grid -->
         <div class="xl:col-span-4 lg:col-span-3">
             {{ page_navigation() }}
 
-            <div id="gallery-grid"
+            <div id="albums-grid"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
             </div>
 
@@ -23,7 +22,12 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
         {{ sidebar_start() }}
         {{ rating_filter('desktop') }}
         {{ sorting_options() }}
-        {{ popular_tags_section() }}
+
+        <h3 class="text-sm font-bold mb-2 pb-1 border-b">Popular Tags</h3>
+        <div id="popular-tags" class="text-xs">
+            <p class="text-secondary">View an album to see tags.</p>
+        </div>
+
         {{ sidebar_end() }}
     </div>
 </div>
@@ -35,7 +39,6 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 <script src="/static/js/tooltip-helper.js"></script>
 <script src="/static/js/modal-helper.js"></script>
 <script src="/static/js/custom-select.js"></script>
-<script src="/static/js/album-picker.js"></script>
 <script src="/static/js/base-gallery.js"></script>
-<script src="/static/js/gallery.js"></script>
+<script src="/static/js/albums.js"></script>
 {% endblock %}

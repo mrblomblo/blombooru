@@ -19,6 +19,31 @@ class Blombooru {
         if (savedRating) {
             this.setRatingFilter(savedRating);
         }
+
+        // Check albums visibility
+        this.checkAlbumsVisibility();
+    }
+
+    async checkAlbumsVisibility() {
+        const navItem = document.getElementById('nav-albums-item');
+        if (!navItem) return;
+
+        try {
+            // Only check if we're not already on an albums page (to avoid flickering if we are)
+            if (!window.location.pathname.startsWith('/album')) {
+                const response = await fetch('/api/albums?limit=1&root_only=true');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.total === 0) {
+                        navItem.style.display = 'none';
+                    } else {
+                        navItem.style.display = 'block';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error checking albums visibility:', error);
+        }
     }
 
     setupEventListeners() {

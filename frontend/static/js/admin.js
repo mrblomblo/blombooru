@@ -15,10 +15,19 @@ class AdminPanel {
         this.setupEventListeners();
         this.loadSettings();
         this.setupTagManagement();
+        this.setupAlbumManagement();
         this.loadTagStats();
         this.loadMediaStats();
+        this.loadAlbumStats();
         this.setupCustomSelects();
         this.loadThemes();
+    }
+
+    // Helper to escape HTML and prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     setupTagAutocomplete() {
@@ -853,6 +862,613 @@ class AdminPanel {
         } catch (error) {
             console.error('Error loading themes:', error);
         }
+    }
+
+    // Album Management Methods
+
+    setupAlbumManagement() {
+        // Create album form
+        const createAlbumForm = document.getElementById('create-album-form');
+        if (createAlbumForm) {
+            createAlbumForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createAlbum();
+            });
+        }
+
+        // Album search
+        const albumSearchBtn = document.getElementById('album-search-btn');
+        const albumSearchInput = document.getElementById('album-search-input');
+
+        albumSearchBtn?.addEventListener('click', () => this.searchAlbums());
+        albumSearchInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.searchAlbums();
+            }
+        });
+
+        // Setup parent album select
+        const parentAlbumSelectElement = document.getElementById('parent-album-select');
+        if (parentAlbumSelectElement) {
+            this.parentAlbumSelect = new CustomSelect(parentAlbumSelectElement);
+        }
+
+        // Load albums for parent select
+        this.loadAlbums();
+    }
+
+    async loadAlbumStats() {
+        try {
+            const response = await fetch('/api/albums?limit=1000');
+            const data = await response.json();
+
+            const totalAlbumsEl = document.getElementById('total-albums');
+            const rootAlbumsEl = document.getElementById('root-albums');
+
+            if (totalAlbumsEl) totalAlbumsEl.textContent = data.total || 0;
+
+            // Count root albums (albums with no parents)
+            let rootCount = 0;
+            if (data.items) {
+                for (const album of data.items) {
+                    const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
+                    const parentsData = await parentsResponse.json();
+                    if (!parentsData.parents || parentsData.parents.length === 0) {
+                        rootCount++;
+                    }
+                }
+            }
+            if (rootAlbumsEl) rootAlbumsEl.textContent = rootCount;
+        } catch (error) {
+            console.error('Error loading album stats:', error);
+        }
+    }
+
+    async loadAlbums() {
+        try {
+            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const data = await response.json();
+
+            // Update parent album select dropdown
+            const parentAlbumSelect = document.getElementById('parent-album-select');
+            const parentAlbumContainer = document.getElementById('parent-album-container');
+
+            if (parentAlbumSelect && this.parentAlbumSelect) {
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    if (parentAlbumContainer) parentAlbumContainer.style.display = 'none';
+                } else {
+                    if (parentAlbumContainer) parentAlbumContainer.style.display = 'block';
+
+                    const options = [
+                        { value: '', text: 'None (Root Album)', selected: true }
+                    ];
+
+                    for (const album of items) {
+                        options.push({
+                            value: album.id.toString(),
+                            text: album.name
+                        });
+                    }
+
+                    this.parentAlbumSelect.setOptions(options);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading albums:', error);
+        }
+    }
+
+    async createAlbum() {
+        const nameInput = document.getElementById('album-name-input');
+        const parentSelectElement = document.getElementById('parent-album-select');
+        const parentId = parentSelectElement?.dataset.value || '';
+
+        const albumName = nameInput.value.trim();
+        if (!albumName) {
+            app.showNotification('Please enter an album name!', 'error');
+            return;
+        }
+
+        try {
+            const albumData = {
+                name: albumName,
+                parent_album_id: parentId ? parseInt(parentId) : null
+            };
+
+            await app.apiCall('/api/albums', {
+                method: 'POST',
+                body: JSON.stringify(albumData)
+            });
+
+            app.showNotification('Album created successfully!', 'success');
+
+            // Clear form
+            nameInput.value = '';
+            if (this.parentAlbumSelect) {
+                this.parentAlbumSelect.setValue('');
+            }
+
+            // Reload data
+            await this.loadAlbumStats();
+            await this.loadAlbums();
+
+        } catch (error) {
+            app.showNotification(error.message, 'error', 'Error creating album');
+        }
+    }
+
+    async searchAlbums() {
+        const query = document.getElementById('album-search-input').value;
+        const resultsDiv = document.getElementById('album-search-results');
+
+        if (!query) {
+            resultsDiv.innerHTML = '';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/albums?limit=100&sort=name&order=asc');
+            const data = await response.json();
+
+            // Filter albums by name
+            const filtered = (data.items || []).filter(album =>
+                album.name.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">No albums found</p>';
+                return;
+            }
+
+            // Build results HTML
+            let html = '';
+            for (const album of filtered) {
+                // Get parent info
+                const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
+                const parentsData = await parentsResponse.json();
+                const parentChain = parentsData.parents.map(p => p.name).join(' > ');
+                const immediateParentId = parentsData.parents.length > 0
+                    ? parentsData.parents[parentsData.parents.length - 1].id
+                    : null;
+
+                html += `
+                    <div class="bg p-3 border-b flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <a href="/album/${album.id}" class="text-sm font-bold hover:text-primary">${this.escapeHtml(album.name)}</a>
+                                <span class="text-xs text-secondary">(${album.media_count || 0} media)</span>
+                            </div>
+                            ${parentChain ? `<div class="text-xs text-secondary">Path: ${this.escapeHtml(parentChain)}</div>` : '<div class="text-xs text-secondary">Root Album</div>'}
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="manage-album-btn text-xs px-3 py-1 bg-primary primary-text hover:bg-primary"
+                                data-album-id="${album.id}"
+                                data-album-name="${this.escapeHtml(album.name)}"
+                                data-parent-id="${immediateParentId || ''}">Manage</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = html;
+
+            // Add event listeners for Manage buttons
+            resultsDiv.querySelectorAll('.manage-album-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const albumId = btn.dataset.albumId;
+                    const albumName = btn.dataset.albumName;
+                    const parentId = btn.dataset.parentId || null;
+                    this.showAlbumManageModal(albumId, albumName, parentId);
+                });
+            });
+
+        } catch (error) {
+            console.error('Error searching albums:', error);
+            resultsDiv.innerHTML = '<p class="text-xs text-danger p-3">Error searching albums</p>';
+        }
+    }
+
+    showAlbumManageModal(albumId, albumName, currentParentId) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('album-manage-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'album-manage-modal';
+        modal.className = 'age-verification-overlay';
+        modal.style.display = 'flex';
+
+        modal.innerHTML = `
+            <div class="surface border-2 border-primary p-8 max-w-md w-full text-center">
+                <svg class="mx-auto mb-4" width="48" height="48" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" fill="var(--primary)"/>
+                </svg>
+                <h2 class="text-xl font-bold mb-2 text-primary">Manage Album</h2>
+                <p class="text-base mb-6 text font-medium">${this.escapeHtml(albumName)}</p>
+                <div class="flex flex-col gap-3">
+                    <button id="album-manage-rename" class="px-6 py-3 transition-colors surface-light hover:surface text font-bold text-sm flex items-center justify-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                        Rename Album
+                    </button>
+                    <button id="album-manage-parent" class="px-6 py-3 transition-colors surface-light hover:surface text font-bold text-sm flex items-center justify-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                        Change Parent Album
+                    </button>
+                    <button id="album-manage-delete" class="px-6 py-3 transition-colors bg-danger hover:bg-danger tag-text font-bold text-sm flex items-center justify-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                        Delete Album
+                    </button>
+                    <button id="album-manage-cancel" class="px-6 py-3 transition-colors hover:surface text font-bold text-sm flex items-center justify-center gap-2">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        document.getElementById('album-manage-rename').addEventListener('click', () => {
+            modal.remove();
+            this.showRenameAlbumModal(albumId, albumName, currentParentId);
+        });
+
+        document.getElementById('album-manage-parent').addEventListener('click', () => {
+            modal.remove();
+            this.showChangeParentModal(albumId, albumName, currentParentId);
+        });
+
+        document.getElementById('album-manage-delete').addEventListener('click', () => {
+            modal.remove();
+            this.deleteAlbum(albumId, albumName, currentParentId);
+        });
+
+        document.getElementById('album-manage-cancel').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Close on Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    showRenameAlbumModal(albumId, currentName, currentParentId) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('album-rename-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'album-rename-modal';
+        modal.className = 'age-verification-overlay';
+        modal.style.display = 'flex';
+
+        modal.innerHTML = `
+            <div class="surface border-2 border-primary p-8 max-w-md w-full">
+                <h2 class="text-xl font-bold mb-4 text-primary text-center">Rename Album</h2>
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">New Name</label>
+                    <input type="text" id="new-album-name" value="${this.escapeHtml(currentName)}"
+                        class="w-full bg px-3 py-2 border text-sm focus:outline-none focus:border-primary">
+                </div>
+                <div class="flex gap-4 justify-center">
+                    <button id="album-rename-confirm" class="px-6 py-3 transition-colors bg-primary primary-text font-bold text-sm">
+                        Save
+                    </button>
+                    <button id="album-rename-cancel" class="px-6 py-3 transition-colors surface-light text font-bold text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Focus the input and select all text
+        const input = document.getElementById('new-album-name');
+        input.focus();
+        input.select();
+
+        // Event listeners
+        const confirmRename = async () => {
+            const newName = input.value.trim();
+            if (!newName) {
+                app.showNotification('Please enter a name!', 'error');
+                return;
+            }
+            if (newName === currentName) {
+                modal.remove();
+                this.showAlbumManageModal(albumId, currentName, currentParentId);
+                return;
+            }
+
+            modal.remove();
+
+            try {
+                await app.apiCall(`/api/albums/${albumId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name: newName })
+                });
+
+                app.showNotification('Album renamed successfully!', 'success');
+                await this.searchAlbums();
+                await this.loadAlbums();
+                await this.loadAlbumStats();
+
+                // Return to manage modal with updated name
+                this.showAlbumManageModal(albumId, newName, currentParentId);
+
+            } catch (error) {
+                app.showNotification(error.message, 'error', 'Error renaming album');
+                // Return to manage modal on error
+                this.showAlbumManageModal(albumId, currentName, currentParentId);
+            }
+        };
+
+        document.getElementById('album-rename-confirm').addEventListener('click', confirmRename);
+
+        document.getElementById('album-rename-cancel').addEventListener('click', () => {
+            modal.remove();
+            this.showAlbumManageModal(albumId, currentName, currentParentId);
+        });
+
+        // Handle Enter key in input
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmRename();
+            }
+        });
+
+        // Close on outside click - return to manage modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                this.showAlbumManageModal(albumId, currentName, currentParentId);
+            }
+        });
+
+        // Close on Escape - return to manage modal
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+                this.showAlbumManageModal(albumId, currentName, currentParentId);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    async getAlbumDescendantIds(albumId) {
+        const descendantIds = new Set();
+
+        const fetchChildren = async (parentId) => {
+            try {
+                const response = await fetch(`/api/albums/${parentId}/children`);
+                if (!response.ok) return;
+                const children = await response.json();
+
+                for (const child of children) {
+                    descendantIds.add(child.id.toString());
+                    await fetchChildren(child.id);
+                }
+            } catch (error) {
+                console.error('Error fetching children:', error);
+            }
+        };
+
+        await fetchChildren(albumId);
+        return descendantIds;
+    }
+
+    async showChangeParentModal(albumId, albumName, currentParentId) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('album-parent-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Load all albums for the dropdown
+        let albums = [];
+        try {
+            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const data = await response.json();
+            albums = data.items || [];
+        } catch (error) {
+            console.error('Error loading albums:', error);
+            app.showNotification('Error loading albums', 'error');
+            this.showAlbumManageModal(albumId, albumName, currentParentId);
+            return;
+        }
+
+        // Get all descendant IDs to prevent circular references
+        const descendantIds = await this.getAlbumDescendantIds(albumId);
+
+        // Filter out the current album and all its descendants
+        const validAlbums = albums.filter(a => {
+            const id = a.id.toString();
+            return id !== albumId.toString() && !descendantIds.has(id);
+        });
+
+        const modal = document.createElement('div');
+        modal.id = 'album-parent-modal';
+        modal.className = 'age-verification-overlay';
+        modal.style.display = 'flex';
+
+        // Build options HTML for custom select
+        let optionsHtml = `
+            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs ${!currentParentId ? 'selected' : ''}"
+                data-value="">None (Root Album)</div>
+        `;
+        for (const album of validAlbums) {
+            const isSelected = currentParentId && album.id.toString() === currentParentId.toString();
+            optionsHtml += `
+                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs ${isSelected ? 'selected' : ''}"
+                    data-value="${album.id}">${this.escapeHtml(album.name)}</div>
+            `;
+        }
+
+        // Determine initial display text
+        let initialDisplayText = 'None (Root Album)';
+        if (currentParentId) {
+            const currentParent = validAlbums.find(a => a.id.toString() === currentParentId.toString());
+            if (currentParent) {
+                initialDisplayText = currentParent.name;
+            }
+        }
+
+        modal.innerHTML = `
+            <div class="surface border-2 border-primary p-8 max-w-md w-full">
+                <h2 class="text-xl font-bold mb-2 text-primary text-center">Change Parent Album</h2>
+                <p class="text-sm mb-4 text-secondary text-center">Album: <span class="text font-medium">${this.escapeHtml(albumName)}</span></p>
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">New Parent Album</label>
+                    <div id="change-parent-select" class="custom-select" data-value="${currentParentId || ''}">
+                        <button
+                            class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none focus:border-primary"
+                            type="button">
+                            <span class="custom-select-value">${this.escapeHtml(initialDisplayText)}</span>
+                            <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                width="12" height="12" viewBox="0 0 12 12">
+                                <path fill="currentColor" d="M6 9L1 4h10z" />
+                            </svg>
+                        </button>
+                        <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-4 justify-center">
+                    <button id="album-parent-confirm" class="px-6 py-3 transition-colors bg-primary primary-text font-bold text-sm">
+                        Save
+                    </button>
+                    <button id="album-parent-cancel" class="px-6 py-3 transition-colors surface-light text font-bold text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Initialize the custom select
+        const selectElement = document.getElementById('change-parent-select');
+        const changeParentSelect = new CustomSelect(selectElement);
+
+        // Event listeners
+        document.getElementById('album-parent-confirm').addEventListener('click', async () => {
+            const newParentId = selectElement.dataset.value;
+            modal.remove();
+
+            // Check if parent actually changed
+            const oldParentId = currentParentId || '';
+            if (newParentId === oldParentId) {
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+                return;
+            }
+
+            try {
+                await app.apiCall(`/api/albums/${albumId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        parent_album_id: newParentId ? parseInt(newParentId) : null
+                    })
+                });
+
+                app.showNotification('Parent album updated successfully!', 'success');
+                await this.searchAlbums();
+                await this.loadAlbums();
+                await this.loadAlbumStats();
+
+                // Return to manage modal with updated parent
+                this.showAlbumManageModal(albumId, albumName, newParentId || null);
+
+            } catch (error) {
+                app.showNotification(error.message, 'error', 'Error updating parent album');
+                // Return to manage modal on error
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+            }
+        });
+
+        document.getElementById('album-parent-cancel').addEventListener('click', () => {
+            modal.remove();
+            this.showAlbumManageModal(albumId, albumName, currentParentId);
+        });
+
+        // Close on outside click - return to manage modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+            }
+        });
+
+        // Close on Escape - return to manage modal
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    async deleteAlbum(albumId, albumName, currentParentId) {
+        const modal = new ModalHelper({
+            id: 'delete-album-modal',
+            type: 'danger',
+            title: 'Delete Album',
+            message: `Are you sure you want to delete "${this.escapeHtml(albumName)}"? This will only delete the album itself. Media and child albums will not be deleted.`,
+            confirmText: 'Yes, Delete',
+            cancelText: 'Cancel',
+            confirmId: 'delete-album-confirm-yes',
+            cancelId: 'delete-album-confirm-no',
+            onConfirm: async () => {
+                try {
+                    await app.apiCall(`/api/albums/${albumId}?cascade=false`, {
+                        method: 'DELETE'
+                    });
+                    app.showNotification('Album deleted successfully!', 'success');
+                    await this.searchAlbums();
+                    await this.loadAlbums();
+                    await this.loadAlbumStats();
+                    // Don't return to manage modal since album is deleted
+                } catch (e) {
+                    app.showNotification(e.message, 'error', 'Error deleting album');
+                    // Return to manage modal on error
+                    this.showAlbumManageModal(albumId, albumName, currentParentId);
+                }
+            },
+            onCancel: () => {
+                // Return to manage modal when cancelled
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+            }
+        });
+
+        modal.show();
     }
 }
 

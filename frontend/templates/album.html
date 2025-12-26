@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import rating_filter, sorting_options, bulk_actions, page_jump_modal,
+loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar_end %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    {{ rating_filter('mobile') }}
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
+        <!-- Main Content -->
+        <div class="xl:col-span-4 lg:col-span-3">
+            {{ page_navigation() }}
+
+            <!-- Album Info -->
+            <div class="surface p-3 border mb-4">
+                <div id="album-breadcrumb" class="text-xs text-secondary"></div>
+                <h1 id="album-name" class="text-lg font-bold">Loading...</h1>
+            </div>
+
+            {{ bulk_actions(['select_all', 'deselect_all', 'remove']) }}
+
+            <!-- Sub-albums Section -->
+            <div id="sub-albums-container" style="display: none;" class="mb-8">
+                <h2 id="sub-albums-title" class="text-sm font-bold mb-4 pb-1 border-b">
+                    Sub-albums
+                </h2>
+                <div id="sub-albums-grid"
+                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
+                </div>
+            </div>
+
+            <!-- Media Section -->
+            <div id="media-container" style="display: none;">
+                <h2 id="media-title" class="text-sm font-bold mb-4 pb-1 border-b">
+                    Media
+                </h2>
+                <div id="album-contents" data-album-id="{{ album_id }}"
+                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
+                </div>
+            </div>
+
+            {{ loading_indicator() }}
+        </div>
+
+        <!-- Sidebar -->
+        {{ sidebar_start() }}
+
+        <h3 class="text-sm font-bold mb-3 pb-2 border-b">Album Details</h3>
+        <div id="album-details" class="text-xs mb-4"></div>
+
+        {{ rating_filter('desktop') }}
+        {{ sorting_options() }}
+        {{ popular_tags_section() }}
+        {{ sidebar_end() }}
+    </div>
+</div>
+
+{{ page_jump_modal() }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/tooltip-helper.js"></script>
+<script src="/static/js/modal-helper.js"></script>
+<script src="/static/js/custom-select.js"></script>
+<script src="/static/js/base-gallery.js"></script>
+<script src="/static/js/album.js"></script>
+{% endblock %}

@@ -108,6 +108,18 @@
 
                         <button id="share-btn"
                             class="w-full px-3 py-1 bg-primary transition-colors primary-text hover:bg-primary text-xs">Share</button>
+
+                        <!-- Album Management -->
+                        <div id="albums-section" class="border-t pt-2 mt-2">
+                            <label class="block text-xs font-bold mb-2">Albums</label>
+                            <div id="current-albums" class="mb-2 max-h-32 overflow-y-auto">
+                                <p class="text-xs text-secondary">Loading...</p>
+                            </div>
+                            <button id="add-to-albums-btn"
+                                class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs mb-1">Add
+                                to Albums</button>
+                        </div>
+
                         <button id="delete-btn"
                             class="w-full px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete</button>
                     </div>
@@ -150,6 +162,7 @@
 <script src="/static/js/modal-helper.js"></script>
 <script src="/static/js/tag-input-helper.js"></script>
 <script src="/static/js/custom-select.js"></script>
+<script src="/static/js/album-picker.js"></script>
 <script src="/static/js/media-viewer-base.js"></script>
 <script src="/static/js/media.js"></script>
 <script>

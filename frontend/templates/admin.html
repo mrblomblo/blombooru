@@ -89,8 +89,6 @@
                                         <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
                                             data-value="uploaded_at">Upload Date</div>
                                         <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                            data-value="created_at">File Creation Date</div>
-                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
                                             data-value="filename">File Name</div>
                                         <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
                                             data-value="file_size">File Size</div>
@@ -264,6 +262,73 @@
                     <button id="clear-tags-btn"
                         class="px-4 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete All
                         Tags</button>
+                </div>
+            </div>
+
+            <!-- Albums Management Section -->
+            <div class="surface p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">Albums Management</h2>
+
+                <div id="album-stats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div class="bg p-3 border">
+                        <div class="text-xs text-secondary">Total Albums</div>
+                        <div class="text-lg font-bold" id="total-albums">0</div>
+                    </div>
+                    <div class="bg p-3 border">
+                        <div class="text-xs text-secondary">Root Albums</div>
+                        <div class="text-lg font-bold" id="root-albums">0</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Create Album</h3>
+                    <div class="bg p-4 border">
+                        <form id="create-album-form">
+                            <div class="mb-3">
+                                <label class="block text-xs font-bold mb-2">Album Name</label>
+                                <input type="text" id="album-name-input" required
+                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary"
+                                    placeholder="My Album">
+                            </div>
+
+                            <div class="mb-3" id="parent-album-container">
+                                <label class="block text-xs font-bold mb-2">Parent Album (Optional)</label>
+                                <div id="parent-album-select" class="custom-select" data-value="">
+                                    <button
+                                        class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none focus:border-primary"
+                                        type="button">
+                                        <span class="custom-select-value text-secondary">None (Root Album)</span>
+                                        <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                            width="12" height="12" viewBox="0 0 12 12">
+                                            <path fill="currentColor" d="M6 9L1 4h10z" />
+                                        </svg>
+                                    </button>
+                                    <div
+                                        class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs selected"
+                                            data-value="">None (Root Album)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Create
+                                Album</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Search & Manage Albums</h3>
+                    <div class="flex gap-2 mb-3">
+                        <div class="w-full">
+                            <input type="text" id="album-search-input" placeholder="Search albums..."
+                                class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                        </div>
+                        <button id="album-search-btn"
+                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Search</button>
+                    </div>
+                    <div id="album-search-results" class="max-h-96 overflow-y-auto"></div>
                 </div>
             </div>
 

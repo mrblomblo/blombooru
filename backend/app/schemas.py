@@ -59,7 +59,6 @@ class MediaResponse(MediaBase):
     height: Optional[int]
     duration: Optional[float]
     uploaded_at: datetime
-    created_at: Optional[datetime]
     is_shared: bool
     share_uuid: Optional[str]
     source: Optional[str] = None
@@ -104,3 +103,38 @@ class SettingsUpdate(BaseModel):
     default_sort: Optional[str] = None
     default_order: Optional[str] = None
     theme: Optional[str] = None
+
+class AlbumBase(BaseModel):
+    name: str
+
+class AlbumCreate(AlbumBase):
+    parent_album_id: Optional[int] = None
+
+class AlbumUpdate(BaseModel):
+    name: Optional[str] = None
+    parent_album_id: Optional[int] = None
+
+class AlbumResponse(AlbumBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    last_modified: datetime
+    media_count: int = 0
+    children_count: int = 0
+    rating: RatingEnum = RatingEnum.safe
+    parent_ids: List[int] = []
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class AlbumListResponse(AlbumBase):
+    id: int
+    last_modified: datetime
+    thumbnail_paths: List[str] = []
+    rating: RatingEnum = RatingEnum.safe
+    media_count: int = 0
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class MediaIds(BaseModel):
+    media_ids: List[int]
+

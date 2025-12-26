@@ -52,7 +52,6 @@ class Media(Base):
     duration = Column(Float, nullable=True)
     rating = Column(Enum(RatingEnum), default=RatingEnum.safe, index=True)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    created_at = Column(DateTime(timezone=True), nullable=True, index=True)
     is_shared = Column(Boolean, default=False, index=True)
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     share_ai_metadata = Column(Boolean, default=False)
@@ -80,3 +79,44 @@ class TagAlias(Base):
     target_tag_id = Column(Integer, ForeignKey('blombooru_tags.id', ondelete='CASCADE'), nullable=False)
     
     target_tag = relationship('Tag', foreign_keys=[target_tag_id], back_populates='aliases')
+
+# Album-Media association table
+blombooru_album_media = Table(
+    'blombooru_album_media',
+    Base.metadata,
+    Column('album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
+    Column('media_id', Integer, ForeignKey('blombooru_media.id', ondelete='CASCADE'), primary_key=True),
+    Column('added_at', DateTime(timezone=True), server_default=func.now(), index=True)
+)
+
+# Album hierarchy (self-referential many-to-many for parent-child relationships)
+blombooru_album_hierarchy = Table(
+    'blombooru_album_hierarchy',
+    Base.metadata,
+    Column('parent_album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
+    Column('child_album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True)
+)
+
+class Album(Base):
+    __tablename__ = 'blombooru_albums'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_modified = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationships
+    media = relationship('Media', secondary=blombooru_album_media, back_populates='albums')
+    
+    # Self-referential relationships for album hierarchy
+    children = relationship(
+        'Album',
+        secondary=blombooru_album_hierarchy,
+        primaryjoin=id == blombooru_album_hierarchy.c.parent_album_id,
+        secondaryjoin=id == blombooru_album_hierarchy.c.child_album_id,
+        backref='parents'
+    )
+
+# Update Media model to include albums relationship
+Media.albums = relationship('Album', secondary=blombooru_album_media, back_populates='media')

@@ -35,16 +35,24 @@ class CustomSelect {
     initializeExistingOptions() {
         const options = this.dropdown.querySelectorAll('.custom-select-option');
         options.forEach(option => {
-            option.addEventListener('click', () => {
-                this.selectOption(option);
-            });
+            // Remove old listeners to prevent duplicates if called multiple times
+            const newOption = option.cloneNode(true);
+            option.parentNode.replaceChild(newOption, option);
 
-            if (option.classList.contains('selected') || option.dataset.value === this.selectedValue) {
-                option.classList.add('selected');
-                this.selectedValue = option.dataset.value;
-                this.element.dataset.value = option.dataset.value;
-                this.valueDisplay.textContent = option.textContent;
+            this._bindOptionEvents(newOption);
+
+            if (newOption.classList.contains('selected') || newOption.dataset.value === this.selectedValue) {
+                newOption.classList.add('selected');
+                this.selectedValue = newOption.dataset.value;
+                this.element.dataset.value = newOption.dataset.value;
+                this.valueDisplay.textContent = newOption.textContent;
             }
+        });
+    }
+
+    _bindOptionEvents(option) {
+        option.addEventListener('click', () => {
+            this.selectOption(option);
         });
     }
 
@@ -176,25 +184,51 @@ class CustomSelect {
 
     setOptions(optionsData) {
         this.dropdown.innerHTML = '';
-
         optionsData.forEach(optionData => {
-            const option = document.createElement('div');
-            option.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs';
-            option.dataset.value = optionData.value;
-            option.textContent = optionData.text;
-
-            if (optionData.selected) {
-                option.classList.add('selected');
-                this.selectedValue = optionData.value;
-                this.element.dataset.value = optionData.value;
-                this.valueDisplay.textContent = optionData.text;
-            }
-
-            option.addEventListener('click', () => {
-                this.selectOption(option);
-            });
-
-            this.dropdown.appendChild(option);
+            this.addOption(optionData.value, optionData.text, optionData.selected);
         });
+    }
+
+    /**
+     * Add a single option dynamically
+     */
+    addOption(value, text, isSelected = false) {
+        // Prevent duplicates
+        if (this.dropdown.querySelector(`[data-value="${value}"]`)) return;
+
+        const option = document.createElement('div');
+        option.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs';
+        option.dataset.value = value;
+        option.textContent = text;
+
+        this._bindOptionEvents(option);
+
+        if (isSelected) {
+            option.classList.add('selected');
+            this.selectedValue = value;
+            this.element.dataset.value = value;
+            this.valueDisplay.textContent = text;
+        }
+
+        this.dropdown.appendChild(option);
+    }
+
+    removeOption(value) {
+        const option = this.dropdown.querySelector(`[data-value="${value}"]`);
+        if (option) {
+            option.remove();
+
+            // If we removed the currently selected item, reset to first available or clear
+            if (this.selectedValue === value) {
+                const firstOption = this.dropdown.querySelector('.custom-select-option');
+                if (firstOption) {
+                    this.selectOption(firstOption);
+                } else {
+                    this.selectedValue = '';
+                    this.element.dataset.value = '';
+                    this.valueDisplay.textContent = '';
+                }
+            }
+        }
     }
 }

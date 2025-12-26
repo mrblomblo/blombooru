@@ -116,19 +116,4 @@ def process_media_file(file_path: Path) -> dict:
         video_info = get_video_info(file_path)
         if video_info:
             result.update(video_info)
-            
-    # Get file creation time
-    try:
-        import datetime
-        stat = file_path.stat()
-        times = [stat.st_mtime]
-        if hasattr(stat, 'st_birthtime'): # macOS / some BSDs
-            times.append(stat.st_birthtime)
-        
-        created_timestamp = min(times)
-        result['created_at'] = datetime.datetime.fromtimestamp(created_timestamp, datetime.timezone.utc)
-    except Exception as e:
-        print(f"Error getting file creation time: {e}")
-        result['created_at'] = None
-    
     return result

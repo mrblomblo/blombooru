@@ -92,6 +92,28 @@ class MediaViewer extends MediaViewerBase {
                 this.ratingSelect.setValue(this.currentMedia.rating);
             }
         }
+
+        // Load albums
+        this.loadAlbums();
+        this.checkAlbumsExistence();
+    }
+
+    async checkAlbumsExistence() {
+        try {
+            const res = await fetch('/api/albums?limit=1');
+            const data = await res.json();
+            const section = this.el('albums-section');
+
+            if (section) {
+                if (data.total === 0) {
+                    section.style.display = 'none';
+                } else {
+                    section.style.display = 'block';
+                }
+            }
+        } catch (e) {
+            console.error('Error checking albums existence:', e);
+        }
     }
 
     renderMedia(media) {
@@ -294,9 +316,119 @@ class MediaViewer extends MediaViewerBase {
         this.el('append-ai-tags-btn')?.addEventListener('click', async () => {
             await this.appendAITags();
         });
+
+        this.el('add-to-albums-btn')?.addEventListener('click', () => {
+            this.addToAlbums();
+        });
     }
 
     // Admin action methods
+    async loadAlbums() {
+        try {
+            const res = await fetch(`/api/media/${this.mediaId}/albums`);
+            if (!res.ok) throw new Error('Failed to load albums');
+
+            const data = await res.json();
+            this.renderAlbumsList(data.albums || []);
+        } catch (e) {
+            console.error('Error loading albums:', e);
+            const container = this.el('current-albums');
+            if (container) {
+                container.innerHTML = '<p class="text-xs text-danger">Error loading albums</p>';
+            }
+        }
+    }
+
+    renderAlbumsList(albums) {
+        const container = this.el('current-albums');
+        if (!container) return;
+
+        if (albums.length === 0) {
+            container.innerHTML = '<p class="text-xs text-secondary">Not in any albums</p>';
+            return;
+        }
+
+        container.innerHTML = albums.map(album => `
+            <div class="flex justify-between items-center py-1 border-b last:border-0">
+                <a href="/album/${album.id}" class="text-xs hover:text-primary truncate flex-1" title="${album.name}">${album.name}</a>
+                <button class="remove-from-album-btn text-xs text-secondary hover:text-danger ml-2" data-album-id="${album.id}" title="Remove from album">&times;</button>
+            </div>
+        `).join('');
+
+        // Add event listeners for remove buttons
+        container.querySelectorAll('.remove-from-album-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const albumId = btn.dataset.albumId;
+                this.removeFromAlbum(albumId);
+            });
+        });
+    }
+
+    async addToAlbums() {
+        try {
+            // Get current album IDs to pre-select
+            const res = await fetch(`/api/media/${this.mediaId}/albums`);
+            const data = await res.json();
+            const currentAlbumIds = (data.albums || []).map(a => a.id);
+
+            const result = await AlbumPicker.pick({
+                title: 'Add to Albums',
+                multiSelect: true,
+                preSelected: currentAlbumIds
+            });
+
+            if (!result) return;
+            const { ids: selectedIds } = result;
+
+            // Determine added and removed albums
+            const addedIds = selectedIds.filter(id => !currentAlbumIds.includes(id));
+            const removedIds = currentAlbumIds.filter(id => !selectedIds.includes(id));
+
+            if (addedIds.length === 0 && removedIds.length === 0) return;
+
+            try {
+                // Process additions
+                for (const albumId of addedIds) {
+                    await app.apiCall(`/api/albums/${albumId}/media`, {
+                        method: 'POST',
+                        body: JSON.stringify({ media_ids: [parseInt(this.mediaId)] })
+                    });
+                }
+
+                // Process removals
+                for (const albumId of removedIds) {
+                    await app.apiCall(`/api/albums/${albumId}/media`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ media_ids: [parseInt(this.mediaId)] })
+                    });
+                }
+
+                app.showNotification('Albums updated successfully', 'success');
+                this.loadAlbums();
+            } catch (error) {
+                app.showNotification(error.message, 'error', 'Error updating albums');
+            }
+        } catch (error) {
+            console.error('Error opening album picker:', error);
+            app.showNotification('Error opening album picker', 'error');
+        }
+    }
+
+    async removeFromAlbum(albumId) {
+        try {
+            await app.apiCall(`/api/albums/${albumId}/media`, {
+                method: 'DELETE',
+                body: JSON.stringify({ media_ids: [parseInt(this.mediaId)] })
+            });
+
+            app.showNotification('Removed from album', 'success');
+            this.loadAlbums();
+        } catch (error) {
+            app.showNotification(error.message, 'error', 'Error removing from album');
+        }
+    }
+
     async saveTags() {
         const tagsInput = this.el('tags-input');
         const validTags = this.tagInputHelper.getValidTagsFromInput(tagsInput);

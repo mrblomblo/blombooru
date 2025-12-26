@@ -62,12 +62,9 @@ def check_and_migrate_schema(engine):
     from sqlalchemy import text, inspect
     
     inspector = inspect(engine)
-    columns = [c['name'] for c in inspector.get_columns('blombooru_media')]
     
-    with engine.connect() as conn:
-        # Add created_at if missing
-        if 'created_at' not in columns:
-            print("Migrating: Adding created_at column to blombooru_media")
-            conn.execute(text("ALTER TABLE blombooru_media ADD COLUMN created_at TIMESTAMP WITH TIME ZONE"))
-            conn.execute(text("UPDATE blombooru_media SET created_at = uploaded_at"))
-            conn.commit()
+    # Check if album tables exist, if not they'll be created by create_all
+    tables = inspector.get_table_names()
+    if 'blombooru_albums' not in tables:
+        print("Creating album tables...")
+

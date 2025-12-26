@@ -5,10 +5,10 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing
+from .routes import admin, media, tags, search, sharing, albums
 from datetime import datetime
 
-app = FastAPI(title="Blombooru", version="1.16.5")
+app = FastAPI(title="Blombooru", version="1.19.2")
 
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
@@ -23,6 +23,7 @@ app.include_router(media.router)
 app.include_router(tags.router)
 app.include_router(search.router)
 app.include_router(sharing.router)
+app.include_router(albums.router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -82,3 +83,21 @@ async def shared_page(request: Request, share_uuid: str):
         "app_name": settings.APP_NAME,
         "share_uuid": share_uuid
     })
+
+@app.get("/albums", response_class=HTMLResponse)
+async def albums_page(request: Request):
+    """Albums overview page"""
+    return templates.TemplateResponse("albums.html", {
+        "request": request,
+        "app_name": settings.APP_NAME
+    })
+
+@app.get("/album/{album_id}", response_class=HTMLResponse)
+async def album_detail_page(request: Request, album_id: int):
+    """Album detail page"""
+    return templates.TemplateResponse("album.html", {
+        "request": request,
+        "app_name": settings.APP_NAME,
+        "album_id": album_id
+    })
+
