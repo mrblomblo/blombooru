@@ -312,10 +312,10 @@ class BaseGallery {
         const bulkWDTaggerBtn = document.getElementById('bulk-wd-tagger-btn');
 
         if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', () => this.selectAll());
+            selectAllBtn.addEventListener('click', () => this.handleSelectAll());
         }
         if (deselectAllBtn) {
-            deselectAllBtn.addEventListener('click', () => this.clearSelection());
+            deselectAllBtn.addEventListener('click', () => this.handleDeselectAll());
         }
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDelete());
@@ -351,6 +351,124 @@ class BaseGallery {
                     this.loadContent();
                 }
             });
+        }
+    }
+
+    // New handler for smart Select All
+    async handleSelectAll() {
+        const visibleItems = document.querySelectorAll('.gallery-item');
+        const visibleIds = Array.from(visibleItems).map(item => parseInt(item.dataset.id));
+
+        // Check if all visible items are already selected
+        const isCurrentPageFull = visibleIds.length > 0 && visibleIds.every(id => this.selectedItems.has(id));
+
+        if (!isCurrentPageFull) {
+            // Logic 1: Fill the current page
+            visibleItems.forEach(item => {
+                const id = parseInt(item.dataset.id);
+                const checkbox = item.querySelector('.checkbox, .album-item-checkbox');
+
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    this.selectedItems.add(id);
+                    item.classList.add('selected');
+                }
+            });
+            this.updateBulkActionsUI();
+        } else {
+            // Logic 2: Select all items across ALL pages
+            await this.performGlobalSelection();
+        }
+    }
+
+    // New handler for smart Deselect All
+    handleDeselectAll() {
+        const visibleItems = document.querySelectorAll('.gallery-item');
+        const visibleIds = Array.from(visibleItems).map(item => parseInt(item.dataset.id));
+
+        // Check if all visible items are selected
+        const isCurrentPageFull = visibleIds.length > 0 && visibleIds.every(id => this.selectedItems.has(id));
+
+        if (isCurrentPageFull) {
+            // Logic 1: Only deselect items on the current page
+            visibleItems.forEach(item => {
+                const id = parseInt(item.dataset.id);
+                this.selectedItems.delete(id);
+                item.classList.remove('selected');
+                const checkbox = item.querySelector('.checkbox, .album-item-checkbox');
+                if (checkbox) checkbox.checked = false;
+            });
+        } else {
+            // Logic 2: Clear EVERYTHING (global deselect)
+            this.clearSelection();
+        }
+        this.updateBulkActionsUI();
+    }
+
+    // Helper to fetch all IDs matching current filter
+    async performGlobalSelection() {
+        const btn = document.getElementById('select-all-btn');
+        if (!btn) return;
+
+        const originalText = btn.textContent;
+        btn.textContent = 'Selecting All...';
+        btn.disabled = true;
+
+        try {
+            // Determine endpoint based on current page context
+            let endpoint = '/api/search'; // Default
+            const path = window.location.pathname;
+
+            if (path.startsWith('/album/')) {
+                const id = path.split('/')[2];
+                endpoint = `/api/albums/${id}/media`;
+            } else if (path === '/' || path === '/index.html') {
+                endpoint = '/api/search';
+            }
+
+            // Build params based on current URL (preserves filters, sorts, etc.)
+            const params = new URLSearchParams(window.location.search);
+            params.set('limit', '100000'); // Fetch "all" (reasonable limit)
+            params.delete('page');
+
+            const res = await fetch(`${endpoint}?${params.toString()}`);
+            if (!res.ok) throw new Error('Failed to fetch all items');
+
+            const data = await res.json();
+            const items = data.items || data.media || []; // Handle different response structures
+
+            if (items.length === 0) {
+                app.showNotification('No items found to select', 'info');
+                return;
+            }
+
+            let addedCount = 0;
+            items.forEach(item => {
+                if (!this.selectedItems.has(item.id)) {
+                    this.selectedItems.add(item.id);
+                    addedCount++;
+                }
+            });
+
+            // Visually update current page items to ensure they look selected
+            document.querySelectorAll('.gallery-item').forEach(item => {
+                const id = parseInt(item.dataset.id);
+                if (this.selectedItems.has(id)) {
+                    item.classList.add('selected');
+                    const checkbox = item.querySelector('.checkbox, .album-item-checkbox');
+                    if (checkbox) checkbox.checked = true;
+                }
+            });
+
+            this.updateBulkActionsUI();
+            app.showNotification(`Selected ${this.selectedItems.size} items total`, 'success');
+
+        } catch (e) {
+            console.error('Global selection failed:', e);
+            app.showNotification('Failed to select all items', 'error');
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
         }
     }
 
