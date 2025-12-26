@@ -7,10 +7,11 @@ class SharedViewer extends MediaViewerBase {
         this.init();
     }
 
-    init() {
+    async init() {
         this.initFullscreenViewer();
         this.initAgeVerificationModal();
-        this.loadSharedContent();
+        await this.loadSharedContent();
+        this.setupAIMetadataToggle();
     }
 
     initAgeVerificationModal() {
@@ -94,9 +95,14 @@ class SharedViewer extends MediaViewerBase {
                     </div>
 
                     ${showAIMetadata ? `
-                    <div id="ai-metadata-section" class="surface p-3 border mb-4">
-                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">AI Generation Data</h3>
-                        <div id="ai-metadata-content" class="text-xs"></div>
+                    <div id="ai-metadata-section" style="display: none;" class="surface border mb-4">
+                        <button type="button" id="ai-metadata-toggle" class="w-full p-3 flex justify-between items-center text-left hover:surface-light transition-colors">
+                            <h3 class="text-sm font-bold">AI Generation Data</h3>
+                            <svg id="ai-metadata-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div id="ai-metadata-content" class="text-xs px-3 pb-3" style="display: none;"></div>
                     </div>
                     ` : ''}
 

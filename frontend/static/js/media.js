@@ -14,6 +14,7 @@ class MediaViewer extends MediaViewerBase {
         this.initFullscreenViewer();
         this.initTooltipHelper();
         this.loadMedia();
+        this.setupAIMetadataToggle();
         this.setupEventListeners();
     }
 

@@ -13,6 +13,20 @@ class MediaViewerBase {
     }
 
     // Common rendering methods
+    setupAIMetadataToggle() {
+        const toggle = document.getElementById('ai-metadata-toggle');
+        const content = document.getElementById('ai-metadata-content');
+        const chevron = document.getElementById('ai-metadata-chevron');
+
+        if (toggle && content && chevron) {
+            toggle.addEventListener('click', () => {
+                const isHidden = content.style.display === 'none';
+                content.style.display = isHidden ? 'block' : 'none';
+                chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
+        }
+    }
+
     renderInfo(media, options = {}) {
         const { downloadUrl, isShared } = options;
 
