@@ -71,15 +71,29 @@ class WDTagger:
         }
         
         # Load model with ONNX Runtime
-        providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
-        available_providers = rt.get_available_providers()
-        providers = [p for p in providers if p in available_providers]
-        
-        self._model = rt.InferenceSession(model_path, providers=providers)
+        try:
+            available = rt.get_available_providers()
+            providers = []
+            
+            if 'CUDAExecutionProvider' in available:
+                providers.append('CUDAExecutionProvider')
+            
+            providers.append('CPUExecutionProvider')
+            
+            self._model = rt.InferenceSession(model_path, providers=providers)
+        except Exception as e:
+            logger.warning(f"Failed to load model with preferred providers: {e}. Attempting CPU fallback.")
+            try:
+                self._model = rt.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+            except Exception as e2:
+                logger.error(f"Critical error: Failed to load model even on CPU: {e2}")
+                raise e2
+
         self._target_size = self._model.get_inputs()[0].shape[2]
         self._current_model_name = model_name
         
-        logger.info(f"WD Tagger loaded successfully. Target size: {self._target_size}, Provider: {self._model.get_providers()[0]}")
+        active_providers = self._model.get_providers()
+        logger.info(f"WD Tagger loaded successfully. Target size: {self._target_size}, Active Providers: {active_providers}")
     
     def ensure_loaded(self, model_name: str = "wd-eva02-large-tagger-v3"):
         """Ensure the model is loaded."""
