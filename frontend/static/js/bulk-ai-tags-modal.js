@@ -14,6 +14,10 @@ class BulkAITagsModal {
         this.selectedItems = new Set();
         this.bulkAITagsData = [];
 
+        // Cancellation support
+        this.abortController = null;
+        this.isCancelled = false;
+
         // Tag resolution cache - persists across modal opens for speed
         this.tagResolutionCache = new Map();
 
@@ -60,7 +64,11 @@ class BulkAITagsModal {
                 </div>
                 
                 <div class="bulk-ai-tags-empty text-center py-8" style="display: none;">
-                    <p class="text-secondary">No new AI tags found in the selected items' metadata.</p>
+                    <p class="text-secondary">No AI tags found in the selected items' metadata.</p>
+                </div>
+                
+                <div class="bulk-ai-tags-cancelled text-center py-8" style="display: none;">
+                    <p class="text-secondary">Operation cancelled.</p>
                 </div>
                 
                 <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-color bg-surface z-20">
@@ -82,10 +90,10 @@ class BulkAITagsModal {
         if (!this.modalElement) return;
 
         const closeBtn = this.modalElement.querySelector('.bulk-ai-tags-close');
-        if (closeBtn) closeBtn.addEventListener('click', () => this.hide());
+        if (closeBtn) closeBtn.addEventListener('click', () => this.cancel());
 
         const cancelBtn = this.modalElement.querySelector('.bulk-ai-tags-cancel');
-        if (cancelBtn) cancelBtn.addEventListener('click', () => this.hide());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.cancel());
 
         const saveBtn = this.modalElement.querySelector('.bulk-ai-tags-save');
         if (saveBtn) saveBtn.addEventListener('click', () => this.saveAITags());
@@ -112,14 +120,15 @@ class BulkAITagsModal {
         }
 
         if (this.options.closeOnEscape) {
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isVisible) this.hide();
-            });
+            this._escapeHandler = (e) => {
+                if (e.key === 'Escape' && this.isVisible) this.cancel();
+            };
+            document.addEventListener('keydown', this._escapeHandler);
         }
 
         if (this.options.closeOnOutsideClick) {
             this.modalElement.addEventListener('click', (e) => {
-                if (e.target === this.modalElement) this.hide();
+                if (e.target === this.modalElement) this.cancel();
             });
         }
     }
@@ -141,6 +150,8 @@ class BulkAITagsModal {
 
         this.selectedItems = new Set(selectedItems);
         this.reset();
+        this.isCancelled = false;
+        this.abortController = new AbortController();
         this.modalElement.style.display = 'flex';
         this.isVisible = true;
 
@@ -155,28 +166,46 @@ class BulkAITagsModal {
             this.isVisible = false;
         }
 
-        if (typeof this.options.onClose === 'function') {
-            this.options.onClose();
-        }
-
         return this;
     }
 
+    cancel() {
+        this.isCancelled = true;
+
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
+
+        this.hide();
+
+        if (typeof this.options.onClose === 'function') {
+            this.options.onClose();
+        }
+    }
+
     reset() {
-        const loading = this.modalElement.querySelector('.bulk-ai-tags-loading');
-        const content = this.modalElement.querySelector('.bulk-ai-tags-content');
-        const empty = this.modalElement.querySelector('.bulk-ai-tags-empty');
+        const states = ['.bulk-ai-tags-loading', '.bulk-ai-tags-content', '.bulk-ai-tags-empty', '.bulk-ai-tags-cancelled'];
+        states.forEach(selector => {
+            const el = this.modalElement.querySelector(selector);
+            if (el) el.style.display = 'none';
+        });
+
         const saveBtn = this.modalElement.querySelector('.bulk-ai-tags-save');
         const itemsContainer = this.modalElement.querySelector('.bulk-ai-tags-items');
 
-        if (loading) loading.style.display = 'none';
-        if (content) content.style.display = 'none';
-        if (empty) empty.style.display = 'none';
         if (saveBtn) saveBtn.style.display = 'none';
         if (itemsContainer) itemsContainer.innerHTML = '';
 
         this.bulkAITagsData = [];
-        // Note: tagResolutionCache is NOT reset - it persists for performance
+    }
+
+    showState(state) {
+        const states = ['loading', 'content', 'empty', 'cancelled'];
+        states.forEach(s => {
+            const el = this.modalElement.querySelector(`.bulk-ai-tags-${s}`);
+            if (el) el.style.display = s === state ? 'block' : 'none';
+        });
     }
 
     updateProgress(current, total, status, phase) {
@@ -191,16 +220,21 @@ class BulkAITagsModal {
         if (phaseEl) phaseEl.textContent = phase;
     }
 
+    async fetchWithAbort(url, options = {}) {
+        if (this.isCancelled) throw new DOMException('Cancelled', 'AbortError');
+
+        return fetch(url, {
+            ...options,
+            signal: this.abortController?.signal
+        });
+    }
+
     async fetchAITags() {
-        const loading = this.modalElement.querySelector('.bulk-ai-tags-loading');
-        const content = this.modalElement.querySelector('.bulk-ai-tags-content');
-        const empty = this.modalElement.querySelector('.bulk-ai-tags-empty');
+        if (this.isCancelled) return;
+
+        this.showState('loading');
         const saveBtn = this.modalElement.querySelector('.bulk-ai-tags-save');
         const itemsContainer = this.modalElement.querySelector('.bulk-ai-tags-items');
-
-        if (loading) loading.style.display = 'block';
-        if (content) content.style.display = 'none';
-        if (empty) empty.style.display = 'none';
 
         const selectedArray = Array.from(this.selectedItems);
         const FETCH_CONCURRENCY = 10;
@@ -208,20 +242,18 @@ class BulkAITagsModal {
 
         this.bulkAITagsData = [];
 
-        // ============================================
-        // PHASE 1: Fetch all metadata and media info in parallel
-        // ============================================
+        // Phase 1: Fetch metadata and media info
         this.updateProgress(0, selectedArray.length, 'Fetching metadata...', 'items fetched');
 
         const rawData = [];
         let fetchProgress = 0;
 
         const fetchMediaData = async (mediaId) => {
+            if (this.isCancelled) return;
             try {
-                // Fetch both requests in parallel
                 const [metaRes, mediaRes] = await Promise.all([
-                    fetch(`/api/media/${mediaId}/metadata`),
-                    fetch(`/api/media/${mediaId}`)
+                    this.fetchWithAbort(`/api/media/${mediaId}/metadata`),
+                    this.fetchWithAbort(`/api/media/${mediaId}`)
                 ]);
 
                 const metadata = metaRes.ok ? await metaRes.json() : null;
@@ -229,22 +261,30 @@ class BulkAITagsModal {
 
                 rawData.push({ mediaId, metadata, mediaData });
             } catch (e) {
+                if (e.name === 'AbortError') throw e;
                 console.error(`Error fetching media ${mediaId}:`, e);
             } finally {
                 fetchProgress++;
-                this.updateProgress(fetchProgress, selectedArray.length, 'Fetching metadata...', 'items fetched');
+                if (!this.isCancelled) {
+                    this.updateProgress(fetchProgress, selectedArray.length, 'Fetching metadata...', 'items fetched');
+                }
             }
         };
 
-        // Process in concurrent batches
-        for (let i = 0; i < selectedArray.length; i += FETCH_CONCURRENCY) {
-            const chunk = selectedArray.slice(i, i + FETCH_CONCURRENCY);
-            await Promise.all(chunk.map(id => fetchMediaData(id)));
+        try {
+            for (let i = 0; i < selectedArray.length; i += FETCH_CONCURRENCY) {
+                if (this.isCancelled) return;
+                const chunk = selectedArray.slice(i, i + FETCH_CONCURRENCY);
+                await Promise.all(chunk.map(id => fetchMediaData(id)));
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            throw e;
         }
 
-        // ============================================
-        // PHASE 2: Extract prompts and collect all unique tags
-        // ============================================
+        if (this.isCancelled) return;
+
+        // Phase 2: Extract prompts and collect tags
         const allUniqueTags = new Set();
         const itemsWithPrompts = [];
 
@@ -261,10 +301,8 @@ class BulkAITagsModal {
 
             if (promptTags.length === 0) continue;
 
-            // Collect unique tags
             promptTags.forEach(tag => allUniqueTags.add(tag));
 
-            // Store for later processing (dedupe within item)
             itemsWithPrompts.push({
                 mediaId,
                 mediaData,
@@ -273,14 +311,11 @@ class BulkAITagsModal {
         }
 
         if (itemsWithPrompts.length === 0) {
-            if (loading) loading.style.display = 'none';
-            if (empty) empty.style.display = 'block';
+            this.showState('empty');
             return;
         }
 
-        // ============================================
-        // PHASE 3: Batch validate all unique tags (with caching)
-        // ============================================
+        // Phase 3: Validate tags
         const tagsToValidate = Array.from(allUniqueTags).filter(
             tag => !this.tagResolutionCache.has(tag)
         );
@@ -291,21 +326,29 @@ class BulkAITagsModal {
             let validationProgress = 0;
 
             const validateTag = async (tag) => {
+                if (this.isCancelled) return;
                 await this.validateAndCacheTag(tag);
                 validationProgress++;
-                this.updateProgress(validationProgress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+                if (!this.isCancelled) {
+                    this.updateProgress(validationProgress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+                }
             };
 
-            // Validate in concurrent batches
-            for (let i = 0; i < tagsToValidate.length; i += TAG_VALIDATION_CONCURRENCY) {
-                const chunk = tagsToValidate.slice(i, i + TAG_VALIDATION_CONCURRENCY);
-                await Promise.all(chunk.map(tag => validateTag(tag)));
+            try {
+                for (let i = 0; i < tagsToValidate.length; i += TAG_VALIDATION_CONCURRENCY) {
+                    if (this.isCancelled) return;
+                    const chunk = tagsToValidate.slice(i, i + TAG_VALIDATION_CONCURRENCY);
+                    await Promise.all(chunk.map(tag => validateTag(tag)));
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') return;
+                throw e;
             }
         }
 
-        // ============================================
-        // PHASE 4: Build final data using cached validations
-        // ============================================
+        if (this.isCancelled) return;
+
+        // Phase 4: Build final data
         for (const { mediaId, mediaData, promptTags } of itemsWithPrompts) {
             const currentTags = (mediaData.tags || []).map(t => t.name || t);
             const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
@@ -334,10 +377,8 @@ class BulkAITagsModal {
             }
         }
 
-        if (loading) loading.style.display = 'none';
-
         if (this.bulkAITagsData.length === 0) {
-            if (empty) empty.style.display = 'block';
+            this.showState('empty');
             return;
         }
 
@@ -350,15 +391,18 @@ class BulkAITagsModal {
 
         await this.initializeInputHelpers(itemsContainer);
 
-        if (content) content.style.display = 'block';
+        if (this.isCancelled) return;
+
+        this.showState('content');
         if (saveBtn) saveBtn.style.display = 'block';
     }
 
     async validateAndCacheTag(tag) {
         if (this.tagResolutionCache.has(tag)) return;
+        if (this.isCancelled) return;
 
         try {
-            const response = await fetch(`/api/tags/autocomplete?q=${encodeURIComponent(tag)}`);
+            const response = await this.fetchWithAbort(`/api/tags/autocomplete?q=${encodeURIComponent(tag)}`);
 
             let result = null;
             if (response.ok) {
@@ -375,7 +419,8 @@ class BulkAITagsModal {
             }
 
             this.tagResolutionCache.set(tag, result);
-        } catch {
+        } catch (e) {
+            if (e.name === 'AbortError') throw e;
             this.tagResolutionCache.set(tag, null);
         }
     }
@@ -384,70 +429,73 @@ class BulkAITagsModal {
         if (!tagName) return null;
         const normalized = tagName.toLowerCase().trim();
 
-        // Check cache first
         if (this.tagResolutionCache.has(normalized)) {
             return this.tagResolutionCache.get(normalized);
         }
 
-        // Not in cache, validate and cache
         await this.validateAndCacheTag(normalized);
         return this.tagResolutionCache.get(normalized);
     }
 
     async processMediaItem(mediaId) {
-        // Fetch both in parallel
-        const [metaRes, mediaRes] = await Promise.all([
-            fetch(`/api/media/${mediaId}/metadata`),
-            fetch(`/api/media/${mediaId}`)
-        ]);
+        if (this.isCancelled) return null;
 
-        if (!metaRes.ok) return null;
+        try {
+            const [metaRes, mediaRes] = await Promise.all([
+                this.fetchWithAbort(`/api/media/${mediaId}/metadata`),
+                this.fetchWithAbort(`/api/media/${mediaId}`)
+            ]);
 
-        const metadata = await metaRes.json();
-        const aiPrompt = this.extractAIPromptFromMetadata(metadata);
-        if (!aiPrompt) return null;
+            if (!metaRes.ok) return null;
 
-        const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
+            const metadata = await metaRes.json();
+            const aiPrompt = this.extractAIPromptFromMetadata(metadata);
+            if (!aiPrompt) return null;
 
-        const promptTags = aiPrompt
-            .split(',')
-            .map(tag => tag.trim().replace(/\s+/g, '_').toLowerCase())
-            .filter(tag => tag.length > 0);
+            const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
 
-        const currentTags = (mediaData.tags || []).map(t => t.name || t);
-        const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
+            const promptTags = aiPrompt
+                .split(',')
+                .map(tag => tag.trim().replace(/\s+/g, '_').toLowerCase())
+                .filter(tag => tag.length > 0);
 
-        const validTags = [];
-        const seenTags = new Set();
+            const currentTags = (mediaData.tags || []).map(t => t.name || t);
+            const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
 
-        for (const tag of promptTags) {
-            if (currentTagsSet.has(tag)) continue;
+            const validTags = [];
+            const seenTags = new Set();
 
-            // Uses cache, so fast if already validated
-            const validTag = await this.getTagOrAlias(tag);
+            for (const tag of promptTags) {
+                if (currentTagsSet.has(tag)) continue;
 
-            if (validTag &&
-                !currentTagsSet.has(validTag.toLowerCase()) &&
-                !seenTags.has(validTag.toLowerCase())) {
-                validTags.push(validTag);
-                seenTags.add(validTag.toLowerCase());
+                const validTag = await this.getTagOrAlias(tag);
+
+                if (validTag &&
+                    !currentTagsSet.has(validTag.toLowerCase()) &&
+                    !seenTags.has(validTag.toLowerCase())) {
+                    validTags.push(validTag);
+                    seenTags.add(validTag.toLowerCase());
+                }
             }
-        }
 
-        if (validTags.length > 0) {
-            return {
-                mediaId,
-                currentTags,
-                aiTags: validTags,
-                filename: mediaData.filename || `Media ${mediaId}`
-            };
+            if (validTags.length > 0) {
+                return {
+                    mediaId,
+                    currentTags,
+                    aiTags: validTags,
+                    filename: mediaData.filename || `Media ${mediaId}`
+                };
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') throw e;
+            console.error(`Error processing media ${mediaId}:`, e);
         }
         return null;
     }
 
     async fetchSingleItemAI(index, inputElement) {
         const item = this.bulkAITagsData[index];
-        if (!item) return;
+        if (!item || this.isCancelled) return;
 
         inputElement.style.opacity = '0.5';
 
@@ -472,6 +520,7 @@ class BulkAITagsModal {
                 this.flashButton(index, 'var(--danger)');
             }
         } catch (e) {
+            if (e.name === 'AbortError') return;
             console.error(e);
             this.flashButton(index, 'var(--danger)');
         } finally {
@@ -489,10 +538,12 @@ class BulkAITagsModal {
     }
 
     async initializeInputHelpers(container) {
-        if (!this.tagInputHelper) return;
+        if (!this.tagInputHelper || this.isCancelled) return;
 
         const inputs = container.querySelectorAll('.bulk-ai-tag-input');
         for (const input of inputs) {
+            if (this.isCancelled) return;
+
             if (typeof TagAutocomplete !== 'undefined') {
                 new TagAutocomplete(input, {
                     multipleValues: true,
@@ -607,7 +658,6 @@ class BulkAITagsModal {
         let successCount = 0;
         let errorCount = 0;
 
-        // Save in parallel batches for speed
         const SAVE_CONCURRENCY = 5;
 
         const saveItem = async (index) => {
@@ -671,7 +721,10 @@ class BulkAITagsModal {
     }
 
     destroy() {
-        this.hide();
+        this.cancel();
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+        }
         if (this.modalElement && this.modalElement.parentNode) {
             this.modalElement.parentNode.removeChild(this.modalElement);
         }
