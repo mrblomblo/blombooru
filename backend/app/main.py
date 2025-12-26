@@ -39,11 +39,6 @@ async def startup_event():
     else:
         print("First run detected - please complete onboarding")
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    """Favicon"""
-    return FileResponse("./frontend/static/favicon.ico")
-
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Home page"""
