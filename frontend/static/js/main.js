@@ -31,10 +31,12 @@ class Blombooru {
         try {
             // Only check if we're not already on an albums page (to avoid flickering if we are)
             if (!window.location.pathname.startsWith('/album')) {
-                const response = await fetch('/api/albums?limit=1&root_only=true');
+                const response = await fetch('/api/albums?limit=100&root_only=true');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.total === 0) {
+                    const hasContent = data.items && data.items.some(album => album.media_count > 0);
+
+                    if (!hasContent) {
                         navItem.style.display = 'none';
                     } else {
                         navItem.style.display = 'block';
