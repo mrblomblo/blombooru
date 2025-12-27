@@ -96,7 +96,6 @@ class BaseGallery {
     }
 
     onRatingChange() {
-        this.currentPage = 1;
         this.loadContent();
     }
 
@@ -160,6 +159,17 @@ class BaseGallery {
     }
 
     // ==================== Pagination ====================
+
+    adjustPageIfNeeded(totalPages) {
+        this.totalPages = Math.max(1, totalPages || 1);
+
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+            this.updateUrlParams({ page: this.currentPage });
+            return true; // Signal that we need to reload
+        }
+        return false;
+    }
 
     setupPageJumpModal() {
         const modal = document.getElementById('page-jump-modal');
