@@ -421,7 +421,7 @@ class BaseGallery {
 
             if (path.startsWith('/album/')) {
                 const id = path.split('/')[2];
-                endpoint = `/api/albums/${id}/media`;
+                endpoint = `/api/albums/${id}/contents`;
             } else if (path === '/' || path === '/index.html') {
                 endpoint = '/api/search';
             }
