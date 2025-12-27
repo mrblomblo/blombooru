@@ -21,21 +21,26 @@ from ..utils.album_utils import (
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
 
-# API Endpoints
+
+def get_effective_limit(limit: Optional[int]) -> int:
+    """Get effective limit, falling back to settings if not provided or invalid."""
+    if limit is None or limit <= 0:
+        return settings.get_items_per_page()
+    return limit
+
 
 @router.get("", response_model=dict)
 async def get_albums(
     page: int = 1,
-    limit: int = Query(None),
-    sort: Optional[str] = Query("created_at"),
-    order: Optional[str] = Query("desc"),
+    limit: Optional[int] = Query(default=None),
+    sort: Optional[str] = Query(default="created_at"),
+    order: Optional[str] = Query(default="desc"),
     rating: Optional[str] = None,
-    root_only: bool = Query(False),
+    root_only: bool = Query(default=False),
     db: Session = Depends(get_db)
 ):
     """Get paginated album list"""
-    if limit is None:
-        limit = settings.get_items_per_page()
+    limit = get_effective_limit(limit)
     
     # Build query
     query = db.query(Album)
@@ -100,7 +105,7 @@ async def get_albums(
         "total": total,
         "page": page,
         "limit": limit,
-        "pages": (total + limit - 1) // limit if limit > 0 else 0
+        "pages": max(1, (total + limit - 1) // limit)
     }
 
 @router.get("/{album_id}", response_model=AlbumResponse)
@@ -227,7 +232,7 @@ async def update_album(
 @router.delete("/{album_id}")
 async def delete_album(
     album_id: int,
-    cascade: bool = Query(False),
+    cascade: bool = Query(default=False),
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -330,26 +335,29 @@ async def remove_media_from_album(
     
     return {"message": "Media removed from album"}
 
+
 @router.get("/{album_id}/contents")
 async def get_album_contents(
     album_id: int,
-    page: int = 1,
-    limit: int = Query(None),
-    rating: Optional[str] = Query(None),
-    sort: str = Query("uploaded_at"),
-    order: str = Query("desc"),
+    page: int = Query(default=1, ge=1),
+    limit: Optional[int] = Query(default=None),
+    rating: Optional[str] = Query(default=None),
+    sort: str = Query(default="uploaded_at"),
+    order: str = Query(default="desc"),
     db: Session = Depends(get_db)
 ):
     """Get album contents (media + sub-albums, paginated)"""
-    # Normalize order string
-    sort_order = order.lower() if order else "desc"
-    
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
     
-    if limit is None:
-        limit = settings.get_items_per_page()
+    # Get effective limit from settings if not provided
+    limit = get_effective_limit(limit)
+    
+    # Normalize order string
+    sort_order = order.lower() if order else "desc"
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
     
     # --- 1. MEDIA ITEMS ---
     from ..schemas import MediaResponse
@@ -389,9 +397,12 @@ async def get_album_contents(
     else:
         media_query = media_query.order_by(media_sort_column.desc())
 
-    # Execute Media Query
+    # Get total count BEFORE pagination
     total_media = media_query.count()
-    media_items = media_query.offset((page - 1) * limit).limit(limit).all()
+    
+    # Calculate offset and apply pagination
+    offset = (page - 1) * limit
+    media_items = media_query.offset(offset).limit(limit).all()
     
     # --- 2. SUB-ALBUMS ---
     child_albums_query = db.query(Album).join(
@@ -422,7 +433,7 @@ async def get_album_contents(
     # Build Album Response List (with rating logic)
     child_album_list = []
     rating_priority = {RatingEnum.explicit: 3, RatingEnum.questionable: 2, RatingEnum.safe: 1}
-    max_rating_val = rating_priority.get(RatingEnum[rating] if rating in RatingEnum.__members__ else RatingEnum.explicit, 3)
+    max_rating_val = rating_priority.get(RatingEnum[rating] if rating and rating in RatingEnum.__members__ else RatingEnum.explicit, 3)
     
     for child in child_albums:
         child_rating = get_album_rating(child.id, db)
@@ -443,19 +454,22 @@ async def get_album_contents(
             media_count=media_count
         ))
     
+    # Calculate total pages
+    total_pages = max(1, (total_media + limit - 1) // limit)
+    
     return {
         "media": [MediaResponse.model_validate(m) for m in media_items],
         "albums": child_album_list,
         "total_media": total_media,
         "page": page,
         "limit": limit,
-        "pages": (total_media + limit - 1) // limit if limit > 0 else 0
+        "pages": total_pages
     }
 
 @router.get("/{album_id}/tags")
 async def get_album_tags_endpoint(
     album_id: int,
-    limit: int = Query(20),
+    limit: int = Query(default=20),
     db: Session = Depends(get_db)
 ):
     """Get popular tags within an album and its children"""
