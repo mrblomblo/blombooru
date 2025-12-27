@@ -5,11 +5,11 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     {{ rating_filter('mobile') }}
-    {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album', 'ai_tags', 'wd_tagger']) }}
 
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Gallery Grid -->
         <div class="xl:col-span-4 lg:col-span-3">
+            {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album', 'ai_tags', 'wd_tagger']) }}
             {{ page_navigation() }}
 
             <div id="gallery-grid"
