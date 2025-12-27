@@ -16,6 +16,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             modelName: 'wd-eva02-large-tagger-v3'
         };
 
+        this.useStreaming = true;
+        this.batchSize = 20;
         this.init();
     }
 
@@ -252,7 +254,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         };
 
         try {
-            await this.processBatch(selectedArray, fetchMediaInfo, 10);
+            await this.processBatch(selectedArray, fetchMediaInfo, 20);
         } catch (e) {
             if (e.name === 'AbortError') return;
             throw e;
@@ -261,34 +263,234 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         if (this.isCancelled) return;
 
         // Phase 2: Predict tags
-        let processed = 0;
-        this.updateProgress(0, selectedArray.length, 'Predicting tags with AI...', 'items processed');
-
-        const predictItem = async (mediaId) => {
-            if (this.isCancelled) return;
+        if (this.useStreaming) {
             try {
-                const result = await this.predictMediaTags(mediaId, mediaInfoMap.get(mediaId));
-                if (result) {
-                    this.itemsData.push(result);
-                }
+                await this.predictWithStreaming(selectedArray, mediaInfoMap);
             } catch (e) {
-                if (e.name === 'AbortError') throw e;
-                console.error(`Error predicting tags for media ${mediaId}:`, e);
-            } finally {
-                processed++;
-                if (!this.isCancelled) {
-                    this.updateProgress(processed, selectedArray.length, 'Predicting tags with AI...', 'items processed');
+                if (e.name === 'AbortError') return;
+                console.warn('Streaming failed, falling back to batch:', e);
+                // Fallback to batch
+                await this.predictWithBatching(selectedArray, mediaInfoMap);
+            }
+        } else {
+            await this.predictWithBatching(selectedArray, mediaInfoMap);
+        }
+    }
+
+    parseSSEEvents(buffer) {
+        const events = [];
+        let remaining = buffer;
+
+        // SSE events are separated by double newlines
+        let idx;
+        while ((idx = remaining.indexOf('\n\n')) !== -1) {
+            const eventText = remaining.slice(0, idx);
+            remaining = remaining.slice(idx + 2);
+
+            // Parse the event
+            for (const line of eventText.split('\n')) {
+                if (line.startsWith('data: ')) {
+                    const jsonStr = line.slice(6);
+                    try {
+                        events.push(JSON.parse(jsonStr));
+                    } catch (e) {
+                        console.warn('Failed to parse SSE JSON:', jsonStr, e);
+                    }
                 }
             }
-        };
-
-        try {
-            await this.processBatch(selectedArray, predictItem, 3);
-        } catch (e) {
-            if (e.name === 'AbortError') return;
-            throw e;
         }
 
+        return { events, remaining };
+    }
+
+    async predictWithStreaming(mediaIds, mediaInfoMap) {
+        this.updateProgress(0, mediaIds.length, 'Predicting tags with AI...', 'items processed');
+
+        const response = await fetch('/api/ai-tagger/predict-stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                media_ids: mediaIds,
+                general_threshold: this.settings.generalThreshold,
+                character_threshold: this.settings.characterThreshold,
+                hide_rating_tags: this.settings.hideRatingTags,
+                character_tags_first: this.settings.characterTagsFirst,
+                model_name: this.settings.modelName
+            }),
+            signal: this.abortController?.signal
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Stream request failed');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            if (this.isCancelled) break;
+
+            const { done, value } = await reader.read();
+
+            if (done) {
+                // Process any remaining buffer
+                if (buffer.trim()) {
+                    const { events } = this.parseSSEEvents(buffer + '\n\n');
+                    for (const data of events) {
+                        this.handleStreamEvent(data, mediaInfoMap);
+                    }
+                }
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Parse complete events from buffer
+            const { events, remaining } = this.parseSSEEvents(buffer);
+            buffer = remaining;
+
+            for (const data of events) {
+                if (this.isCancelled) break;
+
+                const shouldStop = this.handleStreamEvent(data, mediaInfoMap);
+                if (shouldStop) break;
+            }
+        }
+
+        await this.finalizeResults();
+    }
+
+    handleStreamEvent(data, mediaInfoMap) {
+        if (data.type === 'complete') {
+            return true; // Signal to stop
+        }
+
+        if (data.type === 'error' && data.error && !data.media_id) {
+            // Global error
+            throw new Error(data.error);
+        }
+
+        if (data.type === 'result' && data.media_id != null) {
+            const mediaData = mediaInfoMap.get(data.media_id);
+            const result = this.processStreamedResult(data, mediaData);
+
+            if (result) {
+                this.itemsData.push(result);
+            }
+
+            if (data.progress != null && data.total != null) {
+                this.updateProgress(
+                    data.progress,
+                    data.total,
+                    'Predicting tags with AI...',
+                    'items processed'
+                );
+            }
+        }
+
+        return false;
+    }
+
+    async predictWithBatching(mediaIds, mediaInfoMap) {
+        this.updateProgress(0, mediaIds.length, 'Predicting tags with AI...', 'items processed');
+
+        let processed = 0;
+
+        for (let i = 0; i < mediaIds.length; i += this.batchSize) {
+            if (this.isCancelled) break;
+
+            const batchIds = mediaIds.slice(i, i + this.batchSize);
+
+            try {
+                const response = await this.fetchWithAbort('/api/ai-tagger/predict-batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        media_ids: batchIds,
+                        general_threshold: this.settings.generalThreshold,
+                        character_threshold: this.settings.characterThreshold,
+                        hide_rating_tags: this.settings.hideRatingTags,
+                        character_tags_first: this.settings.characterTagsFirst,
+                        model_name: this.settings.modelName
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.detail || 'Batch prediction failed');
+                }
+
+                const batchResult = await response.json();
+
+                for (const result of batchResult.results) {
+                    const mediaData = mediaInfoMap.get(result.media_id);
+                    const processedResult = this.processBatchResult(result, mediaData);
+
+                    if (processedResult) {
+                        this.itemsData.push(processedResult);
+                    }
+                }
+
+                processed += batchIds.length;
+                this.updateProgress(
+                    processed,
+                    mediaIds.length,
+                    'Predicting tags with AI...',
+                    'items processed'
+                );
+
+            } catch (e) {
+                if (e.name === 'AbortError') return;
+                console.error('Batch prediction error:', e);
+                processed += batchIds.length;
+                // Continue with next batch
+            }
+        }
+
+        await this.finalizeResults();
+    }
+
+    processStreamedResult(data, mediaData) {
+        const currentTags = (mediaData?.tags || []).map(t => (t.name || t).toLowerCase());
+        const currentTagsSet = new Set(currentTags);
+
+        const predictedTags = data.tags
+            .map(t => t.name.replace(/ /g, '_'))
+            .filter(t => !currentTagsSet.has(t.toLowerCase()));
+
+        if (predictedTags.length > 0) {
+            return {
+                mediaId: data.media_id,
+                currentTags: (mediaData?.tags || []).map(t => t.name || t),
+                predictedTags,
+                filename: mediaData?.filename || `Media ${data.media_id}`
+            };
+        }
+        return null;
+    }
+
+    processBatchResult(result, mediaData) {
+        const currentTags = (mediaData?.tags || []).map(t => (t.name || t).toLowerCase());
+        const currentTagsSet = new Set(currentTags);
+
+        const predictedTags = result.tags
+            .map(t => t.name.replace(/ /g, '_'))
+            .filter(t => !currentTagsSet.has(t.toLowerCase()));
+
+        if (predictedTags.length > 0) {
+            return {
+                mediaId: result.media_id,
+                currentTags: (mediaData?.tags || []).map(t => t.name || t),
+                predictedTags,
+                filename: mediaData?.filename || `Media ${result.media_id}`
+            };
+        }
+        return null;
+    }
+
+    async finalizeResults() {
         if (this.isCancelled) return;
 
         if (this.itemsData.length === 0) {
@@ -296,7 +498,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             return;
         }
 
-        // Phase 3: Validate tags
+        // Validate tags
         const allTags = new Set();
         for (const item of this.itemsData) {
             item.predictedTags.forEach(tag => allTags.add(tag.toLowerCase()));
@@ -322,13 +524,15 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             });
         }
 
-        // Filter out items with no valid tags
         this.itemsData = this.itemsData.filter(item => item.newTags.length > 0);
 
         if (this.itemsData.length === 0) {
             this.showState('empty');
             return;
         }
+
+        const prefix = this.options.classPrefix;
+        const itemsContainer = this.modalElement.querySelector(`.${prefix}-items`);
 
         this.renderItems();
         await this.initializeInputHelpers(itemsContainer);
@@ -337,50 +541,6 @@ class BulkWDTaggerModal extends BulkTagModalBase {
 
         this.showState('content');
         this.showSaveButton();
-    }
-
-    async predictMediaTags(mediaId, mediaData) {
-        if (this.isCancelled) return null;
-
-        try {
-            const response = await this.fetchWithAbort(`/api/ai-tagger/predict/${mediaId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    general_threshold: this.settings.generalThreshold,
-                    character_threshold: this.settings.characterThreshold,
-                    hide_rating_tags: this.settings.hideRatingTags,
-                    character_tags_first: this.settings.characterTagsFirst,
-                    model_name: this.settings.modelName
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.detail || 'Prediction failed');
-            }
-
-            const result = await response.json();
-            const currentTags = (mediaData?.tags || []).map(t => t.name || t);
-            const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
-
-            const predictedTags = result.tags
-                .map(t => t.name.replace(/ /g, '_'))
-                .filter(t => !currentTagsSet.has(t.toLowerCase()));
-
-            if (predictedTags.length > 0) {
-                return {
-                    mediaId,
-                    currentTags,
-                    predictedTags,
-                    filename: mediaData?.filename || `Media ${mediaId}`
-                };
-            }
-        } catch (e) {
-            if (e.name === 'AbortError') throw e;
-            console.error(`Error predicting tags for media ${mediaId}:`, e);
-        }
-        return null;
     }
 
     async refreshSingleItem(index, inputElement) {
@@ -393,17 +553,38 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             const mediaRes = await this.fetchWithAbort(`/api/media/${item.mediaId}`);
             const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
 
-            const result = await this.predictMediaTags(item.mediaId, mediaData);
+            const response = await this.fetchWithAbort(`/api/ai-tagger/predict/${item.mediaId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    general_threshold: this.settings.generalThreshold,
+                    character_threshold: this.settings.characterThreshold,
+                    hide_rating_tags: this.settings.hideRatingTags,
+                    character_tags_first: this.settings.characterTagsFirst,
+                    model_name: this.settings.modelName
+                })
+            });
 
-            if (result && result.predictedTags.length > 0) {
+            if (!response.ok) {
+                throw new Error('Prediction failed');
+            }
+
+            const result = await response.json();
+            const currentTagsSet = new Set((mediaData?.tags || []).map(t => (t.name || t).toLowerCase()));
+
+            const newPredictions = result.tags
+                .map(t => t.name.replace(/ /g, '_'))
+                .filter(t => !currentTagsSet.has(t.toLowerCase()));
+
+            if (newPredictions.length > 0) {
                 // Validate new tags
-                for (const tag of result.predictedTags) {
+                for (const tag of newPredictions) {
                     if (!this.tagResolutionCache.has(tag.toLowerCase())) {
                         await this.validateAndCacheTag(tag.toLowerCase());
                     }
                 }
 
-                const validTags = result.predictedTags.filter(tag => {
+                const validTags = newPredictions.filter(tag => {
                     const resolved = this.getResolvedTag(tag);
                     return resolved !== null;
                 }).map(tag => {
