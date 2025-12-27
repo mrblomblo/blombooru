@@ -3,7 +3,7 @@ class AlbumViewer extends BaseGallery {
         super({
             gridSelector: '#album-contents',
             defaultSort: 'uploaded_at',
-            enablePagination: false
+            enablePagination: true
         });
 
         this.albumId = albumId;
@@ -14,6 +14,10 @@ class AlbumViewer extends BaseGallery {
 
     async init() {
         this.initCommon();
+
+        // Get page from URL
+        this.currentPage = parseInt(this.getUrlParam('page', '1'));
+
         await this.loadAlbum();
         await this.loadContent();
         await this.loadPopularTagsFromAPI();
@@ -71,8 +75,7 @@ class AlbumViewer extends BaseGallery {
 
         try {
             const params = new URLSearchParams({
-                page: 1,
-                limit: 100,
+                page: this.currentPage,
                 rating: this.currentRating,
                 sort: this.getSortValue(),
                 order: this.getOrderValue()
@@ -82,6 +85,10 @@ class AlbumViewer extends BaseGallery {
             if (!response.ok) throw new Error('Failed to load contents');
 
             const data = await response.json();
+
+            // Update pagination info from response
+            this.totalPages = data.pages || 1;
+            this.currentPage = data.page || 1;
 
             // Filter out empty albums for logic checks
             const allAlbums = data.albums || [];
@@ -99,6 +106,10 @@ class AlbumViewer extends BaseGallery {
             }
 
             this.renderContents(data);
+
+            // Render pagination
+            this.renderPagination();
+
         } catch (error) {
             console.error('Error loading contents:', error);
             this.showError('Failed to load album contents');
@@ -123,8 +134,18 @@ class AlbumViewer extends BaseGallery {
     }
 
     onRatingChange() {
-        super.onRatingChange();
+        this.currentPage = 1;  // Reset to page 1 on filter change
+        this.updateUrlParams({ page: 1 });
+        this.loadContent();
         this.loadPopularTagsFromAPI();
+    }
+
+    onSortChange() {
+        this.currentPage = 1;  // Reset to page 1 on sort change
+        this.currentSort = this.getSortValue();
+        this.currentOrder = this.getOrderValue();
+        this.updateUrlParams({ sort: this.currentSort, order: this.currentOrder, page: 1 });
+        this.loadContent();
     }
 
     renderContents(data) {
@@ -139,16 +160,16 @@ class AlbumViewer extends BaseGallery {
         subAlbumsGrid.innerHTML = '';
         this.elements.grid.innerHTML = '';
 
-        // 1. Process Sub-albums
+        // 1. Process Sub-albums (only show on first page)
         const allAlbums = data.albums || [];
         const visibleAlbums = allAlbums.filter(a => (a.media_count > 0 || a.children_count > 0));
         const emptyCount = allAlbums.length - visibleAlbums.length;
 
-        if (visibleAlbums.length > 0) {
+        // Only show sub-albums on first page
+        if (this.currentPage === 1 && visibleAlbums.length > 0) {
             subAlbumsContainer.style.display = 'block';
             subAlbumsGrid.innerHTML = visibleAlbums.map(album => this.createAlbumCard(album)).join('');
 
-            // Update Header with empty count
             if (subAlbumsHeader) {
                 if (emptyCount > 0) {
                     subAlbumsHeader.innerHTML = `Sub-albums <span class="text-secondary font-normal text-xs">(+${emptyCount} empty albums)</span>`;
@@ -157,14 +178,17 @@ class AlbumViewer extends BaseGallery {
                 }
             }
         } else {
-            // If all albums are empty, or no albums exist
             subAlbumsContainer.style.display = 'none';
-            mediaHeader.style.display = 'none';
         }
 
         // 2. Render Media
         if (data.media && data.media.length > 0) {
             mediaContainer.style.display = 'block';
+
+            if (mediaHeader) {
+                mediaHeader.style.display = (this.currentPage === 1 && visibleAlbums.length > 0) ? 'block' : 'none';
+            }
+
             data.media.forEach(media => {
                 const item = this.createGalleryItem(media, {
                     checkboxClass: 'album-item-checkbox checkbox',
@@ -174,14 +198,18 @@ class AlbumViewer extends BaseGallery {
             });
         } else {
             mediaContainer.style.display = 'none';
-            subAlbumsHeader.style.display = 'none';
+            if (subAlbumsHeader) {
+                subAlbumsHeader.style.display = 'none';
+            }
         }
 
         // 3. Empty State (No visible albums AND no media)
         if (visibleAlbums.length === 0 && (!data.media || data.media.length === 0)) {
             mediaContainer.style.display = 'block';
-            if (emptyCount > 0) {
+            if (emptyCount > 0 && this.currentPage === 1) {
                 this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">This album contains only empty sub-albums.</p>`;
+            } else if (this.currentPage > 1) {
+                this.elements.grid.innerHTML = '<p class="text-secondary col-span-full text-center py-8">No more items on this page</p>';
             } else {
                 this.elements.grid.innerHTML = '<p class="text-secondary col-span-full text-center py-8">This album is empty</p>';
             }

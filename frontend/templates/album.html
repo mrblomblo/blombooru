@@ -9,7 +9,6 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Main Content -->
         <div class="xl:col-span-4 lg:col-span-3">
-            {{ page_navigation() }}
 
             <!-- Album Info -->
             <div class="surface p-3 border mb-4">
@@ -18,6 +17,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
             </div>
 
             {{ bulk_actions(['select_all', 'deselect_all', 'remove', 'album', 'ai_tags', 'wd_tagger', 'delete']) }}
+            {{ page_navigation() }}
 
             <!-- Sub-albums Section -->
             <div id="sub-albums-container" style="display: none;" class="mb-8">
