@@ -274,7 +274,11 @@ class MediaViewer extends MediaViewerBase {
 
         // Add tooltip functionality
         if (this.tooltipHelper && media.tags && media.tags.length > 0) {
-            this.tooltipHelper.addToElement(item, media.tags);
+            const isPrimaryTouch = window.matchMedia('(pointer: coarse)').matches;
+
+            if (!isPrimaryTouch) {
+                this.tooltipHelper.addToElement(item, media.tags);
+            }
         }
 
         return item;
