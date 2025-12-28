@@ -133,18 +133,51 @@ class MediaViewer extends MediaViewerBase {
     renderMedia(media) {
         const container = this.el('media-container');
         if (media.file_type === 'video') {
-            container.innerHTML = `<video controls loop><source src="/api/media/${media.id}/file" type="${media.mime_type}"></video>`;
-        } else {
-            container.innerHTML = `<img src="/api/media/${media.id}/file" alt="${media.filename}" id="main-media-image">`;
+            const video = document.createElement('video');
+            video.controls = true;
+            video.loop = true;
 
-            setTimeout(() => {
-                const mainImage = this.el('main-media-image');
-                if (mainImage) {
-                    mainImage.addEventListener('click', () => {
+            const source = document.createElement('source');
+            source.src = `/api/media/${media.id}/file`;
+            source.type = media.mime_type;
+
+            video.appendChild(source);
+
+            video.onerror = () => {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 text-secondary">
+                        <img src="/static/images/no-thumbnail.png" alt="Media not found" class="w-32 h-32 mb-4 opacity-50">
+                        <p class="text-sm">Failed to load video</p>
+                    </div>
+                `;
+            };
+
+            container.innerHTML = '';
+            container.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = `/api/media/${media.id}/file`;
+            img.alt = media.filename;
+            img.id = 'main-media-image';
+            img.style.cursor = 'pointer';
+
+            img.onerror = () => {
+                img.src = '/static/images/no-thumbnail.png';
+                img.alt = 'Media not found';
+                img.style.cursor = 'default';
+                img.onclick = null;
+            };
+
+            img.onload = () => {
+                if (!img.src.includes('no-thumbnail.png')) {
+                    img.addEventListener('click', () => {
                         this.fullscreenViewer.open(`/api/media/${media.id}/file`);
                     });
                 }
-            }, 0);
+            };
+
+            container.innerHTML = '';
+            container.appendChild(img);
         }
 
         this.el('download-btn').href = `/api/media/${media.id}/file`;

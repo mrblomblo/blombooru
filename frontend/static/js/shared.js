@@ -119,6 +119,9 @@ class SharedViewer extends MediaViewerBase {
             </div>
         `;
 
+        // Setup error handlers for media elements
+        this.setupMediaErrorHandlers(media);
+
         // Render the data into the containers
         this.renderInfo(media, { isShared: true });
         this.renderTags(media, { clickable: false });
@@ -137,9 +140,13 @@ class SharedViewer extends MediaViewerBase {
     getMediaHTML(media) {
         if (media.file_type === 'video') {
             return `
-                <video controls loop style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
+                <video controls loop id="shared-media-video" style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
                     <source src="/api/shared/${this.shareUuid}/file" type="${media.mime_type}">
                 </video>
+                <div id="video-error" style="display: none;" class="flex flex-col items-center justify-center py-8 text-secondary">
+                    <img src="/static/images/no-thumbnail.png" alt="Media not found" class="w-32 h-32 mb-4 opacity-50">
+                    <p class="text-sm">Failed to load video</p>
+                </div>
             `;
         } else {
             return `
@@ -153,11 +160,37 @@ class SharedViewer extends MediaViewerBase {
     setupImageClickHandler() {
         setTimeout(() => {
             const sharedImage = this.el('shared-media-image');
-            if (sharedImage && this.fullscreenViewer) {
+            if (sharedImage && this.fullscreenViewer && sharedImage.src) {
                 sharedImage.addEventListener('click', () => {
+                    if (sharedImage.dataset.failed === 'true') return;
                     this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file`);
                 });
             }
         }, 0);
+    }
+
+    setupMediaErrorHandlers(media) {
+        if (media.file_type === 'video') {
+            const video = this.el('shared-media-video');
+            const errorDiv = this.el('video-error');
+
+            if (video) {
+                video.onerror = () => {
+                    video.style.display = 'none';
+                    if (errorDiv) errorDiv.style.display = 'flex';
+                };
+            }
+        } else {
+            const img = this.el('shared-media-image');
+
+            if (img) {
+                img.onerror = () => {
+                    img.src = '/static/images/no-thumbnail.png';
+                    img.alt = 'Media not found';
+                    img.style.cursor = 'default';
+                    img.dataset.failed = 'true';
+                };
+            }
+        }
     }
 }
