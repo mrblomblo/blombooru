@@ -45,6 +45,7 @@ class MediaUpdate(BaseModel):
     rating: Optional[RatingEnum] = None
     tags: Optional[List[str]] = None
     source: Optional[str] = None
+    parent_id: Optional[int] = None
 
 class MediaResponse(MediaBase):
     id: int
@@ -62,6 +63,8 @@ class MediaResponse(MediaBase):
     is_shared: bool
     share_uuid: Optional[str]
     source: Optional[str] = None
+    parent_id: Optional[int] = None
+    has_children: bool = False
     tags: List[TagResponse] = []
     
     model_config = ConfigDict(from_attributes=True)

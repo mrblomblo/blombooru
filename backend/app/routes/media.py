@@ -120,6 +120,28 @@ async def get_media(media_id: int, db: Session = Depends(get_db)):
     
     result = MediaResponse.model_validate(media).model_dump()
     result['share_ai_metadata'] = media.share_ai_metadata if hasattr(media, 'share_ai_metadata') else False
+    
+    # Add parent and siblings info
+    hierarchy = []
+    if media.parent_id:
+        # I am a child
+        parent = db.query(Media).filter(Media.id == media.parent_id).first()
+        if parent:
+            hierarchy.append(MediaResponse.model_validate(parent).model_dump())
+        
+        siblings = db.query(Media).filter(
+            Media.parent_id == media.parent_id,
+            Media.id != media.id
+        ).all()
+        for sibling in siblings:
+            hierarchy.append(MediaResponse.model_validate(sibling).model_dump())
+    else:
+        # I might be a parent
+        children = db.query(Media).filter(Media.parent_id == media.id).all()
+        for child in children:
+            hierarchy.append(MediaResponse.model_validate(child).model_dump())
+    
+    result['hierarchy'] = hierarchy
     return result
 
 @router.get("/{media_id}/file")
@@ -321,6 +343,25 @@ async def update_media(
         media.tags = get_or_create_tags(db, updates.tags)
         new_tag_ids = [tag.id for tag in media.tags]
         affected_tag_ids = list(set(old_tag_ids + new_tag_ids))
+
+    if 'parent_id' in updates.model_fields_set:
+        if updates.parent_id:
+            parent = db.query(Media).filter(Media.id == updates.parent_id).first()
+            if not parent:
+                raise HTTPException(status_code=404, detail="Parent media not found")
+            
+            if db.query(Media).filter(Media.parent_id == media.id).first():
+                raise HTTPException(status_code=400, detail="This item already has children and cannot be a child itself")
+            
+            if parent.parent_id:
+                raise HTTPException(status_code=400, detail="The selected parent is already a child of another item")
+            
+            if updates.parent_id == media.id:
+                raise HTTPException(status_code=400, detail="An item cannot be its own parent")
+            
+            media.parent_id = updates.parent_id
+        else:
+            media.parent_id = None
     
     db.commit()
     

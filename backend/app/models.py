@@ -56,8 +56,19 @@ class Media(Base):
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     share_ai_metadata = Column(Boolean, default=False)
     source = Column(String(500), nullable=True)
+    parent_id = Column(Integer, ForeignKey('blombooru_media.id', ondelete='SET NULL'), nullable=True, index=True)
     
     tags = relationship('Tag', secondary=blombooru_media_tags, back_populates='media')
+    children = relationship('Media', backref='parent', remote_side=[id])
+
+    @property
+    def has_children(self) -> bool:
+        from .database import SessionLocal
+        db = SessionLocal()
+        try:
+            return db.query(Media).filter(Media.parent_id == self.id).first() is not None
+        finally:
+            db.close()
 
 class Tag(Base):
     __tablename__ = 'blombooru_tags'
