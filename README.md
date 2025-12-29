@@ -38,6 +38,12 @@ It is designed for individuals who want a powerful, simple to use, and modern so
 
 - **AI-Friendly:** You can easily view accompanying AI metadata for *(almost)* any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags to the tag editor from the AI prompt.
 
+- **Automatic Tagging:** Fast-track tagging with the WDv3 Auto Tagger integration, which analyzes images and suggests accurate tags with a single click.
+
+- **Albums:** Organize your media into albums, which can hold both files and other sub-albums for limitless nesting and organization.
+
+- **Media Relations:** Organize your collection by linking related media using parent-child relationships. Group image variations, multi-page comics, etc., keeping related content easily accessible.
+
 - **Secure Media Sharing:** Generate unique, persistent links to share specific media. Shared items are presented in a stripped-down, secure view with optional sharing of AI metadata.
 
 - **Flexible Media Uploads:** Add media via drag-and-drop, by importing a compressed archive, or by simply placing files in the storage directory and pressing the "Scan for Untracked Media" button.
