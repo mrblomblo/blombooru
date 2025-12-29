@@ -9,7 +9,6 @@ class AdminPanel {
 
     async init() {
         await this.checkAuth();
-        await this.hideAdminPanelButton();
 
         this.setupTagAutocomplete();
         this.setupEventListeners();
@@ -94,18 +93,6 @@ class AdminPanel {
             }
         } catch (error) {
             console.error('Error enabling admin mode:', error);
-        }
-    }
-
-    async hideAdminPanelButton() {
-        const isAuthenticated = await this.checkAuth();
-        const adminModeToggle = document.getElementById('admin-mode-toggle');
-        if (adminModeToggle && adminModeToggle.parentElement) {
-            if (isAuthenticated) {
-                adminModeToggle.parentElement.style.display = 'none';
-            } else {
-                adminModeToggle.parentElement.style.display = 'block';
-            }
         }
     }
 

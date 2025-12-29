@@ -142,8 +142,6 @@ class Blombooru {
 
     updateUI() {
         const body = document.body;
-        const adminToggle = document.getElementById('admin-mode-toggle');
-        const adminModeText = document.getElementById('admin-mode-text');
         const logoutBtn = document.getElementById('logout-btn');
 
         // Update body class
@@ -153,9 +151,9 @@ class Blombooru {
             body.classList.remove('admin-mode');
         }
 
-        // Show/hide logout button
+        // Show/hide logout button's
         if (logoutBtn) {
-            logoutBtn.style.display = this.isAuthenticated ? 'inline' : 'none';
+            logoutBtn.parentElement.style.display = this.isAuthenticated ? 'inline' : 'none';
         }
     }
 
