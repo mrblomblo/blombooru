@@ -764,6 +764,8 @@ class BaseGallery {
 
         const item = document.createElement('div');
         item.className = `gallery-item ${media.file_type}`;
+        if (media.parent_id) item.classList.add('child-item');
+        if (media.has_children) item.classList.add('parent-item');
         item.dataset.id = media.id;
         item.dataset.rating = media.rating;
 
