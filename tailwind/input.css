@@ -69,6 +69,10 @@
     .hover\:bg-warning:hover { background-color: var(--warning-hover); }
     .bg-danger { background-color: var(--danger); }
     .hover\:bg-danger:hover { background-color: var(--danger-hover); }
+
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .grabbing { cursor: grabbing !important; scroll-behavior: auto !important; }
 }
 @theme {
     --background: #000;

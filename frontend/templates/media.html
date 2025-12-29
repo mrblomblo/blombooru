@@ -11,10 +11,146 @@
     <div class="fullscreen-close-hint">Press ESC or click outside the media to close</div>
 </div>
 
+<!-- Relation Manager Modal -->
+<div id="relation-manager-modal" class="fixed inset-0 z-50 flex items-center justify-center" style="display: none;">
+    <div class="absolute inset-0 bg-black/70" id="relation-modal-backdrop"></div>
+    <div class="relative surface border shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b">
+            <h2 class="text-lg font-bold">Manage Relations</h2>
+            <button id="relation-modal-close" class="text-secondary hover:text p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Current Status -->
+        <div id="relation-modal-status" class="px-4 py-3 border-b surface-light">
+            <div id="relation-status-content" class="text-sm"></div>
+        </div>
+
+        <!-- Search -->
+        <div class="p-4 border-b">
+            <form id="relation-search-form">
+                <input type="text" id="relation-search-input"
+                    placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                    class="w-full bg px-3 py-2 border text text-sm focus:outline-none focus:border-primary">
+            </form>
+            <p id="relation-search-hint" class="text-xs text-secondary mt-2">
+                Showing related items. Use the search bar to find specific media.
+            </p>
+        </div>
+
+        <!-- Gallery -->
+        <div class="flex-1 overflow-y-auto p-4" id="relation-gallery-container">
+            <div id="relation-gallery" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+            </div>
+            <div id="relation-loading" class="text-center py-8" style="display: none;">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p class="text-secondary mt-2">Loading...</p>
+            </div>
+            <div id="relation-empty" class="text-center py-8 text-secondary" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-3 opacity-50" width="48" height="48"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <p>No items found</p>
+            </div>
+            <!-- Load More Button -->
+            <div id="relation-load-more" class="text-center py-4" style="display: none;">
+                <button id="relation-load-more-btn"
+                    class="px-6 py-2 surface-light text text-sm hover:surface transition-colors">
+                    Load More
+                </button>
+            </div>
+        </div>
+
+        <!-- Selection Info & Actions -->
+        <div id="relation-actions" class="p-4 border-t surface-light">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div id="relation-selection-info">
+                    <span id="relation-selected-count" class="text-sm font-medium">0 selected</span>
+                    <button id="relation-clear-selection" class="text-xs text-secondary hover:text-primary ml-2"
+                        style="display: none;">
+                        Clear selection
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="relation-set-parent-btn"
+                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="display: none;">
+                        Set as Parent
+                    </button>
+                    <button id="relation-add-child-btn"
+                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="display: none;">
+                        Add as Child
+                    </button>
+                    <button id="relation-add-children-btn"
+                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="display: none;">
+                        Add as Children
+                    </button>
+                    <button id="relation-remove-children-btn"
+                        class="px-4 py-2 bg-danger tag-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="display: none;">
+                        Remove Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container mx-auto px-4 py-4">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <!-- Media Content -->
         <div class="lg:col-span-3">
+            <!-- Parent/Sibling Media -->
+            <div id="hierarchy-media-section" class="surface mb-4 border" style="display: none;">
+                <button type="button" id="hierarchy-media-toggle"
+                    class="w-full p-4 flex justify-between items-center text-left hover:surface-light transition-colors">
+                    <h2 id="hierarchy-media-title" class="text-base font-bold">Parent & Sibling Media</h2>
+                    <svg id="hierarchy-media-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="transition-transform duration-200">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="hierarchy-media-content" class="p-4 border-t relative group">
+                    <div class="carousel-wrapper relative overflow-hidden">
+                        <div id="hierarchy-media"
+                            class="flex gap-2 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+                            style="scroll-behavior: smooth;"></div>
+
+                        <!-- Carousel Controls -->
+                        <button id="hierarchy-prev-btn"
+                            class="absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer bg-black/50 hover:bg-black/70 text-white p-2 transition-opacity opacity-0 group-hover:opacity-100 disabled:opacity-0"
+                            style="z-index: 10;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button id="hierarchy-next-btn"
+                            class="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer bg-black/50 hover:bg-black/70 text-white p-2 transition-opacity opacity-0 group-hover:opacity-100 disabled:opacity-0"
+                            style="z-index: 10;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="surface p-4 border">
                 <div id="media-container" class="text-center"></div>
             </div>
@@ -39,8 +175,9 @@
                     <input type="url" id="source-input" placeholder="https://example.com/source"
                         class="w-full bg px-2 py-1 border text-xs focus:outline-none focus:border-primary mb-2">
                     <button id="save-source-btn"
-                        class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">Save
-                        Source</button>
+                        class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                        Save Source
+                    </button>
                 </div>
             </div>
 
@@ -71,8 +208,9 @@
                             </button>
                         </div>
                         <button type="submit"
-                            class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">Save
-                            Tags</button>
+                            class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                            Save Tags
+                        </button>
                     </form>
                 </div>
             </div>
@@ -133,12 +271,25 @@
                                 <p class="text-xs text-secondary">Loading...</p>
                             </div>
                             <button id="add-to-albums-btn"
-                                class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs mb-1">Add
-                                to Albums</button>
+                                class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs mb-1">
+                                Add to Albums
+                            </button>
                         </div>
 
                         <button id="delete-btn"
                             class="w-full px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete</button>
+
+                        <!-- Relation Manager -->
+                        <div id="relation-manager-section" class="border-t pt-2 mt-2">
+                            <label class="block text-xs font-bold mb-2">Relations</label>
+                            <div id="relation-status-display" class="mb-2">
+                                <p class="text-xs text-secondary">No relations</p>
+                            </div>
+                            <button id="manage-relations-btn"
+                                class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+                                Manage Relations
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

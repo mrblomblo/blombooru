@@ -14,6 +14,18 @@ class MediaViewer extends MediaViewerBase {
             modelName: 'wd-eva02-large-tagger-v3'
         };
 
+        // Relation Manager state
+        this.relationModal = {
+            isOpen: false,
+            selectedItems: new Set(),
+            currentPage: 1,
+            totalPages: 1,
+            isSearchMode: false,
+            searchQuery: '',
+            isLoading: false,
+            childIds: new Set() // Track current children for removal
+        };
+
         this.init();
     }
 
@@ -58,6 +70,7 @@ class MediaViewer extends MediaViewerBase {
                 this.showShareLink(this.currentMedia.share_uuid, this.currentMedia.share_ai_metadata);
             }
 
+            this.renderHierarchy(this.currentMedia.hierarchy);
             await this.loadRelatedMedia();
         } catch (e) {
             console.error('loadMedia error', e);
@@ -110,6 +123,9 @@ class MediaViewer extends MediaViewerBase {
         // Load albums
         this.loadAlbums();
         this.checkAlbumsExistence();
+
+        // Setup relation manager
+        this.setupRelationManager();
     }
 
     async checkAlbumsExistence() {
@@ -279,6 +295,8 @@ class MediaViewer extends MediaViewerBase {
     createRelatedMediaItem(media, queryString) {
         const item = document.createElement('div');
         item.className = `gallery-item ${media.file_type}`;
+        if (media.parent_id) item.classList.add('child-item');
+        if (media.has_children) item.classList.add('parent-item');
         item.dataset.id = media.id;
         item.dataset.rating = media.rating;
 
@@ -850,6 +868,787 @@ class MediaViewer extends MediaViewerBase {
         }
 
         return null;
+    }
+
+    // ==================== Hierarchy Methods ====================
+    renderHierarchy(items) {
+        const hierarchyMediaEl = this.el('hierarchy-media');
+        const hierarchySection = this.el('hierarchy-media-section');
+        const titleEl = this.el('hierarchy-media-title');
+
+        if (!hierarchyMediaEl || !hierarchySection) return;
+
+        if (!items || items.length === 0) {
+            hierarchySection.style.display = 'none';
+            return;
+        }
+
+        // Set dynamic title
+        if (this.currentMedia.parent_id) {
+            titleEl.textContent = 'This item belongs to a parent';
+        } else {
+            const childCount = items.length;
+            titleEl.textContent = childCount === 1
+                ? 'This item has 1 child'
+                : `This item has ${childCount} children`;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const queryString = params.toString();
+        hierarchySection.style.display = 'block';
+
+        hierarchyMediaEl.innerHTML = '';
+        items.forEach(media => {
+            const item = this.createRelatedMediaItem(media, queryString);
+            item.style.flex = '0 0 auto';
+            item.style.width = '120px';
+            hierarchyMediaEl.appendChild(item);
+        });
+
+        this.setupHierarchyToggle();
+        this.setupCarousel();
+    }
+
+    setupHierarchyToggle() {
+        const toggle = this.el('hierarchy-media-toggle');
+        const content = this.el('hierarchy-media-content');
+        const chevron = this.el('hierarchy-media-chevron');
+
+        if (!toggle || !content) return;
+
+        // Reset display if needed (default to visible)
+        content.style.display = 'block';
+
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+
+        newToggle.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            if (chevron) {
+                // Point up when expanded (block), point down when collapsed (none)
+                chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        });
+    }
+
+    setupCarousel() {
+        const container = this.el('hierarchy-media');
+        const prevBtn = this.el('hierarchy-prev-btn');
+        const nextBtn = this.el('hierarchy-next-btn');
+
+        if (!container) return;
+
+        // Prevent native drag on images and links within the carousel
+        container.querySelectorAll('a, img').forEach(el => {
+            el.draggable = false;
+        });
+
+        // Update buttons visibility
+        const updateButtons = () => {
+            if (prevBtn) {
+                const isDisabled = container.scrollLeft <= 0;
+                prevBtn.disabled = isDisabled;
+                prevBtn.style.pointerEvents = isDisabled ? 'none' : 'auto';
+            }
+            if (nextBtn) {
+                const isDisabled = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
+                nextBtn.disabled = isDisabled;
+                nextBtn.style.pointerEvents = isDisabled ? 'none' : 'auto';
+            }
+        };
+
+        container.addEventListener('scroll', updateButtons);
+        window.addEventListener('resize', updateButtons);
+        setTimeout(updateButtons, 100);
+
+        // Click & Drag logic
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let hasDragged = false;
+        const dragThreshold = 5;
+
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            hasDragged = false;
+            container.classList.add('grabbing');
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
+
+        container.addEventListener('mouseleave', () => {
+            isDown = false;
+            container.classList.remove('grabbing');
+        });
+
+        container.addEventListener('mouseup', () => {
+            isDown = false;
+            container.classList.remove('grabbing');
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = x - startX;
+
+            if (Math.abs(walk) > dragThreshold) {
+                hasDragged = true;
+            }
+
+            container.scrollLeft = scrollLeft - walk;
+        });
+
+        // Prevent click navigation if user was dragging
+        container.addEventListener('click', (e) => {
+            if (hasDragged) {
+                e.preventDefault();
+                e.stopPropagation();
+                hasDragged = false;
+            }
+        }, true);
+
+        // Button logic
+        if (prevBtn) {
+            prevBtn.onclick = () => {
+                container.scrollBy({ left: -300, behavior: 'smooth' });
+            };
+        }
+
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                container.scrollBy({ left: 300, behavior: 'smooth' });
+            };
+        }
+    }
+
+    // ==================== Relation Manager Methods ====================
+
+    setupRelationManager() {
+        this.renderRelationStatusDisplay();
+        this.setupRelationModalEvents();
+
+        this.el('manage-relations-btn')?.addEventListener('click', () => {
+            this.openRelationModal();
+        });
+    }
+
+    renderRelationStatusDisplay() {
+        const container = this.el('relation-status-display');
+        if (!container) return;
+
+        const hasParent = !!this.currentMedia.parent_id;
+        const hasChildren = this.currentMedia.has_children;
+        const childCount = this.currentMedia.hierarchy?.length || 0;
+
+        if (hasParent) {
+            container.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="text-xs">Parent: <a href="/media/${this.currentMedia.parent_id}" class="hover:text-primary">ID ${this.currentMedia.parent_id}</a></span>
+                </div>
+            `;
+        } else if (hasChildren) {
+            container.innerHTML = `
+                <span class="text-xs">${childCount} child${childCount !== 1 ? 'ren' : ''}</span>
+            `;
+        } else {
+            container.innerHTML = '<p class="text-xs text-secondary">No relations</p>';
+        }
+    }
+
+    setupRelationModalEvents() {
+        const modal = this.el('relation-manager-modal');
+        const backdrop = this.el('relation-modal-backdrop');
+        const closeBtn = this.el('relation-modal-close');
+        const searchForm = this.el('relation-search-form');
+        const searchInput = this.el('relation-search-input');
+
+        // Close modal events
+        backdrop?.addEventListener('click', () => this.closeRelationModal());
+        closeBtn?.addEventListener('click', () => this.closeRelationModal());
+
+        // ESC key to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.relationModal.isOpen) {
+                this.closeRelationModal();
+            }
+        });
+
+        // Search form
+        searchForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.performRelationSearch();
+        });
+
+        // Search input with debounce
+        let searchTimeout;
+        searchInput?.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.performRelationSearch();
+            }, 300);
+        });
+
+        // Initialize tag autocomplete for search input
+        if (searchInput && typeof TagAutocomplete !== 'undefined') {
+            new TagAutocomplete(searchInput, {
+                multipleValues: true
+            });
+        }
+
+        // Action buttons
+        this.el('relation-set-parent-btn')?.addEventListener('click', () => this.setSelectedAsParent());
+        this.el('relation-add-child-btn')?.addEventListener('click', () => this.addSelectedAsChildren());
+        this.el('relation-add-children-btn')?.addEventListener('click', () => this.addSelectedAsChildren());
+        this.el('relation-remove-children-btn')?.addEventListener('click', () => this.removeSelectedChildren());
+        this.el('relation-clear-selection')?.addEventListener('click', () => this.clearRelationSelection());
+
+        // Load more button
+        this.el('relation-load-more-btn')?.addEventListener('click', () => this.loadMoreRelationItems());
+    }
+
+    openRelationModal() {
+        const modal = this.el('relation-manager-modal');
+        if (!modal) return;
+
+        // Reset state
+        this.relationModal.isOpen = true;
+        this.relationModal.selectedItems.clear();
+        this.relationModal.currentPage = 1;
+        this.relationModal.isSearchMode = false;
+        this.relationModal.searchQuery = '';
+        this.relationModal.childIds.clear();
+
+        // Store current children IDs for removal functionality
+        if (this.currentMedia.hierarchy) {
+            this.currentMedia.hierarchy.forEach(item => {
+                if (!this.currentMedia.parent_id) {
+                    // Current media is parent, hierarchy items are children
+                    this.relationModal.childIds.add(item.id);
+                }
+            });
+        }
+
+        // Clear search input
+        const searchInput = this.el('relation-search-input');
+        if (searchInput) searchInput.value = '';
+
+        // Update status
+        this.updateRelationModalStatus();
+
+        // Show modal
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Load initial content (related items)
+        this.loadRelationGallery();
+    }
+
+    closeRelationModal() {
+        const modal = this.el('relation-manager-modal');
+        if (!modal) return;
+
+        this.relationModal.isOpen = false;
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    updateRelationModalStatus() {
+        const container = this.el('relation-status-content');
+        if (!container) return;
+
+        const hasParent = !!this.currentMedia.parent_id;
+        const hasChildren = this.currentMedia.has_children;
+        const childCount = this.relationModal.childIds.size;
+
+        let html = '';
+
+        if (hasParent) {
+            html = `
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                        <span class="font-medium">Current Parent:</span>
+                        <a href="/media/${this.currentMedia.parent_id}" target="_blank" class="text-primary hover:underline ml-1">
+                            ID ${this.currentMedia.parent_id}
+                        </a>
+                    </div>
+                    <button id="relation-remove-parent-btn" class="px-3 py-1 bg-danger tag-text text-xs hover:opacity-90 transition-opacity">
+                        Remove Parent
+                    </button>
+                </div>
+                <p class="text-xs text-secondary mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    This item has a parent. You can change or remove the parent, but cannot add children.
+                </p>
+            `;
+        } else if (hasChildren) {
+            html = `
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <span><span class="font-medium">Children:</span> ${childCount} item${childCount !== 1 ? 's' : ''}</span>
+                </div>
+                <p class="text-xs text-secondary mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    This item has children. You can add or remove children, but cannot set a parent.
+                </p>
+            `;
+        } else {
+            html = `
+                <p class="text-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    No relations. Select one item to set as parent, or select multiple items to add as children.
+                </p>
+            `;
+        }
+
+        container.innerHTML = html;
+
+        // Add remove parent event listener
+        this.el('relation-remove-parent-btn')?.addEventListener('click', () => this.removeParent());
+    }
+
+    async loadRelationGallery(append = false) {
+        if (this.relationModal.isLoading) return;
+
+        this.relationModal.isLoading = true;
+        const gallery = this.el('relation-gallery');
+        const loading = this.el('relation-loading');
+        const empty = this.el('relation-empty');
+        const loadMore = this.el('relation-load-more');
+        const searchHint = this.el('relation-search-hint');
+
+        if (!append) {
+            gallery.innerHTML = '';
+        }
+        loading.style.display = 'block';
+        empty.style.display = 'none';
+        loadMore.style.display = 'none';
+
+        try {
+            let items = [];
+            let totalPages = 1;
+
+            if (this.relationModal.isSearchMode && this.relationModal.searchQuery) {
+                const params = new URLSearchParams({
+                    q: this.relationModal.searchQuery,
+                    page: this.relationModal.currentPage,
+                    limit: 24
+                });
+
+                const res = await fetch(`/api/search?${params.toString()}`);
+                const data = await res.json();
+                items = data.items || [];
+                totalPages = data.pages || 1;
+
+                searchHint.textContent = `Showing search results for "${this.relationModal.searchQuery}"`;
+            } else {
+                items = await this.getRelatedItemsForModal();
+                searchHint.textContent = 'Showing related items. Use the search bar to find specific media.';
+            }
+
+            // Filtering logic
+            const currentId = parseInt(this.mediaId);
+
+            const isCurrentItemParent = this.currentMedia.has_children ||
+                (this.currentMedia.hierarchy &&
+                    this.currentMedia.hierarchy.length > 0 &&
+                    !this.currentMedia.parent_id);
+
+            items = items.filter(item => {
+                if (item.id === currentId) return false;
+                if (item.parent_id && item.parent_id !== currentId) {
+                    return false;
+                }
+                if (isCurrentItemParent && item.has_children) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            this.relationModal.totalPages = totalPages;
+
+            if (items.length === 0 && !append) {
+                empty.style.display = 'block';
+            } else {
+                items.forEach(media => {
+                    const item = this.createRelationGalleryItem(media);
+                    gallery.appendChild(item);
+                });
+
+                // Show load more if there are more pages (only in search mode)
+                if (this.relationModal.isSearchMode && this.relationModal.currentPage < totalPages) {
+                    loadMore.style.display = 'block';
+                }
+            }
+        } catch (e) {
+            console.error('Error loading relation gallery:', e);
+            empty.style.display = 'block';
+            empty.innerHTML = '<p class="text-danger">Error loading items</p>';
+        } finally {
+            loading.style.display = 'none';
+            this.relationModal.isLoading = false;
+        }
+    }
+
+    async getRelatedItemsForModal() {
+        const items = [];
+        const addedIds = new Set();
+        const currentId = parseInt(this.mediaId);
+
+        // Add hierarchy items first (parent/siblings or children)
+        if (this.currentMedia.hierarchy) {
+            this.currentMedia.hierarchy.forEach(item => {
+                if (item.id !== currentId && !addedIds.has(item.id)) {
+                    items.push(item);
+                    addedIds.add(item.id);
+                }
+            });
+        }
+
+        // Add parent if exists
+        if (this.currentMedia.parent_id && !addedIds.has(this.currentMedia.parent_id)) {
+            try {
+                const res = await fetch(`/api/media/${this.currentMedia.parent_id}`);
+                if (res.ok) {
+                    const parent = await res.json();
+                    items.unshift(parent);
+                    addedIds.add(parent.id);
+                }
+            } catch (e) {
+                console.error('Error loading parent:', e);
+            }
+        }
+
+        // Get more related items using tags
+        if (this.currentMedia.tags && this.currentMedia.tags.length > 0) {
+            const generalTags = this.currentMedia.tags.filter(t => t.category === 'general');
+            if (generalTags.length > 0) {
+                const tagQuery = generalTags.slice(0, 3).map(t => t.name).join(' ');
+                try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(tagQuery)}&limit=30`);
+                    const data = await res.json();
+                    (data.items || []).forEach(item => {
+                        if (item.id !== currentId && !addedIds.has(item.id)) {
+                            items.push(item);
+                            addedIds.add(item.id);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error loading related items:', e);
+                }
+            }
+        }
+
+        return items;
+    }
+
+    createRelationGalleryItem(media) {
+        const item = document.createElement('div');
+        item.className = 'gallery-item relative cursor-pointer group';
+        item.dataset.id = media.id;
+
+        const isSelected = this.relationModal.selectedItems.has(media.id);
+        const isChild = this.relationModal.childIds.has(media.id);
+        const isParent = media.id === this.currentMedia.parent_id;
+
+        if (isSelected) item.classList.add('selected');
+        if (isChild) item.classList.add('is-child');
+        if (isParent) item.classList.add('is-parent');
+
+        // Thumbnail
+        const img = document.createElement('img');
+        img.src = `/api/media/${media.id}/thumbnail`;
+        img.alt = media.filename || `Media ${media.id}`;
+        img.loading = 'lazy';
+        img.className = 'w-full aspect-square object-cover border transition-all';
+        img.draggable = false;
+        img.onerror = () => {
+            img.src = '/static/images/no-thumbnail.png';
+        };
+
+        // Selection overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'absolute inset-0 bg-primary/30 opacity-0 transition-opacity pointer-events-none';
+        if (isSelected) overlay.classList.add('opacity-100');
+
+        // Select Indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'select-indicator';
+        indicator.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        `;
+
+        // Status badge (parent/child)
+        if (isParent || isChild) {
+            const badge = document.createElement('div');
+            badge.className = `absolute top-1 right-1 px-1.5 py-0.5 text-xs font-medium ${isParent ? 'bg-[var(--parent-outline)] tag-text' : 'bg-[var(--child-outline)] tag-text'}`;
+            badge.textContent = isParent ? 'PARENT' : 'CHILD';
+            item.appendChild(badge);
+        }
+
+        // Click handler
+        item.addEventListener('click', () => {
+            this.toggleRelationItemSelection(media.id, item);
+        });
+
+        item.appendChild(img);
+        item.appendChild(overlay);
+        item.appendChild(indicator);
+
+        return item;
+    }
+
+    toggleRelationItemSelection(mediaId, itemElement) {
+        const overlay = itemElement.querySelector('.absolute.bg-primary\\/30');
+
+        if (this.relationModal.selectedItems.has(mediaId)) {
+            this.relationModal.selectedItems.delete(mediaId);
+            itemElement.classList.remove('selected');
+            if (overlay) overlay.classList.remove('opacity-100');
+        } else {
+            this.relationModal.selectedItems.add(mediaId);
+            itemElement.classList.add('selected');
+            if (overlay) overlay.classList.add('opacity-100');
+        }
+
+        this.updateRelationActionButtons();
+    }
+
+    updateRelationActionButtons() {
+        const selectedCount = this.relationModal.selectedItems.size;
+        const hasParent = !!this.currentMedia.parent_id;
+        const hasChildren = this.currentMedia.has_children;
+
+        const countEl = this.el('relation-selected-count');
+        const clearBtn = this.el('relation-clear-selection');
+        const setParentBtn = this.el('relation-set-parent-btn');
+        const addChildBtn = this.el('relation-add-child-btn');
+        const addChildrenBtn = this.el('relation-add-children-btn');
+        const removeChildrenBtn = this.el('relation-remove-children-btn');
+        const actionsContainer = this.el('relation-actions');
+
+        // Update count
+        if (countEl) {
+            countEl.textContent = `${selectedCount} selected`;
+        }
+
+        // Show/hide clear button
+        if (clearBtn) {
+            clearBtn.style.display = selectedCount > 0 ? 'inline' : 'none';
+        }
+
+        // Hide all action buttons first
+        if (setParentBtn) setParentBtn.style.display = 'none';
+        if (addChildBtn) addChildBtn.style.display = 'none';
+        if (addChildrenBtn) addChildrenBtn.style.display = 'none';
+        if (removeChildrenBtn) removeChildrenBtn.style.display = 'none';
+
+        if (selectedCount === 0) {
+            return;
+        }
+
+        // Check if any selected items are current children (for removal)
+        const selectedChildIds = [...this.relationModal.selectedItems].filter(id =>
+            this.relationModal.childIds.has(id)
+        );
+        const hasSelectedChildren = selectedChildIds.length > 0;
+
+        // Determine which buttons to show based on current state and selection
+        if (hasParent) {
+            // Current media has a parent - can only change parent
+            if (selectedCount === 1) {
+                const selectedId = [...this.relationModal.selectedItems][0];
+                if (selectedId !== this.currentMedia.parent_id) {
+                    if (setParentBtn) setParentBtn.style.display = 'block';
+                }
+            }
+        } else if (hasChildren) {
+            // Current media has children - can add more or remove existing
+            if (hasSelectedChildren) {
+                if (removeChildrenBtn) {
+                    removeChildrenBtn.style.display = 'block';
+                    removeChildrenBtn.textContent = `Remove ${selectedChildIds.length} Child${selectedChildIds.length !== 1 ? 'ren' : ''}`;
+                }
+            }
+            // Check for non-child items to add
+            const nonChildSelected = [...this.relationModal.selectedItems].filter(id =>
+                !this.relationModal.childIds.has(id)
+            );
+            if (nonChildSelected.length > 0) {
+                if (nonChildSelected.length === 1) {
+                    if (addChildBtn) addChildBtn.style.display = 'block';
+                } else {
+                    if (addChildrenBtn) {
+                        addChildrenBtn.style.display = 'block';
+                        addChildrenBtn.textContent = `Add ${nonChildSelected.length} as Children`;
+                    }
+                }
+            }
+        } else {
+            // No relations - can set parent (1 item) or add children (any number)
+            if (selectedCount === 1) {
+                if (setParentBtn) setParentBtn.style.display = 'block';
+                if (addChildBtn) addChildBtn.style.display = 'block';
+            } else {
+                if (addChildrenBtn) {
+                    addChildrenBtn.style.display = 'block';
+                    addChildrenBtn.textContent = `Add ${selectedCount} as Children`;
+                }
+            }
+        }
+    }
+
+    clearRelationSelection() {
+        this.relationModal.selectedItems.clear();
+
+        const gallery = this.el('relation-gallery');
+        gallery.querySelectorAll('.relation-gallery-item').forEach(item => {
+            item.classList.remove('selected');
+            const overlay = item.querySelector('.absolute.bg-primary\\/30');
+            const checkbox = item.querySelector('.absolute.top-1.left-1');
+            if (overlay) overlay.classList.remove('opacity-100');
+            if (checkbox) {
+                checkbox.innerHTML = '';
+                checkbox.classList.remove('bg-primary', 'border-primary');
+                checkbox.classList.add('border-white/70');
+            }
+        });
+
+        this.updateRelationActionButtons();
+    }
+
+    performRelationSearch() {
+        const searchInput = this.el('relation-search-input');
+        const query = searchInput?.value.trim() || '';
+
+        this.relationModal.searchQuery = query;
+        this.relationModal.isSearchMode = query.length > 0;
+        this.relationModal.currentPage = 1;
+
+        this.loadRelationGallery();
+    }
+
+    loadMoreRelationItems() {
+        this.relationModal.currentPage++;
+        this.loadRelationGallery(true);
+    }
+
+    async setSelectedAsParent() {
+        if (this.relationModal.selectedItems.size !== 1) return;
+
+        const parentId = [...this.relationModal.selectedItems][0];
+
+        try {
+            await app.apiCall(`/api/media/${this.mediaId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ parent_id: parentId })
+            });
+
+            app.showNotification('Parent set successfully', 'success');
+            this.closeRelationModal();
+            location.reload();
+        } catch (e) {
+            app.showNotification(e.message, 'error', 'Error setting parent');
+        }
+    }
+
+    async addSelectedAsChildren() {
+        const selectedIds = [...this.relationModal.selectedItems].filter(id =>
+            !this.relationModal.childIds.has(id)
+        );
+
+        if (selectedIds.length === 0) return;
+
+        try {
+            // Set current media as parent for each selected item
+            for (const childId of selectedIds) {
+                await app.apiCall(`/api/media/${childId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ parent_id: parseInt(this.mediaId) })
+                });
+            }
+
+            app.showNotification(`Added ${selectedIds.length} child${selectedIds.length !== 1 ? 'ren' : ''} successfully`, 'success');
+            this.closeRelationModal();
+            location.reload();
+        } catch (e) {
+            app.showNotification(e.message, 'error', 'Error adding children');
+        }
+    }
+
+    async removeSelectedChildren() {
+        const selectedChildIds = [...this.relationModal.selectedItems].filter(id =>
+            this.relationModal.childIds.has(id)
+        );
+
+        if (selectedChildIds.length === 0) return;
+
+        const modal = new ModalHelper({
+            id: 'remove-children-modal',
+            type: 'warning',
+            title: 'Remove Children',
+            message: `Are you sure you want to remove ${selectedChildIds.length} item${selectedChildIds.length !== 1 ? 's' : ''} as children?`,
+            confirmText: 'Yes, Remove',
+            cancelText: 'Cancel',
+            onConfirm: async () => {
+                try {
+                    for (const childId of selectedChildIds) {
+                        await app.apiCall(`/api/media/${childId}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ parent_id: null })
+                        });
+                    }
+
+                    app.showNotification(`Removed ${selectedChildIds.length} child${selectedChildIds.length !== 1 ? 'ren' : ''} successfully`, 'success');
+                    this.closeRelationModal();
+                    location.reload();
+                } catch (e) {
+                    app.showNotification(e.message, 'error', 'Error removing children');
+                }
+            }
+        });
+        modal.show();
+    }
+
+    async removeParent() {
+        const modal = new ModalHelper({
+            id: 'remove-parent-modal',
+            type: 'warning',
+            title: 'Remove Parent',
+            message: 'Are you sure you want to remove the parent relationship?',
+            confirmText: 'Yes, Remove',
+            cancelText: 'Cancel',
+            onConfirm: async () => {
+                try {
+                    await app.apiCall(`/api/media/${this.mediaId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ parent_id: null })
+                    });
+
+                    app.showNotification('Parent removed successfully', 'success');
+                    this.closeRelationModal();
+                    location.reload();
+                } catch (e) {
+                    app.showNotification(e.message, 'error', 'Error removing parent');
+                }
+            }
+        });
+        modal.show();
     }
 
     showShareLink(uuid, shareAIMetadata) {
