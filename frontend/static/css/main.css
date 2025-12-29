@@ -266,14 +266,6 @@ span.checked:hover {
     border-color: var(--primary-color);
 }
 
-.gallery-grid.selection-mode .gallery-item:not(.selected) a img {
-    opacity: 0.7;
-}
-
-.gallery-grid.selection-mode .gallery-item:not(.selected):hover a img {
-    opacity: 1;
-}
-
 .gallery-item .select-checkbox {
     position: absolute;
     opacity: 0;
@@ -335,9 +327,17 @@ span.checked:hover {
     background: var(--primary-color);
 }
 
-.gallery-grid.selection-mode .gallery-item .select-indicator {
+#gallery-grid.selection-mode .gallery-item .select-indicator {
     opacity: 1;
     pointer-events: auto;
+}
+
+#gallery-grid.selection-mode .gallery-item:not(.selected) a img {
+    opacity: 0.7;
+}
+
+#gallery-grid.selection-mode .gallery-item:not(.selected):hover a img {
+    opacity: 1;
 }
 
 @keyframes longPressRing {
