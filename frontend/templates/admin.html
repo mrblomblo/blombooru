@@ -260,8 +260,9 @@
                 <div class="border-t pt-4">
                     <h3 class="text-sm font-bold mb-3 text-danger">Danger Zone</h3>
                     <button id="clear-tags-btn"
-                        class="px-4 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">Delete All
-                        Tags</button>
+                        class="px-4 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">
+                        Delete All Tags
+                    </button>
                 </div>
             </div>
 
@@ -329,6 +330,51 @@
                             class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Search</button>
                     </div>
                     <div id="album-search-results" class="max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Backup & Restore Section -->
+            <div class="surface p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">Backup & Restore</h2>
+
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Export Data</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <a href="/api/admin/backup/tags"
+                            class="block w-full text-center px-4 py-2 surface-light hover:surface-light text-white transition-colors hover:bg-opacity-80 text-xs">
+                            Export Tags (CSV)
+                        </a>
+                        <a href="/api/admin/backup/media"
+                            class="block w-full text-center px-4 py-2 surface-light hover:surface-light text-white transition-colors hover:bg-opacity-80 text-xs">
+                            Export Media (ZIP)
+                        </a>
+                        <a href="/api/admin/backup/full"
+                            class="block w-full text-center px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                            Full Backup (ZIP)
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold mb-3">Import Full Backup</h3>
+                    <div class="bg p-4 border block">
+                        <p class="text-xs text-secondary mb-3">
+                            Restore a full backup ZIP. This will add missing tags and media files.<br>
+                            Existing files with matching content (hashes) will be skipped.<br>
+                            <strong>Warning:</strong> This process might take a while for large backups.
+                        </p>
+
+                        <div id="full-import-area" class="upload-area">
+                            <p class="text-xs">Drop Full Backup ZIP here or click to browse</p>
+                            <input type="file" id="full-import-input" accept=".zip" class="hidden">
+                        </div>
+
+                        <div id="full-import-status" style="display: none;" class="mt-3">
+                            <div class="text-xs">
+                                <div id="full-import-progress"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

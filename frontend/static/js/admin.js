@@ -598,6 +598,36 @@ class AdminPanel {
             }
         });
 
+        // Full Backup Import
+        const fullImportArea = document.getElementById('full-import-area');
+        const fullImportInput = document.getElementById('full-import-input');
+
+        fullImportArea?.addEventListener('click', () => fullImportInput?.click());
+
+        fullImportArea?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fullImportArea.style.backgroundColor = '#334155';
+        });
+
+        fullImportArea?.addEventListener('dragleave', () => {
+            fullImportArea.style.backgroundColor = '';
+        });
+
+        fullImportArea?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fullImportArea.style.backgroundColor = '';
+
+            if (e.dataTransfer.files.length > 0) {
+                this.uploadFullBackup(e.dataTransfer.files[0]);
+            }
+        });
+
+        fullImportInput?.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.uploadFullBackup(e.target.files[0]);
+            }
+        });
+
         // Tag search
         const searchBtn = document.getElementById('tag-search-btn');
         const searchInput = document.getElementById('tag-search-input');
@@ -734,6 +764,55 @@ class AdminPanel {
         }
     }
 
+    async uploadFullBackup(file) {
+        const statusDiv = document.getElementById('full-import-status');
+        const progressDiv = document.getElementById('full-import-progress');
+
+        statusDiv.style.display = 'block';
+        progressDiv.innerHTML = `
+            <div class="bg-primary primary-text p-3 mb-2">
+                <strong>Uploading and importing backup...</strong><br>
+                <div class="loader mt-2"></div>
+                <span class="text-xs">This operation may take a significant amount of time.<br><strong>DO NOT REFRESH OR CLOSE THE PAGE.</strong></span>
+            </div>
+            `;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/admin/import/full', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Import failed');
+            }
+
+            const result = await response.json();
+
+            progressDiv.innerHTML = `
+                <div class="bg-success p-3 mb-2 tag-text">
+                    <strong>Import Completed Successfully!</strong>
+                </div>
+            `;
+
+            // Reload all stats
+            this.loadTagStats();
+            this.loadMediaStats();
+            this.loadAlbumStats();
+
+        } catch (error) {
+            progressDiv.innerHTML = `
+                <div class="bg-danger p-3 tag-text">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+                `;
+        }
+    }
+
     async searchTags() {
         const query = document.getElementById('tag-search-input').value;
         const resultsDiv = document.getElementById('tag-search-results');
@@ -761,7 +840,7 @@ class AdminPanel {
                     </div>
                     <span class="text-xs text-secondary uppercase">${tag.category}</span>
                 </div>
-            `).join('');
+                `).join('');
 
             // Add event listeners to delete buttons
             resultsDiv.querySelectorAll('.delete-tag-btn').forEach(btn => {

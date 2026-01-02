@@ -1,5 +1,7 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File
-from sqlalchemy.orm import Session
+import json
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import OperationalError, IntegrityError
 from sqlalchemy import create_engine as sqlalchemy_create_engine, text
 from typing import Optional
@@ -13,6 +15,12 @@ from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
 from ..config import settings
 from ..utils.file_scanner import find_untracked_media
 from ..themes import theme_registry
+from ..utils.backup import generate_tags_dump, stream_zip_generator, get_media_files_generator, import_full_backup, generate_tags_csv_stream
+from fastapi.responses import StreamingResponse
+import tempfile
+import shutil
+import zipfile
+from pathlib import Path
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -416,19 +424,14 @@ async def get_media_stats(
         "total_videos": total_videos,
     }
 
-@router.post("/import-tags-csv")
-async def import_tags_csv(
-    file: UploadFile = File(...),
-    current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db)
-):
-    """Import tags from CSV file (two-pass, non-streaming)"""
+def import_tags_csv_logic(csv_text: str, db: Session):
+    """
+    Core logic for importing tags from CSV content.
+    Returns a dict with import statistics.
+    """
     import csv
     import io
     from ..models import Tag, TagAlias
-    
-    contents = await file.read()
-    csv_text = contents.decode('utf-8')
     
     category_map = {
         0: 'general',
@@ -438,7 +441,6 @@ async def import_tags_csv(
         5: 'meta'
     }
     
-    # Limits based on database schema
     MAX_TAG_LENGTH = 255
     MAX_ALIAS_LENGTH = 255
     
@@ -451,204 +453,207 @@ async def import_tags_csv(
     
     BATCH_SIZE = 1000
     
-    try:
-        # PASS 1: Import tags only
-        print("Pass 1: Importing tags...")
-        csv_reader = csv.reader(io.StringIO(csv_text))
-        
-        tag_data = []  # Store (tag_name, category, aliases_str) for pass 2
-        tags_to_create = []
-        rows_processed = 0
-        existing_tags = {tag.name: tag for tag in db.query(Tag).all()}
-        
-        for row_num, row in enumerate(csv_reader, 1):
+    # PASS 1: Import tags only
+    print("Pass 1: Importing tags...")
+    csv_reader = csv.reader(io.StringIO(csv_text))
+    
+    tag_data = []
+    tags_to_create = []
+    rows_processed = 0
+    existing_tags = {tag.name: tag for tag in db.query(Tag).all()}
+    
+    for row_num, row in enumerate(csv_reader, 1):
+        try:
+            if len(row) < 2:
+                continue
+            
+            tag_name = row[0].strip().lower()
+            if not tag_name:
+                continue
+            
+            if len(tag_name) > MAX_TAG_LENGTH:
+                skipped_long_tags += 1
+                errors.append(f"Row {row_num}: Tag '{tag_name[:50]}...' too long ({len(tag_name)} chars)")
+                continue
+            
             try:
-                if len(row) < 2:
-                    continue
-                
-                tag_name = row[0].strip().lower()
-                if not tag_name:
-                    continue
-                
-                if len(tag_name) > MAX_TAG_LENGTH:
-                    skipped_long_tags += 1
-                    errors.append(f"Row {row_num}: Tag '{tag_name[:50]}...' too long ({len(tag_name)} chars)")
-                    continue
-                
+                category_num = int(row[1])
+            except (ValueError, IndexError):
+                errors.append(f"Row {row_num}: Invalid category")
+                continue
+            
+            aliases_str = row[3] if len(row) > 3 else ""
+            category = category_map.get(category_num, 'general')
+            
+            tag_data.append((tag_name, category, aliases_str))
+            
+            if tag_name in existing_tags:
+                tag = existing_tags[tag_name]
+                if tag.category != category:
+                    tag.category = category
+                    tags_updated += 1
+            else:
+                tags_to_create.append({
+                    'name': tag_name,
+                    'category': category,
+                    'post_count': 0
+                })
+                tags_created += 1
+            
+            rows_processed += 1
+            
+            if rows_processed % BATCH_SIZE == 0:
                 try:
-                    category_num = int(row[1])
-                except (ValueError, IndexError):
-                    errors.append(f"Row {row_num}: Invalid category")
-                    continue
-                
-                aliases_str = row[3] if len(row) > 3 else ""
-                category = category_map.get(category_num, 'general')
-                
-                # Store for pass 2
-                tag_data.append((tag_name, category, aliases_str))
-                
-                if tag_name in existing_tags:
-                    tag = existing_tags[tag_name]
-                    if tag.category != category:
-                        tag.category = category
-                        tags_updated += 1
-                else:
-                    tags_to_create.append({
-                        'name': tag_name,
-                        'category': category,
-                        'post_count': 0
-                    })
-                    tags_created += 1
-                
-                rows_processed += 1
-                
-                # Commit in batches
-                if rows_processed % BATCH_SIZE == 0:
-                    try:
-                        if tags_to_create:
-                            db.bulk_insert_mappings(Tag, tags_to_create)
-                            tags_to_create = []
-                        
-                        db.commit()
-                        print(f"Pass 1: Processed {rows_processed} tags...")
-                        
-                        # Clear SQLAlchemy cache
-                        db.expire_all()
-                    except Exception as e:
-                        db.rollback()
-                        errors.append(f"Batch error at row {row_num}: {str(e)}")
+                    if tags_to_create:
+                        db.bulk_insert_mappings(Tag, tags_to_create)
                         tags_to_create = []
-                        # Reload existing tags after rollback
-                        existing_tags = {tag.name: tag for tag in db.query(Tag).all()}
-            
-            except Exception as e:
-                errors.append(f"Row {row_num}: {str(e)}")
-                continue
+                    
+                    db.commit()
+                    print(f"Pass 1: Processed {rows_processed} tags...")
+                    db.expire_all()
+                except Exception as e:
+                    db.rollback()
+                    errors.append(f"Batch error at row {row_num}: {str(e)}")
+                    tags_to_create = []
+                    existing_tags = {tag.name: tag for tag in db.query(Tag).all()}
         
-        # Final commit for pass 1
-        try:
-            if tags_to_create:
-                db.bulk_insert_mappings(Tag, tags_to_create)
-            db.commit()
         except Exception as e:
-            db.rollback()
-            errors.append(f"Final batch error in pass 1: {str(e)}")
+            errors.append(f"Row {row_num}: {str(e)}")
+            continue
+    
+    # Final commit for pass 1
+    try:
+        if tags_to_create:
+            db.bulk_insert_mappings(Tag, tags_to_create)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        errors.append(f"Final batch error in pass 1: {str(e)}")
+    
+    print(f"Pass 1 complete: {tags_created} tags created, {tags_updated} updated, {skipped_long_tags} skipped")
+    
+    existing_tags = None
+    tags_to_create = None
+    db.expire_all()
+    
+    # PASS 2: Import aliases
+    print("Pass 2: Importing aliases...")
+    print("Building tag mapping...")
+    tag_map = {}
+    offset = 0
+    chunk_size = 10000
+    
+    while True:
+        tags_chunk = db.query(Tag.name, Tag.id).limit(chunk_size).offset(offset).all()
+        if not tags_chunk:
+            break
         
-        print(f"Pass 1 complete: {tags_created} tags created, {tags_updated} updated, {skipped_long_tags} skipped (too long)")
+        for name, tag_id in tags_chunk:
+            tag_map[name] = tag_id
         
-        existing_tags = None
-        tags_to_create = None
-        db.expire_all()
-        
-        # PASS 2: Import aliases
-        print("Pass 2: Importing aliases...")
-        
-        # Build tag name -> ID mapping (load in chunks to avoid memory issues)
-        print("Building tag mapping...")
-        tag_map = {}
-        offset = 0
-        chunk_size = 10000
-        
-        while True:
-            tags_chunk = db.query(Tag.name, Tag.id).limit(chunk_size).offset(offset).all()
-            if not tags_chunk:
-                break
+        offset += chunk_size
+        if offset % 50000 == 0:
+            print(f"Loaded {offset} tag mappings...")
+    
+    print(f"Tag mapping complete: {len(tag_map)} tags")
+    
+    existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
+    aliases_to_create = []
+    rows_processed = 0
+    
+    for tag_name, category, aliases_str in tag_data:
+        try:
+            if not aliases_str or tag_name not in tag_map:
+                continue
             
-            for name, tag_id in tags_chunk:
-                tag_map[name] = tag_id
+            tag_id = tag_map[tag_name]
             
-            offset += chunk_size
-            if offset % 50000 == 0:
-                print(f"Loaded {offset} tag mappings...")
-        
-        print(f"Tag mapping complete: {len(tag_map)} tags")
-        
-        existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
-        aliases_to_create = []
-        rows_processed = 0
-        
-        for tag_name, category, aliases_str in tag_data:
-            try:
-                if not aliases_str or tag_name not in tag_map:
+            alias_names = set()
+            for a in aliases_str.split(','):
+                alias = a.strip().lower()
+                if not alias or alias == tag_name:
                     continue
                 
-                tag_id = tag_map[tag_name]
+                if len(alias) > MAX_ALIAS_LENGTH:
+                    skipped_long_aliases += 1
+                    continue
                 
-                alias_names = set()
-                for a in aliases_str.split(','):
-                    alias = a.strip().lower()
-                    if not alias or alias == tag_name:
-                        continue
-                    
-                    if len(alias) > MAX_ALIAS_LENGTH:
-                        skipped_long_aliases += 1
-                        continue
-                    
-                    alias_names.add(alias)
-                
-                # Add to batch
-                for alias_name in alias_names:
-                    if alias_name not in existing_aliases:
-                        aliases_to_create.append({
-                            'alias_name': alias_name,
-                            'target_tag_id': tag_id
-                        })
-                        existing_aliases.add(alias_name)
-                        aliases_created += 1
-                
-                rows_processed += 1
-                
-                # Commit in batches
-                if rows_processed % BATCH_SIZE == 0:
-                    try:
-                        if aliases_to_create:
-                            db.bulk_insert_mappings(TagAlias, aliases_to_create)
-                            aliases_to_create = []
-                        
-                        db.commit()
-                        print(f"Pass 2: Processed {rows_processed} tags, created {aliases_created} aliases...")
-                        
-                        # Clear SQLAlchemy cache
-                        db.expire_all()
-                    except IntegrityError as e:
-                        db.rollback()
-                        errors.append(f"Alias batch integrity error at row {rows_processed}: {str(e)}")
-                        aliases_to_create = []
-                        # Reload existing aliases after rollback
-                        existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
-                    except Exception as e:
-                        db.rollback()
-                        errors.append(f"Alias batch error at row {rows_processed}: {str(e)}")
-                        aliases_to_create = []
-                        existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
+                alias_names.add(alias)
             
-            except Exception as e:
-                errors.append(f"Pass 2, tag '{tag_name}': {str(e)}")
-                continue
+            for alias_name in alias_names:
+                if alias_name not in existing_aliases:
+                    aliases_to_create.append({
+                        'alias_name': alias_name,
+                        'target_tag_id': tag_id
+                    })
+                    existing_aliases.add(alias_name)
+                    aliases_created += 1
+            
+            rows_processed += 1
+            
+            if rows_processed % BATCH_SIZE == 0:
+                try:
+                    if aliases_to_create:
+                        db.bulk_insert_mappings(TagAlias, aliases_to_create)
+                        aliases_to_create = []
+                    
+                    db.commit()
+                    print(f"Pass 2: Processed {rows_processed} tags, created {aliases_created} aliases...")
+                    db.expire_all()
+                except IntegrityError as e:
+                    db.rollback()
+                    errors.append(f"Alias batch integrity error at row {rows_processed}: {str(e)}")
+                    aliases_to_create = []
+                    existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
+                except Exception as e:
+                    db.rollback()
+                    errors.append(f"Alias batch error at row {rows_processed}: {str(e)}")
+                    aliases_to_create = []
+                    existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
         
-        # Final commit for pass 2
-        try:
-            if aliases_to_create:
-                db.bulk_insert_mappings(TagAlias, aliases_to_create)
-            db.commit()
         except Exception as e:
-            db.rollback()
-            errors.append(f"Final batch error in pass 2: {str(e)}")
+            errors.append(f"Pass 2, tag '{tag_name}': {str(e)}")
+            continue
+    
+    # Final commit for pass 2
+    try:
+        if aliases_to_create:
+            db.bulk_insert_mappings(TagAlias, aliases_to_create)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        errors.append(f"Final batch error in pass 2: {str(e)}")
+    
+    print(f"Pass 2 complete: {aliases_created} aliases created, {skipped_long_aliases} skipped")
+    
+    return {
+        "message": "Tags imported successfully",
+        "tags_created": tags_created,
+        "tags_updated": tags_updated,
+        "aliases_created": aliases_created,
+        "rows_processed": len(tag_data),
+        "skipped_long_tags": skipped_long_tags,
+        "skipped_long_aliases": skipped_long_aliases,
+        "errors": errors[:20] if errors else [],
+        "total_errors": len(errors)
+    }
+
+@router.post("/import-tags-csv")
+async def import_tags_csv(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Import tags from CSV file (two-pass, non-streaming)"""
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
         
-        print(f"Pass 2 complete: {aliases_created} aliases created, {skipped_long_aliases} skipped (too long)")
+    try:
+        contents = await file.read()
+        csv_text = contents.decode('utf-8')
         
-        result = {
-            "message": "Tags imported successfully",
-            "tags_created": tags_created,
-            "tags_updated": tags_updated,
-            "aliases_created": aliases_created,
-            "rows_processed": len(tag_data),
-            "skipped_long_tags": skipped_long_tags,
-            "skipped_long_aliases": skipped_long_aliases,
-            "errors": errors[:20] if errors else [],
-            "total_errors": len(errors)
-        }
-        
+        result = import_tags_csv_logic(csv_text, db)
         return result
     
     except Exception as e:
@@ -791,25 +796,164 @@ async def bulk_create_tags(
                 skipped += 1
                 continue
             
-            tag = Tag(
-                name=tag_name,
-                category=category,
-                post_count=0
-            )
             db.add(tag)
             created += 1
             
         except Exception as e:
-            errors.append(f"Error creating tag '{tag_data.get('name', 'unknown')}': {str(e)}")
-    
+            errors.append(f"Error creating tag '{tag_data.get('name')}': {str(e)}")
+            
     try:
         db.commit()
     except Exception as e:
         db.rollback()
-        errors.append(f"Database commit error: {str(e)}")
-    
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
     return {
+        "message": "Bulk tag creation complete",
         "created": created,
         "skipped": skipped,
         "errors": errors
     }
+
+@router.get("/backup/tags")
+async def backup_tags(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Export all tags and aliases as a CSV file compatible with the import format.
+    """
+    csv_stream = generate_tags_csv_stream(db)
+    
+    return StreamingResponse(
+        csv_stream,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=blombooru_tags.csv"}
+    )
+
+@router.get("/backup/media")
+async def backup_media(
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Download a ZIP backup of all media files"""
+    files_gen = get_media_files_generator()
+    zip_stream = stream_zip_generator(files_gen)
+    
+    return StreamingResponse(
+        zip_stream,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=blombooru_media_backup.zip"}
+    )
+
+@router.get("/backup/full")
+async def backup_full_db(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Download a full backup (Media + Database JSON)"""
+    
+    # 1. Generate Metadata
+    dump_data = generate_tags_dump(db)
+    
+    from sqlalchemy.orm import selectinload
+    from ..models import Media, Album
+    
+    # Export Albums
+    album_list = []
+    media_list = [] # Initialize media list
+    albums_query = db.query(Album).all()
+    
+    for album in albums_query:
+        media_hashes = [m.hash for m in album.media]
+        child_ids = [child.id for child in album.children]
+        
+        album_list.append({
+            "id": album.id,
+            "name": album.name,
+            "created_at": album.created_at.isoformat() if album.created_at else None,
+            "last_modified": album.last_modified.isoformat() if album.last_modified else None,
+            "media_hashes": media_hashes,
+            "child_ids": child_ids
+        })
+    
+    # Prepare Metadata    
+    media_query = db.query(Media).options(selectinload(Media.children)).yield_per(1000)
+    
+    for m in media_query:
+        media_list.append({
+            "filename": m.filename,
+            "hash": m.hash,
+            "file_type": m.file_type.value,
+            "mime_type": m.mime_type,
+            "file_size": m.file_size,
+            "width": m.width,
+            "height": m.height,
+            "duration": m.duration,
+            "rating": m.rating.value if m.rating else 'safe',
+            "tags": [t.name for t in m.tags], 
+            "archive_path": str(Path("media") / Path(m.path).relative_to("media/original")) if "media/original" in m.path else f"media/{m.filename}",
+            "parent_hash": m.children.hash if m.children else None
+        })
+        
+    backup_metadata = {
+        "version": 1,
+        "type": "full_backup",
+        "media": media_list,
+        "albums": album_list
+    }
+    
+    # 2. Prepare Generator
+    def mixed_generator():
+        # A. tags.csv
+        with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
+            csv_gen = generate_tags_csv_stream(db)
+            for chunk in csv_gen:
+                tmp_csv.write(chunk)
+            tmp_csv_path = Path(tmp_csv.name)
+            
+        # B. backup.json (Media metadata)
+        with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
+            tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
+            tmp_json_path = Path(tmp_json.name)
+            
+        try:
+            yield ("tags.csv", tmp_csv_path)
+            yield ("backup.json", tmp_json_path)
+            
+            # C. Media files
+            media_gen = get_media_files_generator()
+            yield from media_gen
+            
+        finally:
+            if tmp_csv_path.exists():
+                os.unlink(tmp_csv_path)
+            if tmp_json_path.exists():
+                os.unlink(tmp_json_path)
+                
+    zip_stream = stream_zip_generator(mixed_generator())
+    
+    return StreamingResponse(
+        zip_stream,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=blombooru_full_backup.zip"}
+    )
+
+@router.post("/import/full")
+async def import_full(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Import a full backup ZIP"""
+    
+    # Use the spooled file directly to prevent duplication
+    try:
+        result = import_full_backup(file.file, db)
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
+
+
+
