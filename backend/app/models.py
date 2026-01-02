@@ -80,7 +80,7 @@ class Tag(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     media = relationship('Media', secondary=blombooru_media_tags, back_populates='tags')
-    aliases = relationship('TagAlias', foreign_keys='TagAlias.target_tag_id', back_populates='target_tag')
+    aliases = relationship('TagAlias', foreign_keys='TagAlias.target_tag_id', back_populates='target_tag', cascade="all, delete-orphan")
 
 class TagAlias(Base):
     __tablename__ = 'blombooru_tag_aliases'
