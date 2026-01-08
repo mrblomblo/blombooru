@@ -38,8 +38,8 @@ class BaseGallery {
 
         // Current state
         this.currentRating = localStorage.getItem('selectedRating') || this.options.defaultRating;
-        this.currentSort = this.options.defaultSort;
-        this.currentOrder = this.options.defaultOrder;
+        this.currentSort = this.elements.sortBy?.dataset.value || this.options.defaultSort;
+        this.currentOrder = this.elements.sortOrder?.dataset.value || this.options.defaultOrder;
     }
 
     /**
