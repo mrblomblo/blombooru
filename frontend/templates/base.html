@@ -68,13 +68,13 @@
                     <ul class="flex gap-2">
                         <li id="nav-albums-item">
                             <a href="/albums"
-                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text-secondary' }}">
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
                                 Albums
                             </a>
                         </li>
                         <li>
                             <a href="#" id="admin-mode-toggle"
-                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/admin') else 'text-secondary' }}">
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/admin') else 'text' }}">
                                 <span id="admin-mode-text">Admin Panel</span>
                             </a>
                         </li>
