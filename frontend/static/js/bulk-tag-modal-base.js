@@ -26,6 +26,8 @@ class BulkTagModalBase {
 
         // Initialize the helper class
         this.tagInputHelper = typeof TagInputHelper !== 'undefined' ? new TagInputHelper() : null;
+
+        this.fullscreenViewer = new FullscreenMediaViewer();
     }
 
     // ==================== Abstract Methods ====================
@@ -192,6 +194,23 @@ class BulkTagModalBase {
 
                 if (btn.classList.contains(`${prefix}-refresh`)) {
                     this.refreshSingleItem(index, input);
+                }
+            });
+
+            // Thumbnail click listener
+            itemsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('item-thumbnail')) {
+                    const itemDiv = e.target.closest(`.${prefix}-item`);
+                    if (itemDiv) {
+                        const index = parseInt(itemDiv.dataset.index);
+                        const item = this.itemsData[index];
+                        if (item && item.mediaId) {
+                            const src = `/api/media/${item.mediaId}/file`;
+                            // Detect if video based on filename extension
+                            const isVideo = item.filename && /\.(mp4|webm|mov|avi|mkv)$/i.test(item.filename);
+                            this.fullscreenViewer.open(src, isVideo);
+                        }
+                    }
                 }
             });
         }
@@ -436,7 +455,7 @@ class BulkTagModalBase {
                 <div class="flex gap-3">
                     <img src="/api/media/${item.mediaId}/thumbnail" 
                          alt="" 
-                         class="w-24 object-cover flex-shrink-0"
+                         class="w-24 object-cover flex-shrink-0 item-thumbnail cursor-pointer"
                          onerror="this.src='/static/images/no-thumbnail.png'">
                     <div class="flex-1 min-w-0">
                         <p class="text-sm truncate mb-1" title="${item.filename}">${item.filename}</p>

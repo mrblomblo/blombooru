@@ -11,6 +11,7 @@ class Uploader {
         this.tagInputHelper = new TagInputHelper();
         this.baseRatingSelect = null;
         this.individualRatingSelect = null;
+        this.fullscreenViewer = new FullscreenMediaViewer();
 
         if (this.uploadArea) {
             this.init();
@@ -475,7 +476,16 @@ class Uploader {
 
         thumbnailDiv.addEventListener('click', (e) => {
             const clickedIndex = parseInt(e.currentTarget.dataset.index);
-            this.selectMedia(clickedIndex);
+            if (this.selectedFileIndex === clickedIndex) {
+                const fileData = this.uploadedFiles[clickedIndex];
+                if (fileData && fileData.file) {
+                    const src = URL.createObjectURL(fileData.file);
+                    const isVideo = fileData.file.type.startsWith('video/');
+                    this.fullscreenViewer.open(src, isVideo);
+                }
+            } else {
+                this.selectMedia(clickedIndex);
+            }
         });
 
         container.appendChild(thumbnailDiv);
