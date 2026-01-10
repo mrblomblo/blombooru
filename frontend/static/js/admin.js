@@ -375,6 +375,11 @@ class AdminPanel {
                 if (itemsPerPageInput) itemsPerPageInput.value = settings.items_per_page;
             }
 
+            if (settings.external_share_url) {
+                const externalShareUrlInput = document.getElementById('external-share-url');
+                if (externalShareUrlInput) externalShareUrlInput.value = settings.external_share_url;
+            }
+
             if (settings.default_sort && this.defaultSortSelect) {
                 this.defaultSortSelect.setValue(settings.default_sort);
             }
@@ -393,6 +398,7 @@ class AdminPanel {
         const themeSelectElement = document.getElementById('theme-select');
         const theme = themeSelectElement?.dataset.value;
         const itemsPerPage = document.getElementById('items-per-page')?.value;
+        const externalShareUrl = document.getElementById('external-share-url')?.value;
 
         if (!appName || !theme || !itemsPerPage) {
             app.showNotification('Please fill in all settings fields!', 'error');
@@ -413,7 +419,8 @@ class AdminPanel {
             theme: theme,
             items_per_page: itemsPerPageNum,
             default_sort: defaultSort,
-            default_order: defaultOrder
+            default_order: defaultOrder,
+            external_share_url: externalShareUrl || null
         };
 
         try {
