@@ -171,7 +171,7 @@ def extract_media_metadata(file_path: Path) -> Dict[str, Any]:
     
     return {}
 
-def serve_media_file(file_path: Path,  mime_type: str,  error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
+async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
     """Serve a media file with error handling and optional metadata stripping."""
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
@@ -180,68 +180,76 @@ def serve_media_file(file_path: Path,  mime_type: str,  error_message: str = "Fi
         return FileResponse(file_path, media_type=mime_type)
     
     if mime_type and mime_type.startswith('image/'):
-        try:
-            import io
-            import tempfile
-            from fastapi.responses import Response
+        # Create a unique cache key based on file path and modification time
+        import hashlib
+        from ..config import settings
+        from fastapi.concurrency import run_in_threadpool
+        
+        stat = file_path.stat()
+        cache_key = f"{str(file_path)}_{stat.st_mtime}"
+        cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
+        cache_path = settings.CACHE_DIR / cache_filename
+        
+        # Return cached file if it exists
+        if cache_path.exists():
+            return FileResponse(cache_path, media_type=mime_type)
             
-            with Image.open(file_path) as img:
-                # Convert RGBA to RGB if necessary (for JPEG output)
-                if mime_type == 'image/jpeg' and img.mode in ('RGBA', 'LA', 'P'):
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    if img.mode == 'P':
-                        img = img.convert('RGBA')
-                    background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                    img = background
-                
-                output = io.BytesIO()
-                
-                # Determine format from mime type
-                format_map = {
-                    'image/jpeg': 'JPEG',
-                    'image/png': 'PNG',
-                    'image/gif': 'GIF',
-                    'image/webp': 'WEBP',
-                    'image/bmp': 'BMP',
-                }
-                
-                save_format = format_map.get(mime_type, 'PNG')
-                
-                # Save without metadata
-                save_kwargs = {
-                    'format': save_format,
-                    'optimize': True,
-                }
-                
-                # Format-specific options
-                if save_format == 'JPEG':
-                    save_kwargs['quality'] = 95
-                    save_kwargs['exif'] = b''  # Empty EXIF data
-                elif save_format == 'PNG':
-                    save_kwargs['compress_level'] = 6
-                    # PNG doesn't save EXIF by default, but we ensure no chunks
-                    save_kwargs['pnginfo'] = None
-                elif save_format == 'WEBP':
-                    save_kwargs['quality'] = 95
-                    save_kwargs['exif'] = b''
-                
-                img.save(output, **save_kwargs)
-                output.seek(0)
-                
-                return Response(
-                    content=output.getvalue(),
-                    media_type=mime_type,
-                    headers={
-                        'Content-Disposition': f'inline; filename="{file_path.name}"'
+        try:
+            # Run image processing in threadpool to avoid blocking event loop
+            def process_image():
+                import io
+                with Image.open(file_path) as img:
+                    # Convert RGBA to RGB if necessary (for JPEG output)
+                    if mime_type == 'image/jpeg' and img.mode in ('RGBA', 'LA', 'P'):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        if img.mode == 'P':
+                            img = img.convert('RGBA')
+                        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                        img = background
+                    
+                    # Determine format from mime type
+                    format_map = {
+                        'image/jpeg': 'JPEG',
+                        'image/png': 'PNG',
+                        'image/gif': 'GIF',
+                        'image/webp': 'WEBP',
+                        'image/bmp': 'BMP',
                     }
-                )
+                    
+                    save_format = format_map.get(mime_type, 'PNG')
+                    
+                    # Save without metadata
+                    save_kwargs = {
+                        'format': save_format,
+                        'optimize': True,
+                    }
+                    
+                    # Format-specific options
+                    if save_format == 'JPEG':
+                        save_kwargs['quality'] = 95
+                        save_kwargs['exif'] = b''  # Empty EXIF data
+                    elif save_format == 'PNG':
+                        save_kwargs['compress_level'] = 6
+                        # PNG doesn't save EXIF by default, but we ensure no chunks
+                        save_kwargs['pnginfo'] = None
+                    elif save_format == 'WEBP':
+                        save_kwargs['quality'] = 95
+                        save_kwargs['exif'] = b''
+                    
+                    img.save(cache_path, **save_kwargs)
+            
+            await run_in_threadpool(process_image)
+            
+            return FileResponse(cache_path, media_type=mime_type)
                 
         except Exception as e:
             print(f"Error stripping metadata from {file_path}: {e}")
+            import traceback
+            traceback.print_exc()
             return FileResponse(file_path, media_type=mime_type)
     
     if mime_type and mime_type.startswith('video/'):
-        print(f"Warning: Metadata stripping not supported for video files, serving as-is: {file_path}")
+        # Metadata stripping not supported for video files yet
         return FileResponse(file_path, media_type=mime_type)
     
     return FileResponse(file_path, media_type=mime_type)
