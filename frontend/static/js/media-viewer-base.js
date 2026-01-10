@@ -138,13 +138,13 @@ class MediaViewerBase {
 
             if (showControls) {
                 if (aiMetadataShareToggle) aiMetadataShareToggle.style.display = 'block';
-                if (appendBtn && aiData) appendBtn.style.display = 'block';
+                if (appendBtn) appendBtn.style.display = 'block';
             }
 
             const generatedHTML = this.generateAIMetadataHTML(aiData);
             content.innerHTML = generatedHTML;
             section.style.display = 'block';
-            this.setupAIMetadataEvents();
+            this.setupAIMetadataEvents(content);
         } catch (e) {
             console.error('Error rendering AI metadata:', e);
             this.hideAIMetadata(section, appendBtn, aiMetadataShareToggle);
@@ -160,83 +160,109 @@ class MediaViewerBase {
     generateAIMetadataHTML(aiData) {
         let html = '';
 
-        Object.entries(aiData).forEach(([key, value]) => {
-            const sectionTitle = this.formatKey(key);
+        for (const [key, value] of Object.entries(aiData)) {
+            const sectionTitle = this.escapeHtml(this.formatKey(key));
 
             html += `<div class="ai-section mb-3">`;
             html += `<h4 class="text-xs font-bold text-[var(--primary-color)] mb-2">${sectionTitle}</h4>`;
 
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            if (this.isPlainObject(value)) {
                 html += `<div class="ml-2">`;
-                Object.entries(value).forEach(([subKey, subValue]) => {
+                for (const [subKey, subValue] of Object.entries(value)) {
                     html += `
-                        <div class="ai-data-row">
-                            <span class="text-secondary">${this.formatKey(subKey)}:</span>
-                            <div class="text">${this.formatValue(subValue, true)}</div>
-                        </div>
-                    `;
-                });
+                    <div class="ai-data-row">
+                        <span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span>
+                        <div class="text">${this.formatValue(subValue, true)}</div>
+                    </div>
+                `;
+                }
                 html += `</div>`;
             } else {
                 html += `<div class="text ml-2">${this.formatValue(value, true)}</div>`;
             }
 
             html += `</div>`;
-        });
+        }
 
         return html;
     }
 
-    setupAIMetadataEvents() {
-        const content = this.el('ai-metadata-content');
+    setupAIMetadataEvents(content) {
+        if (!content) {
+            content = this.el('ai-metadata-content');
+        }
         if (!content) return;
 
-        const newContent = content.cloneNode(true);
-        content.parentNode.replaceChild(newContent, content);
+        // Use a namespaced handler reference for clean removal
+        if (this._aiMetadataClickHandler) {
+            content.removeEventListener('click', this._aiMetadataClickHandler);
+        }
 
-        newContent.addEventListener('click', (e) => {
-            if (e.target.classList.contains('ai-toggle-btn')) {
-                const btn = e.target;
-                const textDiv = btn.previousElementSibling;
+        this._aiMetadataClickHandler = (e) => {
+            const btn = e.target.closest('.ai-toggle-btn');
+            if (!btn) return;
 
-                if (textDiv && textDiv.classList.contains('ai-text-content')) {
-                    const isCollapsed = textDiv.classList.contains('is-collapsed');
+            const wrapper = btn.closest('.ai-expandable-wrapper');
+            const textDiv = wrapper?.querySelector('.ai-text-content');
 
-                    if (isCollapsed) {
-                        textDiv.classList.remove('is-collapsed');
-                        btn.classList.add('is-expanded');
-                        btn.firstChild.textContent = 'Show less ';
-                    } else {
-                        textDiv.classList.add('is-collapsed');
-                        btn.classList.remove('is-expanded');
-                        btn.firstChild.textContent = 'Show more ';
-                    }
+            if (textDiv) {
+                const isCollapsed = textDiv.classList.contains('is-collapsed');
+
+                if (isCollapsed) {
+                    textDiv.classList.remove('is-collapsed');
+                    btn.classList.add('is-expanded');
+                    btn.textContent = 'Show less';
+                } else {
+                    textDiv.classList.add('is-collapsed');
+                    btn.classList.remove('is-expanded');
+                    btn.textContent = 'Show more';
                 }
             }
-        });
+        };
+
+        content.addEventListener('click', this._aiMetadataClickHandler);
     }
 
     // Utility methods
+
+    isPlainObject(value) {
+        return typeof value === 'object' &&
+            value !== null &&
+            !Array.isArray(value) &&
+            Object.prototype.toString.call(value) === '[object Object]';
+    }
+
     formatKey(key) {
-        return key
+        // First, handle snake_case and camelCase conversion to spaces
+        let formatted = key
             .replace(/_/g, ' ')
-            .replace(/([A-Z])/g, ' $1')
-            .trim()
-            .replace(/\b\w/g, c => c.toUpperCase())
-            .replace(/Cfgscale/g, 'CFG Scale')
-            .replace(/Cfg Scale/g, 'CFG Scale')
-            .replace(/Vae/g, 'VAE')
-            .replace(/Aspectratio/g, 'Aspect Ratio')
-            .replace(/Aspect Ratio/g, 'Aspect Ratio')
-            .replace(/Automaticvae/g, 'Automatic VAE')
-            .replace(/Automatic Vae/g, 'Automatic VAE')
-            .replace(/Negativeprompt/g, 'Negative Prompt')
-            .replace(/Negative Prompt/g, 'Negative Prompt')
-            .replace(/Loras/g, 'LoRAs');
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .trim();
+
+        // Title case each word
+        formatted = formatted.replace(/\b\w/g, c => c.toUpperCase());
+
+        // Apply specific formatting rules (only need each once now)
+        const replacements = {
+            'Cfg Scale': 'CFG Scale',
+            'Cfgscale': 'CFG Scale',
+            'Vae': 'VAE',
+            'Aspectratio': 'Aspect Ratio',
+            'Automaticvae': 'Automatic VAE',
+            'Negativeprompt': 'Negative Prompt',
+            'Loras': 'LoRAs',
+            'Lora': 'LoRA'
+        };
+
+        for (const [search, replace] of Object.entries(replacements)) {
+            formatted = formatted.replace(new RegExp(search, 'g'), replace);
+        }
+
+        return formatted;
     }
 
     escapeHtml(str) {
-        if (!str) return '';
+        if (str === null || str === undefined) return '';
         return String(str)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -257,44 +283,68 @@ class MediaViewerBase {
         }
 
         if (Array.isArray(value)) {
-            if (value.length === 0) return '<span class="text-secondary text-xs italic">None</span>';
-            return value.map(v => this.escapeHtml(String(v))).join(', ');
+            if (value.length === 0) {
+                return '<span class="text-secondary text-xs italic">None</span>';
+            }
+
+            // Handle arrays of objects (like LoRAs)
+            if (value.some(v => this.isPlainObject(v))) {
+                const items = value.map(v => {
+                    if (this.isPlainObject(v)) {
+                        // Format object entries nicely
+                        const parts = Object.entries(v)
+                            .map(([k, val]) => `${this.escapeHtml(this.formatKey(k))}: ${this.escapeHtml(String(val))}`)
+                            .join(', ');
+                        return parts;
+                    }
+                    return this.escapeHtml(String(v));
+                });
+                return items.map(item => `<div class="text-xs mb-1">${item}</div>`).join('');
+            }
+
+            // Simple array of primitives
+            return this.escapeHtml(value.map(v => String(v)).join(', '));
         }
 
-        if (typeof value === 'object') {
+        if (this.isPlainObject(value)) {
             try {
-                return `<code class="block bg-surface-dark p-2 rounded text-xs overflow-x-auto">${this.escapeHtml(JSON.stringify(value, null, 2))}</code>`;
-            } catch (e) {
-                return '[Complex Object]';
+                const jsonStr = JSON.stringify(value, null, 2);
+                return `<code class="block bg-surface-dark p-2 rounded text-xs overflow-x-auto">${this.escapeHtml(jsonStr)}</code>`;
+            } catch {
+                return '<span class="text-secondary text-xs italic">[Complex Object]</span>';
             }
         }
 
         const str = String(value);
         const escaped = this.escapeHtml(str);
-
-        const needsExpansion = isExpandable && (str.length > 200 || (str.match(/\n/g) || []).length > 4);
+        const lineCount = (str.match(/\n/g) || []).length;
+        const needsExpansion = isExpandable && (str.length > 200 || lineCount > 4);
 
         if (needsExpansion) {
             return `
-                <div class="ai-expandable-wrapper group">
-                    <div class="ai-text-content is-collapsed">${escaped}</div>
-                    <button type="button" class="ai-toggle-btn">Show more</button>
-                </div>
-            `;
+            <div class="ai-expandable-wrapper">
+                <div class="ai-text-content is-collapsed">${escaped}</div>
+                <button type="button" class="ai-toggle-btn">Show more</button>
+            </div>
+        `;
         }
 
         return `<div class="ai-text-content">${escaped}</div>`;
     }
 
     formatFileSize(bytes) {
-        if (!bytes) return '0 Bytes';
+        if (!bytes || bytes < 0) return '0 Bytes';
+        if (bytes === 0) return '0 Bytes';
+
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
         return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
     }
 
     formatDuration(seconds) {
+        if (!seconds || seconds < 0) return '0:00';
+
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${String(secs).padStart(2, '0')}`;
