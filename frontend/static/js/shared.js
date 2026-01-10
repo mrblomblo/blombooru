@@ -145,8 +145,10 @@ class SharedViewer extends MediaViewerBase {
             this.renderAIMetadata(media, { showControls: false, isShared: true });
         }
 
-        // Add click listener for fullscreen (only for images/GIFs)
-        if (media.file_type !== 'video') {
+        // Add click listener for fullscreen
+        if (media.file_type === 'video') {
+            this.setupVideoClickHandler();
+        } else {
             this.setupImageClickHandler();
         }
     }
@@ -177,7 +179,26 @@ class SharedViewer extends MediaViewerBase {
             if (sharedImage && this.fullscreenViewer && sharedImage.src) {
                 sharedImage.addEventListener('click', () => {
                     if (sharedImage.dataset.failed === 'true') return;
-                    this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file`);
+                    this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file`, false);
+                });
+            }
+        }, 0);
+    }
+
+    setupVideoClickHandler() {
+        setTimeout(() => {
+            const sharedVideo = this.el('shared-media-video');
+            if (sharedVideo && this.fullscreenViewer) {
+                sharedVideo.style.cursor = 'pointer';
+                sharedVideo.addEventListener('click', (e) => {
+                    // Only open fullscreen if not clicking on controls
+                    const rect = sharedVideo.getBoundingClientRect();
+                    const clickY = e.clientY - rect.top;
+                    const controlsHeight = 50; // Approximate height of video controls
+
+                    if (clickY < rect.height - controlsHeight) {
+                        this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file`, true);
+                    }
                 });
             }
         }, 0);

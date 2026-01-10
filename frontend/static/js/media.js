@@ -176,6 +176,7 @@ class MediaViewer extends MediaViewerBase {
             const video = document.createElement('video');
             video.controls = true;
             video.loop = true;
+            video.style.cursor = 'pointer';
 
             const source = document.createElement('source');
             source.src = `/api/media/${media.id}/file`;
@@ -191,6 +192,18 @@ class MediaViewer extends MediaViewerBase {
                     </div>
                 `;
             };
+
+            // Add click handler for fullscreen (avoid controls area)
+            video.addEventListener('click', (e) => {
+                // Only open fullscreen if not clicking on controls
+                const rect = video.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const controlsHeight = 50; // Approximate height of video controls
+
+                if (clickY < rect.height - controlsHeight) {
+                    this.fullscreenViewer.open(`/api/media/${media.id}/file`, true);
+                }
+            });
 
             container.innerHTML = '';
             container.appendChild(video);
@@ -211,7 +224,7 @@ class MediaViewer extends MediaViewerBase {
             img.onload = () => {
                 if (!img.src.includes('no-thumbnail.png')) {
                     img.addEventListener('click', () => {
-                        this.fullscreenViewer.open(`/api/media/${media.id}/file`);
+                        this.fullscreenViewer.open(`/api/media/${media.id}/file`, false);
                     });
                 }
             };
