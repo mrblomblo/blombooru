@@ -8,7 +8,8 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/css/tailwind.css">
     <link rel="stylesheet" href="/static/css/main.css">
-    <link id="theme-stylesheet" rel="stylesheet" href="">
+    <link id="theme-stylesheet" rel="stylesheet" href="{{ current_theme.css_path if current_theme else '' }}">
+    {% if not current_theme %}
     <script>
         // Load theme on page load
         (async function loadTheme() {
@@ -30,6 +31,7 @@
             }
         })();
     </script>
+    {% endif %}
     {% block extra_css %}{% endblock %}
     {% block head_extra %}{% endblock %}
 </head>

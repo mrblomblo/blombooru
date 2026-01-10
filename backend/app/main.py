@@ -98,6 +98,15 @@ async def shared_page(request: Request, share_uuid: str, db: Session = Depends(g
         else:
             context["og_image"] = f"/api/shared/{share_uuid}/file"
             
+    # Get current theme
+    try:
+        from .themes import theme_registry
+        current_theme = theme_registry.get_theme(settings.CURRENT_THEME)
+        if current_theme:
+            context["current_theme"] = current_theme.to_dict()
+    except Exception as e:
+        print(f"Error loading theme for shared page: {e}")
+            
     return templates.TemplateResponse("shared.html", context)
 
 @app.get("/albums", response_class=HTMLResponse)
