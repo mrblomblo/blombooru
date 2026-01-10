@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
+from sqlalchemy.orm import Session
+from .models import Media
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -74,13 +76,29 @@ async def media_page(request: Request, media_id: int):
     })
 
 @app.get("/shared/{share_uuid}", response_class=HTMLResponse)
-async def shared_page(request: Request, share_uuid: str):
+async def shared_page(request: Request, share_uuid: str, db: Session = Depends(get_db)):
     """Shared content page"""
-    return templates.TemplateResponse("shared.html", {
+    # Fetch media for Open Graph tags
+    media = db.query(Media).filter(
+        Media.share_uuid == share_uuid,
+        Media.is_shared == True
+    ).first()
+    
+    context = {
         "request": request,
         "app_name": settings.APP_NAME,
         "share_uuid": share_uuid
-    })
+    }
+    
+    if media:
+        context["media"] = media
+        # Construct absolute URL for OG image if possible, or relative
+        if media.thumbnail_path:
+            context["og_image"] = f"/api/shared/{share_uuid}/thumbnail"
+        else:
+            context["og_image"] = f"/api/shared/{share_uuid}/file"
+            
+    return templates.TemplateResponse("shared.html", context)
 
 @app.get("/albums", response_class=HTMLResponse)
 async def albums_page(request: Request):
