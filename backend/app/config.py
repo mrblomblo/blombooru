@@ -9,11 +9,13 @@ class Settings:
         self.MEDIA_DIR = self.BASE_DIR / "media"
         self.ORIGINAL_DIR = self.MEDIA_DIR / "original"
         self.THUMBNAIL_DIR = self.MEDIA_DIR / "thumbnails"
+        self.CACHE_DIR = self.MEDIA_DIR / "cache"
         self.DATA_DIR = self.BASE_DIR / "data"
         self.SETTINGS_FILE = self.DATA_DIR / "settings.json"
         
         self.ORIGINAL_DIR.mkdir(parents=True, exist_ok=True)
         self.THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
+        self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         
         self.settings = self.load_settings()
