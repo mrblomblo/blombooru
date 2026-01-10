@@ -254,6 +254,27 @@ async def serve_media_file(file_path: Path, mime_type: str, error_message: str =
     
     return FileResponse(file_path, media_type=mime_type)
 
+def delete_media_cache(file_path: Path):
+    """Delete the cached version of a media file if it exists."""
+    try:
+        if not file_path.exists():
+            return
+            
+        import hashlib
+        from ..config import settings
+        
+        stat = file_path.stat()
+        cache_key = f"{str(file_path)}_{stat.st_mtime}"
+        cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
+        cache_path = settings.CACHE_DIR / cache_filename
+        
+        if cache_path.exists():
+            cache_path.unlink()
+            print(f"Deleted cache file: {cache_path}")
+            
+    except Exception as e:
+        print(f"Error deleting media cache for {file_path}: {e}")
+
 def sanitize_filename(filename: str, fallback: str = "file") -> str:
     """Sanitize filename to be safe for filesystem and web."""
     import re
