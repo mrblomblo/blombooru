@@ -7,11 +7,10 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums, ai_tagger
+from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru
 from datetime import datetime
 
-app = FastAPI(title="Blombooru", version="1.21.1")
-
+app = FastAPI(title="Blombooru", version="1.22.0")
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
 
@@ -19,7 +18,6 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 templates = Jinja2Templates(directory=str(templates_path))
 
 templates.env.globals['get_current_year'] = lambda: datetime.now().year
-
 app.include_router(admin.router)
 app.include_router(media.router)
 app.include_router(tags.router)
@@ -27,6 +25,7 @@ app.include_router(search.router)
 app.include_router(sharing.router)
 app.include_router(albums.router)
 app.include_router(ai_tagger.router)
+app.include_router(danbooru.router)
 
 @app.on_event("startup")
 async def startup_event():
