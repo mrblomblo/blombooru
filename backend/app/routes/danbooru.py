@@ -27,13 +27,13 @@ def format_media_response(media: Media, base_url: str) -> dict:
     r_val = media.rating.value if hasattr(media.rating, 'value') else str(media.rating)
     rating = rating_map.get(r_val, "q")
 
-    # 2. Generate URLs
+    # Generate URLs
     file_url = f"{base_url}/api/media/{media.id}/file"
     preview_url = f"{base_url}/api/media/{media.id}/thumbnail" if media.thumbnail_path else file_url
     
     file_ext = Path(media.filename).suffix.lstrip('.') if media.filename else "jpg"
 
-    # 3. Categorize Tags (Counts AND Strings)
+    # Categorize Tags (Counts AND Strings)
     # Map internal categories to Danbooru IDs:
     # 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
     
@@ -42,13 +42,51 @@ def format_media_response(media: Media, base_url: str) -> dict:
     # Buckets for string lists
     tags_by_cat = {0: [], 1: [], 3: [], 4: [], 5: []}
     
+    # Collect all tag names for the main tag_string
+    all_tag_names = []
+
     for tag in media.tags:
         # Get category name safely
         c_val = tag.category.value if hasattr(tag.category, 'value') else str(tag.category)
         c_id = cat_map.get(c_val.lower(), 0) # Default to 0 (General)
         tags_by_cat[c_id].append(tag.name)
+        all_tag_names.append(tag.name)
 
-    # 4. Construct Media Asset
+    all_tag_names.sort()
+    for cat_id in tags_by_cat:
+        tags_by_cat[cat_id].sort()
+
+    # Construct Media Asset Variants
+    variants = []
+
+    # A. Thumbnail
+    if media.thumbnail_path:
+        variants.append({
+            "type": "180x180",
+            "url": preview_url,
+            "width": 180, 
+            "height": 180, 
+            "file_ext": "jpg"
+        })
+
+    # B. Sample
+    variants.append({
+        "type": "sample",
+        "url": file_url, 
+        "width": media.width,
+        "height": media.height,
+        "file_ext": file_ext
+    })
+
+    # C. Original
+    variants.append({
+        "type": "original",
+        "url": file_url,
+        "width": media.width,
+        "height": media.height,
+        "file_ext": file_ext
+    })
+
     media_asset = {
         "id": media.id,
         "created_at": media.uploaded_at.isoformat(timespec='milliseconds') if media.uploaded_at else None,
@@ -63,33 +101,11 @@ def format_media_response(media: Media, base_url: str) -> dict:
         "file_key": media.hash,
         "is_public": True,
         "pixel_hash": media.hash,
-        "variants": [
-            {
-                "type": "original",
-                "url": file_url,
-                "width": media.width,
-                "height": media.height,
-                "file_ext": file_ext
-            },
-            {
-                "type": "sample",
-                "url": file_url, 
-                "width": media.width,
-                "height": media.height,
-                "file_ext": file_ext
-            }
-        ]
+        "variants": variants
     }
 
-    # Add thumbnail variant
-    if media.thumbnail_path:
-        media_asset["variants"].insert(0, {
-            "type": "180x180", # Standard thumb identifier
-            "url": preview_url,
-            "width": 180, # Approximate
-            "height": 180,
-            "file_ext": "jpg"
-        })
+    # Logic for media child items
+    has_children = media.has_children
 
     return {
         "id": media.id,
@@ -102,12 +118,12 @@ def format_media_response(media: Media, base_url: str) -> dict:
         "rating": rating,
         "image_width": media.width,
         "image_height": media.height,
-        "tag_string": " ".join([t.name for t in media.tags]),
+        "tag_string": " ".join(all_tag_names),
         "fav_count": 0,
         "file_ext": file_ext,
         "last_noted_at": None,
         "parent_id": media.parent_id,
-        "has_children": media.has_children, 
+        "has_children": has_children,
         "approver_id": None,
         "tag_count_general": len(tags_by_cat[0]),
         "tag_count_artist": len(tags_by_cat[1]),
@@ -131,10 +147,10 @@ def format_media_response(media: Media, base_url: str) -> dict:
         "is_banned": False,
         "pixiv_id": None,
         "last_commented_at": None,
-        "has_active_children": False,
+        "has_active_children": has_children,
+        "has_visible_children": has_children,
         "bit_flags": 0,
         "has_large": True,
-        "has_visible_children": False,
         "file_url": file_url,
         "large_file_url": file_url,
         "preview_file_url": preview_url,
