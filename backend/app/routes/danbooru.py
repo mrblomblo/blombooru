@@ -451,9 +451,9 @@ async def get_single_pool_json(
         "description": "",
         "is_active": True,
         "is_deleted": False,
+        "post_ids": media_ids,
         "category": "collection",
-        "post_count": len(media_ids),
-        "post_ids": media_ids
+        "post_count": len(media_ids)
     }
 
 @router.get("/autocomplete.json")
