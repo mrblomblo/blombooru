@@ -635,3 +635,7 @@ async def get_artist_commentaries_json():
 @router.get("/comments.json")
 async def get_comments_json():
     return []
+
+@router.get("/explore/posts/searches.json")
+async def get_explore_posts_searches_json():
+    return []
