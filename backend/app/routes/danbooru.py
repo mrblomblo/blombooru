@@ -257,6 +257,75 @@ async def get_users_json(db: Session = Depends(get_db)):
         "created_at": user.created_at.isoformat(timespec='milliseconds') if user.created_at else "2023-01-01T00:00:00.000-00:00"
     }]
 
+@router.get("/tags.json")
+async def get_tags_json(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1),
+    search_name_comma: Optional[str] = Query(None, alias="search[name_comma]"),
+    search_name_matches: Optional[str] = Query(None, alias="search[name_matches]"),
+    search_order: Optional[str] = Query(None, alias="search[order]"),
+    search_hide_empty: Optional[str] = Query(None, alias="search[hide_empty]"),
+    db: Session = Depends(get_db)
+):
+    """Danbooru v2 compatible tags API"""
+    
+    # Clamp limit (apps often request 1000 tags at once)
+    limit = min(limit, 1000)
+    
+    query = db.query(Tag)
+
+    # 1. Search by comma-separated list (Used by app to fetch details for current view)
+    if search_name_comma:
+        # Split "tag1,tag2,tag3" into a list
+        names = [n.strip().lower() for n in search_name_comma.split(',') if n.strip()]
+        if names:
+            query = query.filter(Tag.name.in_(names))
+            
+    # 2. Search by wildcard/pattern (Used by tag search bars)
+    elif search_name_matches:
+        query = query.filter(Tag.name.ilike(f"%{search_name_matches}%"))
+
+    # 3. Filter empty tags
+    if search_hide_empty == "yes" or search_hide_empty == "true":
+        query = query.filter(Tag.post_count > 0)
+
+    # 4. Sorting
+    if search_order == "count":
+        query = query.order_by(desc(Tag.post_count))
+    elif search_order == "date":
+        query = query.order_by(desc(Tag.created_at))
+    elif search_order == "name":
+        query = query.order_by(asc(Tag.name))
+    else:
+        # Default sort
+        query = query.order_by(desc(Tag.post_count))
+
+    # Pagination
+    offset = (page - 1) * limit
+    tags = query.offset(offset).limit(limit).all()
+
+    # Response Formatting
+    category_map = {"general": 0, "artist": 1, "copyright": 3, "series": 3, "character": 4, "meta": 5}
+    results = []
+    
+    for tag in tags:
+        # Get category ID safely
+        c_val = tag.category.value if hasattr(tag.category, 'value') else str(tag.category)
+        category_id = category_map.get(c_val.lower(), 0)
+
+        results.append({
+            "id": tag.id,
+            "name": tag.name,
+            "post_count": tag.post_count,
+            "category": category_id,
+            "created_at": tag.created_at.isoformat(timespec='milliseconds') if tag.created_at else None,
+            "updated_at": tag.created_at.isoformat(timespec='milliseconds') if tag.created_at else None,
+            "is_deprecated": False,
+            "words": tag.name.split('_') 
+        })
+
+    return results
+
 @router.get("/artist_commentaries.json")
 async def get_artist_commentaries_json():
     return []
