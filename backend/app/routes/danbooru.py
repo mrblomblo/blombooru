@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, asc, case, exists, and_, func
 from typing import List, Optional, Union
 from pathlib import Path
+import re
 
 from ..database import get_db
 from ..models import Media, Tag, User, Album, blombooru_album_media, blombooru_media_tags
@@ -321,7 +322,7 @@ async def get_tags_json(
             "created_at": tag.created_at.isoformat(timespec='milliseconds') if tag.created_at else None,
             "updated_at": tag.created_at.isoformat(timespec='milliseconds') if tag.created_at else None,
             "is_deprecated": False,
-            "words": tag.name.split('_') 
+            "words": re.split(r'[_\-]', tag.name)
         })
 
     return results
