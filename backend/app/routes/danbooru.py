@@ -84,9 +84,6 @@ def format_media_response(media: Media, base_url: str) -> dict:
     file_ext = Path(media.filename).suffix.lstrip('.') if media.filename else "jpg"
 
     # Categorize Tags (Counts AND Strings)
-    # Map internal categories to Danbooru IDs:
-    # 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
-    
     cat_map = {"general": 0, "artist": 1, "copyright": 3, "series": 3, "character": 4, "meta": 5}
     
     # Buckets for string lists
@@ -154,8 +151,7 @@ def format_media_response(media: Media, base_url: str) -> dict:
         "variants": variants
     }
 
-    # Logic for media child items
-    has_children = media.has_children
+    has_children = bool(media.children)
 
     return {
         "id": media.id,
@@ -222,8 +218,11 @@ async def get_posts_json(
     """Danbooru v2 compatible posts API"""
     # Clamp limit to a reasonable maximum
     limit = min(limit, 1000)
-    
-    query = db.query(Media).options(joinedload(Media.tags))
+
+    query = db.query(Media).options(
+        joinedload(Media.tags), 
+        joinedload(Media.children)
+    )
 
     if tags:
         parsed = parse_search_query(tags)
