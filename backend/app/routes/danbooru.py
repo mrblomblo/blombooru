@@ -467,14 +467,6 @@ async def get_artist_json(
 
     return format_artist_response(tag)
 
-@router.get("/artist_commentaries.json")
-async def get_artist_commentaries_json():
-    return []
-
-@router.get("/comments.json")
-async def get_comments_json():
-    return []
-
 @router.get("/pools.json")
 async def get_pools_json(
     request: Request,
@@ -630,4 +622,12 @@ async def get_post_favorites_json(post_id: int):
 
 @router.get("/forum_topics.json")
 async def get_forum_topics_json():
+    return []
+
+@router.get("/artist_commentaries.json")
+async def get_artist_commentaries_json():
+    return []
+
+@router.get("/comments.json")
+async def get_comments_json():
     return []
