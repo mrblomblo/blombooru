@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from .models import Media
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
@@ -130,3 +130,6 @@ async def album_detail_page(request: Request, album_id: int):
         "default_order": settings.get_default_order()
     })
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(str(static_path / "favicon.ico"))
