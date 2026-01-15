@@ -766,3 +766,7 @@ async def get_comments_json():
 @router.get("/explore/posts/searches.json")
 async def get_explore_posts_searches_json():
     return []
+
+@router.get("/wiki_pages/{character_name}.json")
+async def get_wiki_page_json(character_name: str):
+    return []
