@@ -1519,16 +1519,12 @@ class MediaViewer extends MediaViewerBase {
         this.relationModal.selectedItems.clear();
 
         const gallery = this.el('relation-gallery');
-        gallery.querySelectorAll('.relation-gallery-item').forEach(item => {
+        gallery.querySelectorAll('.gallery-item').forEach(item => {
             item.classList.remove('selected');
+            item.classList.remove('border-primary');
+
             const overlay = item.querySelector('.absolute.bg-primary\\/30');
-            const checkbox = item.querySelector('.absolute.top-1.left-1');
             if (overlay) overlay.classList.remove('opacity-100');
-            if (checkbox) {
-                checkbox.innerHTML = '';
-                checkbox.classList.remove('bg-primary', 'border-primary');
-                checkbox.classList.add('border-white/70');
-            }
         });
 
         this.updateRelationActionButtons();
