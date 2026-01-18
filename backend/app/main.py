@@ -65,6 +65,16 @@ async def admin_panel(request: Request):
         "app_name": settings.APP_NAME
     })
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Login page"""
+    return_url = request.query_params.get("return", "/")
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "app_name": settings.APP_NAME,
+        "return_url": return_url
+    })
+
 @app.get("/media/{media_id}", response_class=HTMLResponse)
 async def media_page(request: Request, media_id: int):
     """Media detail page"""
