@@ -126,6 +126,7 @@ class SettingsUpdate(BaseModel):
     default_order: Optional[str] = None
     theme: Optional[str] = None
     external_share_url: Optional[str] = None
+    require_auth: Optional[bool] = None
 
 class AlbumBase(BaseModel):
     name: str
