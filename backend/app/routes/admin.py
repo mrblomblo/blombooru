@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File, Request
 import json
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import OperationalError, IntegrityError
@@ -178,9 +178,12 @@ async def complete_onboarding(data: OnboardingData):
     return {"message": "Onboarding completed successfully"}
 
 @router.post("/login", response_model=Token)
-async def login(credentials: UserLogin, response: Response, db: Session = Depends(get_db)):
+async def login(credentials: UserLogin, request: Request, response: Response, db: Session = Depends(get_db)):
     """Admin login"""
     from ..auth import authenticate_user
+    from ..login_rate_limiter import login_rate_limiter
+    
+    login_rate_limiter.check_rate_limit(request)
     
     print(f"Login attempt for user: {credentials.username}")
     
@@ -189,9 +192,20 @@ async def login(credentials: UserLogin, response: Response, db: Session = Depend
         
         if not user:
             print(f"Authentication failed for user: {credentials.username}")
-            raise HTTPException(status_code=401, detail="Invalid username or password")
+            
+            login_rate_limiter.record_failed_attempt(request)
+            
+            remaining = login_rate_limiter.get_remaining_attempts(request)
+            if remaining > 0:
+                detail = f"Invalid username or password. {remaining} attempt(s) remaining."
+            else:
+                detail = "Invalid username or password."
+            
+            raise HTTPException(status_code=401, detail=detail)
         
         print(f"Authentication successful for user: {credentials.username}")
+        
+        login_rate_limiter.clear_failed_attempts(request)
         
         access_token = create_access_token(
             data={"sub": user.username},
