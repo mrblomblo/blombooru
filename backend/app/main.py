@@ -8,9 +8,11 @@ from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
 from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru
+from .auth_middleware import AuthMiddleware
 from datetime import datetime
 
-app = FastAPI(title="Blombooru", version="1.22.0")
+app = FastAPI(title="Blombooru", version="1.23.1")
+app.add_middleware(AuthMiddleware)
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
 
