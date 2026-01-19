@@ -9,7 +9,7 @@ import re
 from ..database import get_db
 from ..models import Media, Tag, TagAlias, User, Album, TagCategoryEnum, blombooru_album_media, blombooru_media_tags, blombooru_album_hierarchy
 from ..config import settings
-from .search import parse_search_query, wildcard_to_regex
+from ..utils.search_parser import parse_search_query, apply_search_criteria
 
 router = APIRouter(tags=["danbooru"])
 
@@ -214,61 +214,11 @@ async def get_posts_json(
 
     if tags:
         parsed = parse_search_query(tags)
-        include_tags = parsed['include']
-        exclude_tags = parsed['exclude']
-        wildcards = parsed['wildcards']
-        
-        # Batch lookup for include tags
-        standard_include = []
-        for tag_name in include_tags:
-            tag_lower = tag_name.lower()
-            if tag_lower.startswith("id:"):
-                try:
-                    id_string = tag_name.split(":", 1)[1]
-                    target_ids = [int(x) for x in id_string.split(',') if x.isdigit()]
-                    if target_ids:
-                        query = query.filter(Media.id.in_(target_ids))
-                except ValueError:
-                    pass
-            elif tag_lower.startswith("order:") or tag_lower.startswith("sort:"):
-                continue
-            else:
-                standard_include.append(tag_lower)
-        
-        # Batch lookup for standard include tags
-        if standard_include:
-            found_tags = db.query(Tag).filter(Tag.name.in_(standard_include)).all()
-            found_names = {t.name for t in found_tags}
-            
-            for tag_name in standard_include:
-                if tag_name not in found_names:
-                    return []
-            
-            for tag in found_tags:
-                query = query.filter(Media.tags.contains(tag))
-        
-        # Batch lookup for exclude tags
-        if exclude_tags:
-            exclude_lower = [t.lower() for t in exclude_tags]
-            exclude_found = db.query(Tag).filter(Tag.name.in_(exclude_lower)).all()
-            for tag in exclude_found:
-                query = query.filter(~Media.tags.contains(tag))
-        
-        for wildcard_type, pattern in wildcards:
-            regex_pattern = wildcard_to_regex(pattern)
-            subquery = exists().where(
-                and_(
-                    blombooru_media_tags.c.media_id == Media.id,
-                    blombooru_media_tags.c.tag_id == Tag.id,
-                    Tag.name.op('~*')(regex_pattern)
-                )
-            )
-            if wildcard_type == 'include':
-                query = query.filter(subquery)
-            else:
-                query = query.filter(~subquery)
-
-    query = query.order_by(desc(Media.uploaded_at))
+        query = apply_search_criteria(query, parsed, db)
+    
+    # Apply default order only if no order was applied by apply_search_criteria
+    if not query._order_by_clauses:
+        query = query.order_by(desc(Media.uploaded_at))
     
     offset = (page - 1) * limit
     media_list = query.offset(offset).limit(limit).all()

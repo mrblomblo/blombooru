@@ -1,62 +1,15 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_, exists
+from sqlalchemy import desc
 from typing import List, Optional
-import re
+
 from ..database import get_db
-from ..models import Media, Tag, blombooru_media_tags
-from ..schemas import RatingEnum, MediaResponse
+from ..models import Media
+from ..schemas import MediaResponse
 from ..config import settings
+from ..utils.search_parser import parse_search_query, apply_search_criteria
 
 router = APIRouter(prefix="/api/search", tags=["search"])
-
-def parse_search_query(query_string: str) -> dict:
-    """Parse Danbooru-style search query"""
-    include_tags = []
-    exclude_tags = []
-    wildcards = []
-    
-    tokens = re.findall(r'[^\s"]+|"[^"]*"', query_string)
-    
-    for token in tokens:
-        token = token.strip('"')
-        
-        if token.startswith('-'):
-            # Exclude tag
-            tag_name = token[1:]
-            if '*' in tag_name or '?' in tag_name:
-                wildcards.append(('exclude', tag_name))
-            else:
-                exclude_tags.append(tag_name)
-        else:
-            # Include tag
-            if '*' in token or '?' in token:
-                wildcards.append(('include', token))
-            else:
-                include_tags.append(token)
-    
-    return {
-        'include': include_tags,
-        'exclude': exclude_tags,
-        'wildcards': wildcards
-    }
-
-def wildcard_to_regex(pattern: str) -> str:
-    """Convert wildcard pattern to PostgreSQL regex pattern
-    * matches zero or more characters
-    ? matches zero or one character
-    """
-    # Escape regex special characters except * and ?
-    special_chars = ['.', '^', '$', '+', '(', ')', '[', ']', '{', '}', '|', '\\']
-    for char in special_chars:
-        pattern = pattern.replace(char, '\\' + char)
-    
-    pattern = pattern.replace('*', '.*')  # * -> .* (zero or more of any character)
-    pattern = pattern.replace('?', '.?')  # ? -> .? (zero or one of any character)
-    
-    # Anchor the pattern to match the entire string
-    pattern = '^' + pattern + '$'
-    return pattern
 
 @router.get("/")
 async def search_media(
@@ -70,55 +23,17 @@ async def search_media(
     if limit is None:
         limit = settings.get_items_per_page()
     query = db.query(Media)
+    parsed = parse_search_query(q)
     
     if rating and rating != "explicit":
-        allowed_ratings = {
-            "safe": [RatingEnum.safe],
-            "questionable": [RatingEnum.safe, RatingEnum.questionable]
-        }
-        query = query.filter(Media.rating.in_(allowed_ratings.get(rating, [])))
-    
-    if q:
-        parsed = parse_search_query(q)
+        rating_value = "safe" if rating == "safe" else "safe,questionable"
         
-        # Include tags (exact match)
-        for tag_name in parsed['include']:
-            tag = db.query(Tag).filter(Tag.name == tag_name.lower()).first()
-            if tag:
-                query = query.filter(Media.tags.contains(tag))
-        
-        # Exclude tags (exact match)
-        for tag_name in parsed['exclude']:
-            tag = db.query(Tag).filter(Tag.name == tag_name.lower()).first()
-            if tag:
-                query = query.filter(~Media.tags.contains(tag))
-        
-        # Wildcards - use subquery approach for efficiency
-        for wildcard_type, pattern in parsed['wildcards']:
-            regex_pattern = wildcard_to_regex(pattern)
-            
-            if wildcard_type == 'include':
-                # Media must have at least one tag matching the pattern
-                subquery = exists().where(
-                    and_(
-                        blombooru_media_tags.c.media_id == Media.id,
-                        blombooru_media_tags.c.tag_id == Tag.id,
-                        Tag.name.op('~*')(regex_pattern)
-                    )
-                )
-                query = query.filter(subquery)
-            else:
-                # Media must not have any tags matching the pattern
-                subquery = exists().where(
-                    and_(
-                        blombooru_media_tags.c.media_id == Media.id,
-                        blombooru_media_tags.c.tag_id == Tag.id,
-                        Tag.name.op('~*')(regex_pattern)
-                    )
-                )
-                query = query.filter(~subquery)
-    
-    query = query.order_by(desc(Media.uploaded_at))
+        if 'rating' not in parsed['meta']:
+            parsed['meta']['rating'] = []
+        parsed['meta']['rating'].append({'value': rating_value, 'negated': False})
+
+    # Apply all criteria
+    query = apply_search_criteria(query, parsed, db)
     
     # Pagination
     offset = (page - 1) * limit
