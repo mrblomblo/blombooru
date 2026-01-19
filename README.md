@@ -1,5 +1,11 @@
 # Blombooru
 
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+
 **Your Personal, Self-Hosted Media Tagging Tool.**
 
 Blombooru is a single-user, private alternative to image boorus like Danbooru and Gelbooru.  
