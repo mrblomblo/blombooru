@@ -354,6 +354,10 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
             else:
                 query = query.filter(cond)
 
+    if 'md5' in meta:
+        for item in meta['md5']:
+            query = query.filter(Media.hash == item['value'].strip())
+
     if 'filetype' in meta:
         for item in meta['filetype']:
             ext = item['value'].lower()
@@ -460,6 +464,7 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
     elif order_val == 'filesize': query = query.order_by(desc(Media.file_size))
     elif order_val == 'landscape': query = query.order_by(desc(cast(Media.width, Float) / Media.height))
     elif order_val == 'portrait': query = query.order_by(desc(cast(Media.height, Float) / Media.width))
+    elif order_val == 'md5': query = query.order_by(Media.hash)
     elif order_val == 'custom':
         id_list = None
         if 'id' in meta:
