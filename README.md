@@ -209,12 +209,65 @@ Move your media files directly into the configured storage directory. Then, navi
 
 - Tag Display: On a media page, tags are automatically sorted by category (Artist, Character, Copyright, General, Meta) and then alphabetically within each category.
 
-- Search Syntax: The search bar supports Danbooru's syntax.
-    - `tag1 tag2`: Find media with both `tag1` AND `tag2`.
-    - `-excluded_tag`: Exclude media with `excluded_tag`.
-    - `*_tag`: Find media with tag(s) that end with `_tag`
-    - `?tag`: Find media with tag(s) that have one character before `tag` (including no character before `tag`)
-    - Example: `?girl? *_ears long_hair -blue_eyes`
+- Search Syntax: Blombooru supports a powerful Danbooru-compatible search syntax.
+
+#### Basic Tags
+- `tag1 tag2`: Find media with both `tag1` AND `tag2`.
+- `-tag1`: Exclude media with `tag1`.
+- `tag*`: Wildcard search (finds `tag_name`, `tag_stuff`, etc.).
+- `?tag`: Find media with one or zero characters before `tag`.
+
+#### Ranges
+Most numeric and date qualifiers support range operators:
+- `id:100` -> Exact match (x == 100)
+- `id:100..200` -> Between inclusive (100 <= x <= 200)
+- `id:>=100` -> Greater than or equal (x >= 100)
+- `id:>100` -> Greater than (x > 100)
+- `id:<=100` -> Less than or equal (x <= 100)
+- `id:<100` -> Less than (x < 100)
+- `id:1,2,3` -> In list (x is 1, 2, or 3)
+
+#### Meta Qualifiers
+| Qualifier | Description | Example(s) |
+| :--- | :--- | :--- |
+| `id` | Search by internal ID. | `id:100..200`, `id:>500` |
+| `width`, `height` | Search by image dimensions (pixels). | `width:>=1920`, `height:1080` |
+| `filesize` | Search by file size using `kb`, `mb`, `gb`, `b` units. <br> Supports "fuzzy" matching: `filesize:52MB` finds `52.0MB` to `52.99MB`. | `filesize:1mb..5mb`, `filesize:52MB` |
+| `date` | Search by upload date (YYYY-MM-DD). | `date:2024-01-01` |
+| `age` | Search by age relative to now (`s`, `mi`, `h`, `d`, `w`, `mo`, `y`). <br> Note: `<` means "newer than" (less age). | `age:<24h` (less than 1 day old) <br> `age:1w..1mo` |
+| `rating` | Filter by rating: `s`/`safe`, `q`/`questionable`, `e`/`explicit`. <br> Supports lists. | `rating:s,q`, `-rating:e` |
+| `source` | Search source. Use `none` for missing sources, `http` for web URLs. | `source:none`, `source:http`, `source:twitter` |
+| `filetype` | Search by file extension. | `filetype:png`, `filetype:gif` |
+| `md5` | Search by file hash (exact). | `md5:d34e4c...` |
+| `pool`, `album` | Search by album/pool ID or name. `any`/`none` supported. | `album:any`, `pool:favorites`, `pool:5` |
+| `parent` | Search by parent ID. `any`/`none` supported. | `parent:none`, `parent:123` |
+| `child` | Filter parent posts by children. `any`/`none` supported. | `child:any` (has children), `child:none` |
+| `duration` | Search video/gif duration in seconds. | `duration:>60` |
+
+*Note: `duration` may not be set on all GIFs.*
+
+#### Tag Counts
+Filter by the number of tags on a post.
+- `tagcount`: Total tags
+- `gentags`: General tags
+- `arttags`: Artist tags
+- `chartags`: Character tags
+- `copytags`: Copyright tags
+- `metatags`: Meta tags
+
+Example: `tagcount:<10` (posts with few tags), `arttags:>=1` (posts with at least 1 artist tag).
+
+#### Sorting
+Order results with `order:{value}`. Suffix with `_asc` or `_desc` where applicable (default is usually desc).
+| Value | Description |
+| :--- | :--- |
+| `id` / `id_desc` | Newest uploads first (Default). |
+| `id_asc` | Oldest uploads first. |
+| `filesize` | Largest files first. |
+| `landscape` | Widest aspect ratio first. |
+| `portrait` | Tallest aspect ratio first. |
+| `md5` | Sort using MD5 hash (deterministic random-like shuffle). |
+| `custom` | Sort by the order given in `id:list`. Example: `id:3,1,2 order:custom`. |
 
 ### Sharing Media
 
