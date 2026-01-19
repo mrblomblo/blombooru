@@ -5,7 +5,7 @@ from sqlalchemy import or_, and_, not_, desc, asc, func, exists, cast, Date, Flo
 from sqlalchemy.orm import Session, Query, aliased
 from ..models import Media, Tag, RatingEnum, blombooru_media_tags, Album, blombooru_album_media, TagCategoryEnum
 
-TOKEN_PATTERN = re.compile(r'(-?)(?:([a-zA-Z_]+):)?("[^"]*"|[^\s"]+)')
+TOKEN_PATTERN = re.compile(r'(-?)(?:([a-zA-Z0-9_]+):)?("[^"]*"|[^\s"]+)')
 
 def parse_search_query(query_string: str) -> Dict[str, Any]:
     """
