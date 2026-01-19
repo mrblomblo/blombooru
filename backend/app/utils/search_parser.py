@@ -169,27 +169,88 @@ def parse_age(value: str) -> Dict[str, Any]:
 
 def parse_filesize(value: str) -> Dict[str, Any]:
     """Parse filesize string like 200kb, 1.5M."""
-    def parse_size(s):
-        s = s.lower()
-        multiplier = 1
-        if s.endswith('k') or s.endswith('kb'):
-            multiplier = 1024
-            s = s.rstrip('k').rstrip('b')
-        elif s.endswith('m') or s.endswith('mb'):
-            multiplier = 1024 * 1024
-            s = s.rstrip('m').rstrip('b')
-        elif s.endswith('g') or s.endswith('gb'):
-            multiplier = 1024 * 1024 * 1024
-            s = s.rstrip('g').rstrip('b')
-        elif s.endswith('b'):
-            s = s.rstrip('b')
-            
+    def parse_size(s, multiplier):
         try:
             return int(float(s) * multiplier)
         except ValueError:
             return 0
 
-    return parse_range(value, converter=parse_size)
+    val_lower = value.lower()
+    
+    # Check for units to determine range
+    multiplier = 1
+    unit_found = False
+    
+    if val_lower.endswith('kb'):
+        multiplier = 1024
+        val_lower = val_lower[:-2]
+        unit_found = True
+    elif val_lower.endswith('k'):
+        multiplier = 1024
+        val_lower = val_lower[:-1]
+        unit_found = True
+    elif val_lower.endswith('mb'):
+        multiplier = 1024 * 1024
+        val_lower = val_lower[:-2]
+        unit_found = True
+    elif val_lower.endswith('m'):
+        multiplier = 1024 * 1024
+        val_lower = val_lower[:-1]
+        unit_found = True
+    elif val_lower.endswith('gb'):
+        multiplier = 1024 * 1024 * 1024
+        val_lower = val_lower[:-2]
+        unit_found = True
+    elif val_lower.endswith('g'):
+        multiplier = 1024 * 1024 * 1024
+        val_lower = val_lower[:-1]
+        unit_found = True
+    elif val_lower.endswith('b'):
+        val_lower = val_lower[:-1]
+        
+    if unit_found and '..' not in value and not any(op in value for op in ['>', '<', ',']):
+        # If a specific unit was given without an operator, assume fuzzy range [val, val+1_unit)
+        try:
+            base_val = float(val_lower)
+            start_bytes = int(base_val * multiplier)
+            # Use 1 of the unit as the range width
+            end_bytes = start_bytes + multiplier
+            
+            return {'op': 'between', 'value': (start_bytes, end_bytes - 1)}
+        except ValueError:
+            pass
+
+    # Fallback if no unit inference needed
+    def simple_parse_size(s):
+        s = s.lower()
+        mul = 1
+        if s.endswith('kb'):
+            mul = 1024
+            s = s[:-2]
+        elif s.endswith('k'):
+            mul = 1024
+            s = s[:-1]
+        elif s.endswith('mb'):
+            mul = 1024 * 1024
+            s = s[:-2]
+        elif s.endswith('m'):
+            mul = 1024 * 1024
+            s = s[:-1]
+        elif s.endswith('gb'):
+            mul = 1024 * 1024 * 1024
+            s = s[:-2]
+        elif s.endswith('g'):
+            mul = 1024 * 1024 * 1024
+            s = s[:-1]
+        elif s.endswith('b'):
+            s = s[:-1]
+            
+        try:
+            return int(float(s) * mul)
+        except ValueError:
+            return 0
+            
+    return parse_range(value, converter=simple_parse_size)
 
 def wildcard_to_regex(pattern: str) -> str:
     """Convert wildcard pattern to PostgreSQL regex pattern"""
@@ -266,7 +327,7 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
             
     meta = parsed_query['meta']
     
-    def apply_numeric_filter(key, column, converter=int):
+    def apply_numeric_filter(query, key, column, converter=int):
         if key in meta:
             for item in meta[key]:
                 try:
@@ -289,17 +350,24 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
                         query = apply_range_filter(query, column, criteria)
                 except ValueError:
                     pass
+        return query
     
-    apply_numeric_filter('id', Media.id)
-    apply_numeric_filter('width', Media.width)
-    apply_numeric_filter('height', Media.height)
-    apply_numeric_filter('duration', Media.duration, converter=float)
+    query = apply_numeric_filter(query, 'id', Media.id)
+    query = apply_numeric_filter(query, 'width', Media.width)
+    query = apply_numeric_filter(query, 'height', Media.height)
+    query = apply_numeric_filter(query, 'duration', Media.duration, converter=float)
     
     if 'filesize' in meta:
         for item in meta['filesize']:
             criteria = parse_filesize(item['value'])
             if not item['negated']:
                 query = apply_range_filter(query, Media.file_size, criteria)
+            else:
+                # Negate the 'eq' case if it's not a range
+                if criteria['op'] == 'eq':
+                    query = query.filter(Media.file_size != criteria['value'])
+                else:
+                    pass
 
     if 'date' in meta:
         for item in meta['date']:
