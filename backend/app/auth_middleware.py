@@ -48,28 +48,26 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if self.is_public_route(path):
             return await call_next(request)
 
-        if not settings.REQUIRE_AUTH:
-            return await call_next(request)
-        
-        try:
-            db = next(get_db())
+        if settings.REQUIRE_AUTH:
             try:
-                admin_token = request.cookies.get("admin_token")
-                if not admin_token:
-                    return self.handle_unauthenticated(request)
+                db = next(get_db())
+                try:
+                    admin_token = request.cookies.get("admin_token")
+                    if not admin_token:
+                        return self.handle_unauthenticated(request)
+                    
+                    from .auth import get_current_user as verify_user
+                    user = verify_user(token=admin_token, admin_token=admin_token, db=db)
+                    
+                    if not user:
+                        return self.handle_unauthenticated(request)
+                finally:
+                    db.close()
+            except Exception as e:
+                print(f"Auth middleware error: {e}")
+                return self.handle_unauthenticated(request)
                 
-                from .auth import get_current_user as verify_user
-                user = verify_user(token=admin_token, admin_token=admin_token, db=db)
-                
-                if not user:
-                    return self.handle_unauthenticated(request)
-                
-                return await call_next(request)
-            finally:
-                db.close()
-        except Exception as e:
-            print(f"Auth middleware error: {e}")
-            return self.handle_unauthenticated(request)
+        return await call_next(request)
     
     def handle_unauthenticated(self, request: Request):
         """Handle unauthenticated requests"""
