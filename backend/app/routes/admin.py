@@ -9,9 +9,9 @@ from datetime import timedelta
 import csv
 import io
 from ..database import get_db, init_db
-from ..auth import get_password_hash, create_access_token, get_current_admin_user, require_admin_mode
-from ..models import User, Tag, TagAlias
-from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token
+from ..auth import get_password_hash, create_access_token, get_current_admin_user, require_admin_mode, generate_api_key, hash_api_key
+from ..models import User, Tag, TagAlias, ApiKey
+from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token, ApiKeyCreate, ApiKeyResponse, ApiKeyListResponse
 from ..config import settings
 from ..utils.file_scanner import find_untracked_media
 from ..themes import theme_registry
@@ -798,6 +798,9 @@ async def bulk_create_tags(
     for tag_data in tags_to_create:
         try:
             tag_name = tag_data['name'].lower().strip()
+            if not tag_name:
+                continue
+
             category = tag_data.get('category', 'general')
             
             existing = db.query(Tag).filter(Tag.name == tag_name).first()
@@ -810,6 +813,7 @@ async def bulk_create_tags(
                 skipped += 1
                 continue
             
+            tag = Tag(name=tag_name, category=category)
             db.add(tag)
             created += 1
             
@@ -970,4 +974,70 @@ async def import_full(
         raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
 
+@router.get("/api-keys", response_model=list[ApiKeyListResponse])
+async def list_api_keys(
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """List all API keys"""
+    keys = db.query(ApiKey).filter(ApiKey.is_active == True).order_by(ApiKey.created_at.desc()).all()
+    return keys
 
+@router.post("/api-keys", response_model=ApiKeyResponse)
+async def create_api_key(
+    data: ApiKeyCreate,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Generate a new API key"""
+    # Generate key
+    raw_key = generate_api_key()
+    key_hash = hash_api_key(raw_key)
+    key_prefix = raw_key[:12] # e.g. "blom_abcd12"
+    
+    new_key = ApiKey(
+        key_hash=key_hash,
+        key_prefix=key_prefix,
+        name=data.name,
+        user_id=current_user.id
+    )
+    
+    try:
+        db.add(new_key)
+        db.commit()
+        db.refresh(new_key)
+        
+        # Return the raw key only this one time
+        return {
+            "id": new_key.id,
+            "key": raw_key,
+            "key_prefix": new_key.key_prefix,
+            "name": new_key.name,
+            "created_at": new_key.created_at
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create API key: {str(e)}")
+
+@router.delete("/api-keys/{key_id}")
+async def revoke_api_key(
+    key_id: int,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Revoke an API key"""
+    key = db.query(ApiKey).filter(ApiKey.id == key_id).first()
+    
+    if not key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    
+    if not key.is_active:
+         raise HTTPException(status_code=400, detail="API key is already revoked")
+
+    try:
+        key.is_active = False
+        db.commit()
+        return {"message": "API key revoked successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to revoke API key: {str(e)}")
