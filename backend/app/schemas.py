@@ -162,3 +162,24 @@ class AlbumListResponse(AlbumBase):
 class MediaIds(BaseModel):
     media_ids: List[int]
 
+class ApiKeyCreate(BaseModel):
+    name: Optional[str] = None
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    key: str  # Only returned once on creation
+    key_prefix: str
+    name: Optional[str]
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class ApiKeyListResponse(BaseModel):
+    id: int
+    key_prefix: str
+    name: Optional[str]
+    created_at: datetime
+    last_used_at: Optional[datetime]
+    is_active: bool
+    
+    model_config = ConfigDict(from_attributes=True)
