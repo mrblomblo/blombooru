@@ -126,6 +126,54 @@
                 </form>
             </div>
 
+            <!-- API Access Section -->
+            <div class="surface p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">API Access</h2>
+
+                <p class="text-xs text-secondary mb-4">
+                    API keys allow external applications to access the Booru API when authentication is required.
+                </p>
+
+                <div class="mb-6">
+                    <button id="generate-api-key-btn"
+                        class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                        Generate New API Key
+                    </button>
+
+                    <div id="new-api-key-display" style="display: none;"
+                        class="mt-4 p-4 border border-primary bg bg-opacity-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-white">New API Key</span>
+                            <span class="text-[10px] bg-danger tag-text px-1.5 py-0.5 font-bold">
+                                SHOWN ONCE
+                            </span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-api-key-value"
+                                class="w-full surface px-3 py-2 border text-xs font-mono hover:border-primary transition-colors focus:outline-none focus:border-primary"
+                                readonly>
+                            <button id="copy-api-key-btn"
+                                class="px-4 py-2 bg-primary primary-text border text-xs hover:bg-primary transition-colors whitespace-nowrap">
+                                Copy Key
+                            </button>
+                        </div>
+                        <p class="text-[10px] mt-2 opacity-70 italic font-bold">
+                            Store this key securely. It will not be shown again after you refresh or leave this page.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="api-keys-container">
+                    <h3 class="text-sm font-bold mb-3">Active API Keys</h3>
+                    <div id="api-keys-list" class="border">
+                        <!-- Keys will be populated here as rows -->
+                        <div class="bg p-4 text-center text-xs text-secondary">
+                            Loading API keys...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Media Management Section -->
             <div class="surface p-6 border mb-4">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b">Media Management</h2>

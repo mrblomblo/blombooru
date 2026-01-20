@@ -4,6 +4,7 @@ class AdminPanel {
         this.tagInputHelper = new TagInputHelper();
         this.validationTimeout = null;
         this.themeSelect = null;
+        window.adminPanel = this;
         this.init();
     }
 
@@ -20,6 +21,7 @@ class AdminPanel {
         this.loadAlbumStats();
         this.setupCustomSelects();
         this.loadThemes();
+        this.setupApiKeyManagement();
     }
 
     // Helper to escape HTML and prevent XSS
@@ -1512,9 +1514,157 @@ class AdminPanel {
 
         modal.show();
     }
+    showApiKeyNameModal() {
+        const inputId = 'api-key-name-input';
+        const modal = new ModalHelper({
+            id: 'api-key-name-modal',
+            title: 'Name your API Key',
+            message: `
+                <div class="text-left">
+                    <input type="text" id="${inputId}" 
+                        class="w-full bg px-3 py-2 mb-4 border text-xs hover:border-primary transition-colors focus:outline-none focus:border-primary"
+                        placeholder="e.g. My Mobile App, External Script..."
+                        autocomplete="off">
+                </div>
+            `,
+            confirmText: 'Generate Key',
+            cancelText: 'Cancel',
+            onConfirm: () => {
+                const nameInput = document.getElementById(inputId);
+                const name = nameInput ? nameInput.value.trim() : '';
+                this.generateApiKey(name);
+                modal.destroy();
+            },
+            onCancel: () => {
+                modal.destroy();
+            }
+        });
+
+        modal.show();
+
+        // Focus and clear input
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.value = '';
+            input.focus();
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    modal.confirm();
+                }
+            });
+        }
+    }
+
+    setupApiKeyManagement() {
+        this.loadApiKeys();
+
+        document.getElementById('generate-api-key-btn')?.addEventListener('click', () => {
+            this.showApiKeyNameModal();
+        });
+
+        document.getElementById('copy-api-key-btn')?.addEventListener('click', () => {
+            const input = document.getElementById('new-api-key-value');
+            input.select();
+            document.execCommand('copy');
+            app.showNotification('API Key copied to clipboard!', 'success');
+        });
+    }
+
+    async loadApiKeys() {
+        try {
+            const response = await fetch('/api/admin/api-keys');
+            if (response.ok) {
+                const keys = await response.json();
+                this.renderApiKeys(keys);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    renderApiKeys(keys) {
+        const listContainer = document.getElementById('api-keys-list');
+        if (!listContainer) return;
+
+        if (keys.length === 0) {
+            listContainer.innerHTML = '<div class="bg p-6 text-center text-xs text-secondary opacity-70">No active API keys found.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = keys.map(key => `
+            <div class="bg p-4 border-b last:border-b-0 flex justify-between items-center hover:surface transition-colors">
+                <div class="flex-1 min-w-0 pr-4">
+                    <div class="font-bold text-xs truncate mb-1 text">${this.escapeHtml(key.name || 'Unnamed Key')}</div>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-secondary opacity-80">
+                        <span class="font-mono bg surface px-1 border border-primary border-opacity-20">${this.escapeHtml(key.key_prefix)}...</span>
+                        <span>Created: <strong>${new Date(key.created_at).toLocaleDateString()}</strong></span>
+                        <span>Last used: <strong>${key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</strong></span>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <button class="px-3 py-1 bg-danger tag-text text-[10px] uppercase font-bold tracking-wider hover:bg-danger transition-colors" 
+                        onclick="window.adminPanel.revokeApiKey(${key.id})">
+                        Revoke
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async generateApiKey(name) {
+        try {
+            const response = await app.apiCall('/api/admin/api-keys', {
+                method: 'POST',
+                body: JSON.stringify({ name: name })
+            });
+
+            // Show result
+            const display = document.getElementById('new-api-key-display');
+            if (display) display.style.display = 'block';
+
+            const input = document.getElementById('new-api-key-value');
+            if (input) input.value = response.key;
+
+            // Reload list
+            this.loadApiKeys();
+
+            app.showNotification('API Key generated successfully!', 'success');
+        } catch (error) {
+            app.showNotification(error.message, 'error', 'Error generating API key');
+        }
+    }
+
+    async revokeApiKey(keyId) {
+        const modal = new ModalHelper({
+            id: 'revoke-api-key-modal',
+            type: 'danger',
+            title: 'Revoke API Key',
+            message: 'Are you sure you want to revoke this API Key? This action cannot be undone and any applications using it will lose access immediately.',
+            confirmText: 'Revoke Key',
+            cancelText: 'Cancel',
+            onConfirm: async () => {
+                try {
+                    await app.apiCall(`/api/admin/api-keys/${keyId}`, {
+                        method: 'DELETE'
+                    });
+
+                    this.loadApiKeys();
+                    app.showNotification('API Key revoked successfully', 'success');
+                } catch (error) {
+                    app.showNotification(error.message, 'error', 'Error revoking API key');
+                } finally {
+                    modal.destroy();
+                }
+            },
+            onCancel: () => {
+                modal.destroy();
+            }
+        });
+
+        modal.show();
+    }
 }
 
 // Initialize admin panel
 if (document.getElementById('admin-panel')) {
     const adminPanel = new AdminPanel();
+
 }
