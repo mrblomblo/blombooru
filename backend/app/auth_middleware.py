@@ -52,6 +52,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
             try:
                 db = next(get_db())
                 try:
+                    # 1. Try API Key Authentication
+                    auth_header = request.headers.get("Authorization")
+                    if auth_header and auth_header.startswith("Bearer blom_"):
+                        from .auth import verify_api_key
+                        token = auth_header.split(" ")[1]
+                        user = verify_api_key(db, token)
+                        if user:
+                            return await call_next(request)
+
+                    # 2. Try Admin Token (Session) Authentication
                     admin_token = request.cookies.get("admin_token")
                     if not admin_token:
                         return self.handle_unauthenticated(request)

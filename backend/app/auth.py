@@ -105,3 +105,53 @@ def require_admin_mode(
             detail="You need to be logged in as the admin to perform this action"
         )
     return current_user
+
+def generate_api_key() -> str:
+    """Generate a new API key with 'blom_' prefix"""
+    random_part = secrets.token_urlsafe(32)
+    return f"blom_{random_part}"
+
+def hash_api_key(key: str) -> str:
+    """Hash an API key using SHA-256"""
+    return hashlib.sha256(key.encode('utf-8')).hexdigest()
+
+def verify_api_key(db: Session, key: str) -> Optional[User]:
+    """
+    Verify an API key and return the associated User if valid.
+    Also updates the last_used_at timestamp.
+    """
+    from .models import ApiKey
+    from datetime import datetime
+    
+    key_hash = hash_api_key(key)
+    
+    api_key = db.query(ApiKey).filter(
+        ApiKey.key_hash == key_hash,
+        ApiKey.is_active == True
+    ).first()
+    
+    if not api_key:
+        return None
+    
+    # Update last_used_at
+    api_key.last_used_at = datetime.utcnow()
+    db.commit()
+    
+    return api_key.user
+
+def get_current_user_from_api_key(
+    authorization: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """
+    FastAPI dependency to get current user from API key.
+    Expects Authorization: Bearer <api_key> header.
+    """
+    if not authorization:
+        return None
+    
+    # Extract the key from "Bearer <key>"
+    if not authorization.startswith("blom_"):
+        return None
+    
+    return verify_api_key(db, authorization)
