@@ -131,3 +131,17 @@ class Album(Base):
 
 # Update Media model to include albums relationship
 Media.albums = relationship('Album', secondary=blombooru_album_media, back_populates='media')
+
+class ApiKey(Base):
+    __tablename__ = 'blombooru_api_keys'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key_hash = Column(String(64), unique=True, nullable=False, index=True)
+    key_prefix = Column(String(12), nullable=False)
+    name = Column(String(255), nullable=True)
+    user_id = Column(Integer, ForeignKey('blombooru_users.id', ondelete='CASCADE'), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    user = relationship('User', backref='api_keys')
