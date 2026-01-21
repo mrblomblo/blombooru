@@ -41,6 +41,7 @@ It is designed for individuals who want a powerful, simple to use, and modern so
   - [Uploading Media](#uploading-media)
   - [Tagging & Searching](#tagging--searching)
   - [Sharing Media](#sharing-media)
+  - [API & Third-Party Apps](#api--third-party-apps)
 - [Theming](#theming)
 - [Technical Details](#technical-details)
 - [Disclaimer](#disclaimer)
@@ -74,6 +75,8 @@ It is designed for individuals who want a powerful, simple to use, and modern so
 - **Flexible Media Uploads:** Add media via drag-and-drop, by importing a compressed archive, or by simply placing files in the storage directory and pressing the "Scan for Untracked Media" button.
 
 - **User-Friendly Onboarding:** A simple first-time setup process to configure your admin account, database connection, and branding.
+
+- **Danbooru v2 API Compatibility:** Connect to Blombooru using your favorite third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) thanks to a built-in compatibility layer.
 
 ## Installation & Setup
 
@@ -304,6 +307,26 @@ Order results with `order:{value}`. Suffix with `_asc` or `_desc` where applicab
 - Click the "Share" button and a unique share URL `https://localhost:8000/shared/<uuid>` will be generated.
 
 - Anyone with this link can view the media in a simplified, read-only interface. The shared media can optionally be shared with or without its accompanying AI metadata. Shared items are marked with a "shared" icon in your private gallery view.
+
+### API & Third-Party Apps
+
+Blombooru implements a **Danbooru v2 compatible API**, allowing you to use existing third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) to browse your collection.
+
+**Connection Details:**
+- **Server Type:** Danbooru v2
+- **URL:** Your server IP + port (e.g., `http://192.168.1.10:8000`) or your domain (e.g., `https://example.com`)
+- **Authentication:** Supported via multiple methods:
+  - Query parameters: `login` + `api_key`
+  - HTTP Basic Auth: username + API key as password
+  - Bearer token: `Authorization: Bearer <api_key>`
+
+**Supported Features:**
+- **Posts:** Full search capability, listing, and media retrieval.
+- **Tags:** Tag listing, search, autocomplete, and related tags.
+- **Albums/Pools:** Blombooru Albums are exposed as Danbooru "Pools".
+- **Artists:** Blombooru Artist tags are exposed as the Artists endpoint.
+
+*Note: Write operations (uploading, editing, etc.) via the API are read-only or stubbed to prevent errors in third-party apps. Social features such as voting, favoriting, comments, forums, DMs, and wiki pages return empty results.*
 
 ## Theming
 
