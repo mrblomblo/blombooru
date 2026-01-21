@@ -46,6 +46,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/artist_commentaries.json",
             "/post_versions.json",
             "/post_votes.json",
+            "/profile.json",
+            "/dmails.json",
+            "/user_name_change_requests.json",
+            "/favorite_groups.json",
         }
         
         self.danbooru_prefixes = (
@@ -56,6 +60,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/explore/",
             "/counts/",
             "/wiki_pages/",
+            "/users/",
             "/api/media/",
         )
 
