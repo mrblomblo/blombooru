@@ -3,20 +3,19 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from urllib.parse import quote
+import base64
 from .config import settings
-from .auth import get_current_user
 from .database import get_db
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
     Middleware to conditionally enforce authentication based on settings.REQUIRE_AUTH.
-    Excludes public routes such as share links and static files.
+    Supports multiple authentication methods for maximum client compatibility.
     """
     
     def __init__(self, app: ASGIApp):
         super().__init__(app)
         
-        # Public routes and paths that are always accessible
         self.public_paths = {
             "/login",
             "/favicon.ico",
@@ -33,12 +32,135 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/api/shared/",
         )
     
+        # Danbooru API routes - these handle their own auth
+        self.danbooru_routes = {
+            "/posts.json",
+            "/tags.json",
+            "/artists.json",
+            "/pools.json",
+            "/users.json",
+            "/autocomplete.json",
+            "/related_tag.json",
+            "/comments.json",
+            "/forum_topics.json",
+            "/artist_commentaries.json",
+            "/post_versions.json",
+            "/post_votes.json",
+        }
+        
+        self.danbooru_prefixes = (
+            "/posts/",
+            "/tags/",
+            "/artists/",
+            "/pools/",
+            "/explore/",
+            "/counts/",
+            "/wiki_pages/",
+            "/api/media/",
+        )
+
     def is_public_route(self, path: str) -> bool:
-        """Check if the route is public and should bypass authentication"""
         if path in self.public_paths:
             return True
         if any(path.startswith(prefix) for prefix in self.public_prefixes):
             return True
+        return False
+    
+    def is_danbooru_route(self, path: str) -> bool:
+        if path in self.danbooru_routes:
+            return True
+        if any(path.startswith(prefix) for prefix in self.danbooru_prefixes):
+            return True
+        return False
+    
+    def extract_basic_auth_credentials(self, auth_header: str) -> tuple[str | None, str | None]:
+        try:
+            if not auth_header.startswith("Basic "):
+                return None, None
+            
+            encoded = auth_header[6:]
+            decoded = base64.b64decode(encoded).decode('utf-8')
+            
+            if ':' not in decoded:
+                return None, None
+            
+            username, password = decoded.split(':', 1)
+            return username, password
+        except Exception:
+            return None, None
+    
+    def verify_auth(self, request: Request, db) -> bool:
+        from .auth import verify_api_key, get_current_user
+        
+        auth_header = request.headers.get("Authorization", "")
+        path = request.url.path
+
+        def can_use_api_key():
+            if self.is_danbooru_route(path):
+                return True
+            return False
+        
+        # Method 1: Bearer token
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+
+            if token.startswith("blom_"):
+                if can_use_api_key():
+                    user = verify_api_key(db, token)
+                    if user:
+                        return True
+            else:
+                return False
+        
+        # Method 2: Direct API key
+        elif auth_header.startswith("blom_"):
+
+            if can_use_api_key():
+                user = verify_api_key(db, auth_header)
+                if user:
+                    return True
+            else:
+                return False
+        
+        # Method 3: HTTP Basic Auth
+        elif auth_header.startswith("Basic "):
+            username, password = self.extract_basic_auth_credentials(auth_header)
+            is_blom_password = password.startswith('blom_') if password else False
+            
+            if password:
+                if is_blom_password and not can_use_api_key():
+                    return False
+                else:
+                    user = verify_api_key(db, password)
+                    if user:
+                        if not username or username == user.username:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+        
+        # Method 4: Query parameters
+        api_key = request.query_params.get("api_key")
+        if api_key:            
+            if api_key.startswith("blom_") and not can_use_api_key():
+                return False
+            else:
+                user = verify_api_key(db, api_key)
+                if user:
+                    login = request.query_params.get("login")
+                    if not login or login == user.username:
+                        return True
+        
+        # Method 5: Session cookie (Admin/Site Auth) - Always allowed if valid
+        admin_token = request.cookies.get("admin_token")
+        if admin_token:
+            try:
+                user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
+                if user:
+                    return True
+            except Exception:
+                return False
         
         return False
     
@@ -47,44 +169,36 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         if self.is_public_route(path):
             return await call_next(request)
+        
+        if self.is_danbooru_route(path):
+            return await call_next(request)
 
-        if settings.REQUIRE_AUTH:
+        if not settings.REQUIRE_AUTH:
+            return await call_next(request)
+        
+        try:
+            db = next(get_db())
             try:
-                db = next(get_db())
-                try:
-                    # 1. Try API Key Authentication
-                    auth_header = request.headers.get("Authorization")
-                    if auth_header and auth_header.startswith("Bearer blom_"):
-                        from .auth import verify_api_key
-                        token = auth_header.split(" ")[1]
-                        user = verify_api_key(db, token)
-                        if user:
-                            return await call_next(request)
-
-                    # 2. Try Admin Token (Session) Authentication
-                    admin_token = request.cookies.get("admin_token")
-                    if not admin_token:
-                        return self.handle_unauthenticated(request)
-                    
-                    from .auth import get_current_user as verify_user
-                    user = verify_user(token=admin_token, admin_token=admin_token, db=db)
-                    
-                    if not user:
-                        return self.handle_unauthenticated(request)
-                finally:
-                    db.close()
-            except Exception as e:
-                print(f"Auth middleware error: {e}")
-                return self.handle_unauthenticated(request)
-                
-        return await call_next(request)
+                if self.verify_auth(request, db):
+                    return await call_next(request)
+                else:
+                    return self.handle_unauthenticated(request)
+            finally:
+                db.close()
+        except HTTPException:
+            raise
+        except Exception:
+            return self.handle_unauthenticated(request)
     
     def handle_unauthenticated(self, request: Request):
-        """Handle unauthenticated requests"""
         path = request.url.path
         
         if path.startswith("/api/"):
-            raise HTTPException(status_code=401, detail="Authentication required")
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": 'Basic realm="API"'}
+            )
         
         return_url = quote(str(request.url.path))
         if request.url.query:
