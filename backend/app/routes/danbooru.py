@@ -1,17 +1,86 @@
-from fastapi import APIRouter, Depends, Query, Request, HTTPException
-from sqlalchemy.orm import Session, joinedload, selectinload, load_only
-from sqlalchemy import desc, asc, case, exists, and_, or_, func, literal_column
+from fastapi import APIRouter, Depends, Query, Request, HTTPException, Header
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlalchemy.orm import Session, selectinload, load_only
+from sqlalchemy import desc, asc, case, exists, and_, or_, func
 from typing import List, Optional, Union, Set
 from collections import deque
 from pathlib import Path
 import re
 
 from ..database import get_db
-from ..models import Media, Tag, TagAlias, User, Album, TagCategoryEnum, blombooru_album_media, blombooru_media_tags, blombooru_album_hierarchy
+from ..models import Media, Tag, TagAlias, User, Album, ApiKey, TagCategoryEnum, blombooru_album_media, blombooru_media_tags, blombooru_album_hierarchy
 from ..config import settings
+from ..auth import verify_api_key
 from ..utils.search_parser import parse_search_query, apply_search_criteria
 
-router = APIRouter(tags=["danbooru"])
+# --- AUTHENTICATION ---
+
+http_basic = HTTPBasic(auto_error=False)
+
+async def get_optional_current_user(
+    request: Request,
+    credentials: Optional[HTTPBasicCredentials] = Depends(http_basic),
+    authorization: Optional[str] = Header(None),
+    login: Optional[str] = Query(None),
+    api_key: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Resolves the user from credentials if present, else None."""
+    user = None
+    
+    # 1. Bearer Token
+    if authorization:
+        if authorization.startswith("Bearer "):
+            token = authorization[7:]
+            if token.startswith("blom_"):
+                user = verify_api_key(db, token)
+        elif authorization.startswith("blom_"):
+            user = verify_api_key(db, authorization)
+    
+    # 2. Basic Auth
+    if not user and credentials:
+        potential_key = credentials.password
+        if potential_key:
+            user = verify_api_key(db, potential_key)
+            if user and credentials.username and credentials.username != user.username:
+                user = None
+    
+    # 3. Query Params
+    if not user and api_key:
+        user = verify_api_key(db, api_key)
+        if user and login and login != user.username:
+            user = None
+            
+    # 4. Cookie (Session)
+    if not user:
+        admin_token = request.cookies.get("admin_token")
+        if admin_token:
+            try:
+                from ..auth import get_current_user
+                user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
+            except Exception:
+                pass
+
+    return user
+
+async def verify_danbooru_auth(
+    user: Optional[User] = Depends(get_optional_current_user)
+) -> Optional[User]:
+    """Enforces auth if settings.REQUIRE_AUTH is True."""
+    if settings.REQUIRE_AUTH and not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": 'Basic realm="Danbooru API"'}
+        )
+    return user
+
+# --- ROUTER SETUP ---
+
+router = APIRouter(
+    tags=["danbooru"],
+    dependencies=[Depends(verify_danbooru_auth)]
+)
 
 # --- MODULE-LEVEL CONSTANTS ---
 
@@ -20,6 +89,38 @@ CATEGORY_MAP = {"general": 0, "artist": 1, "copyright": 3, "series": 3, "charact
 TAG_WORD_SPLIT_PATTERN = re.compile(r'[_\-]')
 
 # --- HELPERS ---
+
+def format_user_response(user: User, db: Session) -> dict:
+    upload_count = db.query(func.count(Media.id)).scalar()
+    created_at = user.created_at.isoformat(timespec='milliseconds') if user.created_at else None
+
+    return {
+        "id": user.id,
+        "created_at": created_at,
+        "name": user.username,
+        "inviter_id": None,
+        "level": 70, # 20=Member, 30=Gold, 40=Plat, 50=Builder, 60=Mod, 70=Admin
+        "post_upload_count": upload_count,
+        "post_update_count": 0,
+        "note_update_count": 0,
+        "is_deleted": False,
+        "level_string": "Admin",
+        "is_banned": False,
+        "wiki_page_version_count": 0,
+        "artist_version_count": 0,
+        "artist_commentary_version_count": 0,
+        "pool_version_count": 0,
+        "forum_post_count": 0,
+        "comment_count": 0,
+        "favorite_group_count": 0,
+        "appeal_count": 0,
+        "flag_count": 0,
+        "positive_feedback_count": 0,
+        "neutral_feedback_count": 0,
+        "negative_feedback_count": 0,
+        "base_upload_limit": 1000,
+        "can_upload_free": True
+    }
 
 def format_artist_response(tag: Tag) -> dict:
     """Formats a Tag (Artist) into a Danbooru Artist JSON object"""
@@ -180,7 +281,13 @@ def format_media_response(media: Media, base_url: str) -> dict:
         "file_url": file_url,
         "large_file_url": file_url,
         "preview_file_url": preview_url,
-        "media_asset": media_asset
+        "media_asset": media_asset,
+        "fav_string": "", 
+        "pool_string": "",
+        "is_favorited": False,
+        "is_note_locked": False,
+        "is_rating_locked": False,
+        "is_status_locked": False,
     }
 
 def get_base_url(request: Request) -> str:
@@ -255,21 +362,59 @@ async def get_users_json(db: Session = Depends(get_db)):
     if not user:
         return []
     
-    upload_count = db.query(func.count(Media.id)).scalar()
+    return [format_user_response(user, db)]
+
+@router.get("/users/{user_id}.json")
+@router.get("/users/{user_id}")
+async def get_user_json(
+    user_id: Union[int, str],
+    db: Session = Depends(get_db)
+):
+    if isinstance(user_id, str) and ".json" in user_id:
+        user_id = int(user_id.replace(".json", ""))
+        
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return format_user_response(user, db)
+
+@router.patch("/users/{user_id}.json")
+@router.patch("/users/{user_id}")
+async def update_user_json(
+    user_id: Union[int, str],
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Stub for updating user. 
+    Apps often call this to update blacklists or settings. 
+    Blombooru doesn't support this, but we simulate success without actually changing db.
+    """
+    if isinstance(user_id, str) and ".json" in user_id:
+        user_id = int(user_id.replace(".json", ""))
+        
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    return [{
-        "id": user.id,
-        "name": user.username,
-        "level": 20,
-        "base_upload_limit": 1000,
-        "post_upload_count": upload_count,
-        "post_update_count": 0,
-        "note_update_count": 0,
-        "is_banned": False,
-        "can_upload_free": True,
-        "level_string": "Admin",
-        "created_at": user.created_at.isoformat(timespec='milliseconds') if user.created_at else "2023-01-01T00:00:00.000-00:00"
-    }]
+    return format_user_response(user, db)
+
+@router.get("/profile.json")
+async def get_profile_json(
+    request: Request, 
+    user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    if not user:
+        if settings.REQUIRE_AUTH:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        user = db.query(User).order_by(asc(User.id)).first()
+    
+    if not user:
+        return {} 
+        
+    return format_user_response(user, db)
 
 @router.get("/tags.json")
 async def get_tags_json(
@@ -719,4 +864,16 @@ async def get_explore_posts_searches_json():
 
 @router.get("/wiki_pages/{character_name}.json")
 async def get_wiki_page_json(character_name: str):
+    return []
+
+@router.get("/dmails.json")
+async def get_dmails_json():
+    return []
+
+@router.get("/user_name_change_requests.json")
+async def get_user_name_change_requests_json():
+    return []
+
+@router.get("/favorite_groups.json")
+async def get_favorite_groups_json():
     return []
