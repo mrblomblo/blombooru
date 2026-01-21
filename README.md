@@ -1,12 +1,16 @@
-# Blombooru
+<p align="center"><img width="830" alt="Blombooru Banner" src="https://github.com/user-attachments/assets/a13b7b6d-f7e5-4251-a14c-4bf8b069a366" /></p>
 
-![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-![Docker](https://img.shields.io/badge/docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+<div align="center">
+  
+  ![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+  ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+  ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+  ![Docker](https://img.shields.io/badge/docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+  ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+  
+</div>
 
-**Your Personal, Self-Hosted Media Tagging Tool.**
+<p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
 
 Blombooru is a single-user, private alternative to image boorus like Danbooru and Gelbooru.  
 It is designed for individuals who want a powerful, simple to use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
