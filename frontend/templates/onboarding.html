@@ -53,6 +53,42 @@
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
+            <h3 class="text-sm font-bold mb-3 pb-2 border-b">Redis Configuration (Optional)</h3>
+
+            <div class="mb-4">
+                <label class="flex items-center gap-2 cursor-pointer mb-4">
+                    <input type="checkbox" id="redis-enabled" name="redis_enabled"
+                        class="w-4 h-4 border focus:outline-none focus:border-primary">
+                    <span class="text-xs font-bold">Enable Redis Caching</span>
+                </label>
+            </div>
+
+            <div id="redis-settings" style="display: none;">
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Host</label>
+                    <input type="text" id="redis-host" name="redis_host" value="redis"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">Port</label>
+                    <input type="number" id="redis-port" name="redis_port" value="6379"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">DB Index</label>
+                    <input type="number" id="redis-db" name="redis_db" value="0"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">Password</label>
+                    <input type="password" id="redis-password" name="redis_password"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                </div>
+            </div>
+
             <h3 class="text-sm font-bold mb-3 pb-2 border-b">Admin Account</h3>
 
             <div class="mb-4">
@@ -93,6 +129,10 @@
         successDiv.style.display = 'block';
     }
 
+    document.getElementById('redis-enabled').addEventListener('change', (e) => {
+        document.getElementById('redis-settings').style.display = e.target.checked ? 'block' : 'none';
+    });
+
     document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -108,6 +148,13 @@
                 name: document.getElementById('db-name').value,
                 user: document.getElementById('db-user').value,
                 password: document.getElementById('db-password').value
+            },
+            redis: {
+                host: document.getElementById('redis-host').value,
+                port: parseInt(document.getElementById('redis-port').value),
+                db: parseInt(document.getElementById('redis-db').value),
+                password: document.getElementById('redis-password').value,
+                enabled: document.getElementById('redis-enabled').checked
             },
             admin_username: document.getElementById('admin-username').value,
             admin_password: document.getElementById('admin-password').value
