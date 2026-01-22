@@ -12,6 +12,7 @@ services:
       - UVICORN_PORT=${APP_PORT:-8000}
     depends_on:
       - db
+      - redis
     volumes:
       - media:/app/media
       - data:/app/data
@@ -30,7 +31,16 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:7-alpine
+    container_name: blombooru-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redisdata:/data
+
 volumes:
   pgdata:
+  redisdata:
   media:
   data:
