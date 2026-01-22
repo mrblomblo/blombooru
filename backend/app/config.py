@@ -34,6 +34,13 @@ class Settings:
                 "user": "postgres",
                 "password": ""
             },
+            "redis": {
+                "host": "localhost",
+                "port": 6379,
+                "db": 0,
+                "password": "",
+                "enabled": False
+            },
             "items_per_page": 64,
             "default_sort": "uploaded_at",
             "default_order": "desc",
@@ -61,6 +68,26 @@ class Settings:
     def DATABASE_URL(self) -> str:
         db = self.settings["database"]
         return f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['name']}"
+    
+    @property
+    def REDIS_HOST(self) -> str:
+        return self.settings.get("redis", {}).get("host", "localhost")
+    
+    @property
+    def REDIS_PORT(self) -> int:
+        return self.settings.get("redis", {}).get("port", 6379)
+    
+    @property
+    def REDIS_DB(self) -> int:
+        return self.settings.get("redis", {}).get("db", 0)
+    
+    @property
+    def REDIS_PASSWORD(self) -> Optional[str]:
+        return self.settings.get("redis", {}).get("password")
+    
+    @property
+    def REDIS_ENABLED(self) -> bool:
+        return self.settings.get("redis", {}).get("enabled", False)
     
     @property
     def SECRET_KEY(self) -> str:

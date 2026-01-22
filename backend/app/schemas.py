@@ -113,11 +113,19 @@ class DatabaseSettings(BaseModel):
     user: str
     password: str
 
+class RedisSettings(BaseModel):
+    host: str = "redis"
+    port: int = 6379
+    db: int = 0
+    password: Optional[str] = None
+    enabled: bool = False
+
 class OnboardingData(BaseModel):
     app_name: str
     admin_username: str
     admin_password: str
     database: DatabaseSettings
+    redis: RedisSettings
 
 class SettingsUpdate(BaseModel):
     app_name: Optional[str] = None
@@ -127,6 +135,7 @@ class SettingsUpdate(BaseModel):
     theme: Optional[str] = None
     external_share_url: Optional[str] = None
     require_auth: Optional[bool] = None
+    redis: Optional[RedisSettings] = None
 
 class AlbumBase(BaseModel):
     name: str
