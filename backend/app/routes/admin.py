@@ -136,6 +136,13 @@ async def complete_onboarding(data: OnboardingData):
                     "user": data.database.user,
                     "password": data.database.password
                 },
+                "redis": {
+                    "host": data.redis.host,
+                    "port": data.redis.port,
+                    "db": data.redis.db,
+                    "password": data.redis.password,
+                    "enabled": data.redis.enabled
+                },
                 "first_run": False
             })
             print("✓ Settings saved to file")
@@ -353,8 +360,35 @@ async def get_settings(current_user: User = Depends(get_current_admin_user)):
     safe_settings = settings.settings.copy()
     if "database" in safe_settings:
         safe_settings["database"] = {**safe_settings["database"], "password": "***"}
+    if "redis" in safe_settings:
+        safe_settings["redis"] = {**safe_settings["redis"], "password": "***"}
     safe_settings.pop("secret_key", None)
     return safe_settings
+
+@router.post("/test-redis")
+async def test_redis(data: dict, current_user: User = Depends(require_admin_mode)):
+    """Test Redis connection"""
+    import redis
+    try:
+        host = data.get('host', 'localhost')
+        port = data.get('port', 6379)
+        db = data.get('db', 0)
+        password = data.get('password')
+        if password == "***": # Don't overwrite with placeholder
+            password = settings.REDIS_PASSWORD
+
+        client = redis.Redis(
+            host=host,
+            port=port,
+            db=db,
+            password=password,
+            decode_responses=True,
+            socket_connect_timeout=2
+        )
+        client.ping()
+        return {"success": True, "message": "Redis connection successful"}
+    except Exception as e:
+        return {"success": False, "message": f"Redis connection failed: {str(e)}"}
 
 @router.patch("/settings")
 async def update_settings(
@@ -364,7 +398,19 @@ async def update_settings(
 ):
     """Update settings"""
     update_dict = updates.dict(exclude_unset=True)
+    
+    # Special handling for Redis to avoid overwriting password with placeholder
+    if "redis" in update_dict and update_dict["redis"].get("password") == "***":
+        update_dict["redis"]["password"] = settings.REDIS_PASSWORD
+
     settings.save_settings(update_dict)
+    
+    # Reload Redis client if enabled changed or settings updated
+    from ..redis_client import redis_cache
+    if "redis" in update_dict:
+        redis_cache._enabled = settings.REDIS_ENABLED
+        redis_cache._client = None # Force reconnect
+        
     return {"message": "Settings updated successfully"}
 
 @router.post("/scan-media")

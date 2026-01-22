@@ -119,6 +119,59 @@
                         </div>
                     </div>
 
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold mb-2">Caching (Redis)</label>
+                        <div class="bg p-4 border">
+                            <label class="flex items-center gap-2 cursor-pointer mb-4">
+                                <input type="checkbox" id="redis-enabled" name="redis_enabled"
+                                    class="w-4 h-4 border focus:outline-none focus:border-primary">
+                                <span class="text-xs font-bold">Enable Redis Caching</span>
+                            </label>
+
+                            <div id="redis-settings-container" style="display: none;">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Host</label>
+                                        <input type="text" id="redis-host"
+                                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                            placeholder="localhost">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Port</label>
+                                        <input type="number" id="redis-port"
+                                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                            placeholder="6379">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                            DB Index
+                                        </label>
+                                        <input type="number" id="redis-db"
+                                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                            placeholder="0">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Password</label>
+                                        <input type="password" id="redis-password"
+                                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                            placeholder="Leave empty for none">
+                                    </div>
+                                </div>
+                                <button type="button" id="test-redis-btn"
+                                    class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                                    Test Redis Connection
+                                </button>
+                                <div id="redis-test-result" class="mt-2 text-xs" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit"
                         class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
                         Save Settings

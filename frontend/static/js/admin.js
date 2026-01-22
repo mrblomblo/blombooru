@@ -135,6 +135,62 @@ class AdminPanel {
                 this.changeUsername();
             });
         }
+
+        // Redis settings toggle
+        const redisEnabled = document.getElementById('redis-enabled');
+        if (redisEnabled) {
+            redisEnabled.addEventListener('change', (e) => {
+                const container = document.getElementById('redis-settings-container');
+                if (container) container.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // Redis test button
+        const testRedisBtn = document.getElementById('test-redis-btn');
+        if (testRedisBtn) {
+            testRedisBtn.addEventListener('click', () => this.testRedisConnection());
+        }
+    }
+
+    async testRedisConnection() {
+        const btn = document.getElementById('test-redis-btn');
+        const resultDiv = document.getElementById('redis-test-result');
+        const originalText = btn.textContent;
+
+        const data = {
+            host: document.getElementById('redis-host').value,
+            port: parseInt(document.getElementById('redis-port').value),
+            db: parseInt(document.getElementById('redis-db').value),
+            password: document.getElementById('redis-password').value
+        };
+
+        btn.disabled = true;
+        btn.textContent = 'Testing...';
+        resultDiv.style.display = 'none';
+
+        try {
+            const result = await app.apiCall('/api/admin/test-redis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            resultDiv.style.display = 'block';
+            if (result.success) {
+                resultDiv.className = 'mt-2 text-xs text-success';
+                resultDiv.textContent = '✓ ' + result.message;
+            } else {
+                resultDiv.className = 'mt-2 text-xs text-danger';
+                resultDiv.textContent = '✗ ' + result.message;
+            }
+        } catch (error) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'mt-2 text-xs text-danger';
+            resultDiv.textContent = '✗ Error: ' + error.message;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     }
 
     async changePassword() {
@@ -381,6 +437,27 @@ class AdminPanel {
                 if (requireAuthCheckbox) requireAuthCheckbox.checked = settings.require_auth;
             }
 
+            if (settings.redis) {
+                const redisEnabled = document.getElementById('redis-enabled');
+                if (redisEnabled) {
+                    redisEnabled.checked = settings.redis.enabled;
+                    const container = document.getElementById('redis-settings-container');
+                    if (container) container.style.display = settings.redis.enabled ? 'block' : 'none';
+                }
+
+                const hostInput = document.getElementById('redis-host');
+                if (hostInput) hostInput.value = settings.redis.host || 'localhost';
+
+                const portInput = document.getElementById('redis-port');
+                if (portInput) portInput.value = settings.redis.port || 6379;
+
+                const dbInput = document.getElementById('redis-db');
+                if (dbInput) dbInput.value = settings.redis.db || 0;
+
+                const passwordInput = document.getElementById('redis-password');
+                if (passwordInput) passwordInput.value = settings.redis.password || '';
+            }
+
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -408,6 +485,14 @@ class AdminPanel {
         const defaultOrder = this.defaultOrderSelect ? this.defaultOrderSelect.getValue() : null;
         const requireAuth = document.getElementById('require-auth')?.checked || false;
 
+        const redisSettings = {
+            enabled: document.getElementById('redis-enabled')?.checked || false,
+            host: document.getElementById('redis-host')?.value || 'localhost',
+            port: parseInt(document.getElementById('redis-port')?.value || '6379'),
+            db: parseInt(document.getElementById('redis-db')?.value || '0'),
+            password: document.getElementById('redis-password')?.value || ''
+        };
+
         const settings = {
             app_name: appName,
             theme: theme,
@@ -415,7 +500,8 @@ class AdminPanel {
             default_sort: defaultSort,
             default_order: defaultOrder,
             external_share_url: externalShareUrl || null,
-            require_auth: requireAuth
+            require_auth: requireAuth,
+            redis: redisSettings
         };
 
         try {
