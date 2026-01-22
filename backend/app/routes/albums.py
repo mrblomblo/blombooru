@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, asc, func, text, or_, and_
 from typing import List, Optional
@@ -9,6 +9,7 @@ from ..models import Album, Media, RatingEnum, blombooru_album_media, blombooru_
 from ..schemas import AlbumCreate, AlbumUpdate, AlbumResponse, AlbumListResponse, MediaIds
 from ..auth import get_current_admin_user, require_admin_mode, User
 from ..config import settings
+from ..utils.cache import cache_response, invalidate_album_cache
 from ..utils.album_utils import (
     get_album_rating,
     get_album_tags,
@@ -30,7 +31,9 @@ def get_effective_limit(limit: Optional[int]) -> int:
 
 
 @router.get("", response_model=dict)
+@cache_response(expire=3600, key_prefix="album_list")
 async def get_albums(
+    request: Request,
     page: int = 1,
     limit: Optional[int] = Query(default=None),
     sort: Optional[str] = Query(default="created_at"),
@@ -168,6 +171,9 @@ async def create_album(
     db.commit()
     db.refresh(new_album)
     
+    # Invalidate cache
+    invalidate_album_cache()
+    
     return AlbumResponse(
         id=new_album.id,
         name=new_album.name,
@@ -227,6 +233,9 @@ async def update_album(
     db.commit()
     db.refresh(album)
     
+    # Invalidate cache
+    invalidate_album_cache()
+    
     return await get_album(album_id, db)
 
 @router.delete("/{album_id}")
@@ -266,6 +275,9 @@ async def delete_album(
     
     db.delete(album)
     db.commit()
+    
+    # Invalidate cache
+    invalidate_album_cache()
     
     return {"message": "Album deleted successfully"}
 
@@ -307,6 +319,9 @@ async def add_media_to_album(
     # Update last_modified
     update_album_last_modified(album_id, db)
     
+    # Invalidate cache
+    invalidate_album_cache()
+    
     return {"message": f"Added {added_count} media item(s) to album"}
 
 @router.delete("/{album_id}/media")
@@ -333,11 +348,16 @@ async def remove_media_from_album(
     # Update last_modified
     update_album_last_modified(album_id, db)
     
+    # Invalidate cache
+    invalidate_album_cache()
+    
     return {"message": "Media removed from album"}
 
 
 @router.get("/{album_id}/contents")
+@cache_response(expire=3600, key_prefix="album_contents")
 async def get_album_contents(
+    request: Request,
     album_id: int,
     page: int = Query(default=1, ge=1),
     limit: Optional[int] = Query(default=None),

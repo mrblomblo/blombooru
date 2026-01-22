@@ -12,6 +12,7 @@ from ..models import Media, Tag, TagAlias, User, Album, ApiKey, TagCategoryEnum,
 from ..config import settings
 from ..auth import verify_api_key
 from ..utils.search_parser import parse_search_query, apply_search_criteria
+from ..utils.cache import cache_response, invalidate_cache
 
 # --- AUTHENTICATION ---
 
@@ -303,6 +304,7 @@ def get_base_url(request: Request) -> str:
 @router.get("/explore/posts/popular.json")
 @router.get("/explore/posts/viewed.json")
 @router.get("/posts.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_posts_json(
     request: Request,
     page: int = Query(1, ge=1),
@@ -335,6 +337,7 @@ async def get_posts_json(
 
 @router.get("/posts/{post_id}.json")
 @router.get("/posts/{post_id}")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_post_json(
     post_id: Union[int, str],
     request: Request,
@@ -354,7 +357,8 @@ async def get_post_json(
     return format_media_response(media, get_base_url(request))
 
 @router.get("/users.json")
-async def get_users_json(db: Session = Depends(get_db)):
+@cache_response(expire=3600, key_prefix="danbooru")
+async def get_users_json(request: Request, db: Session = Depends(get_db)):
     user = db.query(User).options(
         load_only(User.id, User.username, User.created_at)
     ).order_by(asc(User.id)).first()
@@ -366,6 +370,7 @@ async def get_users_json(db: Session = Depends(get_db)):
 
 @router.get("/users/{user_id}.json")
 @router.get("/users/{user_id}")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_user_json(
     user_id: Union[int, str],
     db: Session = Depends(get_db)
@@ -401,6 +406,7 @@ async def update_user_json(
     return format_user_response(user, db)
 
 @router.get("/profile.json")
+@cache_response(expire=600, key_prefix="danbooru")
 async def get_profile_json(
     request: Request, 
     user: Optional[User] = Depends(get_optional_current_user),
@@ -417,7 +423,9 @@ async def get_profile_json(
     return format_user_response(user, db)
 
 @router.get("/tags.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_tags_json(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1),
     search_name_comma: Optional[str] = Query(None, alias="search[name_comma]"),
@@ -485,7 +493,9 @@ async def get_tags_json(
     return results
 
 @router.get("/related_tag.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_related_tag_json(
+    request: Request,
     query: Optional[str] = Query(None, alias="search[query]"),
     category: Optional[str] = Query(None, alias="search[category]"),
     limit: int = Query(25, ge=1, le=1000),
@@ -617,7 +627,9 @@ async def get_related_tag_json(
     }
 
 @router.get("/autocomplete.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_autocomplete_json(
+    request: Request,
     query: Optional[str] = Query(None, alias="search[query]"),
     type: Optional[str] = Query(None, alias="search[type]"),
     limit: int = Query(20, ge=1, le=100),
@@ -650,7 +662,9 @@ async def get_autocomplete_json(
     return results
 
 @router.get("/artists.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_artists_json(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1),
     search_any_name_matches: Optional[str] = Query(None, alias="search[any_name_matches]"),
@@ -700,6 +714,7 @@ async def get_artists_json(
 
 @router.get("/artists/{artist_id}.json")
 @router.get("/artists/{artist_id}")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_artist_json(
     artist_id: Union[int, str],
     db: Session = Depends(get_db)
@@ -722,6 +737,7 @@ async def get_artist_json(
     return format_artist_response(tag)
 
 @router.get("/pools.json")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_pools_json(
     request: Request,
     page: int = Query(1, ge=1),
@@ -798,6 +814,7 @@ async def get_pools_json(
 
 @router.get("/pools/{pool_id}.json")
 @router.get("/pools/{pool_id}")
+@cache_response(expire=3600, key_prefix="danbooru")
 async def get_single_pool_json(
     pool_id: Union[int, str],
     db: Session = Depends(get_db)
@@ -830,7 +847,8 @@ async def get_single_pool_json(
     }
 
 @router.get("/counts/posts.json")
-async def get_counts_posts_json(db: Session = Depends(get_db)):
+@cache_response(expire=300, key_prefix="danbooru")
+async def get_counts_posts_json(request: Request, db: Session = Depends(get_db)):
     count = db.query(func.count(Media.id)).scalar()
     return {"counts": {"posts": count}}
 

@@ -8,6 +8,8 @@ from ..database import get_db
 from ..auth import require_admin_mode
 from ..models import User, Tag, TagAlias, TagCategoryEnum
 from ..schemas import TagResponse
+from ..utils.cache import cache_response, invalidate_tag_cache
+from fastapi import Request
 
 router = APIRouter(prefix="/api/tags-management", tags=["tag-management"])
 
@@ -106,6 +108,7 @@ async def import_tags_csv(
                 continue
         
         db.commit()
+        invalidate_tag_cache()
         
         return {
             "success": True,
@@ -117,7 +120,9 @@ async def import_tags_csv(
         raise HTTPException(status_code=500, detail=f"Failed to import CSV: {str(e)}")
 
 @router.get("/stats")
+@cache_response(expire=3600, key_prefix="tags")
 async def get_tag_stats(
+    request: Request,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -157,6 +162,7 @@ async def clear_all_tags(
         db.query(TagAlias).delete()
         db.query(Tag).delete()
         db.commit()
+        invalidate_tag_cache()
         
         return {"success": True, "message": "All tags cleared"}
     except Exception as e:
@@ -164,7 +170,9 @@ async def clear_all_tags(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/search")
+@cache_response(expire=3600, key_prefix="tags")
 async def search_tags(
+    request: Request,
     q: str,
     limit: int = 50,
     current_user: User = Depends(require_admin_mode),
@@ -211,6 +219,8 @@ async def delete_tag(
     try:
         db.delete(tag)
         db.commit()
+        invalidate_tag_cache()
+        
         return {"success": True, "message": f"Tag '{tag.name}' deleted"}
     except Exception as e:
         db.rollback()

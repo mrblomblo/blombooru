@@ -8,11 +8,15 @@ from ..models import Media
 from ..schemas import MediaResponse
 from ..config import settings
 from ..utils.search_parser import parse_search_query, apply_search_criteria
+from ..utils.cache import cache_response
+from fastapi import APIRouter, Depends, Query, Request
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
 @router.get("/")
+@cache_response(expire=3600, key_prefix="search")
 async def search_media(
+    request: Request,
     q: str = Query("", description="Search query"),
     rating: Optional[str] = None,
     page: int = 1,

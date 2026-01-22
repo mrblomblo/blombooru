@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, text, or_, and_
@@ -20,6 +20,7 @@ from ..utils.media_helpers import extract_image_metadata, serve_media_file, sani
 from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count
 from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
 from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse
+from ..utils.cache import cache_response, invalidate_media_cache, invalidate_tag_cache
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -53,7 +54,9 @@ def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
     return tags
 
 @router.get("/")
+@cache_response(expire=300, key_prefix="media_list")
 async def get_media_list(
+    request: Request,
     page: int = 1,
     limit: int = Query(None),
     rating: Optional[str] = None,
@@ -300,6 +303,9 @@ async def upload_media(
         
         print(f"Media uploaded successfully: ID={media.id}, Filename={unique_filename}")
         
+        invalidate_media_cache()
+        invalidate_tag_cache()
+        
         return MediaResponse.model_validate(media)
         
     except HTTPException:
@@ -370,6 +376,9 @@ async def update_media(
         db.commit()
     
     db.refresh(media)
+    invalidate_media_cache()
+    invalidate_tag_cache()
+    
     return MediaResponse.model_validate(media)
 
 
@@ -399,6 +408,9 @@ async def delete_media(
     if tag_ids:
         update_tag_counts(db, tag_ids)
         db.commit()
+
+    invalidate_media_cache()
+    invalidate_tag_cache()
     
     return {"message": "Media deleted successfully"}
 

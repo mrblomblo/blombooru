@@ -6,11 +6,15 @@ from ..database import get_db
 from ..auth import require_admin_mode, get_current_user
 from ..models import Tag, Media, User, blombooru_media_tags
 from ..schemas import TagResponse, TagCreate, TagCategoryEnum
+from ..utils.cache import cache_response, invalidate_tag_cache
+from fastapi import Request
 
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
 @router.get("/", response_model=List[TagResponse])
+@cache_response(expire=3600, key_prefix="tags")
 async def get_tags(
+    request: Request,
     search: Optional[str] = None,
     category: Optional[TagCategoryEnum] = None,
     limit: int = 100,
@@ -31,7 +35,9 @@ async def get_tags(
     return tags
 
 @router.get("/autocomplete")
+@cache_response(expire=3600, key_prefix="autocomplete")
 async def autocomplete_tags(
+    request: Request,
     q: str = Query(..., min_length=1),
     db: Session = Depends(get_db)
 ):
@@ -63,7 +69,8 @@ async def autocomplete_tags(
     return [{"name": tag.name, "category": tag.category, "count": tag.post_count} for tag in tags]
 
 @router.get("/{tag_name}", response_model=TagResponse)
-async def get_tag(tag_name: str, db: Session = Depends(get_db)):
+@cache_response(expire=3600, key_prefix="tag_detail")
+async def get_tag(request: Request, tag_name: str, db: Session = Depends(get_db)):
     """Get single tag"""
     tag = db.query(Tag).filter(Tag.name == tag_name.lower()).first()
     if not tag:
@@ -88,6 +95,7 @@ async def create_tag(
     db.add(tag)
     db.commit()
     db.refresh(tag)
+    invalidate_tag_cache()
     
     return tag
 
@@ -105,6 +113,7 @@ async def update_tag(
     
     tag.category = category
     db.commit()
+    invalidate_tag_cache()
     
     return {"message": "Tag updated successfully"}
 
@@ -121,11 +130,14 @@ async def delete_tag(
     
     db.delete(tag)
     db.commit()
+    invalidate_tag_cache()
     
     return {"message": "Tag deleted successfully"}
 
 @router.get("/{tag_name}/related")
+@cache_response(expire=3600, key_prefix="tag_detail")
 async def get_related_tags(
+    request: Request,
     tag_name: str,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -158,7 +170,9 @@ async def get_related_tags(
     ]
 
 @router.get("/related")
+@cache_response(expire=3600, key_prefix="tag_detail")
 async def related_tags(
+    request: Request,
     tags: str = Query(...),
     db: Session = Depends(get_db)
 ):
