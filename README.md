@@ -2,11 +2,13 @@
 
 <div align="center">
   
-  ![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+  ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
   ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+  ![Redis](https://img.shields.io/badge/Redis-8-FF4235?style=flat-square&logo=redis&logoColor=white)
+  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
   ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-  ![Docker](https://img.shields.io/badge/docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
-  ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+  ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+  ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
   
 </div>
 
@@ -80,6 +82,8 @@ It is designed for individuals who want a powerful, simple to use, and modern so
 
 - **User-Friendly Onboarding:** A simple first-time setup process to configure your admin account, database connection, and branding.
 
+- **High-Performance Caching:** Optional Redis integration provides lightning-fast response times for heavy queries, autocompletes, and Danbooru-compatible API requests.
+
 - **Danbooru v2 API Compatibility:** Connect to Blombooru using your favorite third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) thanks to a built-in compatibility layer.
 
 ## Installation & Setup
@@ -118,6 +122,7 @@ This is the recommended method for using Blombooru.
     Now, open your web browser and navigate to `http://localhost:<port>` *(replace `<port>` with the port you specified in the `.env` file)*. You will be greeted by the onboarding page. Here you will:  
     - Set your Admin Username and Password.
     - Enter your PostgreSQL connection details. The server will test the connection before proceeding. Unless you changed `POSTGRES_DB` and/or `POSTGRES_USER`, you only need to fill in the password that you set in the `.env` file. Do not change the DB Host.
+    - (Optional) Enable and configure Redis for caching.
     - Customize the site's Branding Name (defaults to "Blombooru").
 
     Once submitted, the server will create the database schema and create your admin account.
@@ -147,6 +152,7 @@ docker compose down
 **Prerequisites**  
 - Python 3.10+ *(Tested with 3.13.7 & 3.11, does not seem to work with 3.14)*
 - PostgreSQL 17
+- Redis 8 *(Optional)*
 
 1. **Clone the repository**
 
@@ -166,7 +172,10 @@ docker compose down
 3. **Create a PostgreSQL database**  
     Create a new database and a user with permissions for that database. Blombooru will handle creating the necessary tables.
 
-4. **First-time run & Onboarding**  
+4. **Start a Redis instance** *(Optional)*  
+    If you wish to use high-performance caching, ensure a Redis server (v7+) is running and accessible. You can install it via your OS package manager (e.g., `apt install redis`, `brew install redis`) or run it in a standalone Docker container.
+
+5. **First-time run & Onboarding**  
     Start the server:
 
     ```bash
@@ -176,11 +185,12 @@ docker compose down
     Now, open your web browser and navigate to [`http://localhost:8000`](http://localhost:8000). You will be greeted by the onboarding page. Here you will:  
     - Set your Admin Username and Password.
     - Enter your PostgreSQL connection details. The server will test the connection before proceeding.
+    - (Optional) Enable and configure Redis for high-performance caching.
     - Customize the site's Branding Name (defaults to "Blombooru").
 
     Once submitted, the server will create the database schema and create your admin account.
 
-5. **Running the application again**  
+6. **Running the application again**  
     After the initial setup, you can run the server anytime with the same command. All settings are saved to a `settings.json` file in the `data` folder, and all uploaded media is saved to the `media/original` folder.
 
 ## Usage Guide
@@ -197,6 +207,7 @@ To make any changes, you must log in as the admin. This protects you from accide
 - Add or remove tags.
 - Share media.
 - Perform bulk operations like multi-deleting items from the gallery.
+- Manage system settings, including branding, security, and optional Redis caching.
 
 ### Adding tags
 
@@ -347,6 +358,7 @@ Your new theme will automatically appear in the theme-picker dropdown in the Adm
 - **Backend:** FastAPI (Python)
 - **Frontend:** Tailwind CSS (locally built), Vanilla JavaScript, and HTML
 - **Database:** PostgreSQL 17
+- **Caching:** Redis 8 (Optional)
 - **Media Storage:** Files are stored on the local filesystem, with paths referenced in the database. Original metadata is always preserved, but can optionally be stripped on-the-fly in shared media.
 - **Supported Formats:** JPG, PNG, WEBP, GIF, MP4, and WEBM.
 
