@@ -165,7 +165,7 @@ class AlbumPicker {
         return `
             <div class="album-picker-item p-2 hover:surface border-b flex items-center gap-2" style="padding-left: ${indent + 8}px;">
                 <input type="checkbox" 
-                       class="album-checkbox" 
+                       class="w-4 h-4 accent-primary album-checkbox" 
                        data-album-id="${album.id}"
                        ${isSelected ? 'checked' : ''}>
                 <div class="flex-1 min-w-0">
