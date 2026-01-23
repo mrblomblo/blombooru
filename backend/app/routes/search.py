@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import desc
 from typing import List, Optional
 
@@ -26,7 +26,7 @@ async def search_media(
     """Search media with tag-based query"""
     if limit is None:
         limit = settings.get_items_per_page()
-    query = db.query(Media)
+    query = db.query(Media).options(selectinload(Media.tags))
     parsed = parse_search_query(q)
     
     if rating and rating != "explicit":
