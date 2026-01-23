@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import desc, asc, func, text, or_, and_
 from typing import List, Optional
 from datetime import datetime
@@ -17,7 +17,8 @@ from ..utils.album_utils import (
     update_album_last_modified,
     get_parent_ids,
     get_media_count,
-    get_album_popular_tags
+    get_album_popular_tags,
+    get_bulk_album_metrics
 )
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
@@ -64,13 +65,16 @@ async def get_albums(
     else:
         query = query.order_by(asc(sort_column))
     
-    # Get all albums matching root_only and sorting to filter by computed rating
+    # Get all albums
     all_albums = query.all()
+    all_album_ids = [a.id for a in all_albums]
+    all_metrics = get_bulk_album_metrics(all_album_ids, db)
     
     # Filter and build list
     filtered_albums = []
     for album in all_albums:
-        album_rating = get_album_rating(album.id, db)
+        metrics = all_metrics.get(album.id, {'rating': RatingEnum.safe, 'count': 0})
+        album_rating = metrics['rating']
         
         # Apply rating filter (max rating logic)
         if rating and rating != "explicit":
@@ -79,7 +83,7 @@ async def get_albums(
             if rating == "questionable" and album_rating == RatingEnum.explicit:
                 continue
         
-        filtered_albums.append((album, album_rating))
+        filtered_albums.append((album, album_rating, metrics['count']))
     
     total = len(filtered_albums)
     
@@ -90,9 +94,8 @@ async def get_albums(
     
     # Build response
     album_list = []
-    for album, album_rating in paginated_albums:
+    for album, album_rating, media_count in paginated_albums:
         thumbnails = get_random_thumbnails(album.id, db, count=4)
-        media_count = get_media_count(album.id, db)
         
         album_list.append(AlbumListResponse(
             id=album.id,
@@ -388,7 +391,7 @@ async def get_album_contents(
         Media.id == blombooru_album_media.c.media_id
     ).filter(
         blombooru_album_media.c.album_id == album_id
-    ).options(joinedload(Media.tags))
+    ).options(selectinload(Media.tags))
     
     # Filter Rating
     if rating and rating != "explicit":
@@ -452,27 +455,35 @@ async def get_album_contents(
     
     # Build Album Response List (with rating logic)
     child_album_list = []
-    rating_priority = {RatingEnum.explicit: 3, RatingEnum.questionable: 2, RatingEnum.safe: 1}
-    max_rating_val = rating_priority.get(RatingEnum[rating] if rating and rating in RatingEnum.__members__ else RatingEnum.explicit, 3)
     
-    for child in child_albums:
-        child_rating = get_album_rating(child.id, db)
+    if child_albums:
+        child_ids = [c.id for c in child_albums]
+        all_metrics = get_bulk_album_metrics(child_ids, db)
         
-        # Skip if rating is too high for current filter
-        if rating and rating_priority.get(child_rating, 1) > max_rating_val:
-            continue
+        rating_priority = {RatingEnum.explicit: 3, RatingEnum.questionable: 2, RatingEnum.safe: 1}
+        # Safely get max_rating_val based on the rating filter
+        target_rating = RatingEnum(rating) if rating and rating in [r.value for r in RatingEnum] else RatingEnum.explicit
+        max_rating_val = rating_priority.get(target_rating, 3)
+        
+        for child in child_albums:
+            metrics = all_metrics.get(child.id, {'rating': RatingEnum.safe, 'count': 0})
+            child_rating = metrics['rating']
             
-        thumbnails = get_random_thumbnails(child.id, db, count=4)
-        media_count = get_media_count(child.id, db)
-        
-        child_album_list.append(AlbumListResponse(
-            id=child.id,
-            name=child.name,
-            last_modified=child.last_modified,
-            thumbnail_paths=thumbnails,
-            rating=child_rating,
-            media_count=media_count
-        ))
+            # Skip if rating is too high for current filter
+            if rating and rating_priority.get(child_rating, 1) > max_rating_val:
+                continue
+                
+            thumbnails = get_random_thumbnails(child.id, db, count=4)
+            media_count = metrics['count']
+            
+            child_album_list.append(AlbumListResponse(
+                id=child.id,
+                name=child.name,
+                last_modified=child.last_modified,
+                thumbnail_paths=thumbnails,
+                rating=child_rating,
+                media_count=media_count
+            ))
     
     # Calculate total pages
     total_pages = max(1, (total_media + limit - 1) // limit)
@@ -518,19 +529,22 @@ async def get_child_albums(
     ).all()
     
     result = []
-    for child in children:
-        thumbnails = get_random_thumbnails(child.id, db, count=4)
-        child_rating = get_album_rating(child.id, db)
-        media_count = get_media_count(child.id, db)
+    if children:
+        child_ids = [c.id for c in children]
+        all_metrics = get_bulk_album_metrics(child_ids, db)
         
-        result.append(AlbumListResponse(
-            id=child.id,
-            name=child.name,
-            last_modified=child.last_modified,
-            thumbnail_paths=thumbnails,
-            rating=child_rating,
-            media_count=media_count
-        ))
+        for child in children:
+            metrics = all_metrics.get(child.id, {'rating': RatingEnum.safe, 'count': 0})
+            thumbnails = get_random_thumbnails(child.id, db, count=4)
+            
+            result.append(AlbumListResponse(
+                id=child.id,
+                name=child.name,
+                last_modified=child.last_modified,
+                thumbnail_paths=thumbnails,
+                rating=metrics['rating'],
+                media_count=metrics['count']
+            ))
     
     return result
 
