@@ -259,3 +259,72 @@ def get_album_popular_tags(album_id: int, db: Session, limit: int = 20, visited:
             "count": tc.count
         } for tc in tag_counts
     ]
+
+def get_bulk_album_metrics(album_ids: List[int], db: Session):
+    """
+    Efficiently compute recursive ratings and counts for a list of albums.
+    Uses only a few queries regardless of the number of albums.
+    """
+    if not album_ids:
+        return {}
+
+    # 1. Fetch direct media ratings and counts for ALL albums
+    direct_stats = db.query(
+        blombooru_album_media.c.album_id,
+        Media.rating,
+        func.count(Media.id).label('count')
+    ).join(Media, Media.id == blombooru_album_media.c.media_id).group_by(blombooru_album_media.c.album_id, Media.rating).all()
+    
+    album_data = {}
+    for aid, rating, count in direct_stats:
+        if aid not in album_data:
+            album_data[aid] = {'ratings': set(), 'count': 0}
+        album_data[aid]['ratings'].add(rating)
+        album_data[aid]['count'] += count
+    
+    # 2. Fetch entire hierarchy
+    hierarchies = db.query(blombooru_album_hierarchy).all()
+    children_map = {}
+    for pid, cid in hierarchies:
+        if pid not in children_map:
+            children_map[pid] = []
+        children_map[pid].append(cid)
+        
+    # 3. Recursive computation with memoization
+    memo = {}
+    rating_priority = {RatingEnum.explicit: 3, RatingEnum.questionable: 2, RatingEnum.safe: 1}
+
+    def compute(aid, visited):
+        if aid in memo:
+            return memo[aid]
+        if aid in visited:
+            return {'rating': RatingEnum.safe, 'count': 0}
+        
+        # Avoid circular references
+        new_visited = visited | {aid}
+        
+        # Start with direct stats
+        stats = album_data.get(aid, {'ratings': set(), 'count': 0})
+        current_ratings = set(stats['ratings'])
+        current_count = stats['count']
+        
+        # Add child stats
+        for cid in children_map.get(aid, []):
+            child_stats = compute(cid, new_visited)
+            current_ratings.add(child_stats['rating'])
+            current_count += child_stats['count']
+            
+        # Determine highest rating
+        highest = RatingEnum.safe
+        if current_ratings:
+            highest = max(current_ratings, key=lambda r: rating_priority.get(r, 0))
+            
+        res = {'rating': highest, 'count': current_count}
+        memo[aid] = res
+        return res
+
+    final_results = {}
+    for aid in album_ids:
+        final_results[aid] = compute(aid, set())
+        
+    return final_results
