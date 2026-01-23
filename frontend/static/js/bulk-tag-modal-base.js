@@ -378,23 +378,54 @@ class BulkTagModalBase {
     }
 
     async validateTags(tags, concurrency = 20) {
-        const tagsToValidate = tags.filter(tag => !this.tagResolutionCache.has(tag));
+        const tagsToValidate = tags.filter(tag => !this.tagResolutionCache.has(tag.toLowerCase()));
 
         if (tagsToValidate.length === 0) return;
 
-        let progress = 0;
         this.updateProgress(0, tagsToValidate.length, 'Validating tags...', 'tags checked');
 
-        const validateTag = async (tag) => {
-            if (this.isCancelled) return;
-            await this.validateAndCacheTag(tag);
-            progress++;
-            if (!this.isCancelled) {
-                this.updateProgress(progress, tagsToValidate.length, 'Validating tags...', 'tags checked');
-            }
-        };
+        try {
+            // Use the batch endpoint for multiple tags
+            const namesParam = tagsToValidate.map(n => encodeURIComponent(n.toLowerCase().trim())).join(',');
+            const response = await this.fetchWithAbort(`/api/tags?names=${namesParam}`);
 
-        await this.processBatch(tagsToValidate, validateTag, concurrency);
+            if (response.ok) {
+                const results = await response.json();
+                const foundMap = new Map();
+                results.forEach(t => foundMap.set(t.name.toLowerCase(), t.name));
+
+                tagsToValidate.forEach(tag => {
+                    const normalized = tag.toLowerCase().trim();
+                    this.tagResolutionCache.set(tag, foundMap.get(normalized) || null);
+                });
+            } else {
+                // Fallback to one-by-one if batch fails or is too large
+                let progress = 0;
+                const validateTag = async (tag) => {
+                    if (this.isCancelled) return;
+                    await this.validateAndCacheTag(tag);
+                    progress++;
+                    if (!this.isCancelled) {
+                        this.updateProgress(progress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+                    }
+                };
+                await this.processBatch(tagsToValidate, validateTag, concurrency);
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') throw e;
+            console.error('Error validating tags in batch:', e);
+            // Fallback
+            let progress = 0;
+            const validateTag = async (tag) => {
+                if (this.isCancelled) return;
+                await this.validateAndCacheTag(tag);
+                progress++;
+                this.updateProgress(progress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+            };
+            await this.processBatch(tagsToValidate, validateTag, concurrency);
+        }
+
+        this.updateProgress(tagsToValidate.length, tagsToValidate.length, 'Validating tags...', 'tags checked');
     }
 
     getResolvedTag(tag) {

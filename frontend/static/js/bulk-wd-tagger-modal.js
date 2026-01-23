@@ -228,36 +228,44 @@ class BulkWDTaggerModal extends BulkTagModalBase {
 
         const selectedArray = Array.from(this.selectedItems);
 
-        // Phase 1: Fetch media info
+        // Phase 1: Fetch media info in batch
         const mediaInfoMap = new Map();
-        let fetchProgress = 0;
-
         this.updateProgress(0, selectedArray.length, 'Fetching media info...', 'items fetched');
 
-        const fetchMediaInfo = async (mediaId) => {
-            if (this.isCancelled) return;
-            try {
-                const res = await this.fetchWithAbort(`/api/media/${mediaId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    mediaInfoMap.set(mediaId, data);
-                }
-            } catch (e) {
-                if (e.name === 'AbortError') throw e;
-                console.error(`Error fetching media ${mediaId}:`, e);
-            } finally {
-                fetchProgress++;
-                if (!this.isCancelled) {
-                    this.updateProgress(fetchProgress, selectedArray.length, 'Fetching media info...', 'items fetched');
-                }
-            }
-        };
-
         try {
-            await this.processBatch(selectedArray, fetchMediaInfo, 20);
+            const idsParam = selectedArray.join(',');
+            const res = await this.fetchWithAbort(`/api/media/batch?ids=${idsParam}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.items) {
+                    data.items.forEach(item => mediaInfoMap.set(item.id, item));
+                }
+            } else {
+                throw new Error('Failed to fetch media info batch');
+            }
         } catch (e) {
             if (e.name === 'AbortError') return;
-            throw e;
+            console.error('Error fetching media info batch:', e);
+            // Fallback to individual fetching if batch fails
+            let fetchProgress = 0;
+            const fetchMediaInfo = async (mediaId) => {
+                if (this.isCancelled) return;
+                try {
+                    const res = await this.fetchWithAbort(`/api/media/${mediaId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        mediaInfoMap.set(mediaId, data);
+                    }
+                } catch (err) {
+                    console.error(`Error fetching media ${mediaId}:`, err);
+                } finally {
+                    fetchProgress++;
+                    if (!this.isCancelled) {
+                        this.updateProgress(fetchProgress, selectedArray.length, 'Fetching media info...', 'items fetched');
+                    }
+                }
+            };
+            await this.processBatch(selectedArray, fetchMediaInfo, 20);
         }
 
         if (this.isCancelled) return;

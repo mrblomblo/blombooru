@@ -33,20 +33,46 @@ class BulkAITagsModal extends BulkTagModalBase {
         this.updateProgress(0, selectedArray.length, 'Fetching metadata...', 'items fetched');
 
         const rawData = [];
-        let fetchProgress = 0;
+        const mediaDataMap = new Map();
 
+        // 1a. Batch fetch media data
+        try {
+            const idsParam = selectedArray.join(',');
+            const res = await this.fetchWithAbort(`/api/media/batch?ids=${idsParam}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.items) {
+                    data.items.forEach(item => mediaDataMap.set(item.id, item));
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching media batch:', e);
+        }
+
+        // 1b. Fetch metadata individuals (and media data fallback)
+        let fetchProgress = 0;
         const fetchMediaData = async (mediaId) => {
             if (this.isCancelled) return;
             try {
-                const [metaRes, mediaRes] = await Promise.all([
-                    this.fetchWithAbort(`/api/media/${mediaId}/metadata`),
-                    this.fetchWithAbort(`/api/media/${mediaId}`)
-                ]);
+                let mediaData = mediaDataMap.get(mediaId);
+
+                const fetchTasks = [this.fetchWithAbort(`/api/media/${mediaId}/metadata`)];
+                if (!mediaData) {
+                    fetchTasks.push(this.fetchWithAbort(`/api/media/${mediaId}`));
+                }
+
+                const results = await Promise.all(fetchTasks);
+                const metaRes = results[0];
+                const mediaRes = results[1];
 
                 const metadata = metaRes.ok ? await metaRes.json() : null;
-                const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
+                if (mediaRes && mediaRes.ok) {
+                    mediaData = await mediaRes.json();
+                }
 
-                rawData.push({ mediaId, metadata, mediaData });
+                if (metadata) {
+                    rawData.push({ mediaId, metadata, mediaData: mediaData || { tags: [] } });
+                }
             } catch (e) {
                 if (e.name === 'AbortError') throw e;
                 console.error(`Error fetching media ${mediaId}:`, e);
@@ -64,7 +90,6 @@ class BulkAITagsModal extends BulkTagModalBase {
             if (e.name === 'AbortError') return;
             throw e;
         }
-
         if (this.isCancelled) return;
 
         // Phase 2: Extract prompts and collect tags

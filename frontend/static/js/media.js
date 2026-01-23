@@ -580,15 +580,28 @@ class MediaViewer extends MediaViewerBase {
                 return;
             }
 
-            // Validate predicted tags against database
+            // Validate predicted tags against database in batch
             this.setButtonState(btn, 'Validating...', true);
 
             const validTags = [];
-            for (const tag of predictedTags) {
-                const validTag = await this.getTagOrAlias(tag);
-                if (validTag && !existingSet.has(validTag.toLowerCase())) {
-                    validTags.push(validTag);
-                    existingSet.add(validTag.toLowerCase());
+            try {
+                const results = await this.tagInputHelper.checkTagsBatch(predictedTags);
+                for (const tag of predictedTags) {
+                    const tagObj = results[tag.toLowerCase()];
+                    if (tagObj && !existingSet.has(tagObj.name.toLowerCase())) {
+                        validTags.push(tagObj.name);
+                        existingSet.add(tagObj.name.toLowerCase());
+                    }
+                }
+            } catch (e) {
+                console.error('Error validating tags in batch:', e);
+                // Fallback
+                for (const tag of predictedTags) {
+                    const validTag = await this.getTagOrAlias(tag);
+                    if (validTag && !existingSet.has(validTag.toLowerCase())) {
+                        validTags.push(validTag);
+                        existingSet.add(validTag.toLowerCase());
+                    }
                 }
             }
 

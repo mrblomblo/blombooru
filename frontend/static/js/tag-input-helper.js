@@ -87,6 +87,27 @@ class TagInputHelper {
         }
     }
 
+    // Check multiple tags at once
+    async checkTagsBatch(tagNames) {
+        if (!tagNames || tagNames.length === 0) return {};
+
+        try {
+            const namesParam = tagNames.map(n => encodeURIComponent(n.toLowerCase().trim())).join(',');
+            const res = await fetch(`/api/tags?names=${namesParam}`);
+            if (res.ok) {
+                const tags = await res.json();
+                const result = {};
+                tagNames.forEach(n => result[n.toLowerCase().trim()] = null);
+                tags.forEach(t => result[t.name.toLowerCase().trim()] = t);
+                return result;
+            }
+            return {};
+        } catch (e) {
+            console.error('Error checking tags batch:', e);
+            return {};
+        }
+    }
+
     // Check if tag or alias exists (for admin)
     async checkTagOrAliasExists(tagName) {
         if (!tagName || !tagName.trim()) return false;
@@ -131,14 +152,33 @@ class TagInputHelper {
         const tags = [];
 
         // Check each non-whitespace part
+        const uncachedTags = new Set();
         for (let part of parts) {
             if (part.trim()) {
                 const normalized = part.trim().toLowerCase();
                 if (!validationCache.has(normalized)) {
-                    const exists = await checkFunction(normalized);
-                    validationCache.set(normalized, exists);
+                    uncachedTags.add(normalized);
                 }
+            }
+        }
 
+        // Batch fetch uncached tags if possible
+        if (uncachedTags.size > 0) {
+            const results = await this.checkTagsBatch(Array.from(uncachedTags));
+            for (let tag of uncachedTags) {
+                if (results.hasOwnProperty(tag)) {
+                    validationCache.set(tag, !!results[tag]);
+                } else {
+                    // Fallback to individual check if not in batch results
+                    const exists = await checkFunction(tag);
+                    validationCache.set(tag, exists);
+                }
+            }
+        }
+
+        for (let part of parts) {
+            if (part.trim()) {
+                const normalized = part.trim().toLowerCase();
                 const isValid = validationCache.get(normalized);
                 // If invertLogic is true, mark as invalid if exists
                 const shouldMarkInvalid = invertLogic ? isValid : !isValid;
