@@ -5,6 +5,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             title: 'Bulk AI Tag Prediction (WD Tagger)',
             classPrefix: 'bulk-wd-tagger',
             emptyMessage: 'No new tags could be predicted for the selected items.',
+            closeOnOutsideClick: false,
             ...options
         });
 

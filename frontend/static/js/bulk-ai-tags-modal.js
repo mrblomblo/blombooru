@@ -5,6 +5,7 @@ class BulkAITagsModal extends BulkTagModalBase {
             title: 'Bulk Append AI Tags',
             classPrefix: 'bulk-ai-tags',
             emptyMessage: 'No new AI tags found in the selected items\' metadata.',
+            closeOnOutsideClick: false,
             ...options
         });
 
