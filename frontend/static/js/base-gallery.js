@@ -4,7 +4,7 @@ class BaseGallery {
             gridSelector: '#gallery-grid',
             loadingSelector: '#loading-indicator',
             popularTagsSelector: '#popular-tags',
-            pageNavSelector: '#page-nav-top',
+            pageNavSelector: '#page-nav',
             sortBySelector: '#sort-by-select',
             sortOrderSelector: '#sort-order-select',
             enableTooltips: true,
