@@ -3,6 +3,8 @@
 {% set show_header = false %}
 {% set show_footer = false %}
 
+{% block pwa %}{% endblock %}
+
 {% block title %}{% if media %}{{ media.filename }} - {% endif %}Shared - {{ app_name }}{% endblock %}
 
 {% block head_extra %}

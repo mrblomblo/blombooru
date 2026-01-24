@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from .models import Media
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
@@ -11,7 +11,7 @@ from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danb
 from .auth_middleware import AuthMiddleware
 from datetime import datetime
 
-app = FastAPI(title="Blombooru", version="1.23.1")
+app = FastAPI(title="Blombooru", version="1.24.0")
 app.add_middleware(AuthMiddleware)
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
@@ -145,3 +145,49 @@ async def album_detail_page(request: Request, album_id: int):
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse(str(static_path / "favicon.ico"))
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    return FileResponse(str(static_path / "sw.js"), media_type="application/javascript")
+
+@app.get("/manifest.json", response_class=JSONResponse)
+async def manifest(request: Request):
+    """Dynamic PWA manifest based on settings and theme"""
+    from .themes import theme_registry
+    
+    current_theme = theme_registry.get_theme(settings.CURRENT_THEME)
+    
+    # Defaults if theme not found
+    theme_color = "#3b82f6"
+    background_color = "#0f172a"
+    
+    if current_theme:
+        theme_color = current_theme.primary_color
+        background_color = current_theme.background_color
+        
+    return {
+        "name": settings.APP_NAME,
+        "short_name": settings.APP_NAME,
+        "description": "A modern, self-hosted, single-user image booru and media tagger",
+        "id": "/",
+        "scope": "/",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": background_color,
+        "theme_color": theme_color,
+        "orientation": "any",
+        "icons": [
+            {
+                "src": "/static/images/pwa-icon.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/static/images/pwa-icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }

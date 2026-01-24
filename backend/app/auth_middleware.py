@@ -18,12 +18,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         self.public_paths = {
             "/login",
-            "/favicon.ico",
             "/api/admin/login",
             "/api/admin/logout",
             "/api/admin/first-run",
             "/api/admin/onboarding",
             "/api/admin/current-theme",
+            "/favicon.ico",
+            "/manifest.json",
+            "/sw.js",
         }
         
         self.public_prefixes = (
