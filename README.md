@@ -17,6 +17,10 @@
 Blombooru is a single-user, private alternative to image boorus like Danbooru and Gelbooru.  
 It is designed for individuals who want a powerful, simple to use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
 
+> [!important]
+> This project is currently in **heavy development**, and breaking changes can and will be introduced without prior notice (even if I try my best to limit how much they affect existing users).  
+> If you want to use Blombooru when it has been officially released and when breaking changes will be properly documented, please click the "Watch" button so you know when the first official release has been created!
+
 <details>
 <summary>View screenshots</summary>
 
