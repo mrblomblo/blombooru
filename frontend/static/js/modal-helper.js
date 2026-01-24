@@ -110,7 +110,7 @@ class ModalHelper {
         const iconHTML = this.options.showIcon ? this.getIconSVG(this.options.type) : '';
 
         modal.innerHTML = `
-            <div class="surface border-2 ${this.getBorderClass(this.options.type)} p-8 max-w-md text-center">
+            <div class="surface border-2 ${this.getBorderClass(this.options.type)} p-4 md:p-8 mx-1 md:mx-0 max-w-lg w-full text-center">
                 ${iconHTML}
                 <h2 class="text-xl font-bold mb-4 ${this.getTitleClass(this.options.type)}">${this.options.title}</h2>
                 <p class="text-base mb-6 text">${this.options.message}</p>
