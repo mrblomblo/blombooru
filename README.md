@@ -56,6 +56,7 @@ It is designed for individuals who want a powerful, simple to use, and modern so
 - [Technical Details](#technical-details)
 - [Disclaimer](#disclaimer)
 - [License](#license)
+
 ## Key Features
 
 - **Danbooru-Style Tagging:** A familiar and powerful tagging system with categories (artist, character, copyright, etc.), tag-based searching, and negative tag exclusion.
