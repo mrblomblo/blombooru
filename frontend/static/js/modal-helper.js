@@ -110,11 +110,11 @@ class ModalHelper {
         const iconHTML = this.options.showIcon ? this.getIconSVG(this.options.type) : '';
 
         modal.innerHTML = `
-            <div class="surface border-2 ${this.getBorderClass(this.options.type)} p-4 md:p-8 mx-1 md:mx-0 max-w-lg w-full text-center">
+            <div class="surface border-2 ${this.getBorderClass(this.options.type)} p-4 pb-2 md:p-8 md:pb-4 mx-1 md:mx-0 max-w-lg w-full text-center">
                 ${iconHTML}
                 <h2 class="text-xl font-bold mb-4 ${this.getTitleClass(this.options.type)}">${this.options.title}</h2>
                 <p class="text-base mb-6 text">${this.options.message}</p>
-                <div class="flex gap-4 justify-center">
+                <div class="flex gap-4 mt-2 md:mt-4 justify-center">
                     <button id="${this.options.confirmId}" class="px-6 py-3 transition-colors ${this.getConfirmButtonClass(this.options.type)} tag-text font-bold text-sm">
                         ${this.options.confirmText}
                     </button>
