@@ -77,11 +77,22 @@
 
                 <!-- Desktop Search -->
                 <div class="flex-1 max-w-2xl hidden sm:block">
-                    <form id="search-form">
+                    <form id="search-form" class="flex gap-2 items-center">
                         <input type="text" id="search-input" name="q"
                             placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
                             value="{{ request.query_params.get('q', '') }}"
-                            class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                            class="flex-1 bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                        <button type="button" id="search-help-btn"
+                            class="p-1 border bg text hover:border-primary transition-colors"
+                            title="Search Syntax Guide">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </button>
                     </form>
                 </div>
 
@@ -139,11 +150,20 @@
 
             <!-- Mobile Search -->
             <div class="mt-2 sm:hidden">
-                <form id="search-form-mobile">
+                <form id="search-form-mobile" class="flex gap-2 items-center">
                     <input type="text" id="search-input-mobile" name="q"
                         placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
                         value="{{ request.query_params.get('q', '') }}"
-                        class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                        class="flex-1 bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                    <button type="button" id="search-help-btn-mobile"
+                        class="p-2 border bg text hover:border-primary transition-colors" title="Search Syntax Guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </button>
                 </form>
             </div>
         </div>
@@ -185,8 +205,9 @@
         {% endif %}
     </main>
 
-    <script src="/static/js/main.js"></script>
-    <script src="/static/js/tag-autocomplete.js"></script>
+    <script src="/static/js/modal-helper.js?v={{ app_version }}"></script>
+    <script src="/static/js/main.js?v={{ app_version }}"></script>
+    <script src="/static/js/tag-autocomplete.js?v={{ app_version }}"></script>
 
     {% if show_header is not defined or show_header %}
     <script>

@@ -84,6 +84,21 @@ class Blombooru {
                 this.performSearch();
             });
         }
+
+        // Search help buttons
+        const helpBtns = [
+            document.getElementById('search-help-btn'),
+            document.getElementById('search-help-btn-mobile')
+        ];
+
+        helpBtns.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showSearchSyntaxGuide();
+                });
+            }
+        });
     }
 
     handleAdminToggle() {
@@ -264,6 +279,86 @@ class Blombooru {
         }
 
         return response.json();
+    }
+
+    showSearchSyntaxGuide() {
+        if (!this.searchGuideModal) {
+            this.searchGuideModal = new ModalHelper({
+                id: 'search-syntax-modal',
+                type: 'info',
+                title: 'Search Syntax Guide',
+                message: this.getSearchSyntaxContent(),
+                showIcon: false,
+                confirmText: 'Got it',
+                cancelText: 'Close',
+                cancelId: 'search-guide-close',
+                confirmId: 'search-guide-confirm'
+            });
+        }
+        this.searchGuideModal.show();
+    }
+
+    getSearchSyntaxContent() {
+        return `
+            <div class="text-left space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">Basic Tags</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">tag1 tag2</code>: Find media with both tags</li>
+                        <li><code class="surface">-tag1</code>: Exclude media with tag</li>
+                        <li><code class="surface">tag*</code>: Wildcard search (e.g., <code class="surface">tag_name</code>)</li>
+                        <li><code class="surface">?tag</code>: Fuzzy search (one or zero chars before)</li>
+                    </ul>
+                </div>
+
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">Ranges</h3>
+                    <p class="mb-2 text-xs">Operators: <code>:</code>, <code>..</code>, <code>&gt;=</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&lt;</code></p>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">id:100</code>: Exact match</li>
+                        <li><code class="surface">id:100..200</code>: Between inclusive</li>
+                        <li><code class="surface">id:&gt;=100</code>: Greater than or equal</li>
+                        <li><code class="surface">id:1,2,3</code>: In list</li>
+                    </ul>
+                    <p class="mt-2 text-xs text-secondary">Note: Ranges can also be used with most meta qualifiers.</p>
+                </div>
+
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">Meta Qualifiers</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">width</code>, <code class="surface">height</code>: Image dimensions (pixels)</li>
+                        <li><code class="surface">filesize</code>: File size (kb, mb, gb)</li>
+                        <li><code class="surface">date</code>, <code class="surface">age</code>: Upload date or relative age</li>
+                        <li><code class="surface">rating</code>: <code class="surface">s</code> (safe), <code class="surface">q</code> (questionable), <code class="surface">e</code> (explicit)</li>
+                        <li><code class="surface">source</code>: Source URL or <code class="surface">none</code></li>
+                        <li><code class="surface">filetype</code>: Extension (png, gif, etc)</li>
+                        <li><code class="surface">tagcount</code>, <code class="surface">gentags</code>...: Number of tags</li>
+                    </ul>
+                </div>
+
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">Sorting</h3>
+                    <p class="mb-2 text-sm">Use <code>order:value</code> (e.g., <code>order:id_desc</code>)</p>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">id</code> / <code class="surface">id_desc</code>: Newest first (default)</li>
+                        <li><code class="surface">id_asc</code>: Oldest first</li>
+                        <li><code class="surface">filesize</code>: Largest files first</li>
+                        <li><code class="surface">landscape</code> / <code class="surface">portrait</code>: Aspect ratio</li>
+                    </ul>
+                </div>
+
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">Example Searches</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">cat source:none rating:s</code>: Safe cat images without a source</li>
+                        <li><code class="surface">landscape filetype:mp4 filesize:&gt;5mb</code>: High-quality landscape videos</li>
+                        <li><code class="surface">id:1..100 order:id_asc</code>: First 100 uploads, oldest first</li>
+                        <li><code class="surface">?girl? *_eyes -dog</code>: Searching for one or more girls with any color eyes, no dogs</li>
+                        <li><code class="surface">tagcount:&gt;20 arttags:0</code>: Posts with many tags but no artist info</li>
+                    </ul>
+                </div>
+            </div>
+        `;
     }
 }
 
