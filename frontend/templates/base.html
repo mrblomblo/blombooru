@@ -59,8 +59,7 @@
         class="surface border-b z-50 shrink-0 fixed top-0 w-full transition-transform duration-300 ease-in-out">
         <div class="container mx-auto px-4 py-2">
             <div class="flex items-center justify-between gap-4">
-                <a href="/"
-                    class="text-lg font-bold text-[var(--primary-color)] transition-colors hover:text-[var(--primary-hover)]">
+                <a href="/" class="text-lg font-bold text-primary transition-colors hover:text-primary">
                     <span class="flex gap-2">
                         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"
                             viewBox="0 0 28 28">
@@ -101,13 +100,13 @@
                     <ul class="flex gap-2">
                         <li id="nav-albums-item">
                             <a href="/albums"
-                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
                                 Albums
                             </a>
                         </li>
                         <li>
                             <a href="#" id="admin-mode-toggle"
-                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/admin') else 'text' }}">
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                                 <span id="admin-mode-text">Admin Panel</span>
                             </a>
                         </li>
@@ -121,7 +120,8 @@
                 <!-- Mobile Nav Toggle -->
                 <button id="mobile-menu-btn" class="sm:hidden p-1 border bg hover:border-primary transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
             </div>
@@ -131,13 +131,13 @@
                 <ul class="flex flex-col py-2 gap-1">
                     <li id="nav-albums-item-mobile">
                         <a href="/albums"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
+                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
                             Albums
                         </a>
                     </li>
                     <li>
                         <a href="#" id="admin-mode-toggle-mobile"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-[var(--primary-color)]' if request.url.path.startswith('/admin') else 'text' }}">
+                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                             <span id="admin-mode-text-mobile">Admin Panel</span>
                         </a>
                     </li>
@@ -184,16 +184,15 @@
                     <div class="text-secondary text-xs">
                         <p>&copy; {{ app_name }} {{ get_current_year() }}. Powered by <a
                                 href="https://github.com/mrblomblo/blombooru"
-                                class="text-[var(--primary-color)] transition-colors hover:text-[var(--primary-hover)]"
-                                target="_blank">Blombooru</a>.</p>
+                                class="text-primary transition-colors hover:text-primary" target="_blank">Blombooru</a>.
+                        </p>
                     </div>
 
                     <div class="flex gap-4 text-xs">
                         <a href="https://github.com/mrblomblo/blombooru"
-                            class="text-secondary transition-colors hover:text-[var(--primary-color)]"
-                            target="_blank">GitHub</a>
+                            class="text-secondary transition-colors hover:text-primary" target="_blank">GitHub</a>
                         <span class="text-tertiary">&#x2022;</span>
-                        <a href="#" class="text-secondary transition-colors hover:text-[var(--primary-color)]"
+                        <a href="#" class="text-secondary transition-colors hover:text-primary"
                             onclick="document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'}); return false;">
                             Back to Top
                         </a>

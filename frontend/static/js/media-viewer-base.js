@@ -164,7 +164,7 @@ class MediaViewerBase {
             const sectionTitle = this.escapeHtml(this.formatKey(key));
 
             html += `<div class="ai-section mb-3">`;
-            html += `<h4 class="text-xs font-bold text-[var(--primary-color)] mb-2">${sectionTitle}</h4>`;
+            html += `<h4 class="text-xs font-bold text-primary mb-2">${sectionTitle}</h4>`;
 
             if (this.isPlainObject(value)) {
                 html += `<div class="ml-2">`;
