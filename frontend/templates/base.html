@@ -117,13 +117,26 @@
                     </ul>
                 </nav>
 
-                <!-- Mobile Nav Toggle -->
-                <button id="mobile-menu-btn" class="sm:hidden p-1 border bg hover:border-primary transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+                <div class="sm:hidden flex gap-2">
+                    <button type="button" id="search-help-btn-mobile"
+                        class="sm:hidden p-2 border bg hover:border-primary transition-colors"
+                        title="Search Syntax Guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Nav Toggle -->
+                    <button id="mobile-menu-btn" class="sm:hidden p-1 border bg hover:border-primary transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Mobile Navigation -->
@@ -155,15 +168,6 @@
                         placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
                         value="{{ request.query_params.get('q', '') }}"
                         class="flex-1 bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
-                    <button type="button" id="search-help-btn-mobile"
-                        class="p-2 border bg text hover:border-primary transition-colors" title="Search Syntax Guide">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                    </button>
                 </form>
             </div>
         </div>
