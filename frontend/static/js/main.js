@@ -307,8 +307,7 @@ class Blombooru {
                 message: this.getSearchSyntaxContent(),
                 showIcon: false,
                 confirmText: 'Got it',
-                cancelText: 'Close',
-                cancelId: 'search-guide-close',
+                cancelText: '',
                 confirmId: 'search-guide-confirm'
             });
         }

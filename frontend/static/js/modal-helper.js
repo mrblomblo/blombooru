@@ -118,9 +118,9 @@ class ModalHelper {
                     <button id="${this.options.confirmId}" class="px-6 py-3 transition-colors ${this.getConfirmButtonClass(this.options.type)} tag-text font-bold text-sm">
                         ${this.options.confirmText}
                     </button>
-                    <button id="${this.options.cancelId}" class="px-6 py-3 transition-colors ${this.getCancelButtonClass(this.options.type)} text font-bold text-sm">
+                    ${this.options.cancelText ? `<button id="${this.options.cancelId}" class="px-6 py-3 transition-colors ${this.getCancelButtonClass(this.options.type)} text font-bold text-sm">
                         ${this.options.cancelText}
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>
         `;
