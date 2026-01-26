@@ -76,10 +76,19 @@ class Blombooru {
             });
         });
 
-        // Search form
+        // Search form (desktop)
         const searchForm = document.getElementById('search-form');
         if (searchForm) {
             searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.performSearch();
+            });
+        }
+
+        // Search form (mobile)
+        const searchFormMobile = document.getElementById('search-form-mobile');
+        if (searchFormMobile) {
+            searchFormMobile.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.performSearch();
             });
@@ -244,10 +253,18 @@ class Blombooru {
 
     performSearch() {
         const searchInput = document.getElementById('search-input');
-        const query = searchInput.value;
+        const searchInputMobile = document.getElementById('search-input-mobile');
+
+        // Get query from whichever input has a value (prioritize desktop, then mobile)
+        const query = (searchInput && searchInput.value.trim()) ||
+            (searchInputMobile && searchInputMobile.value.trim()) ||
+            '';
 
         if (query) {
             window.location.href = `/?q=${encodeURIComponent(query)}`;
+        } else {
+            // If no query, just go to home
+            window.location.href = '/';
         }
     }
 
