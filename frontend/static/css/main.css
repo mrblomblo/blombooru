@@ -80,6 +80,13 @@ span.checked:hover {
     width: 338px;
 }
 
+#search-input~.tag-suggestions,
+#search-input-mobile~.tag-suggestions {
+    top: 100%;
+    left: 0;
+    width: 100%;
+}
+
 .tag-suggestion {
     padding: 0.5rem;
     cursor: pointer;

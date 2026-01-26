@@ -77,10 +77,12 @@
                 <!-- Desktop Search -->
                 <div class="flex-1 max-w-2xl hidden sm:block">
                     <form id="search-form" class="flex gap-2 items-center">
-                        <input type="text" id="search-input" name="q"
-                            placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
-                            value="{{ request.query_params.get('q', '') }}"
-                            class="flex-1 bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                        <div class="relative flex-1">
+                            <input type="text" id="search-input" name="q"
+                                placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                                value="{{ request.query_params.get('q', '') }}"
+                                class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                        </div>
                         <button type="button" id="search-help-btn"
                             class="p-1 border bg text hover:border-primary transition-colors"
                             title="Search Syntax Guide">
@@ -164,10 +166,12 @@
             <!-- Mobile Search -->
             <div class="mt-2 sm:hidden">
                 <form id="search-form-mobile" class="flex gap-2 items-center">
-                    <input type="text" id="search-input-mobile" name="q"
-                        placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
-                        value="{{ request.query_params.get('q', '') }}"
-                        class="flex-1 bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                    <div class="relative flex-1">
+                        <input type="text" id="search-input-mobile" name="q"
+                            placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                            value="{{ request.query_params.get('q', '') }}"
+                            class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                    </div>
                 </form>
             </div>
         </div>
