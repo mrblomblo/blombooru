@@ -7,11 +7,11 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru
+from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system
 from .auth_middleware import AuthMiddleware
 from datetime import datetime
 
-APP_VERSION = "1.24.21"
+APP_VERSION = "1.25.5"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -31,6 +31,7 @@ app.include_router(sharing.router)
 app.include_router(albums.router)
 app.include_router(ai_tagger.router)
 app.include_router(danbooru.router)
+app.include_router(system.router)
 
 @app.on_event("startup")
 async def startup_event():

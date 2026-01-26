@@ -484,8 +484,73 @@
                 </div>
             </div>
 
-            <!-- Admin Account Management Section -->
+            <!-- System Update Section -->
             <div class="surface p-2 sm:p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">System Update</h2>
+                <p class="text-xs text-secondary mb-3">
+                    Take a look at the latest release notes for any important information before updating. You can find
+                    them <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
+                        class="text-primary transition-colors hover:text-primary">here</a>.<br>
+                    <strong>Warning:</strong> Updating can cause data loss if not done carefully. Always make a backup
+                    before updating.
+                </p>
+
+                <div id="update-initial-state">
+                    <p class="text-xs text-secondary mb-3">
+                        Check for the latest updates from the official repository.
+                        This will contact GitHub to retrieve the latest version information.
+                    </p>
+                    <button id="btn-check-updates"
+                        class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors">
+                        Check for Updates
+                    </button>
+                </div>
+
+                <div id="update-loading" class="text-xs text-secondary mb-4 hidden">
+                    Checking for updates...
+                </div>
+
+                <div id="update-status" style="display: none;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <div class="text-xs text-secondary mb-1">Current Version</div>
+                            <div class="text-sm font-bold font-mono" id="current-version-hash">...</div>
+                            <div class="text-[10px] text-secondary" id="current-branch">...</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-secondary mb-1">Latest Version</div>
+                            <div class="text-sm font-bold font-mono" id="latest-version-hash">...</div>
+                            <div class="text-[10px] text-secondary" id="latest-version-tag">...</div>
+                        </div>
+                    </div>
+
+                    <div id="update-notices" class="mb-4 hidden"></div>
+
+                    <div class="flex gap-3 mb-4">
+                        <button id="btn-update-dev"
+                            class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            Update to Latest Dev
+                        </button>
+                        <button id="btn-update-stable"
+                            class="px-4 py-2 surface border text-xs hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            Update to Latest Stable
+                        </button>
+                        <button id="btn-view-changelog" style="display: none;"
+                            class="px-4 py-2 surface border text-xs hover:border-primary transition-colors">
+                            View Changelog
+                        </button>
+                    </div>
+                </div>
+
+                <div id="update-result" class="mt-4 hidden">
+                    <h3 class="text-xs font-bold mb-2" id="update-result-title">Update Output</h3>
+                    <pre class="bg-black bg-opacity-20 p-2 border max-h-60 overflow-y-auto font-mono text-[10px] whitespace-pre-wrap"
+                        id="update-result-log"></pre>
+                </div>
+            </div>
+
+            <!-- Admin Account Management Section -->
+            <div class="surface p-2 sm:p-6 border">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b">Admin Account Management</h2>
 
                 <div class="mb-4">
