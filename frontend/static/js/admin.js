@@ -22,6 +22,7 @@ class AdminPanel {
         this.setupCustomSelects();
         this.loadThemes();
         this.setupApiKeyManagement();
+        this.setupSystemUpdate();
     }
 
     // Helper to escape HTML and prevent XSS
@@ -1746,6 +1747,178 @@ class AdminPanel {
         });
 
         modal.show();
+    }
+
+    setupSystemUpdate() {
+        if (document.getElementById('btn-check-updates')) {
+            document.getElementById('btn-check-updates').addEventListener('click', () => this.checkUpdateStatus());
+        }
+        document.getElementById('btn-update-dev')?.addEventListener('click', () => this.performUpdate('dev'));
+        document.getElementById('btn-update-stable')?.addEventListener('click', () => this.performUpdate('stable'));
+        document.getElementById('btn-view-changelog')?.addEventListener('click', () => this.showChangelog());
+
+        this.currentChangelog = [];
+    }
+
+    async checkUpdateStatus() {
+        const initialState = document.getElementById('update-initial-state');
+        const loading = document.getElementById('update-loading');
+        const statusDiv = document.getElementById('update-status');
+
+        if (!loading || !statusDiv) return;
+
+        if (initialState) initialState.classList.add('hidden');
+        loading.classList.remove('hidden');
+        loading.style.display = 'block';
+        statusDiv.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/system/update/check');
+            if (!response.ok) throw new Error('Failed to check for updates');
+
+            const status = await response.json();
+
+            loading.style.display = 'none';
+            loading.classList.add('hidden');
+            statusDiv.style.display = 'block';
+
+            const currentHashEl = document.getElementById('current-version-hash');
+            if (currentHashEl) currentHashEl.textContent = status.current_hash.substring(0, 8);
+
+            const currentBranchEl = document.getElementById('current-branch');
+            if (currentBranchEl) currentBranchEl.textContent = status.current_branch;
+
+            const latestHashEl = document.getElementById('latest-version-hash');
+            if (latestHashEl) latestHashEl.textContent = status.latest_dev_hash.substring(0, 8);
+
+            const latestTagEl = document.getElementById('latest-version-tag');
+            if (latestTagEl) latestTagEl.textContent = status.latest_stable_tag || 'dev';
+
+            const devBtn = document.getElementById('btn-update-dev');
+            if (devBtn) {
+                if (status.current_hash === status.latest_dev_hash) {
+                    devBtn.disabled = true;
+                    devBtn.textContent = 'Already on Latest Dev';
+                }
+            }
+
+            const noticesDiv = document.getElementById('update-notices');
+            if (noticesDiv) {
+                if (status.notices && status.notices.length > 0) {
+                    noticesDiv.classList.remove('hidden');
+                    noticesDiv.innerHTML = status.notices.map(n => `<div class="bg text-xs p-2 mb-1 border-l-4 border-warning text-warning font-bold">${this.escapeHtml(n)}</div>`).join('');
+                } else {
+                    noticesDiv.classList.add('hidden');
+                }
+            }
+
+            // Changelog
+            this.currentChangelog = status.changelog || [];
+            const changelogBtn = document.getElementById('btn-view-changelog');
+            if (changelogBtn) {
+                if (this.currentChangelog.length > 0) {
+                    changelogBtn.style.display = 'block';
+                    changelogBtn.textContent = `View Changelog (${this.currentChangelog.length})`;
+                } else {
+                    changelogBtn.style.display = 'none';
+                }
+            }
+
+        } catch (e) {
+            console.error(e);
+            if (loading) {
+                loading.textContent = 'Error checking for updates: ' + e.message;
+                loading.classList.remove('hidden');
+                loading.classList.add('text-danger');
+            }
+        }
+    }
+
+    showChangelog() {
+        if (!this.currentChangelog || this.currentChangelog.length === 0) return;
+
+        if (typeof ModalHelper === 'undefined') {
+            console.error('ModalHelper not available');
+            return;
+        }
+
+        const changelogHtml = this.currentChangelog.map(commit => `
+            <div class="border-b last:border-0 text-left">
+                <div class="flex items-center bg p-2 gap-2">
+                    <span class="font-mono text-xs bg-primary primary-text px-1">${commit.hash}</span>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm">${this.escapeHtml(commit.subject)}</span>
+                        ${commit.body ? `<div class="text-xs text-secondary whitespace-pre-wrap">${this.escapeHtml(commit.body)}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        const modal = new ModalHelper({
+            id: 'changelog-modal',
+            type: 'info',
+            title: 'Changelog',
+            message: `<div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">${changelogHtml}</div>`,
+            confirmText: 'Got it',
+            cancelText: '',
+            onConfirm: () => {
+                modal.destroy();
+            }
+        });
+
+        modal.show();
+    }
+
+    async performUpdate(target) {
+        if (typeof ModalHelper === 'undefined') {
+            console.error('ModalHelper not available');
+            if (!confirm(`Are you sure you want to update to ${target}? This will stop the server briefly.`)) return;
+            this._execute_update(target);
+            return;
+        }
+
+        const modal = new ModalHelper({
+            id: 'update-confirm-modal',
+            type: 'warning',
+            title: 'System Update',
+            message: `Are you sure you want to update to the latest <strong>${target}</strong> release?<br>The server will stop briefly to restart.<br><br><b>Ensure you have read and understood the changelog and notices before proceeding.</b>`,
+            confirmText: 'Update Now',
+            cancelText: 'Cancel',
+            onConfirm: () => {
+                this._execute_update(target);
+                modal.destroy();
+            },
+            onCancel: () => {
+                modal.destroy();
+            }
+        });
+
+        modal.show();
+    }
+
+    async _execute_update(target) {
+        const resultDiv = document.getElementById('update-result');
+        const resultLog = document.getElementById('update-result-log');
+        if (resultDiv) resultDiv.classList.remove('hidden');
+        if (resultLog) resultLog.textContent = 'Starting update process...';
+
+        try {
+            const response = await app.apiCall('/api/system/update/perform', {
+                method: 'POST',
+                body: JSON.stringify({ target })
+            });
+
+            if (resultLog) {
+                resultLog.textContent = (response.log || '') + "\n\n" + (response.message || '');
+            }
+
+            if (response.success) {
+                app.showNotification('Update initiated successfully', 'success');
+            }
+        } catch (e) {
+            if (resultLog) resultLog.textContent += `\nError: ${e.message}`;
+            app.showNotification('Update failed: ' + e.message, 'error');
+        }
     }
 }
 
