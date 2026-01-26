@@ -52,7 +52,8 @@ async def index(request: Request):
     if settings.IS_FIRST_RUN:
         return templates.TemplateResponse("onboarding.html", {
             "request": request,
-            "app_name": settings.APP_NAME
+            "app_name": settings.APP_NAME,
+            "settings": settings
         })
     
     return templates.TemplateResponse("index.html", {

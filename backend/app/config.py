@@ -77,17 +77,28 @@ class Settings:
             json.dump(self.settings, f, indent=2)
     
     @property
+    def DB_USER(self) -> str:
+        return self.file_settings.get("database", {}).get('user') or os.getenv("POSTGRES_USER") or self.settings.get("database", {}).get('user', 'postgres')
+
+    @property
+    def DB_PASSWORD(self) -> str:
+        return self.file_settings.get("database", {}).get('password') or os.getenv("POSTGRES_PASSWORD") or self.settings.get("database", {}).get('password', '')
+
+    @property
+    def DB_HOST(self) -> str:
+        return self.file_settings.get("database", {}).get('host') or os.getenv("POSTGRES_HOST") or self.settings.get("database", {}).get('host', 'localhost')
+
+    @property
+    def DB_PORT(self) -> int:
+        return int(self.file_settings.get("database", {}).get('port') or os.getenv("POSTGRES_PORT") or self.settings.get("database", {}).get('port', 5432))
+
+    @property
+    def DB_NAME(self) -> str:
+        return self.file_settings.get("database", {}).get('name') or os.getenv("POSTGRES_DB") or self.settings.get("database", {}).get('name', 'blombooru')
+
+    @property
     def DATABASE_URL(self) -> str:
-        db_defaults = self.settings.get("database", {})
-        file_db = self.file_settings.get("database", {})
-        
-        user = file_db.get('user') or os.getenv("POSTGRES_USER") or db_defaults.get('user', 'postgres')
-        password = file_db.get('password') or os.getenv("POSTGRES_PASSWORD") or db_defaults.get('password', '')
-        host = file_db.get('host') or os.getenv("POSTGRES_HOST") or db_defaults.get('host', 'localhost')
-        port = file_db.get('port') or os.getenv("POSTGRES_PORT") or db_defaults.get('port', 5432)
-        name = file_db.get('name') or os.getenv("POSTGRES_DB") or db_defaults.get('name', 'blombooru')
-        
-        return f"postgresql://{user}:{password}@{host}:{port}/{name}"
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     @property
     def REDIS_HOST(self) -> str:

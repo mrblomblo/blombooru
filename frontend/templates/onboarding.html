@@ -5,12 +5,12 @@
 
 {% block pwa %}{% endblock %}
 
-{% block title %}Setup - {{ app_name }}{% endblock %}
+{% block title %}Setup - Blombooru{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 my-4 max-w-2xl">
     <div class="surface p-8 border">
-        <h1 class="text-xl font-bold mb-4">Welcome to {{ app_name }}</h1>
+        <h1 class="text-xl font-bold mb-4">Welcome to Blombooru!</h1>
         <p class="text-xs text-secondary mb-6">Let's get your personal booru set up!</p>
 
         <div id="error-message" style="display: none;" class="bg-danger tag-text p-3 mb-4 text-xs"></div>
@@ -19,7 +19,7 @@
         <form id="onboarding-form">
             <div class="mb-6">
                 <label class="block text-xs font-bold mb-2">Application Name</label>
-                <input type="text" id="app-name" name="app_name" value="Blombooru" required
+                <input type="text" id="app-name" name="app_name" value="{{ settings.APP_NAME }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
@@ -27,31 +27,31 @@
 
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">Host</label>
-                <input type="text" id="db-host" name="db_host" value="db" required
+                <input type="text" id="db-host" name="db_host" value="{{ settings.DB_HOST }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">Port</label>
-                <input type="number" id="db-port" name="db_port" value="5432" required
+                <input type="number" id="db-port" name="db_port" value="{{ settings.DB_PORT }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">Database Name</label>
-                <input type="text" id="db-name" name="db_name" value="blombooru" required
+                <input type="text" id="db-name" name="db_name" value="{{ settings.DB_NAME }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">Username</label>
-                <input type="text" id="db-user" name="db_user" value="postgres" required
+                <input type="text" id="db-user" name="db_user" value="{{ settings.DB_USER }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-6">
                 <label class="block text-xs font-bold mb-2">Password</label>
-                <input type="password" id="db-password" name="db_password"
+                <input type="password" id="db-password" name="db_password" value="{{ settings.DB_PASSWORD }}"
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
@@ -59,33 +59,35 @@
 
             <div class="mb-4">
                 <label class="flex items-center gap-2 cursor-pointer mb-4">
-                    <input type="checkbox" id="redis-enabled" name="redis_enabled" class="w-4 h-4 accent-primary">
+                    <input type="checkbox" id="redis-enabled" name="redis_enabled" class="w-4 h-4 accent-primary" {% if
+                        settings.REDIS_ENABLED %}checked{% endif %}>
                     <span class="text-xs font-bold">Enable Redis Caching</span>
                 </label>
             </div>
 
-            <div id="redis-settings" style="display: none;">
+            <div id="redis-settings" {% if not settings.REDIS_ENABLED %}style="display: none;" {% endif %}>
                 <div class="mb-4">
                     <label class="block text-xs font-bold mb-2">Host</label>
-                    <input type="text" id="redis-host" name="redis_host" value="redis"
+                    <input type="text" id="redis-host" name="redis_host" value="{{ settings.REDIS_HOST }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold mb-2">Port</label>
-                    <input type="number" id="redis-port" name="redis_port" value="6379"
+                    <input type="number" id="redis-port" name="redis_port" value="{{ settings.REDIS_PORT }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold mb-2">DB Index</label>
-                    <input type="number" id="redis-db" name="redis_db" value="0"
+                    <input type="number" id="redis-db" name="redis_db" value="{{ settings.REDIS_DB }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-xs font-bold mb-2">Password</label>
                     <input type="password" id="redis-password" name="redis_password"
+                        value="{{ settings.REDIS_PASSWORD or '' }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
             </div>
