@@ -881,16 +881,23 @@ async def bulk_create_tags(
 
 @router.get("/backup/tags")
 async def backup_tags(
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
     Export all tags and aliases as a CSV file compatible with the import format.
     """
-    csv_stream = generate_tags_csv_stream(db)
+    from ..database import SessionLocal
     
+    def csv_generator():
+        db = SessionLocal()
+        try:
+            csv_stream = generate_tags_csv_stream(db)
+            yield from csv_stream
+        finally:
+            db.close()
+            
     return StreamingResponse(
-        csv_stream,
+        csv_generator(),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=blombooru_tags.csv"}
     )
@@ -941,7 +948,7 @@ async def backup_full_db(
         })
     
     # Prepare Metadata    
-    media_query = db.query(Media).options(selectinload(Media.children)).yield_per(1000)
+    media_query = db.query(Media).options(selectinload(Media.parent)).all()
     
     for m in media_query:
         media_list.append({
@@ -956,7 +963,7 @@ async def backup_full_db(
             "rating": m.rating.value if m.rating else 'safe',
             "tags": [t.name for t in m.tags], 
             "archive_path": str(Path("media") / Path(m.path).relative_to("media/original")) if "media/original" in m.path else f"media/{m.filename}",
-            "parent_hash": m.children.hash if m.children else None
+            "parent_hash": m.parent.hash if m.parent else None
         })
         
     backup_metadata = {
@@ -968,31 +975,37 @@ async def backup_full_db(
     
     # 2. Prepare Generator
     def mixed_generator():
-        # A. tags.csv
-        with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
-            csv_gen = generate_tags_csv_stream(db)
-            for chunk in csv_gen:
-                tmp_csv.write(chunk)
-            tmp_csv_path = Path(tmp_csv.name)
-            
-        # B. backup.json (Media metadata)
-        with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
-            tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
-            tmp_json_path = Path(tmp_json.name)
-            
+        from ..database import SessionLocal
+        stream_db = SessionLocal()
+        
         try:
-            yield ("tags.csv", tmp_csv_path)
-            yield ("backup.json", tmp_json_path)
-            
-            # C. Media files
-            media_gen = get_media_files_generator()
-            yield from media_gen
-            
+            # A. tags.csv
+            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
+                csv_gen = generate_tags_csv_stream(stream_db)
+                for chunk in csv_gen:
+                    tmp_csv.write(chunk)
+                tmp_csv_path = Path(tmp_csv.name)
+                
+            # B. backup.json (Media metadata)
+            with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
+                tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
+                tmp_json_path = Path(tmp_json.name)
+                
+            try:
+                yield ("tags.csv", tmp_csv_path)
+                yield ("backup.json", tmp_json_path)
+                
+                # C. Media files
+                media_gen = get_media_files_generator()
+                yield from media_gen
+                
+            finally:
+                if tmp_csv_path.exists():
+                    os.unlink(tmp_csv_path)
+                if tmp_json_path.exists():
+                    os.unlink(tmp_json_path)
         finally:
-            if tmp_csv_path.exists():
-                os.unlink(tmp_csv_path)
-            if tmp_json_path.exists():
-                os.unlink(tmp_json_path)
+            stream_db.close()
                 
     zip_stream = stream_zip_generator(mixed_generator())
     

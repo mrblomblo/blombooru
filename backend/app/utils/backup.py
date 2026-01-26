@@ -22,7 +22,7 @@ def generate_tags_csv_stream(db: Session) -> Generator[str, None, None]:
             aliases_map[alias.target_tag_id] = []
         aliases_map[alias.target_tag_id].append(alias.alias_name)
 
-    query = db.query(Tag).yield_per(1000)
+    query = db.query(Tag)
 
     # Reverse mapping for category export
     # 'general' -> 0, etc.
@@ -64,7 +64,7 @@ def generate_tags_dump(db: Session) -> dict:
     Generates a dictionary containing all tags and aliases.
     """
     # Fetch tags
-    tags_query = db.query(Tag).yield_per(DB_BATCH_SIZE)
+    tags_query = db.query(Tag)
     tags_list = []
     for tag in tags_query:
         tags_list.append({
@@ -74,7 +74,7 @@ def generate_tags_dump(db: Session) -> dict:
         })
 
     # Fetch aliases
-    aliases_query = db.query(TagAlias).yield_per(DB_BATCH_SIZE)
+    aliases_query = db.query(TagAlias)
     aliases_list = []
     for alias in aliases_query:
         aliases_list.append({
