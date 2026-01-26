@@ -1090,13 +1090,6 @@ class MediaViewer extends MediaViewerBase {
         backdrop?.addEventListener('click', () => this.closeRelationModal());
         closeBtn?.addEventListener('click', () => this.closeRelationModal());
 
-        // ESC key to close
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.relationModal.isOpen) {
-                this.closeRelationModal();
-            }
-        });
-
         // Search form
         searchForm?.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -1119,14 +1112,12 @@ class MediaViewer extends MediaViewerBase {
             });
         }
 
-        // Action buttons
+        // Buttons
         this.el('relation-set-parent-btn')?.addEventListener('click', () => this.setSelectedAsParent());
         this.el('relation-add-child-btn')?.addEventListener('click', () => this.addSelectedAsChildren());
         this.el('relation-add-children-btn')?.addEventListener('click', () => this.addSelectedAsChildren());
         this.el('relation-remove-children-btn')?.addEventListener('click', () => this.removeSelectedChildren());
         this.el('relation-clear-selection')?.addEventListener('click', () => this.clearRelationSelection());
-
-        // Load more button
         this.el('relation-load-more-btn')?.addEventListener('click', () => this.loadMoreRelationItems());
     }
 
