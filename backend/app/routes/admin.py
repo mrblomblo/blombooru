@@ -951,6 +951,20 @@ async def backup_full_db(
     media_query = db.query(Media).options(selectinload(Media.parent)).all()
     
     for m in media_query:
+        try:
+            media_path = Path(m.path)
+            if settings.ORIGINAL_DIR in media_path.parents or str(settings.ORIGINAL_DIR) in str(media_path):
+                try:
+                    rel_path = media_path.relative_to(settings.ORIGINAL_DIR)
+                    archive_path = f"media/{rel_path}"
+                except ValueError:
+                    archive_path = f"media/{m.filename}"
+            else:
+                archive_path = f"media/{m.filename}"
+        except Exception as e:
+            print(f"Warning: Could not construct archive path for {m.filename}: {e}")
+            archive_path = f"media/{m.filename}"
+        
         media_list.append({
             "filename": m.filename,
             "hash": m.hash,
@@ -962,7 +976,7 @@ async def backup_full_db(
             "duration": m.duration,
             "rating": m.rating.value if m.rating else 'safe',
             "tags": [t.name for t in m.tags], 
-            "archive_path": str(Path("media") / Path(m.path).relative_to("media/original")) if "media/original" in m.path else f"media/{m.filename}",
+            "archive_path": archive_path,
             "parent_hash": m.parent.hash if m.parent else None
         })
         
@@ -977,35 +991,86 @@ async def backup_full_db(
     def mixed_generator():
         from ..database import SessionLocal
         stream_db = SessionLocal()
+        tmp_csv_path = None
+        tmp_json_path = None
         
         try:
+            print("Starting full backup generation...")
+            
             # A. tags.csv
-            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
-                csv_gen = generate_tags_csv_stream(stream_db)
-                for chunk in csv_gen:
-                    tmp_csv.write(chunk)
-                tmp_csv_path = Path(tmp_csv.name)
+            print("Generating tags.csv...")
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
+                    csv_gen = generate_tags_csv_stream(stream_db)
+                    for chunk in csv_gen:
+                        tmp_csv.write(chunk)
+                    tmp_csv_path = Path(tmp_csv.name)
+                print(f"tags.csv generated: {tmp_csv_path}")
+            except Exception as e:
+                print(f"Error generating tags.csv: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
                 
             # B. backup.json (Media metadata)
-            with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
-                tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
-                tmp_json_path = Path(tmp_json.name)
+            print("Generating backup.json...")
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
+                    tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
+                    tmp_json_path = Path(tmp_json.name)
+                print(f"backup.json generated: {tmp_json_path}")
+            except Exception as e:
+                print(f"Error generating backup.json: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
                 
             try:
+                print("Yielding tags.csv to ZIP stream...")
                 yield ("tags.csv", tmp_csv_path)
+                
+                print("Yielding backup.json to ZIP stream...")
                 yield ("backup.json", tmp_json_path)
                 
                 # C. Media files
+                print("Yielding media files to ZIP stream...")
                 media_gen = get_media_files_generator()
-                yield from media_gen
+                file_count = 0
+                for item in media_gen:
+                    yield item
+                    file_count += 1
+                    if file_count % 100 == 0:
+                        print(f"Processed {file_count} media files...")
+                print(f"All {file_count} media files yielded to ZIP stream")
                 
+            except Exception as e:
+                print(f"Error during ZIP streaming: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
             finally:
-                if tmp_csv_path.exists():
-                    os.unlink(tmp_csv_path)
-                if tmp_json_path.exists():
-                    os.unlink(tmp_json_path)
+                # Cleanup temp files
+                if tmp_csv_path and tmp_csv_path.exists():
+                    try:
+                        os.unlink(tmp_csv_path)
+                        print("Cleaned up tags.csv temp file")
+                    except Exception as e:
+                        print(f"Error cleaning up tags.csv: {e}")
+                        
+                if tmp_json_path and tmp_json_path.exists():
+                    try:
+                        os.unlink(tmp_json_path)
+                        print("Cleaned up backup.json temp file")
+                    except Exception as e:
+                        print(f"Error cleaning up backup.json: {e}")
+        except Exception as e:
+            print(f"Fatal error in mixed_generator: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
         finally:
             stream_db.close()
+            print("Backup generation complete, database session closed")
                 
     zip_stream = stream_zip_generator(mixed_generator())
     
