@@ -10,6 +10,37 @@ from ..config import settings
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
+def is_git_available() -> tuple[bool, str]:
+    """Check if git repo is available and properly configured"""
+    try:
+        # Check if git is installed
+        subprocess.run(["git", "--version"], check=True, capture_output=True)
+        
+        # Check if in a git repo
+        subprocess.run(
+            ["git", "rev-parse", "--git-dir"], 
+            check=True, 
+            capture_output=True,
+            text=True
+        )
+        
+        # Check if a remote is configured
+        subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            check=True,
+            capture_output=True
+        )
+        
+        return True, ""
+    except subprocess.CalledProcessError as e:
+        if "not a git repository" in e.stderr.decode() if e.stderr else "":
+            return False, "Not running in a git repository. If you're using Docker, rebuild the image with: docker compose up --build --no-cache"
+        return False, f"Git is not properly configured: {e.stderr.decode() if e.stderr else str(e)}"
+    except FileNotFoundError:
+        return False, "Git is not installed"
+    except Exception as e:
+        return False, f"Unable to access git: {str(e)}"
+
 class UpdateStatus(BaseModel):
     current_hash: str
     latest_dev_hash: str
@@ -23,6 +54,10 @@ class UpdateStatus(BaseModel):
 @router.get("/update/check", response_model=UpdateStatus)
 async def check_update_status(current_user: dict = Depends(require_admin_mode)):
     """Check for available updates"""
+    git_available, error_msg = is_git_available()
+    if not git_available:
+        raise HTTPException(status_code=503, detail=error_msg)
+    
     try:
         subprocess.run(["git", "fetch"], check=True, capture_output=True)
 
@@ -94,6 +129,10 @@ async def perform_update(
     current_user: dict = Depends(require_admin_mode)
 ):
     """Perform update"""
+    git_available, error_msg = is_git_available()
+    if not git_available:
+        raise HTTPException(status_code=503, detail=error_msg)
+    
     target_type = target.get("target", "dev") # "dev" or "stable"
     
     try:
