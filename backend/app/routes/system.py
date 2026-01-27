@@ -34,7 +34,7 @@ def is_git_available() -> tuple[bool, str]:
         return True, ""
     except subprocess.CalledProcessError as e:
         if "not a git repository" in e.stderr.decode() if e.stderr else "":
-            return False, "Not running in a git repository. If you're using Docker, rebuild the image with: docker compose up --build --no-cache"
+            return False, "Not running in a git repository. If you're using Docker, rebuild the image with: docker compose up --build"
         return False, f"Git is not properly configured: {e.stderr.decode() if e.stderr else str(e)}"
     except FileNotFoundError:
         return False, "Git is not installed"
