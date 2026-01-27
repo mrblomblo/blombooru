@@ -219,12 +219,15 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
             expires_delta=timedelta(minutes=43200)
         )
         
+        is_secure = request.url.scheme == "https"
+        
         response.set_cookie(
             key="admin_token",
             value=access_token,
             httponly=True,
             max_age=43200 * 60,
-            samesite="lax"
+            samesite="none" if is_secure else "lax",
+            secure=is_secure
         )
         
         print(f"Login successful, token issued")
@@ -311,12 +314,15 @@ async def update_admin_username(
             expires_delta=timedelta(minutes=43200)
         )
         
+        is_secure = request.url.scheme == "https"
+        
         response.set_cookie(
             key="admin_token",
             value=access_token,
             httponly=True,
             max_age=43200 * 60,
-            samesite="lax"
+            samesite="none" if is_secure else "lax",
+            secure=is_secure
         )
         
         return {
@@ -336,17 +342,21 @@ async def update_admin_username(
 @router.post("/toggle-admin-mode")
 async def toggle_admin_mode(
     enabled: bool,
+    request: Request,
     response: Response,
     current_user: User = Depends(get_current_admin_user)
 ):
     """Toggle admin mode"""
+    is_secure = request.url.scheme == "https"
+    
     if enabled:
         response.set_cookie(
             key="admin_mode",
             value="true",
             httponly=False,
             max_age=43200 * 60,
-            samesite="lax"
+            samesite="none" if is_secure else "lax",
+            secure=is_secure
         )
     else:
         response.delete_cookie(key="admin_mode")
