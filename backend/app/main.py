@@ -11,7 +11,7 @@ from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danb
 from .auth_middleware import AuthMiddleware
 from datetime import datetime
 
-APP_VERSION = "1.25.11"
+APP_VERSION = "1.25.16"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
