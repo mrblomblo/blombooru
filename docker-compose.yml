@@ -3,7 +3,6 @@ services:
     build:
       context: .
     image: blombooru:latest
-    container_name: blombooru
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     env_file:
@@ -20,7 +19,6 @@ services:
 
   db:
     image: postgres:17
-    container_name: blombooru-db
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -33,7 +31,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: blombooru-redis
     restart: unless-stopped
     env_file:
       - .env
