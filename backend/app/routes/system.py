@@ -10,6 +10,20 @@ from ..config import settings
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
+def is_running_in_docker() -> bool:
+    """Check if the application is running in a Docker container"""
+    if os.path.exists("/.dockerenv"):
+        return True
+    
+    if os.path.exists("/proc/self/cgroup"):
+        try:
+            with open("/proc/self/cgroup", "r") as f:
+                return "docker" in f.read()
+        except:
+            pass
+    
+    return False
+
 def is_git_available() -> tuple[bool, str]:
     """Check if git repo is available and properly configured"""
     try:
@@ -96,15 +110,21 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         update_available = current_hash != latest_dev_hash
         requirements_changed = False
         notices = []
+        
+        if is_running_in_docker():
+            notices.append("Running in Docker: The built-in updater cannot be used from within a Docker container. To update, run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder.")
+        
         try:
             diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"]).decode()
             if "requirements.txt" in diff_output:
                 requirements_changed = True
-                notices.append("Python dependencies have changed. You need to run `git pull` then `docker compose up --build -d` (if running in docker) or `pip install -r requirements.txt` in the project root folder (if running locally).")
+                if not is_running_in_docker():
+                    notices.append("Python dependencies have changed. The updater will automatically install them when you update.")
             
             if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
-                notices.append("Docker configuration has changed. You need to run `git pull` then `docker compose up --build -d` in the project root folder (if running in docker).")
-                
+                if not is_running_in_docker():
+                    notices.append("Docker configuration has changed. If you plan to use Docker, you will need to rebuild with 'docker compose up --build -d'.")
+
         except subprocess.CalledProcessError:
             pass
 
@@ -128,14 +148,22 @@ async def perform_update(
     target: dict, 
     current_user: dict = Depends(require_admin_mode)
 ):
-    """Perform update"""
+    """Perform update and automatically handle dependencies"""
     git_available, error_msg = is_git_available()
     if not git_available:
         raise HTTPException(status_code=503, detail=error_msg)
     
+    in_docker = is_running_in_docker()
+    if in_docker:
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot update from within Docker container. Please run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder."
+        )
+    
     target_type = target.get("target", "dev") # "dev" or "stable"
     
     try:
+        current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
         commands = []
         if target_type == "stable":
             latest_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", "origin/main"]).decode().strip()
@@ -156,8 +184,100 @@ async def perform_update(
             output_log.append(process.stdout)
             if process.stderr:
                  output_log.append(process.stderr)
+        
+        new_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()        
+        requirements_changed = False
+        docker_files_changed = False
+        post_update_actions = []
+        
+        if current_hash != new_hash:
+            try:
+                diff_output = subprocess.check_output(
+                    ["git", "diff", "--name-only", current_hash, new_hash]
+                ).decode()
+                
+                if "requirements.txt" in diff_output:
+                    requirements_changed = True
+                
+                if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
+                    docker_files_changed = True
+                    
+            except subprocess.CalledProcessError:
+                pass
+        
+        # Handle dependencies automatically when running locally, not in Docker
+        if requirements_changed:
+            output_log.append("\n=== Python Dependencies Changed ===")
+            output_log.append("Installing updated dependencies...")
+            
+            # Try to install dependencies
+            try:
+                base_dir = subprocess.check_output(
+                    ["git", "rev-parse", "--show-toplevel"]
+                ).decode().strip()
+                requirements_path = os.path.join(base_dir, "requirements.txt")
+                
+                if os.path.exists(requirements_path):
+                    install_process = subprocess.run(
+                        ["pip", "install", "-r", requirements_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=300  # 5 minute timeout
+                    )
+                    
+                    output_log.append(f"$ pip install -r {requirements_path}")
+                    output_log.append(install_process.stdout)
+                    if install_process.stderr:
+                        output_log.append(install_process.stderr)
+                    
+                    if install_process.returncode == 0:
+                        output_log.append("Dependencies installed successfully!")
+                        post_update_actions.append(
+                            "Dependencies were automatically installed. Please restart Blombooru to apply the changes."
+                        )
+                    else:
+                        output_log.append("Failed to install dependencies automatically.")
+                        post_update_actions.append(
+                            f"WARNING: Automatic dependency installation failed. Please manually run 'pip install -r {requirements_path}' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
+                        )
+                else:
+                    post_update_actions.append(
+                        "WARNING: requirements.txt not found. Please manually install dependencies."
+                    )
+                    
+            except subprocess.TimeoutExpired:
+                output_log.append("Dependency installation timed out.")
+                post_update_actions.append(
+                    "WARNING: Automatic dependency installation timed out. Please manually run 'pip install -r requirements.txt' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
+                )
+            except Exception as e:
+                output_log.append(f"Error installing dependencies: {str(e)}")
+                post_update_actions.append(
+                    f"WARNING: Could not automatically install dependencies. Please manually run 'pip install -r requirements.txt' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
+                )
+        
+        if docker_files_changed:
+            output_log.append("\n=== Docker Configuration Changed ===")
+            output_log.append("Note: Docker configuration files have changed.")
+            post_update_actions.append(
+                "INFO: Docker configuration has changed. If you plan to run in Docker, rebuild with 'docker compose up --build -d'."
+            )
+        
+        if post_update_actions:
+            message = "\n\n".join(post_update_actions)
+        else:
+            message = "Update successful. Please restart Blombooru to apply the changes!"
                  
-        return {"success": True, "log": "\n".join(output_log), "message": "Update successful. Please restart Blombooru to apply the changes!"}
+        return {
+            "success": True, 
+            "log": "\n".join(output_log), 
+            "message": message,
+            "actions_taken": {
+                "git_updated": True,
+                "dependencies_installed": requirements_changed,
+                "needs_restart": True
+            }
+        }
 
     except subprocess.CalledProcessError as e:
         error_msg = f"Command failed: {e.cmd}\nStdout: {e.stdout}\nStderr: {e.stderr}"
