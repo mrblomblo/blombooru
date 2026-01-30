@@ -9,9 +9,10 @@ from .config import settings
 from .database import get_db, init_db, init_engine
 from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system
 from .auth_middleware import AuthMiddleware
+from .translations import translation_helper, language_registry
 from datetime import datetime
 
-APP_VERSION = "1.26.11"
+APP_VERSION = "1.27.0"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -23,6 +24,9 @@ templates = Jinja2Templates(directory=str(templates_path))
 
 templates.env.globals['app_version'] = APP_VERSION
 templates.env.globals['get_current_year'] = lambda: datetime.now().year
+templates.env.globals['t'] = lambda key, **kwargs: translation_helper.get(key, settings.CURRENT_LANGUAGE, **kwargs)
+templates.env.globals['current_language'] = lambda: settings.CURRENT_LANGUAGE
+templates.env.globals['available_languages'] = lambda: [lang.to_dict() for lang in language_registry.get_all_languages()]
 app.include_router(admin.router)
 app.include_router(media.router)
 app.include_router(tags.router)
