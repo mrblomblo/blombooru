@@ -23,9 +23,9 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
         {{ rating_filter('desktop') }}
         {{ sorting_options(default_sort=default_sort, default_order=default_order) }}
 
-        <h3 class="text-sm font-bold mb-2 pb-1 border-b">Popular Tags</h3>
+        <h3 class="text-sm font-bold mb-2 pb-1 border-b">{{ t('gallery.popular_tags') }}</h3>
         <div id="popular-tags" class="text-xs">
-            <p class="text-secondary">View an album to see tags.</p>
+            <p class="text-secondary">{{ t('albums.view_album_for_tags') }}</p>
         </div>
 
         {{ sidebar_end() }}

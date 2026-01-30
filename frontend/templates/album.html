@@ -11,7 +11,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
             <!-- Album Info -->
             <div class="surface p-3 border mb-4">
                 <div id="album-breadcrumb" class="text-xs text-secondary"></div>
-                <h1 id="album-name" class="text-lg font-bold">Loading...</h1>
+                <h1 id="album-name" class="text-lg font-bold">{{ t('common.loading') }}</h1>
             </div>
 
             {{ rating_filter('mobile') }}
@@ -21,7 +21,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
             <!-- Sub-albums Section -->
             <div id="sub-albums-container" style="display: none;" class="mb-8">
                 <h2 id="sub-albums-title" class="text-sm font-bold mb-4 pb-1 border-b">
-                    Sub-albums
+                    {{ t('albums.sub_albums') }}
                 </h2>
                 <div id="sub-albums-grid"
                     class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
@@ -31,7 +31,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
             <!-- Media Section -->
             <div id="media-container" style="display: none;">
                 <h2 id="media-title" class="text-sm font-bold mb-4 pb-1 border-b">
-                    Media
+                    {{ t('albums.media') }}
                 </h2>
                 <div id="album-contents" data-album-id="{{ album_id }}"
                     class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
@@ -45,7 +45,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
         <!-- Sidebar -->
         {{ sidebar_start() }}
 
-        <h3 class="text-sm font-bold mb-3 pb-2 border-b">Album Details</h3>
+        <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('albums.album_details') }}</h3>
         <div id="album-details" class="text-xs mb-4"></div>
 
         {{ rating_filter('desktop') }}
