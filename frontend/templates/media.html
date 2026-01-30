@@ -251,7 +251,7 @@
             <div class="surface p-3 border">
                 <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.relations.title') }}</h3>
 
-                {% if media.parent_id %}
+                {% if media and media.parent_id %}
                 <div class="mb-4">
                     <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ t('media.hierarchy.title') }}</h4>
                     <div class="flex items-center gap-2">
