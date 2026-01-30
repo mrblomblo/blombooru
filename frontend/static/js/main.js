@@ -1,3 +1,72 @@
+// Internationalization helper
+class I18n {
+    constructor() {
+        this.translations = {};
+        this.currentLang = 'en';
+        this.fallbackLang = 'en';
+        this.loaded = false;
+        this.loadPromise = null;
+    }
+
+    async load(lang = null) {
+        if (this.loadPromise) {
+            return this.loadPromise;
+        }
+
+        this.loadPromise = (async () => {
+            try {
+                const targetLang = lang || this.currentLang;
+                const response = await fetch(`/api/admin/translations?lang=${targetLang}`);
+                if (response.ok) {
+                    this.translations = await response.json();
+                    this.currentLang = targetLang;
+                    this.loaded = true;
+                }
+            } catch (error) {
+                console.error('Error loading translations:', error);
+            } finally {
+                this.loadPromise = null;
+            }
+        })();
+
+        return this.loadPromise;
+    }
+
+    /**
+     * Get a translation string by dot-notation key
+     * @param {string} key - Dot-notation key (e.g., 'nav.albums')
+     * @param {Object} params - Interpolation parameters (e.g., {count: 5})
+     * @returns {string} Translated string or the key itself if not found
+     */
+    t(key, params = {}) {
+        const keys = key.split('.');
+        let value = this.translations;
+
+        for (const k of keys) {
+            if (value && typeof value === 'object' && k in value) {
+                value = value[k];
+            } else {
+                return key;
+            }
+        }
+
+        if (typeof value !== 'string') {
+            return key;
+        }
+
+        // Handle interpolation: {name} -> replaced with params.name
+        if (params && Object.keys(params).length > 0) {
+            return value.replace(/\{(\w+)\}/g, (match, paramKey) => {
+                return params[paramKey] !== undefined ? params[paramKey] : match;
+            });
+        }
+
+        return value;
+    }
+}
+
+window.i18n = new I18n();
+
 // Core functionality
 class Blombooru {
     constructor() {
