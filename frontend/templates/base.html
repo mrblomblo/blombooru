@@ -79,7 +79,7 @@
                     <form id="search-form" class="flex gap-2 items-center">
                         <div class="relative flex-1">
                             <input type="text" id="search-input" name="q"
-                                placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                                placeholder="{{ t('nav.search_placeholder') }}"
                                 value="{{ request.query_params.get('q', '') }}"
                                 class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                         </div>
@@ -103,18 +103,20 @@
                         <li id="nav-albums-item">
                             <a href="/albums"
                                 class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
-                                Albums
+                                {{ t('nav.albums') }}
                             </a>
                         </li>
                         <li>
                             <a href="#" id="admin-mode-toggle"
                                 class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                                <span id="admin-mode-text">Admin Panel</span>
+                                <span id="admin-mode-text">{{ t('nav.admin_panel') }}</span>
                             </a>
                         </li>
                         <li>
                             <a href="#" id="logout-btn"
-                                class="bg border px-3 py-1.5 hover:border-primary transition-colors ">Logout</a>
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors ">
+                                {{ t('nav.logout') }}
+                            </a>
                         </li>
                     </ul>
                 </nav>
@@ -147,18 +149,19 @@
                     <li id="nav-albums-item-mobile">
                         <a href="/albums"
                             class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
-                            Albums
+                            {{ t('nav.albums') }}
                         </a>
                     </li>
                     <li>
                         <a href="#" id="admin-mode-toggle-mobile"
                             class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                            <span id="admin-mode-text-mobile">Admin Panel</span>
+                            <span id="admin-mode-text-mobile">{{ t('nav.admin_panel') }}</span>
                         </a>
                     </li>
                     <li>
                         <a href="#" id="logout-btn-mobile"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors">Logout</a>
+                            class="block px-4 py-2 border bg hover:border-primary transition-colors">
+                            {{ t('nav.logout') }} </a>
                     </li>
                 </ul>
             </nav>
@@ -168,7 +171,7 @@
                 <form id="search-form-mobile" class="flex gap-2 items-center">
                     <div class="relative flex-1">
                         <input type="text" id="search-input-mobile" name="q"
-                            placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                            placeholder="{{ t('nav.search_placeholder') }}"
                             value="{{ request.query_params.get('q', '') }}"
                             class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                     </div>
@@ -203,7 +206,7 @@
                         <span class="text-tertiary">&#x2022;</span>
                         <a href="#" class="text-secondary transition-colors hover:text-primary"
                             onclick="document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'}); return false;">
-                            Back to Top
+                            {{ t('footer.back_to_top') }}
                         </a>
                     </div>
                 </div>
