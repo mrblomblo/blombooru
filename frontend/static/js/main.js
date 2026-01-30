@@ -80,6 +80,8 @@ class Blombooru {
     }
 
     init() {
+        window.i18n.load();
+
         this.setupEventListeners();
         this.updateUI();
 
@@ -209,7 +211,7 @@ class Blombooru {
 
                 // Show notification
                 this.showNotification(
-                    newMode ? 'Admin mode enabled' : 'Admin mode disabled',
+                    newMode ? window.i18n.t('notifications.admin_mode_enabled') : window.i18n.t('notifications.admin_mode_disabled'),
                     newMode ? 'success' : 'info'
                 );
             }
@@ -255,11 +257,11 @@ class Blombooru {
     showNotification(message, type = 'info', title = null) {
         // Set default title based on type if none provided
         const defaultTitles = {
-            info: 'Info',
-            success: 'Success',
-            error: 'Error'
+            info: window.i18n.t('common.info'),
+            success: window.i18n.t('common.success'),
+            error: window.i18n.t('common.error')
         };
-        const notificationTitle = title || defaultTitles[type] || 'Info';
+        const notificationTitle = title || defaultTitles[type] || window.i18n.t('common.info');
         const notification = document.createElement('div');
 
         const baseClasses = 'fixed top-20 left-1/2 -translate-x-1/2 px-6 py-4 shadow-lg border-2 z-[1000] min-w-[320px] max-w-md cursor-pointer';
