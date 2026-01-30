@@ -158,6 +158,10 @@ class Settings:
         return self.settings.get("theme", "default_dark")
     
     @property
+    def CURRENT_LANGUAGE(self) -> str:
+        return self.settings.get("language", "en")
+    
+    @property
     def IS_FIRST_RUN(self) -> bool:
         return self.settings.get("first_run", True)
         
