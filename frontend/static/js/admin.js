@@ -4,6 +4,7 @@ class AdminPanel {
         this.tagInputHelper = new TagInputHelper();
         this.validationTimeout = null;
         this.themeSelect = null;
+        this.languageSelect = null;
         window.adminPanel = this;
         this.init();
     }
@@ -21,6 +22,7 @@ class AdminPanel {
         this.loadAlbumStats();
         this.setupCustomSelects();
         this.loadThemes();
+        this.loadLanguages();
         this.setupApiKeyManagement();
         this.setupSystemUpdate();
         this.setupTabs();
@@ -46,6 +48,11 @@ class AdminPanel {
         const themeSelectElement = document.getElementById('theme-select');
         if (themeSelectElement) {
             this.themeSelect = new CustomSelect(themeSelectElement);
+        }
+
+        const languageSelectElement = document.getElementById('language-select');
+        if (languageSelectElement) {
+            this.languageSelect = new CustomSelect(languageSelectElement);
         }
 
         const defaultSortElement = document.getElementById('default-sort');
@@ -514,6 +521,8 @@ class AdminPanel {
         const appName = document.getElementById('app-name').value.trim();
         const themeSelectElement = document.getElementById('theme-select');
         const theme = themeSelectElement?.dataset.value;
+        const languageSelectElement = document.getElementById('language-select');
+        const language = languageSelectElement?.dataset.value;
         const itemsPerPage = document.getElementById('items-per-page')?.value;
         const externalShareUrl = document.getElementById('external-share-url')?.value;
 
@@ -548,6 +557,7 @@ class AdminPanel {
         const settings = {
             app_name: appName,
             theme: theme,
+            language: language || 'en',
             items_per_page: itemsPerPageNum,
             default_sort: defaultSort,
             default_order: defaultOrder,
@@ -1043,6 +1053,29 @@ class AdminPanel {
 
         } catch (error) {
             console.error('Error loading themes:', error);
+        }
+    }
+
+    async loadLanguages() {
+        try {
+            const response = await fetch('/api/admin/languages');
+            const data = await response.json();
+
+            if (!this.languageSelect) {
+                console.error('languageSelect is not initialized!');
+                return;
+            }
+
+            const options = data.languages.map(lang => ({
+                value: lang.id,
+                text: lang.native_name,
+                selected: lang.id === data.current_language
+            }));
+
+            this.languageSelect.setOptions(options);
+
+        } catch (error) {
+            console.error('Error loading languages:', error);
         }
     }
 

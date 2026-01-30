@@ -58,14 +58,36 @@
                                     class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
                                 </div>
                             </div>
+
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.language') }}</label>
+                            <div id="language-select" class="custom-select" data-value="{{ current_language() }}">
+                                <button
+                                    class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                    type="button">
+                                    <span class="custom-select-value text-secondary">
+                                        {{ t('common.loading') }}
+                                    </span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                        width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="block text-xs font-bold mb-2">Items Per Page</label>
                             <input type="number" id="items-per-page" name="items_per_page" min="20" max="200"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
-                            <p class="text-xs text-secondary opacity-70 mt-1 ml-1">Number of items to display per page
-                                (20-200)</p>
+                            <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
+                                Number of items to display per page (20-200)
+                            </p>
                         </div>
 
                         <div class="mb-4">
