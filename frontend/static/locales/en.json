@@ -1,0 +1,328 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "search": "Search",
+        "close": "Close",
+        "go": "Go",
+        "copy": "Copy",
+        "yes": "Yes",
+        "no": "No",
+        "none": "None",
+        "error": "Error",
+        "success": "Success",
+        "info": "Info",
+        "warning": "Warning",
+        "confirm": "Confirm",
+        "items_selected": "{count} items selected",
+        "no_items_found": "No items found"
+    },
+    "nav": {
+        "albums": "Albums",
+        "admin_panel": "Admin Panel",
+        "logout": "Logout",
+        "search_placeholder": "Search tags... (e.g., ?girl? *_background cat_ears -dog)",
+        "search_syntax_guide": "Search Syntax Guide"
+    },
+    "footer": {
+        "back_to_top": "Back to Top"
+    },
+    "login": {
+        "title": "Login to {app_name}",
+        "username": "Username",
+        "password": "Password",
+        "login_button": "Login",
+        "enter_credentials": "Enter your credentials to access {app_name}",
+        "login_failed": "Login failed",
+        "invalid_credentials": "Invalid username or password"
+    },
+    "admin": {
+        "title": "Admin Panel",
+        "tabs": {
+            "content": "Content",
+            "system": "System",
+            "account": "Account"
+        },
+        "settings": {
+            "title": "Settings",
+            "app_name": "Application Name",
+            "theme": "Theme",
+            "language": "Language",
+            "items_per_page": "Items Per Page",
+            "items_per_page_hint": "Number of items to display per page (20-200)",
+            "external_share_url": "External Share URL",
+            "external_share_url_placeholder": "https://example.com",
+            "external_share_url_hint": "Base URL for share links (optional, e.g., https://example.com). Leave empty to use default.",
+            "default_sort": "Default Sort",
+            "upload_date": "Upload Date",
+            "file_name": "File Name",
+            "file_size": "File Size",
+            "file_type": "File Type",
+            "descending": "Descending",
+            "ascending": "Ascending",
+            "security": "Security",
+            "require_auth": "Require Authentication to View Media",
+            "require_auth_hint": "When enabled, users must log in to view media. Public routes such as share links and static files remain public.",
+            "save_settings": "Save Settings",
+            "settings_saved": "Settings saved successfully",
+            "loading_themes": "Loading themes..."
+        },
+        "caching": {
+            "title": "Caching (Redis)",
+            "enable_redis": "Enable Redis Caching",
+            "host": "Host",
+            "port": "Port",
+            "db_index": "DB Index",
+            "password": "Password",
+            "password_placeholder": "Leave empty for none",
+            "test_connection": "Test Redis Connection",
+            "connection_success": "Redis connection successful!",
+            "connection_failed": "Redis connection failed"
+        },
+        "api_access": {
+            "title": "API Access",
+            "description": "API keys allow external applications to access the Booru API when authentication is required.",
+            "generate_key": "Generate New API Key",
+            "new_api_key": "New API Key",
+            "shown_once": "SHOWN ONCE",
+            "copy_key": "Copy Key",
+            "store_securely": "Store this key securely. It will not be shown again after you refresh or leave this page.",
+            "active_keys": "Active API Keys",
+            "loading_keys": "Loading API keys...",
+            "no_keys": "No API keys generated yet.",
+            "key_generated": "API key generated successfully",
+            "key_copied": "API key copied to clipboard",
+            "key_revoked": "API key revoked"
+        },
+        "backup": {
+            "title": "Backup & Restore",
+            "export_data": "Export Data",
+            "export_tags": "Export Tags (CSV)",
+            "export_media": "Export Media (ZIP)",
+            "full_backup": "Full Backup (ZIP)",
+            "import_backup": "Import Full Backup",
+            "import_hint": "Restore a full backup ZIP. This will add missing tags and media files.",
+            "import_warning": "Existing files with matching content (hashes) will be skipped.",
+            "import_time_warning": "Warning: This process might take a while for large backups.",
+            "drop_backup": "Drop Full Backup ZIP here or click to browse"
+        },
+        "update": {
+            "title": "System Update",
+            "check_updates": "Check for Updates",
+            "checking": "Checking for updates...",
+            "current_version": "Current Version",
+            "latest_version": "Latest Version",
+            "update_dev": "Update to Latest Dev",
+            "update_stable": "Update to Latest Stable",
+            "view_changelog": "View Changelog",
+            "update_output": "Update Output",
+            "update_warning": "Take a look at the latest release notes for any important information before updating.",
+            "backup_warning": "Warning: Updating can cause data loss if not done carefully. Always make a backup before updating.",
+            "contact_github": "Check for the latest updates from the official repository. This will contact GitHub to retrieve the latest version information."
+        },
+        "media_management": {
+            "title": "Media Management",
+            "total_media": "Total Media",
+            "total_images": "Total Images",
+            "total_gifs": "Total GIFs",
+            "total_videos": "Total Videos",
+            "upload_media": "Upload Media",
+            "upload_hint": "You can upload images, videos, or compressed archives (ZIP, TAR.GZ).",
+            "supported_images": "Supported image formats: JPG/JPEG, PNG, GIF, WEBP.",
+            "supported_videos": "Supported video formats: MP4, WEBM.",
+            "max_file_size": "Max individual file size: 500MB.",
+            "archive_hint": "Archives will be extracted and all supported media files inside will be processed.",
+            "scan_untracked": "Scan for Untracked Media",
+            "drop_media": "Drop media files here or click to browse"
+        },
+        "tags_management": {
+            "title": "Tags Management",
+            "total_tags": "Total Tags",
+            "tag_aliases": "Tag Aliases",
+            "categories": "Categories",
+            "import_csv": "Import Tags from CSV",
+            "csv_format": "Upload a CSV file with the following format: (usage_count/column 3 will always be ignored)",
+            "csv_example": "tag_name, category_number, usage_count, \"alias1,alias2,alias3\"",
+            "csv_categories": "Categories: 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta",
+            "drop_csv": "Drop CSV file here or click to browse",
+            "add_tags": "Add Tags",
+            "add_tags_hint": "Add tags with optional category prefixes:",
+            "tags_without_prefix": "Tags without a prefix will be added as \"general\" category.",
+            "tags_exist_hint": "Tags that already exist (or exist as aliases) will be ignored.",
+            "tags_to_add": "Tags to Add",
+            "search_delete_tags": "Search & Delete Tags",
+            "search_tags_placeholder": "Search tags...",
+            "danger_zone": "Danger Zone",
+            "delete_all_tags": "Delete All Tags"
+        },
+        "albums_management": {
+            "title": "Albums Management",
+            "total_albums": "Total Albums",
+            "root_albums": "Root Albums",
+            "create_album": "Create Album",
+            "album_name": "Album Name",
+            "album_name_placeholder": "My Album",
+            "parent_album": "Parent Album (Optional)",
+            "none_root": "None (Root Album)",
+            "search_manage": "Search & Manage Albums",
+            "search_albums_placeholder": "Search albums...",
+            "album_created": "Album created successfully",
+            "album_deleted": "Album deleted"
+        },
+        "account": {
+            "title": "Admin Account Management",
+            "new_password": "New Password",
+            "password_placeholder": "password123",
+            "password_hint": "6-50 characters",
+            "change_password": "Change Password",
+            "password_changed": "Password changed successfully",
+            "new_username": "New Username",
+            "username_placeholder": "admin",
+            "change_username": "Change Username",
+            "username_changed": "Username changed successfully"
+        }
+    },
+    "media": {
+        "title": "Media",
+        "fullscreen_hint": "Press ESC or click outside the media to close",
+        "relations": {
+            "title": "Manage Relations",
+            "search_hint": "Showing related items. Use the search bar to find specific media.",
+            "selected": "{count} selected",
+            "clear_selection": "Clear selection",
+            "set_parent": "Set as Parent",
+            "add_child": "Add as Child",
+            "add_children": "Add as Children",
+            "remove_selected": "Remove Selected",
+            "load_more": "Load More"
+        },
+        "hierarchy": {
+            "title": "Parent & Sibling Media"
+        },
+        "related": {
+            "title": "Related Media"
+        },
+        "info": {
+            "title": "Information",
+            "source_url": "Source URL",
+            "save_source": "Save Source"
+        },
+        "tags": {
+            "title": "Tags",
+            "edit_tags": "Edit Tags",
+            "append_ai_tags": "Append AI Tags",
+            "predict_tags": "Predict Tags (AI)",
+            "save_tags": "Save Tags",
+            "tags_saved": "Tags saved successfully"
+        },
+        "ai_metadata": {
+            "title": "AI Generation Data"
+        },
+        "actions": {
+            "title": "Actions",
+            "download": "Download",
+            "safe": "Safe",
+            "questionable": "Questionable",
+            "explicit": "Explicit",
+            "share": "Share",
+            "unshare": "Unshare",
+            "albums": "Albums",
+            "relations": "Relations",
+            "delete_media": "Delete Media"
+        },
+        "share": {
+            "title": "Share Actions",
+            "include_ai_metadata": "Include AI metadata",
+            "copy_link": "Copy Link",
+            "link_copied": "Share link copied to clipboard"
+        }
+    },
+    "gallery": {
+        "rating_filter": "Rating Filter",
+        "sort_by": "Sort By",
+        "safe": "Safe",
+        "questionable": "Questionable",
+        "explicit": "Explicit",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All",
+        "add_to_albums": "Add to Albums",
+        "bulk_ai_tags": "Bulk Append AI Tags",
+        "bulk_predict_tags": "Bulk AI Predict Tags",
+        "remove_from_album": "Remove from Album",
+        "delete_selected": "Delete Selected",
+        "jump_to_page": "Jump to Page",
+        "popular_tags": "Popular Tags"
+    },
+    "albums": {
+        "title": "Albums",
+        "subalbums": "Subalbums",
+        "no_albums": "No albums yet",
+        "no_media": "No media in this album"
+    },
+    "notifications": {
+        "admin_mode_enabled": "Admin mode enabled",
+        "admin_mode_disabled": "Admin mode disabled",
+        "copied_to_clipboard": "Copied to clipboard",
+        "delete_confirm": "Are you sure you want to delete this?",
+        "delete_success": "Deleted successfully",
+        "save_success": "Saved successfully",
+        "upload_success": "Upload successful",
+        "upload_failed": "Upload failed",
+        "error_occurred": "An error occurred",
+        "connection_error": "Connection error"
+    },
+    "search": {
+        "guide_title": "Search Syntax Guide",
+        "got_it": "Got it",
+        "basic_tags": "Basic Tags",
+        "basic_desc_both": "Find media with both tags",
+        "basic_desc_exclude": "Exclude media with tag",
+        "basic_desc_wildcard": "Wildcard search",
+        "basic_desc_fuzzy": "Fuzzy search (one or zero chars before)",
+        "ranges": "Ranges",
+        "ranges_operators": "Operators",
+        "ranges_exact": "Exact match",
+        "ranges_between": "Between inclusive",
+        "ranges_gte": "Greater than or equal",
+        "ranges_in_list": "In list",
+        "ranges_note": "Note: Ranges can also be used with most meta qualifiers.",
+        "meta_qualifiers": "Meta Qualifiers",
+        "meta_dimensions": "Image dimensions (pixels)",
+        "meta_filesize": "File size (kb, mb, gb)",
+        "meta_date": "Upload date or relative age",
+        "meta_rating": "safe, questionable, explicit",
+        "meta_source": "Source URL or none",
+        "meta_filetype": "Extension (png, gif, etc)",
+        "meta_tagcount": "Number of tags",
+        "sorting": "Sorting",
+        "sorting_desc": "Use order:value",
+        "sorting_newest": "Newest first (default)",
+        "sorting_oldest": "Oldest first",
+        "sorting_filesize": "Largest files first",
+        "sorting_aspect": "Aspect ratio",
+        "examples": "Example Searches"
+    },
+    "onboarding": {
+        "welcome": "Welcome to {app_name}!",
+        "setup_title": "Initial Setup",
+        "database_settings": "Database Settings",
+        "create_admin": "Create Admin Account",
+        "complete_setup": "Complete Setup",
+        "skip": "Skip"
+    },
+    "shared": {
+        "shared_media": "Shared Media",
+        "media_not_found": "This shared media does not exist or has been removed.",
+        "view_original": "View Original"
+    },
+    "errors": {
+        "not_found": "Not Found",
+        "unauthorized": "Unauthorized",
+        "forbidden": "Forbidden",
+        "server_error": "Server Error",
+        "page_not_found": "The page you're looking for doesn't exist."
+    }
+}
