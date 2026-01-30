@@ -87,12 +87,15 @@ async def login_page(request: Request):
     })
 
 @app.get("/media/{media_id}", response_class=HTMLResponse)
-async def media_page(request: Request, media_id: int):
+async def media_page(request: Request, media_id: int, db: Session = Depends(get_db)):
     """Media detail page"""
+    media_item = db.query(Media).filter(Media.id == media_id).first()
+    
     return templates.TemplateResponse("media.html", {
         "request": request,
         "app_name": settings.APP_NAME,
         "media_id": media_id,
+        "media": media_item,
         "external_share_url": settings.EXTERNAL_SHARE_URL
     })
 
