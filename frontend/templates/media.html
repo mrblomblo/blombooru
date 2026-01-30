@@ -8,7 +8,7 @@
     <div id="fullscreen-image-wrapper">
         <img id="fullscreen-image" src="" alt="">
     </div>
-    <div class="fullscreen-close-hint">Press ESC or click outside the media to close</div>
+    <div class="fullscreen-close-hint">{{ t('media.fullscreen_close_hint') }}</div>
 </div>
 
 <!-- Relation Manager Modal -->
@@ -17,7 +17,7 @@
     <div class="relative surface border shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b">
-            <h2 class="text-lg font-bold">Manage Relations</h2>
+            <h2 class="text-lg font-bold">{{ t('media.relations.title') }}</h2>
             <button id="relation-modal-close" class="text-secondary hover:text p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -37,12 +37,12 @@
             <form id="relation-search-form">
                 <div class="relative">
                     <input type="text" id="relation-search-input"
-                        placeholder="Search tags... (e.g., ?girl? *_background cat_ears -dog)"
+                        placeholder="{{ t('media.tags.search_tags_placeholder') }}"
                         class="w-full bg px-3 py-2 border text text-sm hover:border-primary transition-colors focus:outline-none focus:border-primary">
                 </div>
             </form>
             <p id="relation-search-hint" class="text-xs text-secondary mt-2">
-                Showing related items. Use the search bar to find specific media.
+                {{ t('media.relations.showing_related_items') }}
             </p>
         </div>
 
@@ -52,7 +52,7 @@
             </div>
             <div id="relation-loading" class="text-center py-8" style="display: none;">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p class="text-secondary mt-2">Loading...</p>
+                <p class="text-secondary mt-2">{{ t('common.loading') }}</p>
             </div>
             <div id="relation-empty" class="text-center py-8 text-secondary" style="display: none;">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-3 opacity-50" width="48" height="48"
@@ -61,13 +61,13 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                <p>No items found</p>
+                <p>{{ t('common.no_items_found') }}</p>
             </div>
             <!-- Load More Button -->
             <div id="relation-load-more" class="text-center py-4" style="display: none;">
                 <button id="relation-load-more-btn"
                     class="px-6 py-2 surface-light text text-sm hover:surface transition-colors">
-                    Load More
+                    {{ t('common.load_more') }}
                 </button>
             </div>
         </div>
@@ -76,32 +76,34 @@
         <div id="relation-actions" class="p-4 border-t surface-light">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div id="relation-selection-info">
-                    <span id="relation-selected-count" class="text-sm font-medium">0 selected</span>
+                    <span id="relation-selected-count" class="text-sm font-medium">
+                        {{ t('common.items_selected', count=0) }}
+                    </span>
                     <button id="relation-clear-selection" class="text-xs text-secondary hover:text-primary ml-2"
                         style="display: none;">
-                        Clear selection
+                        {{ t('common.clear_selection') }}
                     </button>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button id="relation-set-parent-btn"
                         class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         style="display: none;">
-                        Set as Parent
+                        {{ t('media.relations.set_parent') }}
                     </button>
                     <button id="relation-add-child-btn"
                         class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         style="display: none;">
-                        Add as Child
+                        {{ t('media.relations.add_child') }}
                     </button>
                     <button id="relation-add-children-btn"
                         class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         style="display: none;">
-                        Add as Children
+                        {{ t('media.relations.add_children') }}
                     </button>
                     <button id="relation-remove-children-btn"
                         class="px-4 py-2 bg-danger tag-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         style="display: none;">
-                        Remove Selected
+                        {{ t('media.relations.remove_selected') }}
                     </button>
                 </div>
             </div>
@@ -117,7 +119,9 @@
             <div id="hierarchy-media-section" class="surface border" style="display: none;">
                 <button type="button" id="hierarchy-media-toggle"
                     class="w-full p-4 flex justify-between items-center text-left hover:surface-light transition-colors">
-                    <h2 id="hierarchy-media-title" class="text-base font-bold">Parent & Sibling Media</h2>
+                    <h2 id="hierarchy-media-title" class="text-base font-bold">
+                        {{ t('media.hierarchy.title') }}
+                    </h2>
                     <svg id="hierarchy-media-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" class="transition-transform duration-200">
@@ -159,7 +163,7 @@
 
             <!-- Related Media -->
             <div class="surface p-4 border">
-                <h2 class="text-base font-bold mb-3 pb-2 border-b">Related Media</h2>
+                <h2 class="text-base font-bold mb-3 pb-2 border-b">{{ t('media.related.title') }}</h2>
                 <div id="related-media" class="grid grid-cols-3 md:grid-cols-6 gap-2"></div>
             </div>
         </div>
@@ -168,31 +172,31 @@
         <div class="lg:col-span-1 flex flex-col gap-4">
             <!-- Information -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">Information</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.info.title') }}</h3>
                 <div id="media-info-content" class="text-xs"></div>
 
                 <!-- Edit Source (Admin Mode Only) -->
                 <div id="edit-source-section" style="display: none;" class="pt-3 border-t">
-                    <label class="block text-xs font-bold mb-2">Source URL</label>
-                    <input type="url" id="source-input" placeholder="https://example.com/source"
+                    <label class="block text-xs font-bold mb-2">{{ t('media.info.source_url') }}</label>
+                    <input type="url" id="source-input" placeholder="{{ t('media.info.source_placeholder') }}"
                         class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary mb-2">
                     <button id="save-source-btn"
                         class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                        Save Source
+                        {{ t('media.info.save_source') }}
                     </button>
                 </div>
             </div>
 
             <!-- Tags -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">Tags</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.tags.title') }}</h3>
                 <div id="tags-container" class="mb-2"></div>
 
                 <!-- Edit Tags (Admin Mode Only) -->
                 <div id="edit-tags-section" style="display: none;" class="pt-2 border-t">
                     <button type="button" id="edit-tags-toggle"
                         class="w-full flex justify-between items-center text-left py-2 hover:text-primary transition-colors cursor-pointer">
-                        <span class="text-xs font-bold">Edit Tags</span>
+                        <span class="text-xs font-bold">{{ t('media.tags.edit_tags') }}</span>
                         <svg id="edit-tags-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200">
@@ -203,7 +207,8 @@
                     <div id="edit-tags-content" style="display: none;" class="mt-2">
                         <form id="edit-tags-form">
                             <div class="mb-2" style="position: relative;">
-                                <div id="tags-input" contenteditable="true" data-placeholder="original highres cat_ears"
+                                <div id="tags-input" contenteditable="true"
+                                    data-placeholder="{{ t('media.tags.tags_placeholder') }}"
                                     class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                     style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                             </div>
@@ -211,17 +216,17 @@
                                 <button type="button" id="append-ai-tags-btn"
                                     class="flex-1 px-3 py-1 surface-light transition-colors hover:surface-light text text-xs"
                                     style="display: none;">
-                                    <span class="btn-text">Append AI Tags</span>
+                                    <span class="btn-text">{{ t('media.tags.append_ai_tags') }}</span>
                                 </button>
                                 <button type="button" id="predict-wd-tags-btn"
                                     class="flex-1 px-3 py-1 surface-light transition-colors hover:surface-light text text-xs"
                                     style="display: none;">
-                                    <span class="btn-text">Predict Tags (AI)</span>
+                                    <span class="btn-text">{{ t('media.tags.predict_tags') }}</span>
                                 </button>
                             </div>
                             <button type="submit"
                                 class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                Save Tags
+                                {{ t('media.tags.save_tags') }}
                             </button>
                         </form>
                     </div>
@@ -232,7 +237,7 @@
             <div id="ai-metadata-section" style="display: none;" class="surface border">
                 <button type="button" id="ai-metadata-toggle"
                     class="w-full p-3 flex justify-between items-center text-left hover:text-primary transition-colors cursor-pointer">
-                    <h3 class="text-sm font-bold">AI Generation Data</h3>
+                    <h3 class="text-sm font-bold">{{ t('media.ai_metadata.title') }}</h3>
                     <svg id="ai-metadata-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" class="transition-transform duration-200">
@@ -244,7 +249,23 @@
 
             <!-- Actions -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">Actions</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.relations.title') }}</h3>
+
+                {% if media.parent_id %}
+                <div class="mb-4">
+                    <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ t('media.hierarchy.title') }}</h4>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('media.view_media', media_id=media.parent_id) }}"
+                            class="flex-1 px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs text-center">
+                            {{ t('media.hierarchy.view_parent') }}
+                        </a>
+                        <button id="remove-parent-btn"
+                            class="flex-1 px-3 py-1.5 bg-danger tag-text transition-colors hover:opacity-90 text-xs">
+                            {{ t('media.hierarchy.remove_parent') }}
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="flex flex-col gap-3">
                     <!-- Primary Action -->
@@ -256,7 +277,7 @@
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        Download
+                        {{ t('media.actions.download') }}
                     </a>
 
                     <!-- Admin Actions -->
@@ -268,7 +289,9 @@
                                 <button
                                     class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer hover:border-primary transition-colors focus:outline-none focus:border-primary"
                                     type="button">
-                                    <span class="custom-select-value text-secondary truncate">Safe</span>
+                                    <span class="custom-select-value text-secondary truncate">
+                                        {{ t('media.actions.safe') }}
+                                    </span>
                                     <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
                                         width="12" height="12" viewBox="0 0 12 12">
                                         <path fill="currentColor" d="M6 9L1 4h10z" />
@@ -277,11 +300,11 @@
                                 <div
                                     class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg z-20">
                                     <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected"
-                                        data-value="safe">Safe</div>
+                                        data-value="safe">{{ t('media.actions.safe') }}</div>
                                     <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs"
-                                        data-value="questionable">Questionable</div>
+                                        data-value="questionable">{{ t('media.actions.questionable') }}</div>
                                     <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs"
-                                        data-value="explicit">Explicit</div>
+                                        data-value="explicit">{{ t('media.actions.explicit') }}</div>
                                 </div>
                             </div>
 
@@ -296,7 +319,7 @@
                                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                                 </svg>
-                                <span id="share-btn-text">Share</span>
+                                <span id="share-btn-text">{{ t('media.actions.share') }}</span>
                             </button>
                         </div>
 
@@ -304,18 +327,18 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button id="add-to-albums-btn"
                                 class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">
-                                Albums
+                                {{ t('media.actions.albums') }}
                             </button>
                             <button id="manage-relations-btn"
                                 class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">
-                                Relations
+                                {{ t('media.actions.relations') }}
                             </button>
                         </div>
 
                         <!-- Danger Chain -->
                         <button id="delete-btn"
                             class="w-full px-3 py-1.5 text-danger border border-danger transition-colors hover:bg-danger hover:tag-text text-xs mt-1">
-                            Delete Media
+                            {{ t('media.actions.delete_media') }}
                         </button>
                     </div>
                 </div>
@@ -323,10 +346,10 @@
 
             <!-- Share Link Display -->
             <div id="share-link-section" style="display: none;" class="surface p-3 border">
-                <h4 class="text-sm font-bold mb-3 pb-2 border-b">Share Actions</h4>
+                <h4 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.share.title') }}</h4>
                 <div id="ai-metadata-share-toggle" class="mb-2 p-2 bg border" style="display: none;">
                     <label class="flex items-center justify-between cursor-pointer">
-                        <span class="text-xs text font-medium">Include AI metadata</span>
+                        <span class="text-xs text font-medium">{{ t('media.share.include_ai_metadata') }}</span>
                         <div class="relative">
                             <input type="checkbox" id="share-ai-metadata-toggle" class="sr-only peer">
                             <div
@@ -339,8 +362,9 @@
                     class="w-full bg px-2 py-1 border focus:outline-none hover:border-primary transition-colors focus:border-primary text-xs text mb-2">
                 <div class="space-y-1">
                     <button id="copy-share-link-btn"
-                        class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">Copy
-                        Link</button>
+                        class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+                        {{ t('media.share.copy_link') }}
+                    </button>
                 </div>
             </div>
         </div>
