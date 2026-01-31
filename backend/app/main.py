@@ -9,9 +9,10 @@ from .config import settings
 from .database import get_db, init_db, init_engine
 from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system
 from .auth_middleware import AuthMiddleware
+from .translations import translation_helper, language_registry
 from datetime import datetime
 
-APP_VERSION = "1.26.11"
+APP_VERSION = "1.27.42"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -23,6 +24,9 @@ templates = Jinja2Templates(directory=str(templates_path))
 
 templates.env.globals['app_version'] = APP_VERSION
 templates.env.globals['get_current_year'] = lambda: datetime.now().year
+templates.env.globals['t'] = lambda key, **kwargs: translation_helper.get(key, settings.CURRENT_LANGUAGE, **kwargs)
+templates.env.globals['current_language'] = lambda: settings.CURRENT_LANGUAGE
+templates.env.globals['available_languages'] = lambda: [lang.to_dict() for lang in language_registry.get_all_languages()]
 app.include_router(admin.router)
 app.include_router(media.router)
 app.include_router(tags.router)
@@ -83,12 +87,15 @@ async def login_page(request: Request):
     })
 
 @app.get("/media/{media_id}", response_class=HTMLResponse)
-async def media_page(request: Request, media_id: int):
+async def media_page(request: Request, media_id: int, db: Session = Depends(get_db)):
     """Media detail page"""
+    media_item = db.query(Media).filter(Media.id == media_id).first()
+    
     return templates.TemplateResponse("media.html", {
         "request": request,
         "app_name": settings.APP_NAME,
         "media_id": media_id,
+        "media": media_item,
         "external_share_url": settings.EXTERNAL_SHARE_URL
     })
 
@@ -124,6 +131,18 @@ async def shared_page(request: Request, share_uuid: str, db: Session = Depends(g
     except Exception as e:
         print(f"Error loading theme for shared page: {e}")
             
+    # Handle language override
+    target_lang = settings.CURRENT_LANGUAGE
+    if media and media.share_language:
+        target_lang = media.share_language
+        
+        # Override translation helper and language for this specific context
+        context["t"] = lambda key, **kwargs: translation_helper.get(key, target_lang, **kwargs)
+        context["current_language"] = lambda: target_lang
+        
+        # For valid HTML lang attribute
+        context["html_lang"] = target_lang
+
     return templates.TemplateResponse("shared.html", context)
 
 @app.get("/albums", response_class=HTMLResponse)

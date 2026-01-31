@@ -828,6 +828,23 @@ async def get_current_theme():
     # Fallback to default dark
     return theme_registry.get_theme("default_dark").to_dict()
 
+@router.get("/languages")
+async def get_languages():
+    """Get all available languages"""
+    from ..translations import language_registry
+    languages = language_registry.get_all_languages()
+    return {
+        "languages": [lang.to_dict() for lang in languages],
+        "current_language": settings.CURRENT_LANGUAGE
+    }
+
+@router.get("/translations")
+async def get_translations(lang: str = None):
+    """Get translation strings for the current or specified language"""
+    from ..translations import translation_helper
+    target_lang = lang or settings.CURRENT_LANGUAGE
+    return translation_helper.get_translations(target_lang)
+
 @router.get("/check-alias")
 async def check_alias(
     name: str,

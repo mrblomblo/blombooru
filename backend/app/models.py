@@ -55,6 +55,7 @@ class Media(Base):
     is_shared = Column(Boolean, default=False, index=True)
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     share_ai_metadata = Column(Boolean, default=False)
+    share_language = Column(String(10), nullable=True, default=None)
     source = Column(String(500), nullable=True)
     parent_id = Column(Integer, ForeignKey('blombooru_media.id', ondelete='SET NULL'), nullable=True, index=True)
     

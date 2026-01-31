@@ -7,23 +7,23 @@
     <div id="admin-panel">
         <!-- Header & Tab Navigation -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b mb-6">
-            <h1 class="text-lg font-bold py-2 sm:pb-3">Admin Panel</h1>
+            <h1 class="text-lg font-bold py-2 sm:pb-3">{{ t('admin.title') }}</h1>
 
             <div class="flex w-full sm:w-auto">
                 <button type="button"
                     class="tab-btn flex-1 sm:flex-none text-center px-6 py-2 text-sm font-bold border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap"
                     data-tab="content">
-                    Content
+                    {{ t('admin.tabs.content') }}
                 </button>
                 <button type="button"
                     class="tab-btn flex-1 sm:flex-none text-center px-6 py-2 text-sm font-bold border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap"
                     data-tab="system">
-                    System
+                    {{ t('admin.tabs.system') }}
                 </button>
                 <button type="button"
                     class="tab-btn flex-1 sm:flex-none text-center px-6 py-2 text-sm font-bold border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap"
                     data-tab="account">
-                    Account
+                    {{ t('admin.tabs.account') }}
                 </button>
             </div>
         </div>
@@ -33,22 +33,45 @@
             <!-- Settings Section -->
             <div id="settings-section">
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">Settings</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.settings.title') }}</h2>
 
                     <form id="settings-form">
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">Application Name</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.app_name') }}</label>
                             <input type="text" id="app-name" name="app_name"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">Theme</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.theme') }}</label>
                             <div id="theme-select" class="custom-select" data-value="">
                                 <button
                                     class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                     type="button">
-                                    <span class="custom-select-value text-secondary">Loading themes...</span>
+                                    <span class="custom-select-value text-secondary">
+                                        {{ t('admin.settings.loading_themes') }}
+                                    </span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                        width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.language') }}</label>
+                            <div id="language-select" class="custom-select" data-value="{{ current_language() }}">
+                                <button
+                                    class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                    type="button">
+                                    <span class="custom-select-value text-secondary">
+                                        {{ t('common.loading') }}
+                                    </span>
                                     <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
                                         width="12" height="12" viewBox="0 0 12 12">
                                         <path fill="currentColor" d="M6 9L1 4h10z" />
@@ -61,32 +84,35 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">Items Per Page</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.items_per_page') }}</label>
                             <input type="number" id="items-per-page" name="items_per_page" min="20" max="200"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
-                            <p class="text-xs text-secondary opacity-70 mt-1 ml-1">Number of items to display per page
-                                (20-200)</p>
+                            <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
+                                {{ t('admin.settings.items_per_page_hint') }}
+                            </p>
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">External Share URL</label>
+                            <label class="block text-xs font-bold mb-2">
+                                {{ t('admin.settings.external_share_url') }}
+                            </label>
                             <input type="url" id="external-share-url" name="external_share_url"
                                 placeholder="https://example.com"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                             <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
-                                Base URL for share links (optional, e.g., https://example.com). Leave empty to use
-                                default.
+                                {{ t('admin.settings.external_share_url_hint') }}
                             </p>
                         </div>
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">Default Sort</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.default_sort') }}</label>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <div id="default-sort" class="custom-select w-full" data-value="uploaded_at">
                                         <button
                                             class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                             type="button">
-                                            <span class="custom-select-value">Upload Date</span>
+                                            <span class="custom-select-value">{{ t('admin.settings.upload_date')
+                                                }}</span>
                                             <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
                                                 width="12" height="12" viewBox="0 0 12 12">
                                                 <path fill="currentColor" d="M6 9L1 4h10z" />
@@ -95,13 +121,13 @@
                                         <div
                                             class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="uploaded_at">Upload Date</div>
+                                                data-value="uploaded_at">{{ t('admin.settings.upload_date') }}</div>
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="filename">File Name</div>
+                                                data-value="filename">{{ t('admin.settings.file_name') }}</div>
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="file_size">File Size</div>
+                                                data-value="file_size">{{ t('admin.settings.file_size') }}</div>
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="file_type">File Type</div>
+                                                data-value="file_type">{{ t('admin.settings.file_type') }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -110,7 +136,8 @@
                                         <button
                                             class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                             type="button">
-                                            <span class="custom-select-value">Descending</span>
+                                            <span class="custom-select-value">{{ t('admin.settings.descending')
+                                                }}</span>
                                             <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
                                                 width="12" height="12" viewBox="0 0 12 12">
                                                 <path fill="currentColor" d="M6 9L1 4h10z" />
@@ -119,9 +146,9 @@
                                         <div
                                             class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="desc">Descending</div>
+                                                data-value="desc">{{ t('admin.settings.descending') }}</div>
                                             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                                data-value="asc">Ascending</div>
+                                                data-value="asc">{{ t('admin.settings.ascending') }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -129,41 +156,44 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">Security</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.security') }}</label>
                             <div class="bg p-4 border">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" id="require-auth" name="require_auth"
                                         class="w-4 h-4 accent-primary">
-                                    <span class="text-xs">Require Authentication to View Media</span>
+                                    <span class="text-xs">{{ t('admin.settings.require_auth') }}</span>
                                 </label>
                                 <p class="text-xs text-secondary opacity-70 mt-2 ml-6">
-                                    When enabled, users must log in to view media.
-                                    Public routes such as share links and static files remain public.
+                                    {{ t('admin.settings.require_auth_hint') }}
                                 </p>
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-xs font-bold mb-2">Caching (Redis)</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.caching.title') }}</label>
                             <div class="bg p-4 border">
                                 <label class="flex items-center gap-2 cursor-pointer mb-4">
                                     <input type="checkbox" id="redis-enabled" name="redis_enabled"
                                         class="w-4 h-4 accent-primary">
-                                    <span class="text-xs font-bold">Enable Redis Caching</span>
+                                    <span class="text-xs font-bold">{{ t('admin.caching.enable_redis') }}</span>
                                 </label>
 
                                 <div id="redis-settings-container" style="display: none;">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <label
-                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Host</label>
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.caching.host') }}
+                                            </label>
                                             <input type="text" id="redis-host"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                                 placeholder="localhost">
                                         </div>
                                         <div>
                                             <label
-                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Port</label>
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.caching.port') }}
+                                            </label>
                                             <input type="number" id="redis-port"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                                 placeholder="6379">
@@ -173,7 +203,7 @@
                                         <div>
                                             <label
                                                 class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
-                                                DB Index
+                                                {{ t('admin.caching.db_index') }}
                                             </label>
                                             <input type="number" id="redis-db"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
@@ -181,15 +211,17 @@
                                         </div>
                                         <div>
                                             <label
-                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">Password</label>
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.caching.password') }}
+                                            </label>
                                             <input type="password" id="redis-password"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
-                                                placeholder="Leave empty for none">
+                                                placeholder="{{ t('admin.caching.password_placeholder') }}">
                                         </div>
                                     </div>
                                     <button type="button" id="test-redis-btn"
                                         class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                        Test Redis Connection
+                                        {{ t('admin.caching.test_connection') }}
                                     </button>
                                     <div id="redis-test-result" class="mt-2 text-xs" style="display: none;"></div>
                                 </div>
@@ -198,31 +230,33 @@
 
                         <button type="submit"
                             class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                            Save Settings
+                            {{ t('admin.settings.save_settings') }}
                         </button>
                     </form>
                 </div>
 
                 <!-- API Access Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">API Access</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.api_access.title') }}</h2>
 
                     <p class="text-xs text-secondary mb-4">
-                        API keys allow external applications to access the Booru API when authentication is required.
+                        {{ t('admin.api_access.description') }}
                     </p>
 
                     <div class="mb-6">
                         <button id="generate-api-key-btn"
                             class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                            Generate New API Key
+                            {{ t('admin.api_access.generate_key') }}
                         </button>
 
                         <div id="new-api-key-display" style="display: none;"
                             class="mt-4 p-4 border border-primary bg bg-opacity-5">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-white">New API Key</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-white">
+                                    {{ t('admin.api_access.new_api_key') }}
+                                </span>
                                 <span class="text-[10px] bg-danger tag-text px-1.5 py-0.5 font-bold">
-                                    SHOWN ONCE
+                                    {{ t('admin.api_access.shown_once') }}
                                 </span>
                             </div>
                             <div class="flex gap-2">
@@ -231,22 +265,21 @@
                                     readonly>
                                 <button id="copy-api-key-btn"
                                     class="px-4 py-2 bg-primary primary-text border text-xs hover:bg-primary transition-colors whitespace-nowrap">
-                                    Copy Key
+                                    {{ t('admin.api_access.copy_key') }}
                                 </button>
                             </div>
                             <p class="text-[10px] mt-2 opacity-70 italic font-bold">
-                                Store this key securely. It will not be shown again after you refresh or leave this
-                                page.
+                                {{ t('admin.api_access.store_securely') }}
                             </p>
                         </div>
                     </div>
 
                     <div id="api-keys-container">
-                        <h3 class="text-sm font-bold mb-3">Active API Keys</h3>
+                        <h3 class="text-sm font-bold mb-3">{{ t('admin.api_access.active_keys') }}</h3>
                         <div id="api-keys-list" class="border">
                             <!-- Keys will be populated here as rows -->
                             <div class="bg p-4 text-center text-xs text-secondary">
-                                Loading API keys...
+                                {{ t('admin.api_access.loading_keys') }}
                             </div>
                         </div>
                     </div>
@@ -254,37 +287,37 @@
 
                 <!-- Backup & Restore Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">Backup & Restore</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.backup.title') }}</h2>
 
                     <div class="mb-4">
-                        <h3 class="text-sm font-bold mb-3">Export Data</h3>
+                        <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.export_data') }}</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <a href="/api/admin/backup/tags"
                                 class="block w-full text-center px-4 py-2 bg border transition-colors hover:border-primary text-xs">
-                                Export Tags (CSV)
+                                {{ t('admin.backup.export_tags') }}
                             </a>
                             <a href="/api/admin/backup/media"
                                 class="block w-full text-center px-4 py-2 bg border transition-colors hover:border-primary text-xs">
-                                Export Media (ZIP)
+                                {{ t('admin.backup.export_media') }}
                             </a>
                             <a href="/api/admin/backup/full"
                                 class="block w-full text-center px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                Full Backup (ZIP)
+                                {{ t('admin.backup.full_backup') }}
                             </a>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <h3 class="text-sm font-bold mb-3">Import Full Backup</h3>
+                        <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.import_backup') }}</h3>
                         <div class="bg p-4 border block">
                             <p class="text-xs text-secondary mb-3">
-                                Restore a full backup ZIP. This will add missing tags and media files.<br>
-                                Existing files with matching content (hashes) will be skipped.<br>
-                                <strong>Warning:</strong> This process might take a while for large backups.
+                                {{ t('admin.backup.import_hint') }}<br>
+                                {{ t('admin.backup.import_warning') }}<br>
+                                <strong>{{ t('common.warning') }}:</strong> {{ t('admin.backup.import_time_warning') }}
                             </p>
 
                             <div id="full-import-area" class="upload-area">
-                                <p class="text-xs">Drop Full Backup ZIP here or click to browse</p>
+                                <p class="text-xs">{{ t('admin.backup.drop_backup') }}</p>
                                 <input type="file" id="full-import-input" accept=".zip" class="hidden">
                             </div>
 
@@ -299,41 +332,40 @@
 
                 <!-- System Update Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">System Update</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">
+                        {{ t('admin.update.title') }}
+                    </h2>
                     <p class="text-xs text-secondary mb-3">
-                        Take a look at the latest release notes for any important information before updating. You can
-                        find
-                        them <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
-                            class="text-primary transition-colors hover:text-primary">here</a>.<br>
-                        <strong>Warning:</strong> Updating can cause data loss if not done carefully. Always make a
-                        backup
-                        before updating.
+                        <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
+                            class="text-primary transition-colors hover:text-primary">
+                            {{ t('admin.update.update_warning') }}
+                        </a><br>
+                        <strong>{{ t('common.warning') }}:</strong> {{ t('admin.update.backup_warning') }}
                     </p>
 
                     <div id="update-initial-state">
                         <p class="text-xs text-secondary mb-3">
-                            Check for the latest updates from the official repository.
-                            This will contact GitHub to retrieve the latest version information.
+                            {{ t('admin.update.contact_github') }}
                         </p>
                         <button id="btn-check-updates"
                             class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors">
-                            Check for Updates
+                            {{ t('admin.update.check_updates') }}
                         </button>
                     </div>
 
                     <div id="update-loading" class="text-xs text-secondary mb-4 hidden">
-                        Checking for updates...
+                        {{ t('admin.update.checking') }}
                     </div>
 
                     <div id="update-status" style="display: none;">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <div class="text-xs text-secondary mb-1">Current Version</div>
+                                <div class="text-xs text-secondary mb-1">{{ t('admin.update.current_version') }}</div>
                                 <div class="text-sm font-bold font-mono" id="current-version-hash">...</div>
                                 <div class="text-[10px] text-secondary" id="current-branch">...</div>
                             </div>
                             <div>
-                                <div class="text-xs text-secondary mb-1">Latest Version</div>
+                                <div class="text-xs text-secondary mb-1">{{ t('admin.update.latest_version') }}</div>
                                 <div class="text-sm font-bold font-mono" id="latest-version-hash">...</div>
                                 <div class="text-[10px] text-secondary" id="latest-version-tag">...</div>
                             </div>
@@ -344,21 +376,22 @@
                         <div class="flex gap-3 mb-4">
                             <button id="btn-update-dev"
                                 class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                Update to Latest Dev
+                                {{ t('admin.update.update_dev') }}
                             </button>
                             <button id="btn-update-stable"
                                 class="px-4 py-2 surface border text-xs hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                Update to Latest Stable
+                                {{ t('admin.update.update_stable') }}
                             </button>
                             <button id="btn-view-changelog" style="display: none;"
                                 class="px-4 py-2 surface border text-xs hover:border-primary transition-colors">
-                                View Changelog
+                                {{ t('admin.update.view_changelog') }}
                             </button>
                         </div>
                     </div>
 
                     <div id="update-result" class="mt-4 hidden">
-                        <h3 class="text-xs font-bold mb-2" id="update-result-title">Update Output</h3>
+                        <h3 class="text-xs font-bold mb-2" id="update-result-title">{{ t('admin.update.update_output')
+                            }}</h3>
                         <pre class="bg-black bg-opacity-20 p-2 border max-h-60 overflow-y-auto font-mono text-[10px] whitespace-pre-wrap"
                             id="update-result-log"></pre>
                     </div>
@@ -370,41 +403,41 @@
         <div id="tab-content" class="tab-content hidden">
             <!-- Media Management Section -->
             <div class="surface p-2 sm:p-6 border mb-4">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b">Media Management</h2>
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.media_management.title') }}</h2>
                 <div id="media-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total Media</div>
+                        <div class="text-xs text-secondary">{{ t('admin.media_management.total_media') }}</div>
                         <div class="text-lg font-bold" id="total-media">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total Images</div>
+                        <div class="text-xs text-secondary">{{ t('admin.media_management.total_images') }}</div>
                         <div class="text-lg font-bold" id="total-images">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total GIFs</div>
+                        <div class="text-xs text-secondary">{{ t('admin.media_management.total_gifs') }}</div>
                         <div class="text-lg font-bold" id="total-gifs">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total Videos</div>
+                        <div class="text-xs text-secondary">{{ t('admin.media_management.total_videos') }}</div>
                         <div class="text-lg font-bold" id="total-videos">0</div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Upload Media</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.media_management.upload_media') }}</h3>
                     <div class="bg p-4 border">
                         <p class="text-xs text-secondary mb-3">
-                            You can upload images, videos, or compressed archives (ZIP, TAR.GZ).<br>
-                            Supported image formats: JPG/JPEG, PNG, GIF, WEBP.<br>
-                            Supported video formats: MP4, WEBM.<br>
-                            Max individual file size: 500MB.<br>
-                            Archives will be extracted and all supported media files inside will be processed.
+                            {{ t('admin.media_management.upload_hint') }}<br>
+                            {{ t('admin.media_management.supported_images') }}<br>
+                            {{ t('admin.media_management.supported_videos') }}<br>
+                            {{ t('admin.media_management.max_file_size') }}<br>
+                            {{ t('admin.media_management.archive_hint') }}
                         </p>
                         <button id="scan-media-btn"
-                            class="px-4 py-2 w-full bg-primary primary-text transition-colors hover:bg-primary text-xs mb-4">Scan
-                            for Untracked Media</button>
+                            class="px-4 py-2 w-full bg-primary primary-text transition-colors hover:bg-primary text-xs mb-4">{{
+                            t('admin.media_management.scan_untracked') }}</button>
                         <div id="upload-area" class="upload-area">
-                            <p class="text-xs">Drop media files here or click to browse</p>
+                            <p class="text-xs">{{ t('admin.media_management.drop_media') }}</p>
                             <input type="file" id="file-input" multiple accept="image/*,video/*,.zip,.tar.gz,.tgz">
                         </div>
                     </div>
@@ -413,37 +446,36 @@
 
             <!-- Tags Management Section -->
             <div class="surface p-2 sm:p-6 border mb-4">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b">Tags Management</h2>
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.tags_management.title') }}</h2>
 
                 <div id="tag-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total Tags</div>
+                        <div class="text-xs text-secondary">{{ t('admin.tags_management.total_tags') }}</div>
                         <div class="text-lg font-bold" id="total-tags">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Tag Aliases</div>
+                        <div class="text-xs text-secondary">{{ t('admin.tags_management.tag_aliases') }}</div>
                         <div class="text-lg font-bold" id="total-aliases">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Categories</div>
+                        <div class="text-xs text-secondary">{{ t('admin.tags_management.categories') }}</div>
                         <div class="text-lg font-bold" id="total-categories">5</div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Import Tags from CSV</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.import_csv') }}</h3>
                     <div class="bg p-4 border">
                         <p class="text-xs text-secondary mb-3">
-                            Upload a CSV file with the following format:
-                            (usage_count/column 3 will always be ignored)<br>
+                            {{ t('admin.tags_management.csv_format') }}<br>
                             <code class="surface">
-                                tag_name, category_number, usage_count, "alias1,alias2,alias3"
+                                {{ t('admin.tags_management.csv_example') }}
                             </code><br>
-                            Categories: 0=General, 1=Artist, 3=Copyright, 4=Character, 5=Meta
+                            {{ t('admin.tags_management.csv_categories') }}
                         </p>
 
                         <div id="csv-upload-area" class="upload-area">
-                            <p class="text-xs">Drop CSV file here or click to browse</p>
+                            <p class="text-xs">{{ t('admin.tags_management.drop_csv') }}</p>
                             <input type="file" id="csv-file-input" accept=".csv" class="hidden">
                         </div>
 
@@ -456,20 +488,21 @@
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Add Tags</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.add_tags') }}</h3>
                     <div class="bg p-4 border">
                         <p class="text-xs text-secondary mb-3">
-                            Add tags with optional category prefixes:<br>
+                            {{ t('admin.tags_management.add_tags_hint') }}<br>
                             <code class="surface">artist:&lt;tag&gt;</code>,
                             <code class="surface">copyright:&lt;tag&gt;</code>,
                             <code class="surface">character:&lt;tag&gt;</code>,
                             <code class="surface">meta:&lt;tag&gt;</code><br>
-                            Tags without a prefix will be added as "general" category.<br>
-                            Tags that already exist (or exist as aliases) will be ignored.
+                            {{ t('admin.tags_management.tags_without_prefix') }}<br>
+                            {{ t('admin.tags_management.tags_exist_hint') }}
                         </p>
 
                         <form id="add-tags-form">
-                            <label class="block text-xs font-bold mb-2">Tags to Add</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.tags_management.tags_to_add')
+                                }}</label>
                             <div style="position: relative;">
                                 <div id="new-tags-input" contenteditable="true"
                                     data-placeholder="artist:bingus character:herbert meta:ai-generated copyright:original cool_tag"
@@ -478,7 +511,7 @@
                             </div>
                             <button type="submit"
                                 class="w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                Add Tags
+                                {{ t('admin.tags_management.add_tags') }}
                             </button>
                         </form>
 
@@ -491,60 +524,67 @@
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Search & Delete Tags</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.search_delete_tags') }}</h3>
                     <div class="flex gap-2 mb-3">
                         <div class="relative w-full">
-                            <input type="text" id="tag-search-input" placeholder="Search tags..."
+                            <input type="text" id="tag-search-input"
+                                placeholder="{{ t('admin.tags_management.search_tags_placeholder') }}"
                                 class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                         </div>
                         <button id="tag-search-btn"
-                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Search</button>
+                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                            {{ t('common.search') }}
+                        </button>
                     </div>
                     <div id="tag-search-results" class="max-h-64 overflow-y-auto"></div>
                 </div>
 
                 <div class="border-t pt-4">
-                    <h3 class="text-sm font-bold mb-3 text-danger">Danger Zone</h3>
+                    <h3 class="text-sm font-bold mb-3 text-danger">{{ t('admin.tags_management.danger_zone') }}</h3>
                     <button id="clear-tags-btn"
                         class="px-4 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">
-                        Delete All Tags
+                        {{ t('admin.tags_management.delete_all_tags') }}
                     </button>
                 </div>
             </div>
 
             <!-- Albums Management Section -->
             <div class="surface p-2 sm:p-6 border mb-4">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b">Albums Management</h2>
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.albums_management.title') }}</h2>
 
                 <div id="album-stats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Total Albums</div>
+                        <div class="text-xs text-secondary">{{ t('admin.albums_management.total_albums') }}</div>
                         <div class="text-lg font-bold" id="total-albums">0</div>
                     </div>
                     <div class="bg p-3 border">
-                        <div class="text-xs text-secondary">Root Albums</div>
+                        <div class="text-xs text-secondary">{{ t('admin.albums_management.root_albums') }}</div>
                         <div class="text-lg font-bold" id="root-albums">0</div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Create Album</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.albums_management.create_album') }}</h3>
                     <div class="bg p-4 border">
                         <form id="create-album-form">
                             <div class="mb-3">
-                                <label class="block text-xs font-bold mb-2">Album Name</label>
+                                <label class="block text-xs font-bold mb-2">{{ t('admin.albums_management.album_name')
+                                    }}</label>
                                 <input type="text" id="album-name-input" required
                                     class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
-                                    placeholder="My Album">
+                                    placeholder="{{ t('admin.albums_management.album_name_placeholder') }}">
                             </div>
 
                             <div class="mb-3" id="parent-album-container">
-                                <label class="block text-xs font-bold mb-2">Parent Album (Optional)</label>
+                                <label class="block text-xs font-bold mb-2">{{ t('admin.albums_management.parent_album')
+                                    }}</label>
                                 <div id="parent-album-select" class="custom-select" data-value="">
                                     <button
                                         class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                         type="button">
-                                        <span class="custom-select-value text-secondary">None (Root Album)</span>
+                                        <span class="custom-select-value text-secondary">
+                                            {{ t('admin.albums_management.none_root') }}
+                                        </span>
                                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
                                             width="12" height="12" viewBox="0 0 12 12">
                                             <path fill="currentColor" d="M6 9L1 4h10z" />
@@ -553,28 +593,30 @@
                                     <div
                                         class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
                                         <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs selected"
-                                            data-value="">None (Root Album)</div>
+                                            data-value="">{{ t('admin.albums_management.none_root') }}</div>
                                     </div>
                                 </div>
                             </div>
 
                             <button type="submit"
                                 class="w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                Create Album
+                                {{ t('admin.albums_management.create_album') }}
                             </button>
                         </form>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Search & Manage Albums</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.albums_management.search_manage') }}</h3>
                     <div class="flex gap-2 mb-3">
                         <div class="w-full">
-                            <input type="text" id="album-search-input" placeholder="Search albums..."
+                            <input type="text" id="album-search-input"
+                                placeholder="{{ t('admin.albums_management.search_albums_placeholder') }}"
                                 class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                         </div>
                         <button id="album-search-btn"
-                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Search</button>
+                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">{{
+                            t('common.search') }}</button>
                     </div>
                     <div id="album-search-results" class="max-h-96 overflow-y-auto"></div>
                 </div>
@@ -585,21 +627,21 @@
         <div id="tab-account" class="tab-content hidden">
             <!-- Admin Account Management Section -->
             <div class="surface p-2 sm:p-6 border">
-                <h2 class="text-base font-bold mb-4 pb-3 border-b">Admin Account Management</h2>
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.account.title') }}</h2>
 
                 <div class="mb-4">
                     <form id="change-admin-password-form">
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">New Password</label>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_password') }}</label>
                             <input type="password" id="new-admin-password" required minlength="6" maxlength="50"
                                 placeholder="password123"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
-                            <small class="text-secondary text-xs">6-50 characters</small>
+                            <small class="text-secondary text-xs">{{ t('admin.account.password_hint') }}</small>
                         </div>
 
                         <button type="submit"
                             class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                            Change Password
+                            {{ t('admin.account.change_password') }}
                         </button>
                     </form>
 
@@ -612,14 +654,14 @@
 
                 <form id="change-admin-username-form" class="mt-6">
                     <div class="mb-4">
-                        <label class="block text-xs font-bold mb-2">New Username</label>
+                        <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_username') }}</label>
                         <input type="text" id="new-admin-username" required placeholder="admin"
                             class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                     </div>
 
                     <button type="submit"
                         class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                        Change Username
+                        {{ t('admin.account.change_username') }}
                     </button>
                 </form>
 

@@ -26,7 +26,7 @@ class AlbumViewer extends BaseGallery {
     async loadAlbum() {
         try {
             const response = await fetch(`/api/albums/${this.albumId}`);
-            if (!response.ok) throw new Error('Album not found');
+            if (!response.ok) throw new Error(window.i18n.t('albums.not_found'));
 
             this.album = await response.json();
             document.getElementById('album-name').textContent = this.album.name;
@@ -34,7 +34,7 @@ class AlbumViewer extends BaseGallery {
             this.updateDetails();
         } catch (error) {
             console.error('Error loading album:', error);
-            document.getElementById('album-name').textContent = 'Error loading album';
+            document.getElementById('album-name').textContent = window.i18n.t('albums.error_loading');
         }
     }
 
@@ -50,7 +50,7 @@ class AlbumViewer extends BaseGallery {
                 ).join(' > ');
                 breadcrumbEl.innerHTML = `${crumbs} > ${this.album.name}`;
             } else {
-                breadcrumbEl.textContent = 'Root Album';
+                breadcrumbEl.textContent = window.i18n.t('albums.root_album');
             }
         } catch (error) {
             console.error('Error loading breadcrumb:', error);
@@ -62,11 +62,11 @@ class AlbumViewer extends BaseGallery {
         if (!detailsEl || !this.album) return;
 
         detailsEl.innerHTML = `
-            <div class="mb-2"><strong>Media Count:</strong> ${this.album.media_count || 0}</div>
-            <div class="mb-2"><strong>Sub-albums:</strong> ${this.album.children_count || 0}</div>
-            <div class="mb-2"><strong>Rating:</strong> ${this.album.rating}</div>
-            <div class="mb-2"><strong>Created:</strong> ${new Date(this.album.created_at).toLocaleDateString()}</div>
-            <div class="mb-2"><strong>Last Modified:</strong> ${new Date(this.album.last_modified).toLocaleDateString()}</div>
+            <div class="mb-2"><strong>${window.i18n.t('albums.media_count')}</strong> ${this.album.media_count || 0}</div>
+            <div class="mb-2"><strong>${window.i18n.t('albums.sub_albums_count')}</strong> ${this.album.children_count || 0}</div>
+            <div class="mb-2"><strong>${window.i18n.t('albums.rating')}</strong> ${this.album.rating}</div>
+            <div class="mb-2"><strong>${window.i18n.t('albums.created')}</strong> ${new Date(this.album.created_at).toLocaleDateString()}</div>
+            <div class="mb-2"><strong>${window.i18n.t('albums.last_modified')}</strong> ${new Date(this.album.last_modified).toLocaleDateString()}</div>
         `;
     }
 
@@ -82,7 +82,7 @@ class AlbumViewer extends BaseGallery {
             });
 
             const response = await fetch(`/api/albums/${this.albumId}/contents?${params}`);
-            if (!response.ok) throw new Error('Failed to load contents');
+            if (!response.ok) throw new Error(window.i18n.t('albums.failed_load_contents'));
 
             const data = await response.json();
 
@@ -113,7 +113,7 @@ class AlbumViewer extends BaseGallery {
 
         } catch (error) {
             console.error('Error loading contents:', error);
-            this.showError('Failed to load album contents');
+            this.showError(window.i18n.t('albums.failed_load_album_contents'));
         } finally {
             this.hideLoading();
         }
@@ -127,7 +127,7 @@ class AlbumViewer extends BaseGallery {
             if (data.tags && data.tags.length > 0) {
                 this.renderPopularTags(data.tags);
             } else {
-                this.elements.popularTags.innerHTML = '<p class="text-secondary">No tags found in this album</p>';
+                this.elements.popularTags.innerHTML = `<p class="text-secondary">${window.i18n.t('albums.no_tags_found')}</p>`;
             }
         } catch (error) {
             console.error('Error loading popular tags:', error);
@@ -170,9 +170,9 @@ class AlbumViewer extends BaseGallery {
 
             if (subAlbumsHeader) {
                 if (emptyCount > 0) {
-                    subAlbumsHeader.innerHTML = `Sub-albums <span class="text-secondary font-normal text-xs">(+${emptyCount} empty albums)</span>`;
+                    subAlbumsHeader.innerHTML = window.i18n.t('albums.sub_albums_with_empty', { count: emptyCount });
                 } else {
-                    subAlbumsHeader.textContent = 'Sub-albums';
+                    subAlbumsHeader.textContent = window.i18n.t('albums.sub_albums');
                 }
             }
         } else {
@@ -205,11 +205,11 @@ class AlbumViewer extends BaseGallery {
         if (visibleAlbums.length === 0 && (!data.media || data.media.length === 0)) {
             mediaContainer.style.display = 'block';
             if (emptyCount > 0 && this.currentPage === 1) {
-                this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">This album contains only empty sub-albums.</p>`;
+                this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${window.i18n.t('albums.only_empty_subalbums')}</p>`;
             } else if (this.currentPage > 1) {
-                this.elements.grid.innerHTML = '<p class="text-secondary col-span-full text-center py-8">No more items on this page</p>';
+                this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${window.i18n.t('albums.no_more_items')}</p>`;
             } else {
-                this.elements.grid.innerHTML = '<p class="text-secondary col-span-full text-center py-8">This album is empty</p>';
+                this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${window.i18n.t('albums.empty_album')}</p>`;
             }
         }
     }
@@ -250,7 +250,7 @@ class AlbumViewer extends BaseGallery {
                 <div class="p-2 border-t">
                     <div class="text-xs font-bold truncate mb-1">${album.name}</div>
                     <div class="flex justify-between items-center text-xs text-secondary">
-                        <span>${album.media_count || 0} items</span>
+                        <span>${window.i18n.t('albums.items_count', { count: album.media_count || 0 })}</span>
                         <span>${album.rating[0].toUpperCase()}</span>
                     </div>
                 </div>
@@ -265,10 +265,10 @@ class AlbumViewer extends BaseGallery {
         const modal = new ModalHelper({
             id: 'bulk-remove-modal',
             type: 'warning',
-            title: 'Remove from Album',
-            message: `Are you sure you want to remove ${itemCount} item${itemCount > 1 ? 's' : ''} from this album?`,
-            confirmText: 'Yes, Remove',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.bulk_remove_from_album.title'),
+            message: window.i18n.t('modal.bulk_remove_from_album.message', { count: itemCount }),
+            confirmText: window.i18n.t('modal.bulk_remove_from_album.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: async () => {
                 try {
                     const mediaIds = Array.from(this.selectedItems);
@@ -277,12 +277,12 @@ class AlbumViewer extends BaseGallery {
                         body: JSON.stringify({ media_ids: mediaIds })
                     });
 
-                    app.showNotification(`Removed ${itemCount} item(s) from album`, 'success');
+                    app.showNotification(window.i18n.t('albums.removed_items_success', { count: itemCount }), 'success');
                     this.clearSelection();
                     this.loadContent();
                     this.loadAlbum();
                 } catch (error) {
-                    app.showNotification(error.message, 'error', 'Error removing from album');
+                    app.showNotification(error.message, 'error', window.i18n.t('notifications.media.error_removing_from_album'));
                 }
             }
         });

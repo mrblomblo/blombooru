@@ -8,32 +8,32 @@
 <div class="container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-200px)]">
     <div class="w-full max-w-md">
         <div class="surface p-8 border">
-            <h1 class="text-xl font-bold mb-6 text-center">Login to {{ app_name }}</h1>
+            <h1 class="text-xl font-bold mb-6 text-center">{{ t('login.title', app_name=app_name) }}</h1>
 
             <div id="login-error" style="display: none;" class="bg-danger tag-text p-3 mb-4 text-xs"></div>
 
             <form id="login-form">
                 <div class="mb-4">
-                    <label for="username" class="block text-xs font-bold mb-2">Username</label>
+                    <label for="username" class="block text-xs font-bold mb-2">{{ t('login.username') }}</label>
                     <input type="text" id="username" name="username" required autocomplete="username" autofocus
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                 </div>
 
                 <div class="mb-6">
-                    <label for="password" class="block text-xs font-bold mb-2">Password</label>
+                    <label for="password" class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
                     <input type="password" id="password" name="password" required autocomplete="current-password"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                 </div>
 
                 <button type="submit" id="login-btn"
                     class="w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs font-bold">
-                    Login
+                    {{ t('login.login_button') }}
                 </button>
             </form>
         </div>
 
         <p class="text-center text-xs text-secondary mt-4">
-            Enter your credentials to access {{ app_name }}
+            {{ t('login.enter_credentials', app_name=app_name) }}
         </p>
     </div>
 </div>

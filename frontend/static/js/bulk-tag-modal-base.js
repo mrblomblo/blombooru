@@ -2,9 +2,9 @@ class BulkTagModalBase {
     constructor(options = {}) {
         this.options = {
             id: options.id || 'bulk-tag-modal',
-            title: options.title || 'Bulk Tags',
+            title: options.title || window.i18n.t('bulk_modal.defaults.title'),
             classPrefix: options.classPrefix || 'bulk-tag',
-            emptyMessage: options.emptyMessage || 'No tags found for the selected items.',
+            emptyMessage: options.emptyMessage || window.i18n.t('bulk_modal.defaults.empty_message'),
             onSave: options.onSave || null,
             onClose: options.onClose || null,
             closeOnEscape: options.closeOnEscape !== false,
@@ -113,10 +113,10 @@ class BulkTagModalBase {
                         ` : ''}
                         <div class="flex gap-2 ${footerLeft ? '' : 'sm:ml-auto'}">
                             <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 surface-light hover:surface-light text text-sm font-medium transition-colors">
-                                Cancel
+                                ${window.i18n.t('modal.buttons.cancel')}
                             </button>
                             <button class="${prefix}-save flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 bg-primary hover:bg-primary tag-text text-sm font-medium transition-colors" style="display: none;">
-                                Save All
+                                ${window.i18n.t('modal.buttons.save_all')}
                             </button>
                         </div>
                     </div>
@@ -130,14 +130,15 @@ class BulkTagModalBase {
 
     // ==================== HTML Helpers ====================
 
-    getLoadingHTML(statusText = 'Processing...') {
+    getLoadingHTML(statusText) {
+        if (!statusText) statusText = window.i18n.t('bulk_modal.progress.processing');
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-loading flex flex-col items-center justify-center h-full py-12" style="display: none;">
                 <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
                 <p class="text-secondary ${prefix}-status text-center">${statusText}</p>
                 <p class="text-secondary text-sm mt-2 text-center">
-                    <span class="${prefix}-progress">0</span> / <span class="${prefix}-total">0</span> <span class="${prefix}-phase">items processed</span>
+                    <span class="${prefix}-progress">0</span> / <span class="${prefix}-total">0</span> <span class="${prefix}-phase">${window.i18n.t('bulk_modal.progress.items_processed')}</span>
                 </p>
             </div>
         `;
@@ -147,7 +148,7 @@ class BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-content h-full flex flex-col" style="display: none;">
-                <p class="text-secondary mb-3 text-xs sm:text-sm flex-shrink-0">Review and edit tags for each item. Invalid tags are highlighted in red.</p>
+                <p class="text-secondary mb-3 text-xs sm:text-sm flex-shrink-0">${window.i18n.t('bulk_modal.messages.review_tags')}</p>
                 <div class="${prefix}-items space-y-3 overflow-y-auto flex-1 -mx-4 px-4 pb-2" style="overscroll-behavior: contain;"></div>
             </div>
         `;
@@ -166,7 +167,7 @@ class BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-cancelled flex items-center justify-center h-full py-12" style="display: none;">
-                <p class="text-secondary text-center">Operation cancelled.</p>
+                <p class="text-secondary text-center">${window.i18n.t('bulk_modal.messages.operation_cancelled')}</p>
             </div>
         `;
     }
@@ -175,7 +176,7 @@ class BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-error flex items-center justify-center h-full py-12" style="display: none;">
-                <p class="text-danger ${prefix}-error-message text-center">An error occurred.</p>
+                <p class="text-danger ${prefix}-error-message text-center">${window.i18n.t('bulk_modal.messages.error_occurred')}</p>
             </div>
         `;
     }
@@ -417,7 +418,7 @@ class BulkTagModalBase {
 
         if (tagsToValidate.length === 0) return;
 
-        this.updateProgress(0, tagsToValidate.length, 'Validating tags...', 'tags checked');
+        this.updateProgress(0, tagsToValidate.length, window.i18n.t('bulk_modal.progress.validating_tags'), window.i18n.t('bulk_modal.progress.tags_checked'));
 
         try {
             // Use the batch endpoint for multiple tags
@@ -427,7 +428,7 @@ class BulkTagModalBase {
             if (response.ok) {
                 const results = await response.json();
                 const foundMap = new Map();
-                results.forEach(t => foundMap.set(t.name.toLowerCase(), t.name));
+                results.forEach(t => foundMap.set(t.name.toLowerCase(), t.name)); showError
 
                 tagsToValidate.forEach(tag => {
                     const normalized = tag.toLowerCase().trim();
@@ -441,7 +442,7 @@ class BulkTagModalBase {
                     await this.validateAndCacheTag(tag);
                     progress++;
                     if (!this.isCancelled) {
-                        this.updateProgress(progress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+                        this.updateProgress(progress, tagsToValidate.length, window.i18n.t('bulk_modal.progress.validating_tags'), window.i18n.t('bulk_modal.progress.tags_checked'));
                     }
                 };
                 await this.processBatch(tagsToValidate, validateTag, concurrency);
@@ -455,12 +456,12 @@ class BulkTagModalBase {
                 if (this.isCancelled) return;
                 await this.validateAndCacheTag(tag);
                 progress++;
-                this.updateProgress(progress, tagsToValidate.length, 'Validating tags...', 'tags checked');
+                this.updateProgress(progress, tagsToValidate.length, window.i18n.t('bulk_modal.progress.validating_tags'), window.i18n.t('bulk_modal.progress.tags_checked'));
             };
             await this.processBatch(tagsToValidate, validateTag, concurrency);
         }
 
-        this.updateProgress(tagsToValidate.length, tagsToValidate.length, 'Validating tags...', 'tags checked');
+        this.updateProgress(tagsToValidate.length, tagsToValidate.length, window.i18n.t('bulk_modal.progress.validating_tags'), window.i18n.t('bulk_modal.progress.tags_checked'));
     }
 
     getResolvedTag(tag) {
@@ -540,8 +541,8 @@ class BulkTagModalBase {
     renderItem(item, index) {
         const prefix = this.options.classPrefix;
         const currentTagsDisplay = item.currentTags.length > 0
-            ? item.currentTags.slice(0, 3).join(', ') + (item.currentTags.length > 3 ? ` (+${item.currentTags.length - 3})` : '')
-            : 'No tags';
+            ? item.currentTags.slice(0, 3).join(', ') + (item.currentTags.length > 3 ? ` (${window.i18n.t('bulk_modal.messages.tag_overflow', { count: item.currentTags.length - 3 })})` : '')
+            : window.i18n.t('bulk_modal.messages.no_tags');
 
         const tagsToShow = item.newTags || [];
 
@@ -559,7 +560,7 @@ class BulkTagModalBase {
                         <!-- Mobile: Info next to thumbnail -->
                         <div class="flex-1 sm:hidden min-w-0">
                             <p class="text-sm font-medium truncate mb-1" title="${item.filename}">${item.filename}</p>
-                            <p class="text-xs text-secondary line-clamp-2">Current: ${currentTagsDisplay}</p>
+                            <p class="text-xs text-secondary line-clamp-2">${window.i18n.t('bulk_modal.messages.current')}${currentTagsDisplay}</p>
                         </div>
                     </div>
                     
@@ -568,7 +569,7 @@ class BulkTagModalBase {
                         <!-- Desktop: Info above input -->
                         <div class="hidden sm:block">
                             <p class="text-sm font-medium truncate mb-1" title="${item.filename}">${item.filename}</p>
-                            <p class="text-xs text-secondary mb-2">Current: ${currentTagsDisplay}</p>
+                            <p class="text-xs text-secondary mb-2">${window.i18n.t('bulk_modal.messages.current')}${currentTagsDisplay}</p>
                         </div>
                         
                         <!-- Input and buttons -->
@@ -585,7 +586,7 @@ class BulkTagModalBase {
                                 <button type="button" 
                                         class="${prefix}-refresh w-11 h-11 sm:w-9 sm:h-9 surface hover:surface-light text-secondary hover:text-white flex items-center justify-center transition-colors"
                                         data-index="${index}"
-                                        title="Refresh tags">
+                                        title="${window.i18n.t('bulk_modal.buttons.refresh_tags')}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-4 sm:h-4">
                                         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
                                     </svg>
@@ -593,7 +594,7 @@ class BulkTagModalBase {
                                 <button type="button" 
                                         class="${prefix}-clear w-11 h-11 sm:w-9 sm:h-9 bg-danger hover:bg-danger tag-text flex items-center justify-center transition-colors"
                                         data-index="${index}"
-                                        title="Clear tags">
+                                        title="${window.i18n.t('bulk_modal.buttons.clear_tags')}">showError
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-4 sm:h-4">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -619,7 +620,7 @@ class BulkTagModalBase {
     }
 
     // ==================== Button Feedback ====================
-
+    showError
     flashButton(index, color, buttonType = 'refresh') {
         const prefix = this.options.classPrefix;
         const btn = this.modalElement.querySelector(`.${prefix}-${buttonType}[data-index="${index}"]`);
@@ -638,7 +639,7 @@ class BulkTagModalBase {
 
         if (saveBtn) {
             saveBtn.disabled = true;
-            saveBtn.textContent = 'Saving...';
+            saveBtn.textContent = window.i18n.t('modal.buttons.saving');
         }
 
         let successCount = 0;
@@ -686,7 +687,7 @@ class BulkTagModalBase {
 
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Save All';
+            saveBtn.textContent = window.i18n.t('modal.buttons.save_all');
         }
 
         this.hide();
@@ -694,10 +695,10 @@ class BulkTagModalBase {
         if (typeof this.options.onSave === 'function') {
             this.options.onSave({ successCount, errorCount });
         }
-
+        showError
         if (typeof app !== 'undefined' && app.showNotification) {
-            if (successCount > 0) app.showNotification(`Successfully updated ${successCount} item(s)`, 'success');
-            if (errorCount > 0) app.showNotification(`Failed to update ${errorCount} item(s)`, 'error');
+            if (successCount > 0) app.showNotification(window.i18n.t('bulk_modal.notifications.updated_success', { count: successCount }), 'success');
+            if (errorCount > 0) app.showNotification(window.i18n.t('bulk_modal.notifications.updated_failed', { count: errorCount }), 'error');
         }
     }
 

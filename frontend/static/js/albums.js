@@ -14,7 +14,7 @@ class AlbumsOverview extends BaseGallery {
     async init() {
         this.initCommon();
         this.currentPage = parseInt(this.getUrlParam('page', 1));
-        this.addSortOption('last_modified', 'Last Modified');
+        this.addSortOption('last_modified', window.i18n.t('albums.sort_last_modified'));
 
         await this.loadContent();
     }
@@ -36,7 +36,7 @@ class AlbumsOverview extends BaseGallery {
             });
 
             const response = await fetch(`/api/albums?${params}`);
-            if (!response.ok) throw new Error('Failed to load albums');
+            if (!response.ok) throw new Error(window.i18n.t('albums.failed_load_list'));
 
             const data = await response.json();
             this.totalPages = data.pages || 1;
@@ -51,7 +51,7 @@ class AlbumsOverview extends BaseGallery {
             this.renderPagination();
         } catch (error) {
             console.error('Error loading albums:', error);
-            this.showError('Failed to load albums');
+            this.showError(window.i18n.t('albums.failed_load_list'));
         } finally {
             this.isLoading = false;
             this.hideLoading();
@@ -62,7 +62,7 @@ class AlbumsOverview extends BaseGallery {
         if (!this.elements.grid) return;
 
         if (albums.length === 0) {
-            this.showEmptyState('No visible albums found');
+            this.showEmptyState(window.i18n.t('albums.no_visible_albums'));
             return;
         }
 
@@ -105,7 +105,7 @@ class AlbumsOverview extends BaseGallery {
                 <div class="p-2 border-t">
                     <div class="text-xs font-bold truncate mb-1">${album.name}</div>
                     <div class="flex justify-between items-center text-xs text-secondary">
-                        <span>${album.media_count || 0} items</span>
+                        <span>${window.i18n.t('albums.items_count', { count: album.media_count || 0 })}</span>
                         <span>${album.rating[0].toUpperCase()}</span>
                     </div>
                 </div>

@@ -10,113 +10,109 @@
 {% block content %}
 <div class="container mx-auto px-4 my-4 max-w-2xl">
     <div class="surface p-8 border">
-        <h1 class="text-xl font-bold mb-4">Welcome to Blombooru!</h1>
-        <p class="text-xs text-secondary mb-6">Let's get your personal booru set up!</p>
+        <h1 class="text-xl font-bold mb-4">{{ t('onboarding.welcome') }}</h1>
+        <p class="text-xs text-secondary mb-6">{{ t('onboarding.setup_intro') }}</p>
 
         <div id="error-message" style="display: none;" class="bg-danger tag-text p-3 mb-4 text-xs"></div>
         <div id="success-message" style="display: none;" class="bg-success tag-text p-3 mb-4 text-xs"></div>
 
         <form id="onboarding-form">
             <div class="mb-6">
-                <label class="block text-xs font-bold mb-2">Application Name</label>
+                <label class="block text-xs font-bold mb-2">{{ t('onboarding.app_name') }}</label>
                 <input type="text" id="app-name" name="app_name" value="{{ settings.APP_NAME }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
-            <h3 class="text-sm font-bold mb-3 pb-2 border-b">Database Configuration</h3>
+            <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('onboarding.database_config') }}</h3>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Host</label>
+                <label class="block text-xs font-bold mb-2">{{ t('onboarding.host') }}</label>
                 <input type="text" id="db-host" name="db_host" value="{{ settings.DB_HOST }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
-                <span class="text-xs text-secondary">Set this to "db" if running in docker</span>
+                <span class="text-xs text-secondary">{{ t('onboarding.db_host_hint') }}</span>
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Port</label>
+                <label class="block text-xs font-bold mb-2">{{ t('onboarding.port') }}</label>
                 <input type="number" id="db-port" name="db_port" value="{{ settings.DB_PORT }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
-                <span class="text-xs text-secondary">
-                    Set this to "5432" if running in docker or if the pre-filled value is incorrect
-                </span>
+                <span class="text-xs text-secondary">{{ t('onboarding.db_port_hint') }}</span>
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Database Name</label>
+                <label class="block text-xs font-bold mb-2">{{ t('onboarding.database_name') }}</label>
                 <input type="text" id="db-name" name="db_name" value="{{ settings.DB_NAME }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Username</label>
+                <label class="block text-xs font-bold mb-2">{{ t('login.username') }}</label>
                 <input type="text" id="db-user" name="db_user" value="{{ settings.DB_USER }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-bold mb-2">Password</label>
+                <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
                 <input type="password" id="db-password" name="db_password" value="{{ settings.DB_PASSWORD }}"
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
-            <h3 class="text-sm font-bold mb-3 pb-2 border-b">Redis Configuration (Optional)</h3>
+            <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('onboarding.redis_config') }}</h3>
 
             <div class="mb-4">
                 <label class="flex items-center gap-2 cursor-pointer mb-4">
                     <input type="checkbox" id="redis-enabled" name="redis_enabled" class="w-4 h-4 accent-primary" {% if
                         settings.REDIS_ENABLED %}checked{% endif %}>
-                    <span class="text-xs font-bold">Enable Redis Caching</span>
+                    <span class="text-xs font-bold">{{ t('onboarding.enable_redis') }}</span>
                 </label>
             </div>
 
             <div id="redis-settings" {% if not settings.REDIS_ENABLED %}style="display: none;" {% endif %}>
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">Host</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('onboarding.host') }}</label>
                     <input type="text" id="redis-host" name="redis_host" value="{{ settings.REDIS_HOST }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
-                    <span class="text-xs text-secondary">Set this to "redis" if running in docker</span>
+                    <span class="text-xs text-secondary">{{ t('onboarding.redis_host_hint') }}</span>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">Port</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('onboarding.port') }}</label>
                     <input type="number" id="redis-port" name="redis_port" value="{{ settings.REDIS_PORT }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
-                    <span class="text-xs text-secondary">
-                        Set this to "6379" if running in docker or if the pre-filled value is incorrect
-                    </span>
+                    <span class="text-xs text-secondary">{{ t('onboarding.redis_port_hint') }}</span>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">DB Index</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('onboarding.db_index') }}</label>
                     <input type="number" id="redis-db" name="redis_db" value="{{ settings.REDIS_DB }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-xs font-bold mb-2">Password</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
                     <input type="password" id="redis-password" name="redis_password"
                         value="{{ settings.REDIS_PASSWORD or '' }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
             </div>
 
-            <h3 class="text-sm font-bold mb-3 pb-2 border-b">Admin Account</h3>
+            <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('onboarding.admin_account') }}</h3>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Username</label>
+                <label class="block text-xs font-bold mb-2">{{ t('login.username') }}</label>
                 <input type="text" id="admin-username" name="admin_username" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-bold mb-2">Password</label>
+                <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
                 <input type="password" id="admin-password" name="admin_password" required minlength="6" maxlength="50"
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
-                <small class="text-secondary text-xs">6-50 characters</small>
+                <small class="text-secondary text-xs">{{ t('onboarding.password_hint') }}</small>
             </div>
 
             <button type="submit" class="w-full px-4 py-3 bg-primary primary-text hover:bg-primary text-xs font-bold">
-                Complete Setup
+                {{ t('onboarding.complete_setup') }}
             </button>
         </form>
     </div>

@@ -6,8 +6,8 @@ class ModalHelper {
             title: options.title || this.getDefaultTitle(options.type),
             message: options.message || '',
             showIcon: options.showIcon !== false,
-            confirmText: options.confirmText || 'Yes',
-            cancelText: options.cancelText || 'No',
+            confirmText: options.confirmText || window.i18n.t('modal.buttons.yes'),
+            cancelText: options.cancelText || window.i18n.t('modal.buttons.no'),
             confirmId: options.confirmId || 'modal-confirm-yes',
             cancelId: options.cancelId || 'modal-confirm-no',
             onConfirm: options.onConfirm || null,
@@ -31,11 +31,11 @@ class ModalHelper {
 
     getDefaultTitle(type) {
         const titles = {
-            info: 'Info',
-            warning: 'Warning',
-            danger: 'Explicit Content Warning'
+            info: window.i18n.t('modal.default_titles.info'),
+            warning: window.i18n.t('modal.default_titles.warning'),
+            danger: window.i18n.t('modal.default_titles.danger')
         };
-        return titles[type] || 'Info';
+        return titles[type] || window.i18n.t('modal.default_titles.info');
     }
 
     getIconSVG(type) {
