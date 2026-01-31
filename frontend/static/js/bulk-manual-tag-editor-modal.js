@@ -137,6 +137,65 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
             if (errorCount > 0) app.showNotification(window.i18n.t('bulk_modal.notifications.updated_failed', { count: errorCount }), 'error');
         }
     }
+
+    async refreshSingleItem(index, inputElement) {
+        const item = this.itemsData[index];
+        if (!item || this.isCancelled) return;
+
+        inputElement.style.opacity = '0.5';
+
+        try {
+            // Fetch authoritative tags
+            const response = await this.fetchWithAbort(`/api/media/${item.mediaId}`);
+            if (!response.ok) throw new Error('Failed to fetch media');
+
+            const mediaData = await response.json();
+            const serverTags = (mediaData.tags || []).map(t => t.name || t);
+
+            // Get current input tags
+            let currentInputTags = [];
+            if (this.tagInputHelper) {
+                currentInputTags = this.tagInputHelper.getValidTagsFromInput(inputElement);
+            } else {
+                currentInputTags = inputElement.innerText.trim().split(/\s+/).filter(t => t.length > 0);
+            }
+
+            const uniqueTags = new Set([...serverTags, ...currentInputTags]);
+            const mergedTags = Array.from(uniqueTags);
+
+            // Check if anything actually changed from what's currently in input
+            const inputSet = new Set(currentInputTags.map(t => t.toLowerCase()));
+            const mergedSet = new Set(mergedTags.map(t => t.toLowerCase()));
+
+            let changed = false;
+            if (inputSet.size !== mergedSet.size) {
+                changed = true;
+            } else {
+                for (const t of mergedSet) {
+                    if (!inputSet.has(t)) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (changed) {
+                const newValue = mergedTags.join(' ');
+                inputElement.textContent = newValue;
+                this.triggerValidation(inputElement);
+                this.flashButton(index, 'var(--primary)');
+            } else {
+                this.flashButton(index, 'var(--secondary)');
+            }
+
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            console.error(`Error refreshing item ${index}:`, e);
+            this.flashButton(index, 'var(--danger)');
+        } finally {
+            inputElement.style.opacity = '1';
+        }
+    }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
