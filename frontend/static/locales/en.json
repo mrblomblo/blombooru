@@ -18,7 +18,9 @@
         "warning": "Warning",
         "confirm": "Confirm",
         "items_selected": "{count} items selected",
-        "no_items_found": "No items found"
+        "no_items_found": "No items found",
+        "clear_selection": "Clear Selection",
+        "load_more": "Load More"
     },
     "nav": {
         "albums": "Albums",
@@ -172,6 +174,23 @@
             "album_created": "Album created successfully",
             "album_deleted": "Album deleted"
         },
+        "actions": {
+            "testing": "Testing...",
+            "scanning": "Scanning...",
+            "loading": "Loading...",
+            "checking": "Checking..."
+        },
+        "messages": {
+            "already_latest": "Already on Latest Dev",
+            "view_changelog": "View Changelog ({count})",
+            "update_error": "Error checking for updates: {error}",
+            "update_started": "Starting update process...",
+            "update_output": "Update Output",
+            "scan_result_success": "✓ {message}",
+            "scan_result_error": "✗ {message}",
+            "scan_loading": "Loading {count} file(s)...",
+            "scan_progress": "Loading {current}/{total}..."
+        },
         "account": {
             "title": "Admin Account Management",
             "new_password": "New Password",
@@ -187,7 +206,19 @@
     },
     "media": {
         "title": "Media",
-        "fullscreen_hint": "Press ESC or click outside the media to close",
+        "fullscreen_close_hint": "Press ESC or click outside the media to close",
+        "share": {
+            "title": "Share Actions",
+            "include_ai_metadata": "Include AI metadata",
+            "copy_link": "Copy Link",
+            "link_copied": "Share link copied to clipboard"
+        },
+        "progress": {
+            "downloading": "Downloading...",
+            "predicting": "Predicting...",
+            "validating": "Validating...",
+            "processing": "Processing..."
+        },
         "relations": {
             "title": "Manage Relations",
             "search_hint": "Showing related items. Use the search bar to find specific media.",
@@ -197,10 +228,20 @@
             "add_child": "Add as Child",
             "add_children": "Add as Children",
             "remove_selected": "Remove Selected",
-            "load_more": "Load More"
+            "load_more": "Load More",
+            "showing_related_items": "Showing {count} related items",
+            "search_results": "Showing search results for \"{query}\"",
+            "belongs_to_parent": "This item belongs to a parent",
+            "parent_badge": "PARENT",
+            "child_badge": "CHILD",
+            "remove_children": "Remove {count} Child(ren)",
+            "add_children_count": "Add {count} as Children",
+            "shared": "SHARED"
         },
         "hierarchy": {
-            "title": "Parent & Sibling Media"
+            "title": "Parent & Sibling Media",
+            "view_parent": "View Parent",
+            "remove_parent": "Remove Parent"
         },
         "related": {
             "title": "Related Media"
@@ -208,11 +249,14 @@
         "info": {
             "title": "Information",
             "source_url": "Source URL",
+            "source_placeholder": "https://example.com/source",
             "save_source": "Save Source"
         },
         "tags": {
             "title": "Tags",
             "edit_tags": "Edit Tags",
+            "tags_placeholder": "original highres cat_ears",
+            "search_tags_placeholder": "Search tags...",
             "append_ai_tags": "Append AI Tags",
             "predict_tags": "Predict Tags (AI)",
             "save_tags": "Save Tags",
@@ -232,14 +276,9 @@
             "albums": "Albums",
             "relations": "Relations",
             "delete_media": "Delete Media"
-        },
-        "share": {
-            "title": "Share Actions",
-            "include_ai_metadata": "Include AI metadata",
-            "copy_link": "Copy Link",
-            "link_copied": "Share link copied to clipboard"
         }
     },
+    "q": "?",
     "gallery": {
         "rating_filter": "Rating Filter",
         "sort_by": "Sort By",
@@ -254,13 +293,45 @@
         "remove_from_album": "Remove from Album",
         "delete_selected": "Delete Selected",
         "jump_to_page": "Jump to Page",
-        "popular_tags": "Popular Tags"
+        "popular_tags": "Popular Tags",
+        "selecting_all": "Selecting All...",
+        "no_tags_found": "No tags found",
+        "no_items_found": "No items found",
+        "go_to_admin": "Go to Admin Panel",
+        "shared_badge": "SHARED",
+        "error_label": "Error:",
+        "check_console": "Check the browser console for more details",
+        "add_items_to_albums_title": "Add {count} Item(s) to Albums"
     },
     "albums": {
         "title": "Albums",
         "subalbums": "Subalbums",
         "no_albums": "No albums yet",
-        "no_media": "No media in this album"
+        "no_media": "No media in this album",
+        "sub_albums": "Sub-albums",
+        "media": "Media",
+        "album_details": "Album Details",
+        "view_album_for_tags": "View an album to see tags.",
+        "not_found": "Album not found",
+        "error_loading": "Error loading album",
+        "root_album": "Root Album",
+        "media_count": "Media Count:",
+        "sub_albums_count": "Sub-albums:",
+        "rating": "Rating:",
+        "created": "Created:",
+        "last_modified": "Last Modified:",
+        "failed_load_contents": "Failed to load contents",
+        "failed_load_album_contents": "Failed to load album contents",
+        "no_tags_found": "No tags found in this album",
+        "sub_albums_with_empty": "Sub-albums <span class=\"text-secondary font-normal text-xs\">(+{count} empty albums)</span>",
+        "only_empty_subalbums": "This album contains only empty sub-albums.",
+        "no_more_items": "No more items on this page",
+        "failed_load_list": "Failed to load albums",
+        "no_visible_albums": "No visible albums found",
+        "sort_last_modified": "Last Modified",
+        "empty_album": "This album is empty",
+        "items_count": "{count} items",
+        "removed_items_success": "Removed {count} item(s) from album"
     },
     "notifications": {
         "admin_mode_enabled": "Admin mode enabled",
@@ -272,7 +343,78 @@
         "upload_success": "Upload successful",
         "upload_failed": "Upload failed",
         "error_occurred": "An error occurred",
-        "connection_error": "Connection error"
+        "connection_error": "Connection error",
+        "admin": {
+            "username_updated": "Username updated successfully. You are now logged in as: {username}",
+            "enter_at_least_one_tag": "Please enter at least one tag!",
+            "tags_already_exist": "All tags already exist or are aliases.",
+            "nothing_to_add": "Nothing to add",
+            "fill_all_settings": "Please fill in all settings fields!",
+            "app_name_length": "Application name must be between 1 and 25 characters!",
+            "items_per_page_range": "Items per page must be between 20 and 200!",
+            "no_untracked_media": "No new untracked media files found.",
+            "uploader_not_initialized": "Uploader not initialized",
+            "refresh_and_retry": "Please refresh the page and try again.",
+            "tag_deleted": "Tag deleted",
+            "error_deleting_tag": "Error deleting tag",
+            "all_tags_cleared": "All tags cleared successfully",
+            "error_clearing_tags": "Error clearing tags",
+            "enter_album_name": "Please enter an album name!",
+            "album_created": "Album created successfully!",
+            "error_creating_album": "Error creating album",
+            "enter_name": "Please enter a name!",
+            "album_renamed": "Album renamed successfully!",
+            "error_renaming_album": "Error renaming album",
+            "error_loading_albums": "Error loading albums",
+            "parent_album_updated": "Parent album updated successfully!",
+            "error_updating_parent": "Error updating parent album",
+            "album_deleted": "Album deleted successfully!",
+            "error_deleting_album": "Error deleting album",
+            "api_key_copied": "API Key copied to clipboard!",
+            "api_key_generated": "API Key generated successfully!",
+            "error_generating_api_key": "Error generating API key",
+            "api_key_revoked": "API Key revoked successfully",
+            "error_revoking_api_key": "Error revoking API key",
+            "update_initiated": "Update initiated successfully",
+            "update_failed": "Update failed: {error}",
+            "update_confirm": "Are you sure you want to update to {target}? You will need to manually restart the server to fully apply the update.",
+            "error_saving_settings": "Error saving settings",
+            "error_scanning_media": "Error scanning media"
+        },
+        "media": {
+            "no_new_tags_predicted": "No new tags predicted",
+            "no_valid_tags_predictions": "No valid tags found in predictions",
+            "tags_added": "Added {count} predicted tag(s)",
+            "albums_updated": "Albums updated successfully",
+            "error_opening_album_picker": "Error opening album picker",
+            "removed_from_album": "Removed from album",
+            "source_updated": "Source updated successfully",
+            "link_copied": "Link copied to clipboard",
+            "media_unshared": "Media successfully unshared",
+            "could_not_load_ai_metadata": "Could not load AI metadata",
+            "no_ai_prompt": "No AI prompt found in metadata",
+            "no_valid_tags_ai_prompt": "No valid tags found in AI prompt",
+            "ai_tags_already_present": "All AI tags are already present",
+            "parent_set": "Parent set successfully",
+            "parent_removed": "Parent removed successfully",
+            "error_checking_ai_model": "Error checking AI model status: {error}",
+            "error_downloading_ai_model": "Failed to download AI model: {error}",
+            "error_predicting_tags": "Error predicting tags: {error}",
+            "error_updating_albums": "Error updating albums",
+            "error_removing_from_album": "Error removing from album",
+            "error_updating_tags": "Error updating tags",
+            "error_updating_source": "Error updating source"
+        },
+        "gallery": {
+            "no_items_to_select": "No items found to select",
+            "failed_to_select_all": "Failed to select all items",
+            "items_selected": "Selected {count} items total",
+            "added_to_albums": "Added {itemCount} item(s) to {albumCount} album(s)",
+            "error_adding_to_albums": "Error adding to albums"
+        },
+        "album_picker": {
+            "failed_to_load_albums": "Failed to load albums"
+        }
     },
     "search": {
         "guide_title": "Search Syntax Guide",
@@ -303,10 +445,30 @@
         "sorting_oldest": "Oldest first",
         "sorting_filesize": "Largest files first",
         "sorting_aspect": "Aspect ratio",
-        "examples": "Example Searches"
+        "examples": "Example Searches",
+        "example_cat": "Safe cat images without a source",
+        "example_landscape": "High-quality landscape videos",
+        "example_id": "First 100 uploads, oldest first",
+        "example_fuzzy": "Searching for one or more girls with any color eyes, no dogs",
+        "example_tagcount": "Posts with many tags but no artist info"
     },
     "onboarding": {
         "welcome": "Welcome to {app_name}!",
+        "setup_intro": "Let's get your instance configured. This will only take a minute.",
+        "app_name": "Application Name",
+        "database_config": "Database Configuration",
+        "host": "Host",
+        "db_host_hint": "Usually 'localhost' or '127.0.0.1'",
+        "port": "Port",
+        "db_port_hint": "Default PostgreSQL port is 5432",
+        "database_name": "Database Name",
+        "redis_config": "Redis Configuration (Optional)",
+        "enable_redis": "Enable Redis",
+        "redis_host_hint": "Usually 'localhost' or '127.0.0.1'",
+        "redis_port_hint": "Default Redis port is 6379",
+        "db_index": "Database Index",
+        "admin_account": "Create Admin Account",
+        "password_hint": "Minimum 6 characters",
         "setup_title": "Initial Setup",
         "database_settings": "Database Settings",
         "create_admin": "Create Admin Account",
@@ -316,7 +478,18 @@
     "shared": {
         "shared_media": "Shared Media",
         "media_not_found": "This shared media does not exist or has been removed.",
-        "view_original": "View Original"
+        "view_original": "View Original",
+        "content_shared_with_you": "This content has been shared with you.",
+        "error_unshared_or_deleted": "The media you attempted to view has either been unshared, deleted, or never existed.",
+        "error_invalid_link": "This shared link is invalid or has been removed.",
+        "content_not_found": "Content Not Found",
+        "information": "Information",
+        "tags": "Tags",
+        "ai_generation_data": "AI Generation Data",
+        "actions": "Actions",
+        "download": "Download",
+        "failed_load_video": "Failed to load video",
+        "media_load_error": "Media not found"
     },
     "errors": {
         "not_found": "Not Found",
@@ -324,5 +497,212 @@
         "forbidden": "Forbidden",
         "server_error": "Server Error",
         "page_not_found": "The page you're looking for doesn't exist."
+    },
+    "upload": {
+        "base_settings": {
+            "title": "Base Settings (applies to all media)",
+            "base_rating": "Base Rating",
+            "safe": "Safe",
+            "questionable": "Questionable",
+            "explicit": "Explicit",
+            "base_albums": "Base Albums",
+            "select_album": "Select album to add...",
+            "base_source": "Base Source URL (optional)",
+            "source_placeholder": "https://example.com/source",
+            "base_tags": "Base Tags (prefixed to all media)",
+            "tags_placeholder": "original highres cat_ears",
+            "base_badge": "(Base)"
+        },
+        "preview": {
+            "title": "Uploaded Media (click to edit individual rating, source, and tags)",
+            "editing": "Editing: ",
+            "individual_rating": "Individual Rating",
+            "individual_albums": "Individual Albums",
+            "individual_source": "Individual Source URL (optional)",
+            "additional_tags": "Additional Tags (base tags are prefixed automatically)",
+            "additional_tags_placeholder": "solo long_hair",
+            "final_tags": "Final tags: ",
+            "remove_media": "Remove This Media",
+            "no_tags": "No tags",
+            "none": "None"
+        },
+        "submit": {
+            "cancel_all": "Cancel & Clear All",
+            "submit_all": "Submit All Media"
+        },
+        "progress": {
+            "extracting": "Extracting {filename}...",
+            "extracted_success": "✓ Extracted {count} files from {filename}",
+            "extracted_error": "✗ Error extracting {filename}: {error}",
+            "uploading": "Uploading...",
+            "uploading_progress": "Uploading {current}/{total}...",
+            "upload_success": "Successfully uploaded {count} file(s).",
+            "duplicates_skipped": "{count} duplicate(s) skipped.",
+            "failed": "{count} failed."
+        }
+    },
+    "modal": {
+        "default_titles": {
+            "info": "Info",
+            "warning": "Warning",
+            "danger": "Explicit Content Warning"
+        },
+        "buttons": {
+            "yes": "Yes",
+            "no": "No",
+            "cancel": "Cancel",
+            "save_all": "Save All",
+            "saving": "Saving..."
+        },
+        "delete_tag": {
+            "title": "Delete Tag",
+            "message": "Are you sure you want to delete this tag and its aliases? This action cannot be undone.",
+            "confirm": "Yes, Delete"
+        },
+        "clear_tags": {
+            "title": "Clear All Tags",
+            "message": "Are you sure you want to clear <b>ALL</b> tags for this media? This action cannot be undone.",
+            "confirm": "Clear All"
+        },
+        "clear_tags_confirm": {
+            "title": "Confirm Clear Tags",
+            "message": "This will remove all tags from the database for this media item. Are you absolutely sure?",
+            "confirm": "Yes, Clear Everything"
+        },
+        "delete_album": {
+            "title": "Delete Album",
+            "message": "Are you sure you want to delete \"{albumName}\"? This will only delete the album itself. Media and child albums will not be deleted.",
+            "confirm": "Yes, Delete"
+        },
+        "api_key_name": {
+            "title": "Name your API Key",
+            "placeholder": "e.g. My Mobile App, External Script...",
+            "confirm": "Generate Key"
+        },
+        "revoke_api_key": {
+            "title": "Revoke API Key",
+            "message": "Are you sure you want to revoke this API Key? This action cannot be undone and any applications using it will lose access immediately.",
+            "confirm": "Revoke Key"
+        },
+        "changelog": {
+            "title": "Changelog",
+            "confirm": "Got it"
+        },
+        "system_update": {
+            "title": "System Update",
+            "message": "Are you sure you want to update to the latest <strong>{target}</strong> release?<br>You will need to manually restart the server to fully apply the update.<br><br><b>Ensure you have read and understood the changelog and notices before proceeding.</b>",
+            "confirm": "Update Now"
+        },
+        "search_syntax": {
+            "title": "Search Syntax Guide",
+            "confirm": "Got it"
+        },
+        "download_model": {
+            "title": "Download AI Model",
+            "message": "The AI tagging model needs to be downloaded first.<br><br><strong>Model:</strong> {modelName}<br><strong>Size:</strong> ~{size} MB<br><br>This only needs to be done once.",
+            "confirm": "Download & Predict"
+        },
+        "delete_media": {
+            "title": "Delete Media",
+            "message": "Are you sure you want to delete this media? This action cannot be undone.",
+            "confirm": "Yes, Delete"
+        },
+        "unshare_media": {
+            "title": "Unshare Media",
+            "message": "Are you sure you want to unshare this media? The share link will stop working.",
+            "confirm": "Yes, Unshare"
+        },
+        "remove_parent": {
+            "title": "Remove Parent",
+            "message": "Are you sure you want to remove the parent relationship?",
+            "confirm": "Yes, Remove"
+        },
+        "remove_children": {
+            "title": "Remove Children",
+            "message": "Are you sure you want to remove {count} item(s) as children?",
+            "confirm": "Yes, Remove"
+        },
+        "age_verification": {
+            "title": "Explicit Content Warning",
+            "message": "This media contains explicit content.<br>By clicking \"Yes, I am 18+\", you confirm that you are over the age of 18 and consent to viewing adult content.",
+            "confirm": "Yes, I am 18+",
+            "cancel": "No, I am not 18"
+        },
+        "bulk_delete": {
+            "title": "Delete {count} Items",
+            "title_single": "Delete Item",
+            "message": "Are you sure you want to delete {count} item(s)? This action cannot be undone.",
+            "confirm": "Yes, Delete"
+        },
+        "bulk_remove_from_album": {
+            "title": "Remove from Album",
+            "message": "Are you sure you want to remove {count} item(s) from this album?",
+            "confirm": "Yes, Remove"
+        }
+    },
+    "bulk_modal": {
+        "messages": {
+            "review_tags": "Review and edit tags for each item. Invalid tags are highlighted in red.",
+            "operation_cancelled": "Operation cancelled.",
+            "error_occurred": "An error occurred.",
+            "no_tags": "No tags",
+            "current": "Current: ",
+            "tag_overflow": "+{count}",
+            "download_wait": "This may take a few minutes depending on your connection.",
+            "model_cached": "Model files are cached locally for future use."
+        },
+        "defaults": {
+            "title": "Bulk Tags",
+            "empty_message": "No tags found for the selected items."
+        },
+        "buttons": {
+            "refresh_tags": "Refresh tags",
+            "clear_tags": "Clear tags",
+            "download_continue": "Download & Continue",
+            "settings": "Settings"
+        },
+        "progress": {
+            "processing": "Processing...",
+            "items_processed": "items processed",
+            "validating_tags": "Validating tags...",
+            "tags_checked": "tags checked",
+            "fetching_metadata": "Fetching metadata...",
+            "items_fetched": "items fetched",
+            "downloading_model": "Downloading AI model...",
+            "initializing_tagger": "Initializing AI Tagger...",
+            "checking_model": "Checking AI model status...",
+            "fetching_media": "Fetching media info...",
+            "predicting_tags": "Predicting tags with AI..."
+        },
+        "notifications": {
+            "updated_success": "Successfully updated {count} item(s)",
+            "updated_failed": "Failed to update {count} item(s)"
+        },
+        "ai_tags": {
+            "title": "Bulk Append AI Tags",
+            "empty_message": "No new AI tags found in the selected items' metadata.",
+            "default_media_name": "Media {id}"
+        },
+        "wd_tagger": {
+            "title": "Bulk Predict Tags (WD Tagger)",
+            "empty_message": "No tags predicted for the selected items.",
+            "general_threshold": "General Confidence Threshold",
+            "character_threshold": "Character Confidence Threshold",
+            "download_needed": "The AI model needs to be downloaded first.",
+            "model": "Model",
+            "size": "Size"
+        }
+    },
+    "album_picker": {
+        "title": "Select Albums",
+        "search_placeholder": "Search albums...",
+        "selected_count": "{count} album(s) selected",
+        "no_albums": "No albums found",
+        "path": "Path: {path}",
+        "items_count": "{count} items",
+        "root": "Root",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "load_error": "Failed to load albums"
     }
 }

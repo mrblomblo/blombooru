@@ -12,7 +12,7 @@ from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
 
-APP_VERSION = "1.27.5"
+APP_VERSION = "1.27.25"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
