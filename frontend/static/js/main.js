@@ -2,8 +2,7 @@
 class I18n {
     constructor() {
         this.translations = {};
-        this.currentLang = 'en';
-        this.fallbackLang = 'en';
+        this.currentLang = window.CURRENT_LANGUAGE || 'en';
         this.loaded = false;
         this.loadPromise = null;
     }
