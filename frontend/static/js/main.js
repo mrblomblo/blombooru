@@ -374,10 +374,10 @@ class Blombooru {
             this.searchGuideModal = new ModalHelper({
                 id: 'search-syntax-modal',
                 type: 'info',
-                title: 'Search Syntax Guide',
+                title: window.i18n.t('modal.search_syntax.title'),
                 message: this.getSearchSyntaxContent(),
                 showIcon: false,
-                confirmText: 'Got it',
+                confirmText: window.i18n.t('modal.search_syntax.confirm'),
                 cancelText: '',
                 confirmId: 'search-guide-confirm'
             });
@@ -389,59 +389,59 @@ class Blombooru {
         return `
             <div class="text-left space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div class="bg p-2 border-2 border-info">
-                    <h3 class="font-bold text-lg mb-2 text-info">Basic Tags</h3>
+                    <h3 class="font-bold text-lg mb-2 text-info">${window.i18n.t('search.basic_tags')}</h3>
                     <ul class="list-disc pl-5 space-y-1 text-sm">
-                        <li><code class="surface">tag1 tag2</code>: Find media with both tags</li>
-                        <li><code class="surface">-tag1</code>: Exclude media with tag</li>
-                        <li><code class="surface">tag*</code>: Wildcard search (e.g., <code class="surface">tag_name</code>)</li>
-                        <li><code class="surface">?tag</code>: Fuzzy search (one or zero chars before)</li>
+                        <li><code class="surface">tag1 tag2</code>: ${window.i18n.t('search.basic_desc_both')}</li>
+                        <li><code class="surface">-tag1</code>: ${window.i18n.t('search.basic_desc_exclude')}</li>
+                        <li><code class="surface">tag*</code>: ${window.i18n.t('search.basic_desc_wildcard')}</li>
+                        <li><code class="surface">?tag</code>: ${window.i18n.t('search.basic_desc_fuzzy')}</li>
                     </ul>
                 </div>
 
                 <div class="bg p-2 border-2 border-info">
-                    <h3 class="font-bold text-lg mb-2 text-info">Ranges</h3>
-                    <p class="mb-2 text-xs">Operators: <code>:</code>, <code>..</code>, <code>&gt;=</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&lt;</code></p>
+                    <h3 class="font-bold text-lg mb-2 text-info">${window.i18n.t('search.ranges')}</h3>
+                    <p class="mb-2 text-xs">${window.i18n.t('search.ranges_operators')}: <code>:</code>, <code>..</code>, <code>&gt;=</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&lt;</code></p>
                     <ul class="list-disc pl-5 space-y-1 text-sm">
-                        <li><code class="surface">id:100</code>: Exact match</li>
-                        <li><code class="surface">id:100..200</code>: Between inclusive</li>
-                        <li><code class="surface">id:&gt;=100</code>: Greater than or equal</li>
-                        <li><code class="surface">id:1,2,3</code>: In list</li>
+                        <li><code class="surface">id:100</code>: ${window.i18n.t('search.ranges_exact')}</li>
+                        <li><code class="surface">id:100..200</code>: ${window.i18n.t('search.ranges_between')}</li>
+                        <li><code class="surface">id:&gt;=100</code>: ${window.i18n.t('search.ranges_gte')}</li>
+                        <li><code class="surface">id:1,2,3</code>: ${window.i18n.t('search.ranges_in_list')}</li>
                     </ul>
-                    <p class="mt-2 text-xs text-secondary">Note: Ranges can also be used with most meta qualifiers.</p>
+                    <p class="mt-2 text-xs text-secondary">${window.i18n.t('search.ranges_note')}</p>
                 </div>
 
                 <div class="bg p-2 border-2 border-info">
-                    <h3 class="font-bold text-lg mb-2 text-info">Meta Qualifiers</h3>
+                    <h3 class="font-bold text-lg mb-2 text-info">${window.i18n.t('search.meta_qualifiers')}</h3>
                     <ul class="list-disc pl-5 space-y-1 text-sm">
-                        <li><code class="surface">width</code>, <code class="surface">height</code>: Image dimensions (pixels)</li>
-                        <li><code class="surface">filesize</code>: File size (kb, mb, gb)</li>
-                        <li><code class="surface">date</code>, <code class="surface">age</code>: Upload date or relative age</li>
-                        <li><code class="surface">rating</code>: <code class="surface">s</code> (safe), <code class="surface">q</code> (questionable), <code class="surface">e</code> (explicit)</li>
-                        <li><code class="surface">source</code>: Source URL or <code class="surface">none</code></li>
-                        <li><code class="surface">filetype</code>: Extension (png, gif, etc)</li>
-                        <li><code class="surface">tagcount</code>, <code class="surface">gentags</code>...: Number of tags</li>
-                    </ul>
-                </div>
-
-                <div class="bg p-2 border-2 border-info">
-                    <h3 class="font-bold text-lg mb-2 text-info">Sorting</h3>
-                    <p class="mb-2 text-sm">Use <code>order:value</code> (e.g., <code>order:id_desc</code>)</p>
-                    <ul class="list-disc pl-5 space-y-1 text-sm">
-                        <li><code class="surface">id</code> / <code class="surface">id_desc</code>: Newest first (default)</li>
-                        <li><code class="surface">id_asc</code>: Oldest first</li>
-                        <li><code class="surface">filesize</code>: Largest files first</li>
-                        <li><code class="surface">landscape</code> / <code class="surface">portrait</code>: Aspect ratio</li>
+                        <li><code class="surface">width</code>, <code class="surface">height</code>: ${window.i18n.t('search.meta_dimensions')}</li>
+                        <li><code class="surface">filesize</code>: ${window.i18n.t('search.meta_filesize')}</li>
+                        <li><code class="surface">date</code>, <code class="surface">age</code>: ${window.i18n.t('search.meta_date')}</li>
+                        <li><code class="surface">rating</code>: ${window.i18n.t('search.meta_rating')}</li>
+                        <li><code class="surface">source</code>: ${window.i18n.t('search.meta_source')}</li>
+                        <li><code class="surface">filetype</code>: ${window.i18n.t('search.meta_filetype')}</li>
+                        <li><code class="surface">tagcount</code>, <code class="surface">gentags</code>...: ${window.i18n.t('search.meta_tagcount')}</li>
                     </ul>
                 </div>
 
                 <div class="bg p-2 border-2 border-info">
-                    <h3 class="font-bold text-lg mb-2 text-info">Example Searches</h3>
+                    <h3 class="font-bold text-lg mb-2 text-info">${window.i18n.t('search.sorting')}</h3>
+                    <p class="mb-2 text-sm">${window.i18n.t('search.sorting_desc').replace('order:value', '<code>order:value</code>')}</p>
                     <ul class="list-disc pl-5 space-y-1 text-sm">
-                        <li><code class="surface">cat source:none rating:s</code>: Safe cat images without a source</li>
-                        <li><code class="surface">landscape filetype:mp4 filesize:&gt;5mb</code>: High-quality landscape videos</li>
-                        <li><code class="surface">id:1..100 order:id_asc</code>: First 100 uploads, oldest first</li>
-                        <li><code class="surface">?girl? *_eyes -dog</code>: Searching for one or more girls with any color eyes, no dogs</li>
-                        <li><code class="surface">tagcount:&gt;20 arttags:0</code>: Posts with many tags but no artist info</li>
+                        <li><code class="surface">id</code> / <code class="surface">id_desc</code>: ${window.i18n.t('search.sorting_newest')}</li>
+                        <li><code class="surface">id_asc</code>: ${window.i18n.t('search.sorting_oldest')}</li>
+                        <li><code class="surface">filesize</code>: ${window.i18n.t('search.sorting_filesize')}</li>
+                        <li><code class="surface">landscape</code> / <code class="surface">portrait</code>: ${window.i18n.t('search.sorting_aspect')}</li>
+                    </ul>
+                </div>
+
+                <div class="bg p-2 border-2 border-info">
+                    <h3 class="font-bold text-lg mb-2 text-info">${window.i18n.t('search.examples')}</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        <li><code class="surface">cat source:none rating:s</code>: ${window.i18n.t('search.example_cat')}</li>
+                        <li><code class="surface">landscape filetype:mp4 filesize:&gt;5mb</code>: ${window.i18n.t('search.example_landscape')}</li>
+                        <li><code class="surface">id:1..100 order:id_asc</code>: ${window.i18n.t('search.example_id')}</li>
+                        <li><code class="surface">?girl? *_eyes -dog</code>: ${window.i18n.t('search.example_fuzzy')}</li>
+                        <li><code class="surface">tagcount:&gt;20 arttags:0</code>: ${window.i18n.t('search.example_tagcount')}</li>
                     </ul>
                 </div>
             </div>
