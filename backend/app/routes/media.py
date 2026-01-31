@@ -19,7 +19,7 @@ from ..utils.thumbnail_generator import generate_thumbnail
 from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename, delete_media_cache
 from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count, update_album_last_modified
 from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
-from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse
+from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse, ShareSettingsUpdate
 from ..utils.cache import cache_response, invalidate_media_cache, invalidate_tag_cache, invalidate_album_cache, invalidate_media_item_cache
 
 router = APIRouter(prefix="/api/media", tags=["media"])
@@ -526,7 +526,7 @@ async def unshare_media(
 @router.patch("/{media_id}/share-settings")
 async def update_share_settings(
     media_id: int,
-    share_ai_metadata: bool,
+    updates: ShareSettingsUpdate,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -538,12 +538,21 @@ async def update_share_settings(
     if not media.is_shared:
         raise HTTPException(status_code=400, detail="Media is not shared")
     
-    media.share_ai_metadata = share_ai_metadata
+    if updates.share_ai_metadata is not None:
+        media.share_ai_metadata = updates.share_ai_metadata
+        
+    if updates.share_language is not None:
+        if updates.share_language == "default" or updates.share_language == "":
+            media.share_language = None
+        else:
+            media.share_language = updates.share_language
+            
     db.commit()
     invalidate_media_item_cache(media_id)
     
     return {
-        "share_ai_metadata": media.share_ai_metadata
+        "share_ai_metadata": media.share_ai_metadata,
+        "share_language": media.share_language
     }
 
 @router.get("/{media_id}/albums")
