@@ -2,9 +2,9 @@ class BulkAITagsModal extends BulkTagModalBase {
     constructor(options = {}) {
         super({
             id: 'bulk-ai-tags-modal',
-            title: 'Bulk Append AI Tags',
+            title: window.i18n.t('bulk_modal.ai_tags.title'),
             classPrefix: 'bulk-ai-tags',
-            emptyMessage: 'No new AI tags found in the selected items\' metadata.',
+            emptyMessage: window.i18n.t('bulk_modal.ai_tags.empty_message'),
             closeOnOutsideClick: false,
             ...options
         });
@@ -14,7 +14,7 @@ class BulkAITagsModal extends BulkTagModalBase {
 
     getBodyHTML() {
         return `
-            ${this.getLoadingHTML('Fetching AI metadata...')}
+            ${this.getLoadingHTML(window.i18n.t('bulk_modal.progress.fetching_metadata'))}
             ${this.getContentHTML()}
             ${this.getEmptyHTML()}
             ${this.getCancelledHTML()}
@@ -31,7 +31,7 @@ class BulkAITagsModal extends BulkTagModalBase {
         const selectedArray = Array.from(this.selectedItems);
 
         // Phase 1: Fetch metadata and media info
-        this.updateProgress(0, selectedArray.length, 'Fetching metadata...', 'items fetched');
+        this.updateProgress(0, selectedArray.length, window.i18n.t('bulk_modal.progress.fetching_metadata'), window.i18n.t('bulk_modal.progress.items_fetched'));
 
         const rawData = [];
         const mediaDataMap = new Map();
@@ -80,7 +80,7 @@ class BulkAITagsModal extends BulkTagModalBase {
             } finally {
                 fetchProgress++;
                 if (!this.isCancelled) {
-                    this.updateProgress(fetchProgress, selectedArray.length, 'Fetching metadata...', 'items fetched');
+                    this.updateProgress(fetchProgress, selectedArray.length, window.i18n.t('bulk_modal.progress.fetching_metadata'), window.i18n.t('bulk_modal.progress.items_fetched'));
                 }
             }
         };
