@@ -12,7 +12,7 @@ from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
 
-APP_VERSION = "1.27.40"
+APP_VERSION = "1.27.41"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -131,6 +131,18 @@ async def shared_page(request: Request, share_uuid: str, db: Session = Depends(g
     except Exception as e:
         print(f"Error loading theme for shared page: {e}")
             
+    # Handle language override
+    target_lang = settings.CURRENT_LANGUAGE
+    if media and media.share_language:
+        target_lang = media.share_language
+        
+        # Override translation helper and language for this specific context
+        context["t"] = lambda key, **kwargs: translation_helper.get(key, target_lang, **kwargs)
+        context["current_language"] = lambda: target_lang
+        
+        # For valid HTML lang attribute
+        context["html_lang"] = target_lang
+
     return templates.TemplateResponse("shared.html", context)
 
 @app.get("/albums", response_class=HTMLResponse)
