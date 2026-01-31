@@ -383,19 +383,41 @@
             "parent_badge": "FÖRÄLDER",
             "remove_children": "Ta bort {count} barn",
             "remove_selected": "Ta bort valda",
-            "search_hint": "Visar relaterade objekt. Använd sökfältet för att hitta specifik media.",
-            "search_results": "Visar sökresultat för \"{query}\"",
+            "search_hint": "Visar objekt relaterade genom taggar. Använd sökning för att hitta fler.",
+            "search_results": "Sökresultat för: {query}",
             "selected": "{count} valda",
             "set_parent": "Sätt som förälder",
             "shared": "DELAD",
             "showing_related_items": "Visar {count} relaterade objekt",
-            "title": "Hantera relationer"
+            "title": "Hantera relationer",
+            "has_one_child": "Detta objekt har 1 barn",
+            "has_children": "Detta objekt har {count} barn",
+            "parent_label": "Förälder:",
+            "parent_id_link": "ID {id}",
+            "children_count": "{count} barn",
+            "children_count_plural": "{count} barn",
+            "no_relations": "Inga relationer",
+            "current_parent_label": "Nuvarande förälder:",
+            "remove_parent_button": "Ta bort förälder",
+            "info_has_parent": "Detta objekt har en förälder. Du kan ändra eller ta bort föräldern, men kan inte lägga till barn.",
+            "children_label": "Barn:",
+            "children_items": "{count} objekt",
+            "children_items_plural": "{count} objekt",
+            "info_has_children": "Detta objekt har barn. Du kan lägga till eller ta bort barn, men kan inte sätta en förälder.",
+            "info_no_relations": "Inga relationer. Välj ett objekt för att sätta som förälder, eller välj flera objekt för att lägga till som barn.",
+            "fallback_alt": "Media {id}",
+            "added_children_success": "Lade till {count} barn",
+            "added_children_success_plural": "Lade till {count} barn",
+            "removed_children_success": "Tog bort {count} barn",
+            "removed_children_success_plural": "Tog bort {count} barn"
         },
         "share": {
             "copy_link": "Kopiera länk",
             "include_ai_metadata": "Inkludera AI-metadata",
             "link_copied": "Delningslänk kopierad till urklipp",
-            "title": "Delningsåtgärder"
+            "title": "Delningsåtgärder",
+            "share_button": "Dela",
+            "unshare_button": "Sluta dela"
         },
         "tags": {
             "append_ai_tags": "Lägg till AI-taggar",
@@ -405,6 +427,28 @@
             "search_tags_placeholder": "Sök taggar...",
             "tags_saved": "Taggar sparade",
             "title": "Taggar"
+        },
+        "albums": {
+            "add_to_albums_title": "Lägg till i album"
+        },
+        "ai_tags": {
+            "appended_count": "Lade till {count} tagg(ar) från AI-prompt"
+        },
+        "errors": {
+            "failed_to_load_video": "Kunde inte ladda video",
+            "media_not_found": "Media hittades inte",
+            "failed_load_thumbnail": "Kunde inte ladda miniatyrbild för media: {id}",
+            "creating_share_link": "Fel vid skapande av delningslänk",
+            "removing_share": "Fel vid borttagning av delning",
+            "deleting_media": "Fel vid radering av media",
+            "updating_share_settings": "Fel vid uppdatering av delningsinställningar",
+            "processing_ai_tags": "Fel vid bearbetning av AI-taggar: {error}",
+            "setting_parent": "Fel vid sättning av förälder",
+            "adding_children": "Fel vid tillägg av barn",
+            "removing_children": "Fel vid borttagning av barn",
+            "removing_parent": "Fel vid borttagning av förälder",
+            "loading_items": "Fel vid laddning av objekt",
+            "updating_rating": "Fel vid uppdatering av betyg"
         },
         "title": "Media"
     },

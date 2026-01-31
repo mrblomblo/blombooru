@@ -383,19 +383,41 @@
             "parent_badge": "PARENT",
             "remove_children": "Remove {count} Child(ren)",
             "remove_selected": "Remove Selected",
-            "search_hint": "Showing related items. Use the search bar to find specific media.",
-            "search_results": "Showing search results for \"{query}\"",
+            "search_hint": "Showing items related by tags. Use search to find more.",
+            "search_results": "Search results for: {query}",
             "selected": "{count} selected",
             "set_parent": "Set as Parent",
             "shared": "SHARED",
             "showing_related_items": "Showing {count} related items",
-            "title": "Manage Relations"
+            "title": "Manage Relations",
+            "has_one_child": "This item has 1 child",
+            "has_children": "This item has {count} children",
+            "parent_label": "Parent:",
+            "parent_id_link": "ID {id}",
+            "children_count": "{count} child",
+            "children_count_plural": "{count} children",
+            "no_relations": "No relations",
+            "current_parent_label": "Current Parent:",
+            "remove_parent_button": "Remove Parent",
+            "info_has_parent": "This item has a parent. You can change or remove the parent, but cannot add children.",
+            "children_label": "Children:",
+            "children_items": "{count} item",
+            "children_items_plural": "{count} items",
+            "info_has_children": "This item has children. You can add or remove children, but cannot set a parent.",
+            "info_no_relations": "No relations. Select one item to set as parent, or select multiple items to add as children.",
+            "fallback_alt": "Media {id}",
+            "added_children_success": "Added {count} child successfully",
+            "added_children_success_plural": "Added {count} children successfully",
+            "removed_children_success": "Removed {count} child successfully",
+            "removed_children_success_plural": "Removed {count} children successfully"
         },
         "share": {
             "copy_link": "Copy Link",
             "include_ai_metadata": "Include AI metadata",
             "link_copied": "Share link copied to clipboard",
-            "title": "Share Actions"
+            "title": "Share Actions",
+            "share_button": "Share",
+            "unshare_button": "Unshare"
         },
         "tags": {
             "append_ai_tags": "Append AI Tags",
@@ -405,6 +427,28 @@
             "search_tags_placeholder": "Search tags...",
             "tags_saved": "Tags saved successfully",
             "title": "Tags"
+        },
+        "albums": {
+            "add_to_albums_title": "Add to Albums"
+        },
+        "ai_tags": {
+            "appended_count": "Appended {count} tag(s) from AI prompt"
+        },
+        "errors": {
+            "failed_to_load_video": "Failed to load video",
+            "media_not_found": "Media not found",
+            "failed_load_thumbnail": "Failed to load thumbnail for media: {id}",
+            "creating_share_link": "Error creating share link",
+            "removing_share": "Error removing share",
+            "deleting_media": "Error deleting media",
+            "updating_share_settings": "Error updating share settings",
+            "processing_ai_tags": "Error processing AI tags: {error}",
+            "setting_parent": "Error setting parent",
+            "adding_children": "Error adding children",
+            "removing_children": "Error removing children",
+            "removing_parent": "Error removing parent",
+            "loading_items": "Error loading items",
+            "updating_rating": "Error updating rating"
         },
         "title": "Media"
     },

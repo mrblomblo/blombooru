@@ -196,8 +196,8 @@ class MediaViewer extends MediaViewerBase {
             video.onerror = () => {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-8 text-secondary">
-                        <img src="/static/images/no-thumbnail.png" alt="Media not found" class="w-32 h-32 mb-4 opacity-50">
-                        <p class="text-sm">Failed to load video</p>
+                        <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('media.errors.media_not_found')}" class="w-32 h-32 mb-4 opacity-50">
+                        <p class="text-sm">${window.i18n.t('media.errors.failed_to_load_video')}</p>
                     </div>
                 `;
             };
@@ -225,7 +225,7 @@ class MediaViewer extends MediaViewerBase {
 
             img.onerror = () => {
                 img.src = '/static/images/no-thumbnail.png';
-                img.alt = 'Media not found';
+                img.alt = window.i18n.t('media.errors.media_not_found');
                 img.style.cursor = 'default';
                 img.onclick = null;
             };
@@ -383,7 +383,7 @@ class MediaViewer extends MediaViewerBase {
         img.loading = 'lazy';
         img.className = 'transition-colors';
         img.onerror = () => {
-            console.error('Failed to load thumbnail for media:', media.id);
+            console.error(window.i18n.t('media.errors.failed_load_thumbnail', { id: media.id }));
             img.src = '/static/images/no-thumbnail.png';
         };
 
@@ -647,7 +647,7 @@ class MediaViewer extends MediaViewerBase {
             const currentAlbumIds = (data.albums || []).map(a => a.id);
 
             const result = await AlbumPicker.pick({
-                title: 'Add to Albums',
+                title: window.i18n.t('media.albums.add_to_albums_title'),
                 multiSelect: true,
                 preSelected: currentAlbumIds
             });
@@ -741,7 +741,7 @@ class MediaViewer extends MediaViewerBase {
                 body: JSON.stringify({ rating })
             });
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error updating rating');
+            app.showNotification(e.message, 'error', window.i18n.t('media.errors.updating_rating'));
         }
     }
 
@@ -752,7 +752,7 @@ class MediaViewer extends MediaViewerBase {
             const res = await app.apiCall(`/api/media/${this.mediaId}/share`, { method: 'POST' });
             this.showShareLink(res.share_url.split('/').pop(), res.share_ai_metadata);
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error creating share link');
+            app.showNotification(e.message, 'error', window.i18n.t('media.errors.creating_share_link'));
         }
     }
 
@@ -784,12 +784,12 @@ class MediaViewer extends MediaViewerBase {
                         btn.style.removeProperty('display');
                         btn.classList.remove('unshare-mode', 'border-danger', 'text-danger', 'hover:bg-danger', 'hover:tag-text');
                         btn.classList.add('surface-light', 'hover:surface-light');
-                        btnText.innerHTML = `Share`;
+                        btnText.innerHTML = window.i18n.t('media.share.share_button');
                     }
 
                     app.showNotification(window.i18n.t('notifications.media.media_unshared'), 'success');
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error removing share');
+                    app.showNotification(e.message, 'error', window.i18n.t('media.errors.removing_share'));
                 }
             }
         });
@@ -811,7 +811,7 @@ class MediaViewer extends MediaViewerBase {
                     await app.apiCall(`/api/media/${this.mediaId}`, { method: 'DELETE' });
                     window.location.href = '/';
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error deleting media');
+                    app.showNotification(e.message, 'error', window.i18n.t('media.errors.deleting_media'));
                 }
             }
         });
@@ -824,7 +824,7 @@ class MediaViewer extends MediaViewerBase {
                 method: 'PATCH'
             });
         } catch (err) {
-            app.showNotification(err.message, 'error', 'Error updating share settings');
+            app.showNotification(err.message, 'error', window.i18n.t('media.errors.updating_share_settings'));
             const toggle = this.el('share-ai-metadata-toggle');
             if (toggle) toggle.checked = !toggle.checked;
         }
@@ -882,11 +882,11 @@ class MediaViewer extends MediaViewerBase {
             tagsInput.textContent = allTags.join(' ');
 
             await this.validateAndStyleTags();
-            app.showNotification(`Appended ${newTags.length} tag(s) from AI prompt`, 'success');
+            app.showNotification(window.i18n.t('media.ai_tags.appended_count', { count: newTags.length }), 'success');
 
         } catch (e) {
             console.error('Error appending AI tags:', e);
-            app.showNotification('Error processing AI tags: ' + e.message, 'error');
+            app.showNotification(window.i18n.t('media.errors.processing_ai_tags', { error: e.message }), 'error');
         } finally {
             this.setButtonState(btn, window.i18n.t('media.tags.append_ai_tags'), false);
         }
@@ -913,8 +913,8 @@ class MediaViewer extends MediaViewerBase {
         } else {
             const childCount = items.length;
             titleEl.textContent = childCount === 1
-                ? 'This item has 1 child'
-                : `This item has ${childCount} children`;
+                ? window.i18n.t('media.relations.has_one_child')
+                : window.i18n.t('media.relations.has_children', { count: childCount });
         }
 
         const params = new URLSearchParams(window.location.search);
@@ -1069,15 +1069,15 @@ class MediaViewer extends MediaViewerBase {
         if (hasParent) {
             container.innerHTML = `
                 <div class="flex items-center justify-between">
-                    <span class="text-xs">Parent: <a href="/media/${this.currentMedia.parent_id}" class="hover:text-primary">ID ${this.currentMedia.parent_id}</a></span>
+                    <span class="text-xs">${window.i18n.t('media.relations.parent_label')} <a href="/media/${this.currentMedia.parent_id}" class="hover:text-primary">${window.i18n.t('media.relations.parent_id_link', { id: this.currentMedia.parent_id })}</a></span>
                 </div>
             `;
         } else if (hasChildren) {
             container.innerHTML = `
-                <span class="text-xs">${childCount} child${childCount !== 1 ? 'ren' : ''}</span>
+                <span class="text-xs">${childCount === 1 ? window.i18n.t('media.relations.children_count', { count: childCount }) : window.i18n.t('media.relations.children_count_plural', { count: childCount })}</span>
             `;
         } else {
-            container.innerHTML = '<p class="text-xs text-secondary">No relations</p>';
+            container.innerHTML = `<p class="text-xs text-secondary">${window.i18n.t('media.relations.no_relations')}</p>`;
         }
     }
 
@@ -1183,13 +1183,13 @@ class MediaViewer extends MediaViewerBase {
             html = `
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                        <span class="font-medium">Current Parent:</span>
+                        <span class="font-medium">${window.i18n.t('media.relations.current_parent_label')}</span>
                         <a href="/media/${this.currentMedia.parent_id}" target="_blank" class="text-primary hover:underline ml-1">
                             ID ${this.currentMedia.parent_id}
                         </a>
                     </div>
                     <button id="relation-remove-parent-btn" class="px-3 py-1 bg-danger tag-text text-xs hover:opacity-90 transition-opacity">
-                        Remove Parent
+                        ${window.i18n.t('media.relations.remove_parent_button')}
                     </button>
                 </div>
                 <p class="text-xs text-secondary mt-2">
@@ -1198,13 +1198,13 @@ class MediaViewer extends MediaViewerBase {
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    This item has a parent. You can change or remove the parent, but cannot add children.
+                    ${window.i18n.t('media.relations.info_has_parent')}
                 </p>
             `;
         } else if (hasChildren) {
             html = `
                 <div class="flex items-center justify-between flex-wrap gap-2">
-                    <span><span class="font-medium">Children:</span> ${childCount} item${childCount !== 1 ? 's' : ''}</span>
+                    <span><span class="font-medium">${window.i18n.t('media.relations.children_label')}</span> ${childCount === 1 ? window.i18n.t('media.relations.children_items', { count: childCount }) : window.i18n.t('media.relations.children_items_plural', { count: childCount })}</span>
                 </div>
                 <p class="text-xs text-secondary mt-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1212,7 +1212,7 @@ class MediaViewer extends MediaViewerBase {
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    This item has children. You can add or remove children, but cannot set a parent.
+                    ${window.i18n.t('media.relations.info_has_children')}
                 </p>
             `;
         } else {
@@ -1223,7 +1223,7 @@ class MediaViewer extends MediaViewerBase {
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    No relations. Select one item to set as parent, or select multiple items to add as children.
+                    ${window.i18n.t('media.relations.info_no_relations')}
                 </p>
             `;
         }
@@ -1313,7 +1313,7 @@ class MediaViewer extends MediaViewerBase {
         } catch (e) {
             console.error('Error loading relation gallery:', e);
             empty.style.display = 'block';
-            empty.innerHTML = '<p class="text-danger">Error loading items</p>';
+            empty.innerHTML = `<p class="text-danger">${window.i18n.t('media.errors.loading_items')}</p>`;
         } finally {
             loading.style.display = 'none';
             this.relationModal.isLoading = false;
@@ -1390,7 +1390,7 @@ class MediaViewer extends MediaViewerBase {
         // Thumbnail
         const img = document.createElement('img');
         img.src = `/api/media/${media.id}/thumbnail`;
-        img.alt = media.filename || `Media ${media.id}`;
+        img.alt = media.filename || window.i18n.t('media.relations.fallback_alt', { id: media.id });
         img.loading = 'lazy';
         img.className = 'w-full aspect-square object-cover transition-all';
         img.draggable = false;
@@ -1580,7 +1580,7 @@ class MediaViewer extends MediaViewerBase {
             this.closeRelationModal();
             location.reload();
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error setting parent');
+            app.showNotification(e.message, 'error', window.i18n.t('media.errors.setting_parent'));
         }
     }
 
@@ -1600,11 +1600,11 @@ class MediaViewer extends MediaViewerBase {
                 });
             }
 
-            app.showNotification(`Added ${selectedIds.length} child${selectedIds.length !== 1 ? 'ren' : ''} successfully`, 'success');
+            app.showNotification(selectedIds.length === 1 ? window.i18n.t('media.relations.added_children_success', { count: selectedIds.length }) : window.i18n.t('media.relations.added_children_success_plural', { count: selectedIds.length }), 'success');
             this.closeRelationModal();
             location.reload();
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error adding children');
+            app.showNotification(e.message, 'error', window.i18n.t('media.errors.adding_children'));
         }
     }
 
@@ -1631,11 +1631,11 @@ class MediaViewer extends MediaViewerBase {
                         });
                     }
 
-                    app.showNotification(`Removed ${selectedChildIds.length} child${selectedChildIds.length !== 1 ? 'ren' : ''} successfully`, 'success');
+                    app.showNotification(selectedChildIds.length === 1 ? window.i18n.t('media.relations.removed_children_success', { count: selectedChildIds.length }) : window.i18n.t('media.relations.removed_children_success_plural', { count: selectedChildIds.length }), 'success');
                     this.closeRelationModal();
                     location.reload();
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error removing children');
+                    app.showNotification(e.message, 'error', window.i18n.t('media.errors.removing_children'));
                 }
             }
         });
@@ -1661,7 +1661,7 @@ class MediaViewer extends MediaViewerBase {
                     this.closeRelationModal();
                     location.reload();
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error removing parent');
+                    app.showNotification(e.message, 'error', window.i18n.t('media.errors.removing_parent'));
                 }
             }
         });
@@ -1683,7 +1683,7 @@ class MediaViewer extends MediaViewerBase {
             btn.style.removeProperty('display');
             btn.classList.add('unshare-mode', 'border-danger', 'text-danger', 'hover:bg-danger', 'hover:tag-text');
             btn.classList.remove('surface-light', 'hover:surface-light');
-            btnText.innerHTML = `Unshare`;
+            btnText.innerHTML = window.i18n.t('media.share.unshare_button');
         }
 
         const aiMetadataToggle = this.el('share-ai-metadata-toggle');
