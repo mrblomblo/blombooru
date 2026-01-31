@@ -505,7 +505,7 @@ class BaseGallery {
         if (!btn) return;
 
         const originalText = btn.textContent;
-        btn.textContent = 'Selecting All...';
+        btn.textContent = window.i18n.t('gallery.selecting_all');
         btn.disabled = true;
 
         try {
@@ -534,7 +534,7 @@ class BaseGallery {
             const items = data.items || data.media || []; // Handle different response structures
 
             if (items.length === 0) {
-                app.showNotification('No items found to select', 'info');
+                app.showNotification(window.i18n.t('notifications.gallery.no_items_to_select'), 'info');
                 return;
             }
 
@@ -557,11 +557,11 @@ class BaseGallery {
             });
 
             this.updateBulkActionsUI();
-            app.showNotification(`Selected ${this.selectedItems.size} items total`, 'success');
+            app.showNotification(window.i18n.t('notifications.gallery.items_selected', { count: this.selectedItems.size }), 'success');
 
         } catch (e) {
             console.error('Global selection failed:', e);
-            app.showNotification('Failed to select all items', 'error');
+            app.showNotification(window.i18n.t('notifications.gallery.failed_to_select_all'), 'error');
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;
@@ -629,10 +629,10 @@ class BaseGallery {
         const modal = new ModalHelper({
             id: 'bulk-delete-modal',
             type: 'danger',
-            title: `Delete ${itemCount > 1 ? 'Multiple Items' : 'Item'}`,
-            message: `Are you sure you want to delete ${itemCount} item${itemCount > 1 ? 's' : ''}? This action cannot be undone.`,
-            confirmText: 'Yes, Delete',
-            cancelText: 'Cancel',
+            title: itemCount > 1 ? window.i18n.t('modal.bulk_delete.title', { count: itemCount }) : window.i18n.t('modal.bulk_delete.title_single'),
+            message: window.i18n.t('modal.bulk_delete.message', { count: itemCount }),
+            confirmText: window.i18n.t('modal.bulk_delete.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: async () => {
                 for (const id of this.selectedItems) {
                     try {
@@ -780,7 +780,7 @@ class BaseGallery {
 
         try {
             const result = await AlbumPicker.pick({
-                title: `Add ${itemCount} Item${itemCount > 1 ? 's' : ''} to Albums`,
+                title: window.i18n.t('gallery.add_items_to_albums_title', { count: itemCount }),
                 multiSelect: true
             });
 
@@ -797,11 +797,11 @@ class BaseGallery {
                 successCount++;
             }
 
-            app.showNotification(`Added ${itemCount} item(s) to ${successCount} album(s)`, 'success');
+            app.showNotification(window.i18n.t('notifications.gallery.added_to_albums', { itemCount, albumCount: successCount }), 'success');
             this.clearSelection();
         } catch (error) {
             console.error('Error adding to albums:', error);
-            app.showNotification(error.message || 'Error adding to albums', 'error');
+            app.showNotification(error.message || window.i18n.t('notifications.gallery.error_adding_to_albums'), 'error');
         }
     }
 
@@ -867,7 +867,7 @@ class BaseGallery {
         }
 
         if (sortedTags.length === 0) {
-            this.elements.popularTags.innerHTML = '<p class="text-secondary">No tags found</p>';
+            this.elements.popularTags.innerHTML = `<p class="text-secondary">${window.i18n.t('gallery.no_tags_found')}</p>`;
             return;
         }
 
@@ -1132,7 +1132,7 @@ class BaseGallery {
         if (media.is_shared) {
             const shareIcon = document.createElement('div');
             shareIcon.className = 'share-icon';
-            shareIcon.textContent = 'SHARED';
+            shareIcon.textContent = window.i18n.t('gallery.shared_badge');
             item.appendChild(shareIcon);
         }
 
@@ -1167,20 +1167,20 @@ class BaseGallery {
         errorDiv.className = 'col-span-full';
         errorDiv.innerHTML = `
             <div class="bg-danger tag-text p-4 my-4">
-                <strong>Error:</strong> ${message}
-                <br><small>Check the browser console for more details</small>
+                <strong>${window.i18n.t('gallery.error_label')}</strong> ${message}
+                <br><small>${window.i18n.t('gallery.check_console')}</small>
             </div>
         `;
         this.elements.grid.appendChild(errorDiv);
     }
 
-    showEmptyState(message = 'No items found') {
+    showEmptyState(message = window.i18n.t('gallery.no_items_found')) {
         if (!this.elements.grid) return;
 
         this.elements.grid.innerHTML = `
             <div class="col-span-full text-center py-16 text-secondary">
                 <h2 class="text-lg mb-2">${message}</h2>
-                ${app.isAuthenticated ? '<a href="/admin" class="btn mt-4 inline-block">Go to Admin Panel</a>' : ''}
+                ${app.isAuthenticated ? `<a href="/admin" class="btn mt-4 inline-block">${window.i18n.t('gallery.go_to_admin')}</a>` : ''}
             </div>
         `;
     }
