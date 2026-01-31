@@ -155,7 +155,7 @@ class BulkAITagsModal extends BulkTagModalBase {
                     mediaId,
                     currentTags,
                     newTags: validTags,
-                    filename: mediaData.filename || `Media ${mediaId}`
+                    filename: mediaData.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: mediaId })
                 });
             }
         }
@@ -222,7 +222,7 @@ class BulkAITagsModal extends BulkTagModalBase {
                     mediaId,
                     currentTags,
                     newTags: validTags,
-                    filename: mediaData.filename || `Media ${mediaId}`
+                    filename: mediaData.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: mediaId })
                 };
             }
         } catch (e) {
