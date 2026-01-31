@@ -44,7 +44,11 @@
             "search_albums_placeholder": "Sök album...",
             "search_manage": "Sök & hantera album",
             "title": "Albumhantering",
-            "total_albums": "Totalt antal album"
+            "total_albums": "Totalt antal album",
+            "manage_album": "Hantera album",
+            "rename_album": "Byt namn på album",
+            "change_parent_album": "Ändra överordnat album",
+            "delete_album": "Radera album"
         },
         "api_access": {
             "active_keys": "Aktiva API-nycklar",
@@ -284,6 +288,7 @@
         "items_selected": "{count} objekt valda",
         "load_more": "Ladda fler",
         "loading": "Laddar...",
+        "manage": "Hantera",
         "no": "Nej",
         "no_items_found": "Inga objekt hittades",
         "none": "Ingen",
@@ -291,7 +296,10 @@
         "search": "Sök",
         "success": "Lyckades",
         "warning": "Varning",
-        "yes": "Ja"
+        "yes": "Ja",
+        "explicit": "Explicit",
+        "questionable": "Tveksam",
+        "safe": "Säker"
     },
     "errors": {
         "forbidden": "Förbjudet",
@@ -322,10 +330,7 @@
         "select_all": "Välj alla",
         "selecting_all": "Väljer alla...",
         "shared_badge": "DELAD",
-        "sort_by": "Sortera efter",
-        "explicit": "Explicit",
-        "questionable": "Tveksam",
-        "safe": "Säker"
+        "sort_by": "Sortera efter"
     },
     "login": {
         "enter_credentials": "Ange dina uppgifter för att komma åt {app_name}",
@@ -341,10 +346,7 @@
             "albums": "Album",
             "delete_media": "Radera media",
             "download": "Ladda ner",
-            "explicit": "Explicit",
-            "questionable": "Tveksam",
             "relations": "Relationer",
-            "safe": "Säker",
             "share": "Dela",
             "title": "Åtgärder",
             "unshare": "Sluta dela"
@@ -723,9 +725,6 @@
             "base_rating": "Basbetyg",
             "base_source": "Baskäll-URL (valfritt)",
             "base_tags": "Bastaggar (läggs till före all media)",
-            "explicit": "Explicit",
-            "questionable": "Tveksam",
-            "safe": "Säker",
             "select_album": "Välj album att lägga till...",
             "title": "Basinställningar (gäller för all media)"
         },

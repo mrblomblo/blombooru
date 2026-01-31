@@ -208,9 +208,9 @@ class Uploader {
                         </svg>
                     </button>
                     <div class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('upload.base_settings.safe')}</div>
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('upload.base_settings.questionable')}</div>
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('upload.base_settings.explicit')}</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('common.safe')}</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('common.questionable')}</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('common.explicit')}</div>
                     </div>
                 </div>
             </div>
@@ -332,9 +332,9 @@ class Uploader {
                                 </svg>
                             </button>
                             <div class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('upload.base_settings.safe')}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('upload.base_settings.questionable')}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('upload.base_settings.explicit')}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('common.safe')}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('common.questionable')}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('common.explicit')}</div>
                             </div>
                         </div>
                     </div>

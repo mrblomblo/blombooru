@@ -524,7 +524,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Search & Delete Tags</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.search_delete_tags') }}</h3>
                     <div class="flex gap-2 mb-3">
                         <div class="relative w-full">
                             <input type="text" id="tag-search-input"
@@ -607,7 +607,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold mb-3">Search & Manage Albums</h3>
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.albums_management.search_manage') }}</h3>
                     <div class="flex gap-2 mb-3">
                         <div class="w-full">
                             <input type="text" id="album-search-input"
@@ -615,7 +615,8 @@
                                 class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                         </div>
                         <button id="album-search-btn"
-                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">Search</button>
+                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">{{
+                            t('common.search') }}</button>
                     </div>
                     <div id="album-search-results" class="max-h-96 overflow-y-auto"></div>
                 </div>

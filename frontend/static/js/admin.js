@@ -1233,7 +1233,7 @@ class AdminPanel {
             );
 
             if (filtered.length === 0) {
-                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">No albums found</p>';
+                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">' + window.i18n.t('album_picker.no_albums') + '</p>';
                 return;
             }
 
@@ -1255,13 +1255,13 @@ class AdminPanel {
                                 <a href="/album/${album.id}" class="text-sm font-bold hover:text-primary">${this.escapeHtml(album.name)}</a>
                                 <span class="text-xs text-secondary">(${album.media_count || 0} media)</span>
                             </div>
-                            ${parentChain ? `<div class="text-xs text-secondary">Path: ${this.escapeHtml(parentChain)}</div>` : '<div class="text-xs text-secondary">Root Album</div>'}
+                            ${parentChain ? `<div class="text-xs text-secondary">Path: ${this.escapeHtml(parentChain)}</div>` : '<div class="text-xs text-secondary">' + window.i18n.t('albums.root_album') + '</div>'}
                         </div>
                         <div class="flex gap-2">
                             <button class="manage-album-btn text-xs px-3 py-1 bg-primary primary-text hover:bg-primary"
                                 data-album-id="${album.id}"
                                 data-album-name="${this.escapeHtml(album.name)}"
-                                data-parent-id="${immediateParentId || ''}">Manage</button>
+                                data-parent-id="${immediateParentId || ''}">${window.i18n.t('common.manage')}</button>
                         </div>
                     </div>
                 `;
@@ -1302,29 +1302,29 @@ class AdminPanel {
                 <svg class="mx-auto mb-4" width="48" height="48" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" fill="var(--primary)"/>
                 </svg>
-                <h2 class="text-xl font-bold mb-2 text-primary">Manage Album</h2>
+                <h2 class="text-xl font-bold mb-2 text-primary">${window.i18n.t('admin.albums_management.manage_album')}</h2>
                 <p class="text-base mb-6 text font-medium">${this.escapeHtml(albumName)}</p>
                 <div class="flex flex-col gap-3">
                     <button id="album-manage-rename" class="px-6 py-3 transition-colors surface-light hover:surface text font-bold text-sm flex items-center justify-center gap-2">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                         </svg>
-                        Rename Album
+                        ${window.i18n.t('admin.albums_management.rename_album')}
                     </button>
                     <button id="album-manage-parent" class="px-6 py-3 transition-colors surface-light hover:surface text font-bold text-sm flex items-center justify-center gap-2">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
                         </svg>
-                        Change Parent Album
+                        ${window.i18n.t('admin.albums_management.change_parent_album')}
                     </button>
                     <button id="album-manage-delete" class="px-6 py-3 transition-colors bg-danger hover:bg-danger tag-text font-bold text-sm flex items-center justify-center gap-2">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                         </svg>
-                        Delete Album
+                        ${window.i18n.t('admin.albums_management.delete_album')}
                     </button>
                     <button id="album-manage-cancel" class="px-6 py-3 transition-colors hover:surface text font-bold text-sm flex items-center justify-center gap-2">
-                        Cancel
+                        ${window.i18n.t('common.cancel')}
                     </button>
                 </div>
             </div>

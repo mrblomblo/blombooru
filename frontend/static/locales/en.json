@@ -44,7 +44,11 @@
             "search_albums_placeholder": "Search albums...",
             "search_manage": "Search & Manage Albums",
             "title": "Albums Management",
-            "total_albums": "Total Albums"
+            "total_albums": "Total Albums",
+            "manage_album": "Manage Album",
+            "rename_album": "Rename Album",
+            "change_parent_album": "Change Parent Album",
+            "delete_album": "Delete Album"
         },
         "api_access": {
             "active_keys": "Active API Keys",
@@ -284,6 +288,7 @@
         "items_selected": "{count} items selected",
         "load_more": "Load More",
         "loading": "Loading...",
+        "manage": "Manage",
         "no": "No",
         "no_items_found": "No items found",
         "none": "None",
@@ -291,7 +296,10 @@
         "search": "Search",
         "success": "Success",
         "warning": "Warning",
-        "yes": "Yes"
+        "yes": "Yes",
+        "explicit": "Explicit",
+        "questionable": "Questionable",
+        "safe": "Safe"
     },
     "errors": {
         "forbidden": "Forbidden",
@@ -322,10 +330,7 @@
         "select_all": "Select All",
         "selecting_all": "Selecting All...",
         "shared_badge": "SHARED",
-        "sort_by": "Sort By",
-        "explicit": "Explicit",
-        "questionable": "Questionable",
-        "safe": "Safe"
+        "sort_by": "Sort By"
     },
     "login": {
         "enter_credentials": "Enter your credentials to access {app_name}",
@@ -341,10 +346,7 @@
             "albums": "Albums",
             "delete_media": "Delete Media",
             "download": "Download",
-            "explicit": "Explicit",
-            "questionable": "Questionable",
             "relations": "Relations",
-            "safe": "Safe",
             "share": "Share",
             "title": "Actions",
             "unshare": "Unshare"
@@ -723,9 +725,6 @@
             "base_rating": "Base Rating",
             "base_source": "Base Source URL (optional)",
             "base_tags": "Base Tags (prefixed to all media)",
-            "explicit": "Explicit",
-            "questionable": "Questionable",
-            "safe": "Safe",
             "select_album": "Select album to add...",
             "title": "Base Settings (applies to all media)"
         },
