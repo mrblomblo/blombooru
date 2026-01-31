@@ -93,8 +93,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.external_share_url')
-                                }}</label>
+                            <label class="block text-xs font-bold mb-2">
+                                {{ t('admin.settings.external_share_url') }}
+                            </label>
                             <input type="url" id="external-share-url" name="external_share_url"
                                 placeholder="https://example.com"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
@@ -286,7 +287,7 @@
 
                 <!-- Backup & Restore Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">Backup & Restore</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.backup.title') }}</h2>
 
                     <div class="mb-4">
                         <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.export_data') }}</h3>
@@ -331,12 +332,14 @@
 
                 <!-- System Update Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
-                    <h2 class="text-base font-bold mb-4 pb-3 border-b">System Update</h2>
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">
+                        {{ t('admin.update.title') }}
+                    </h2>
                     <p class="text-xs text-secondary mb-3">
-                        {{ t('admin.update.update_warning') }} You can
-                        find
-                        them <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
-                            class="text-primary transition-colors hover:text-primary">here</a>.<br>
+                        <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
+                            class="text-primary transition-colors hover:text-primary">
+                            {{ t('admin.update.update_warning') }}
+                        </a><br>
                         <strong>{{ t('common.warning') }}:</strong> {{ t('admin.update.backup_warning') }}
                     </p>
 
