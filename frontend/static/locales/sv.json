@@ -161,7 +161,7 @@
         },
         "title": "Adminpanel",
         "update": {
-            "backup_warning": "Varning: Uppdatering kan orsaka dataförlust om det inte görs försiktigt. Gör alltid en säkerhetskopia före uppdatering.",
+            "backup_warning": "Uppdatering kan orsaka dataförlust om det inte görs försiktigt. Gör alltid en säkerhetskopia före uppdatering.",
             "check_updates": "Sök efter uppdateringar",
             "checking": "Söker efter uppdateringar...",
             "contact_github": "Kontrollera senaste uppdateringar från det officiella arkivet. Detta kontaktar GitHub för att hämta senaste versionsinformation.",

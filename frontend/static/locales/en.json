@@ -161,7 +161,7 @@
         },
         "title": "Admin Panel",
         "update": {
-            "backup_warning": "Warning: Updating can cause data loss if not done carefully. Always make a backup before updating.",
+            "backup_warning": "Updating can cause data loss if not done carefully. Always make a backup before updating.",
             "check_updates": "Check for Updates",
             "checking": "Checking for updates...",
             "contact_github": "Check for the latest updates from the official repository. This will contact GitHub to retrieve the latest version information.",
