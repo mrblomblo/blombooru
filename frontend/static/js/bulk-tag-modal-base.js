@@ -99,7 +99,7 @@ class BulkTagModalBase {
                 </div>
                 
                 <!-- Body -->
-                <div class="flex-1 overflow-hidden p-4">
+                <div class="flex-1 overflow-auto p-4">
                     ${this.getBodyHTML()}
                 </div>
                 
