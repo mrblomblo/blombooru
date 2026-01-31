@@ -48,12 +48,30 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
             }
 
             // Process items
+            const categoryOrder = ['artist', 'character', 'copyright', 'general', 'meta'];
             this.itemsData = items.map(item => {
-                const currentTags = (item.tags || []).map(t => t.name || t);
+                let tags = item.tags || [];
+
+                // Sort tags if they are objects with category
+                tags.sort((a, b) => {
+                    const catA = a.category ? categoryOrder.indexOf(a.category) : 3;
+                    const catB = b.category ? categoryOrder.indexOf(b.category) : 3;
+
+                    const orderA = catA === -1 ? 99 : catA;
+                    const orderB = catB === -1 ? 99 : catB;
+
+                    if (orderA !== orderB) return orderA - orderB;
+
+                    const nameA = a.name || a;
+                    const nameB = b.name || b;
+                    return nameA.localeCompare(nameB);
+                });
+
+                const currentTags = tags.map(t => t.name || t);
                 return {
                     mediaId: item.id,
-                    currentTags: [...currentTags], // Original tags
-                    newTags: [...currentTags],     // Editable tags (initially same as current)
+                    currentTags: [...currentTags],
+                    newTags: [...currentTags],
                     filename: item.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: item.id })
                 };
             });
@@ -98,10 +116,6 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
             } else {
                 finalTags = input.innerText.trim().split(/\s+/).filter(t => t.length > 0);
             }
-
-            // For manual editor, we send whatever is in the input, even if empty (clearing tags)
-            // But usually we want to avoid accidental clears? 
-            // The user requested "edit media's tags freely". So clearing is valid.
 
             try {
                 const response = await fetch(`/api/media/${item.mediaId}`, {
