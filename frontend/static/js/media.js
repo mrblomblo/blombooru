@@ -393,7 +393,7 @@ class MediaViewer extends MediaViewerBase {
         if (media.is_shared) {
             const shareIcon = document.createElement('div');
             shareIcon.className = 'share-icon';
-            shareIcon.textContent = 'SHARED';
+            shareIcon.textContent = window.i18n.t('media.relations.shared');
             item.appendChild(shareIcon);
         }
 
@@ -496,13 +496,13 @@ class MediaViewer extends MediaViewerBase {
                 const modal = new ModalHelper({
                     id: 'wd-download-modal',
                     type: 'info',
-                    title: 'Download AI Model',
-                    message: `The AI tagging model needs to be downloaded first.<br><br>
-                              <strong>Model:</strong> ${this.wdTaggerSettings.modelName}<br>
-                              <strong>Size:</strong> ~${status.download_size_mb || 850} MB<br><br>
-                              This only needs to be done once.`,
-                    confirmText: 'Download & Predict',
-                    cancelText: 'Cancel',
+                    title: window.i18n.t('modal.download_model.title'),
+                    message: window.i18n.t('modal.download_model.message', {
+                        modelName: this.wdTaggerSettings.modelName,
+                        size: status.download_size_mb || 850
+                    }),
+                    confirmText: window.i18n.t('modal.download_model.confirm'),
+                    cancelText: window.i18n.t('modal.buttons.cancel'),
                     showIcon: true,
                     onConfirm: async () => {
                         await this.downloadModelAndPredict(btn);
@@ -517,12 +517,12 @@ class MediaViewer extends MediaViewerBase {
 
         } catch (e) {
             console.error('Error checking model status:', e);
-            app.showNotification('Error checking AI model status: ' + e.message, 'error');
+            app.showNotification(window.i18n.t('notifications.media.error_checking_ai_model', { error: e.message }), 'error');
         }
     }
 
     async downloadModelAndPredict(btn) {
-        this.setButtonState(btn, 'Downloading...', true);
+        this.setButtonState(btn, window.i18n.t('media.progress.downloading'), true);
 
         try {
             const res = await fetch(`/api/ai-tagger/download/${this.wdTaggerSettings.modelName}`, {
@@ -539,13 +539,13 @@ class MediaViewer extends MediaViewerBase {
 
         } catch (e) {
             console.error('Error downloading model:', e);
-            app.showNotification('Failed to download AI model: ' + e.message, 'error');
-            this.setButtonState(btn, 'Predict Tags (AI)', false);
+            app.showNotification(window.i18n.t('notifications.media.error_downloading_ai_model', { error: e.message }), 'error');
+            this.setButtonState(btn, window.i18n.t('media.tags.predict_tags'), false);
         }
     }
 
     async performWDPrediction(btn) {
-        this.setButtonState(btn, 'Predicting...', true);
+        this.setButtonState(btn, window.i18n.t('media.progress.predicting'), true);
 
         try {
             const res = await fetch(`/api/ai-tagger/predict/${this.mediaId}`, {
@@ -577,13 +577,13 @@ class MediaViewer extends MediaViewerBase {
                 .filter(t => !existingSet.has(t.toLowerCase()));
 
             if (predictedTags.length === 0) {
-                app.showNotification('No new tags predicted', 'info');
-                this.setButtonState(btn, 'Predict Tags (AI)', false);
+                app.showNotification(window.i18n.t('notifications.media.no_new_tags_predicted'), 'info');
+                this.setButtonState(btn, window.i18n.t('media.tags.predict_tags'), false);
                 return;
             }
 
             // Validate predicted tags against database in batch
-            this.setButtonState(btn, 'Validating...', true);
+            this.setButtonState(btn, window.i18n.t('media.progress.validating'), true);
 
             const validTags = [];
             try {
@@ -608,19 +608,19 @@ class MediaViewer extends MediaViewerBase {
             }
 
             if (validTags.length === 0) {
-                app.showNotification('No valid tags found in predictions', 'info');
+                app.showNotification(window.i18n.t('notifications.media.no_valid_tags_predictions'), 'info');
             } else {
                 const allTags = [...currentTags, ...validTags];
                 tagsInput.textContent = allTags.join(' ');
                 await this.validateAndStyleTags();
-                app.showNotification(`Added ${validTags.length} predicted tag(s)`, 'success');
+                app.showNotification(window.i18n.t('notifications.media.tags_added', { count: validTags.length }), 'success');
             }
 
         } catch (e) {
             console.error('Error predicting tags:', e);
-            app.showNotification('Error predicting tags: ' + e.message, 'error');
+            app.showNotification(window.i18n.t('notifications.media.error_predicting_tags', { error: e.message }), 'error');
         } finally {
-            this.setButtonState(btn, 'Predict Tags (AI)', false);
+            this.setButtonState(btn, window.i18n.t('media.tags.predict_tags'), false);
         }
     }
 
@@ -678,13 +678,13 @@ class MediaViewer extends MediaViewerBase {
                     });
                 }
 
-                app.showNotification('Albums updated successfully', 'success');
+                app.showNotification(window.i18n.t('notifications.media.albums_updated'), 'success');
             } catch (error) {
-                app.showNotification(error.message, 'error', 'Error updating albums');
+                app.showNotification(error.message, 'error', window.i18n.t('notifications.media.error_updating_albums'));
             }
         } catch (error) {
             console.error('Error opening album picker:', error);
-            app.showNotification('Error opening album picker', 'error');
+            app.showNotification(window.i18n.t('notifications.media.error_opening_album_picker'), 'error');
         }
     }
 
@@ -695,9 +695,9 @@ class MediaViewer extends MediaViewerBase {
                 body: JSON.stringify({ media_ids: [parseInt(this.mediaId)] })
             });
 
-            app.showNotification('Removed from album', 'success');
+            app.showNotification(window.i18n.t('notifications.media.removed_from_album'), 'success');
         } catch (error) {
-            app.showNotification(error.message, 'error', 'Error removing from album');
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.media.error_removing_from_album'));
         }
     }
 
@@ -714,7 +714,7 @@ class MediaViewer extends MediaViewerBase {
             });
             location.reload();
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error updating tags');
+            app.showNotification(e.message, 'error', window.i18n.t('notifications.media.error_updating_tags'));
         }
     }
 
@@ -727,10 +727,10 @@ class MediaViewer extends MediaViewerBase {
                 method: 'PATCH',
                 body: JSON.stringify({ source: sourceValue || null })
             });
-            app.showNotification('Source updated successfully', 'success');
+            app.showNotification(window.i18n.t('notifications.media.source_updated'), 'success');
             location.reload();
         } catch (e) {
-            app.showNotification(e.message, 'error', 'Error updating source');
+            app.showNotification(e.message, 'error', window.i18n.t('notifications.media.error_updating_source'));
         }
     }
 
@@ -759,17 +759,17 @@ class MediaViewer extends MediaViewerBase {
     copyShareLink() {
         this.el('share-link-input').select();
         document.execCommand('copy');
-        app.showNotification('Link copied to clipboard', 'success');
+        app.showNotification(window.i18n.t('notifications.media.link_copied'), 'success');
     }
 
     async unshareMedia() {
         const modal = new ModalHelper({
             id: 'unshare-modal',
             type: 'warning',
-            title: 'Unshare Media',
-            message: 'Are you sure you want to unshare this media? The share link will stop working.',
-            confirmText: 'Yes, Unshare',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.unshare_media.title'),
+            message: window.i18n.t('modal.unshare_media.message'),
+            confirmText: window.i18n.t('modal.unshare_media.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             confirmId: 'unshare-confirm-yes',
             cancelId: 'unshare-confirm-no',
             onConfirm: async () => {
@@ -787,7 +787,7 @@ class MediaViewer extends MediaViewerBase {
                         btnText.innerHTML = `Share`;
                     }
 
-                    app.showNotification('Media successfully unshared', 'success');
+                    app.showNotification(window.i18n.t('notifications.media.media_unshared'), 'success');
                 } catch (e) {
                     app.showNotification(e.message, 'error', 'Error removing share');
                 }
@@ -800,10 +800,10 @@ class MediaViewer extends MediaViewerBase {
         const modal = new ModalHelper({
             id: 'delete-modal',
             type: 'danger',
-            title: 'Delete Media',
-            message: 'Are you sure you want to delete this media? This action cannot be undone.',
-            confirmText: 'Yes, Delete',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.delete_media.title'),
+            message: window.i18n.t('modal.delete_media.message'),
+            confirmText: window.i18n.t('modal.delete_media.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             confirmId: 'delete-confirm-yes',
             cancelId: 'delete-confirm-no',
             onConfirm: async () => {
@@ -834,12 +834,12 @@ class MediaViewer extends MediaViewerBase {
 
     async appendAITags() {
         const btn = this.el('append-ai-tags-btn');
-        this.setButtonState(btn, 'Processing...', true);
+        this.setButtonState(btn, window.i18n.t('media.progress.processing'), true);
 
         try {
             const res = await fetch(`/api/media/${this.mediaId}/metadata`);
             if (!res.ok) {
-                app.showNotification('Could not load AI metadata', 'error');
+                app.showNotification(window.i18n.t('notifications.media.could_not_load_ai_metadata'), 'error');
                 return;
             }
 
@@ -847,7 +847,7 @@ class MediaViewer extends MediaViewerBase {
             const aiPrompt = AITagUtils.extractAIPrompt(metadata);
 
             if (!aiPrompt || typeof aiPrompt !== 'string') {
-                app.showNotification('No AI prompt found in metadata', 'error');
+                app.showNotification(window.i18n.t('notifications.media.no_ai_prompt'), 'error');
                 return;
             }
 
@@ -862,7 +862,7 @@ class MediaViewer extends MediaViewerBase {
             }
 
             if (validTags.length === 0) {
-                app.showNotification('No valid tags found in AI prompt', 'error');
+                app.showNotification(window.i18n.t('notifications.media.no_valid_tags_ai_prompt'), 'error');
                 return;
             }
 
@@ -874,7 +874,7 @@ class MediaViewer extends MediaViewerBase {
             const newTags = validTags.filter(tag => !existingTagsSet.has(tag.toLowerCase()));
 
             if (newTags.length === 0) {
-                app.showNotification('All AI tags are already present', 'info');
+                app.showNotification(window.i18n.t('notifications.media.ai_tags_already_present'), 'info');
                 return;
             }
 
@@ -888,7 +888,7 @@ class MediaViewer extends MediaViewerBase {
             console.error('Error appending AI tags:', e);
             app.showNotification('Error processing AI tags: ' + e.message, 'error');
         } finally {
-            this.setButtonState(btn, 'Append AI Tags', false);
+            this.setButtonState(btn, window.i18n.t('media.tags.append_ai_tags'), false);
         }
     }
 
@@ -909,7 +909,7 @@ class MediaViewer extends MediaViewerBase {
 
         // Set dynamic title
         if (this.currentMedia.parent_id) {
-            titleEl.textContent = 'This item belongs to a parent';
+            titleEl.textContent = window.i18n.t('media.relations.belongs_to_parent');
         } else {
             const childCount = items.length;
             titleEl.textContent = childCount === 1
@@ -1269,10 +1269,10 @@ class MediaViewer extends MediaViewerBase {
                 items = data.items || [];
                 totalPages = data.pages || 1;
 
-                searchHint.textContent = `Showing search results for "${this.relationModal.searchQuery}"`;
+                searchHint.textContent = window.i18n.t('media.relations.search_results', { query: this.relationModal.searchQuery });
             } else {
                 items = await this.getRelatedItemsForModal();
-                searchHint.textContent = 'Showing related items. Use the search bar to find specific media.';
+                searchHint.textContent = window.i18n.t('media.relations.search_hint');
             }
 
             // Filtering logic
@@ -1416,7 +1416,7 @@ class MediaViewer extends MediaViewerBase {
         if (isParent || isChild) {
             const badge = document.createElement('div');
             badge.className = `absolute top-1 right-1 px-1.5 py-0.5 text-xs font-medium ${isParent ? 'bg-[var(--parent-outline)] tag-text' : 'bg-[var(--child-outline)] tag-text'}`;
-            badge.textContent = isParent ? 'PARENT' : 'CHILD';
+            badge.textContent = isParent ? window.i18n.t('media.relations.parent_badge') : window.i18n.t('media.relations.child_badge');
             item.appendChild(badge);
         }
 
@@ -1465,7 +1465,7 @@ class MediaViewer extends MediaViewerBase {
 
         // Update count
         if (countEl) {
-            countEl.textContent = `${selectedCount} selected`;
+            countEl.textContent = window.i18n.t('media.relations.selected', { count: selectedCount });
         }
 
         // Show/hide clear button
@@ -1503,7 +1503,7 @@ class MediaViewer extends MediaViewerBase {
             if (hasSelectedChildren) {
                 if (removeChildrenBtn) {
                     removeChildrenBtn.style.display = 'block';
-                    removeChildrenBtn.textContent = `Remove ${selectedChildIds.length} Child${selectedChildIds.length !== 1 ? 'ren' : ''}`;
+                    removeChildrenBtn.textContent = window.i18n.t('media.relations.remove_children', { count: selectedChildIds.length });
                 }
             }
             // Check for non-child items to add
@@ -1516,7 +1516,7 @@ class MediaViewer extends MediaViewerBase {
                 } else {
                     if (addChildrenBtn) {
                         addChildrenBtn.style.display = 'block';
-                        addChildrenBtn.textContent = `Add ${nonChildSelected.length} as Children`;
+                        addChildrenBtn.textContent = window.i18n.t('media.relations.add_children_count', { count: nonChildSelected.length });
                     }
                 }
             }
@@ -1528,7 +1528,7 @@ class MediaViewer extends MediaViewerBase {
             } else {
                 if (addChildrenBtn) {
                     addChildrenBtn.style.display = 'block';
-                    addChildrenBtn.textContent = `Add ${selectedCount} as Children`;
+                    addChildrenBtn.textContent = window.i18n.t('media.relations.add_children_count', { count: selectedCount });
                 }
             }
         }
@@ -1576,7 +1576,7 @@ class MediaViewer extends MediaViewerBase {
                 body: JSON.stringify({ parent_id: parentId })
             });
 
-            app.showNotification('Parent set successfully', 'success');
+            app.showNotification(window.i18n.t('notifications.media.parent_set'), 'success');
             this.closeRelationModal();
             location.reload();
         } catch (e) {
@@ -1618,10 +1618,10 @@ class MediaViewer extends MediaViewerBase {
         const modal = new ModalHelper({
             id: 'remove-children-modal',
             type: 'warning',
-            title: 'Remove Children',
-            message: `Are you sure you want to remove ${selectedChildIds.length} item${selectedChildIds.length !== 1 ? 's' : ''} as children?`,
-            confirmText: 'Yes, Remove',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.remove_children.title'),
+            message: window.i18n.t('modal.remove_children.message', { count: selectedChildIds.length }),
+            confirmText: window.i18n.t('modal.remove_children.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: async () => {
                 try {
                     for (const childId of selectedChildIds) {
@@ -1646,10 +1646,10 @@ class MediaViewer extends MediaViewerBase {
         const modal = new ModalHelper({
             id: 'remove-parent-modal',
             type: 'warning',
-            title: 'Remove Parent',
-            message: 'Are you sure you want to remove the parent relationship?',
-            confirmText: 'Yes, Remove',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.remove_parent.title'),
+            message: window.i18n.t('modal.remove_parent.message'),
+            confirmText: window.i18n.t('modal.remove_parent.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: async () => {
                 try {
                     await app.apiCall(`/api/media/${this.mediaId}`, {
@@ -1657,7 +1657,7 @@ class MediaViewer extends MediaViewerBase {
                         body: JSON.stringify({ parent_id: null })
                     });
 
-                    app.showNotification('Parent removed successfully', 'success');
+                    app.showNotification(window.i18n.t('notifications.media.parent_removed'), 'success');
                     this.closeRelationModal();
                     location.reload();
                 } catch (e) {
