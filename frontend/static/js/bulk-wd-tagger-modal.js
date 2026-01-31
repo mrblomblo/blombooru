@@ -2,9 +2,9 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     constructor(options = {}) {
         super({
             id: 'bulk-wd-tagger-modal',
-            title: 'Bulk AI Tag Prediction (WD Tagger)',
+            title: window.i18n.t('bulk_modal.wd_tagger.title'),
             classPrefix: 'bulk-wd-tagger',
-            emptyMessage: 'No new tags could be predicted for the selected items.',
+            emptyMessage: window.i18n.t('bulk_modal.wd_tagger.empty_message'),
             closeOnOutsideClick: false,
             ...options
         });
@@ -31,7 +31,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             ${this.getSettingsHTML()}
             ${this.getDownloadConfirmHTML()}
             ${this.getDownloadingHTML()}
-            ${this.getLoadingHTML('Initializing AI Tagger...')}
+            ${this.getLoadingHTML(window.i18n.t('bulk_modal.progress.initializing_tagger'))}
             ${this.getContentHTML()}
             ${this.getEmptyHTML()}
             ${this.getErrorHTML()}
@@ -45,13 +45,13 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             <div class="${prefix}-settings mb-4 p-3 surface-light border text-sm" style="display: none;">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs text-secondary mb-1">General Confidence Threshold</label>
+                        <label class="block text-xs text-secondary mb-1">${window.i18n.t('bulk_modal.wd_tagger.general_threshold')}</label>
                         <input type="number" class="wd-general-threshold w-full px-2 py-1 border surface text-sm" 
                                min="0" max="1" step="0.05" value="${this.settings.generalThreshold}">
                     </div>
                     <div>
-                        <label class="block text-xs text-secondary mb-1">Character Confidence Threshold</label>
-                        <input type="number" class="wd-character-threshold w-full px-2 py-1 border surface text-sm" 
+                        <label class="block text-xs text-secondary mb-1">${window.i18n.t('bulk_modal.wd_tagger.character_threshold')}</label>
+                        <input type="number" class="wd-character-threshold w-full px-2 py-1 border surface text-sm"  
                                min="0" max="1" step="0.05" value="${this.settings.characterThreshold}">
                     </div>
                 </div>
@@ -70,17 +70,17 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                 </div>
-                <p class="text-secondary mb-2">The AI model needs to be downloaded first.</p>
+                <p class="text-secondary mb-2">${window.i18n.t('bulk_modal.wd_tagger.download_needed')}</p>
                 <p class="text-secondary text-sm mb-4">
-                    Model: <strong class="download-model-name">${this.settings.modelName}</strong><br>
-                    Size: approximately <strong class="download-model-size">~850 MB</strong>
+                    ${window.i18n.t('bulk_modal.wd_tagger.model')}: <strong class="download-model-name">${this.settings.modelName}</strong><br>
+                    ${window.i18n.t('bulk_modal.wd_tagger.size')}: <strong class="download-model-size">~850 MB</strong>
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-2">
                     <button class="${prefix}-download-cancel w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
-                        Cancel
+                        ${window.i18n.t('modal.buttons.cancel')}
                     </button>
                     <button class="${prefix}-download-confirm-btn w-full sm:w-auto px-4 py-3 sm:py-2 bg-primary tag-text text-sm font-medium transition-colors hover:bg-primary">
-                        Download & Continue
+                        ${window.i18n.t('bulk_modal.buttons.download_continue')}
                     </button>
                 </div>
             </div>
@@ -94,9 +94,9 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 <div class="mb-4">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
                 </div>
-                <p class="text-secondary mb-2">Downloading AI model...</p>
-                <p class="text-secondary text-sm">This may take a few minutes depending on your connection.</p>
-                <p class="text-secondary text-xs mt-2">Model files are cached locally for future use.</p>
+                <p class="text-secondary mb-2">${window.i18n.t('bulk_modal.progress.downloading_model')}</p>
+                <p class="text-secondary text-sm">${window.i18n.t('bulk_modal.messages.download_wait')}</p>
+                <p class="text-secondary text-xs mt-2">${window.i18n.t('bulk_modal.messages.model_cached')}</p>
             </div>
         `;
     }
@@ -105,7 +105,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <button class="${prefix}-toggle-settings w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
-                Settings
+                ${window.i18n.t('bulk_modal.buttons.settings')}
             </button>
         `;
     }
@@ -164,7 +164,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
 
     async checkModelAndStart() {
         this.showState('loading');
-        this.updateProgress(0, 0, 'Checking AI model status...', '');
+        this.updateProgress(0, 0, window.i18n.t('bulk_modal.progress.checking_model'), '');
 
         try {
             const response = await this.fetchWithAbort(`/api/ai-tagger/model-status/${this.settings.modelName}`);
@@ -231,7 +231,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
 
         // Phase 1: Fetch media info in batch
         const mediaInfoMap = new Map();
-        this.updateProgress(0, selectedArray.length, 'Fetching media info...', 'items fetched');
+        this.updateProgress(0, selectedArray.length, window.i18n.t('bulk_modal.progress.fetching_media'), window.i18n.t('bulk_modal.progress.items_fetched'));
 
         try {
             const idsParam = selectedArray.join(',');
@@ -262,7 +262,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 } finally {
                     fetchProgress++;
                     if (!this.isCancelled) {
-                        this.updateProgress(fetchProgress, selectedArray.length, 'Fetching media info...', 'items fetched');
+                        this.updateProgress(fetchProgress, selectedArray.length, window.i18n.t('bulk_modal.progress.fetching_media'), window.i18n.t('bulk_modal.progress.items_fetched'));
                     }
                 }
             };
@@ -313,7 +313,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     }
 
     async predictWithStreaming(mediaIds, mediaInfoMap) {
-        this.updateProgress(0, mediaIds.length, 'Predicting tags with AI...', 'items processed');
+        this.updateProgress(0, mediaIds.length, window.i18n.t('bulk_modal.progress.predicting_tags'), window.i18n.t('bulk_modal.progress.items_processed'));
 
         const response = await fetch('/api/ai-tagger/predict-stream', {
             method: 'POST',
@@ -393,8 +393,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 this.updateProgress(
                     data.progress,
                     data.total,
-                    'Predicting tags with AI...',
-                    'items processed'
+                    window.i18n.t('bulk_modal.progress.predicting_tags'),
+                    window.i18n.t('bulk_modal.progress.items_processed')
                 );
             }
         }
@@ -403,7 +403,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     }
 
     async predictWithBatching(mediaIds, mediaInfoMap) {
-        this.updateProgress(0, mediaIds.length, 'Predicting tags with AI...', 'items processed');
+        this.updateProgress(0, mediaIds.length, window.i18n.t('bulk_modal.progress.predicting_tags'), window.i18n.t('bulk_modal.progress.items_processed'));
 
         let processed = 0;
 
@@ -446,8 +446,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 this.updateProgress(
                     processed,
                     mediaIds.length,
-                    'Predicting tags with AI...',
-                    'items processed'
+                    window.i18n.t('bulk_modal.progress.predicting_tags'),
+                    window.i18n.t('bulk_modal.progress.items_processed')
                 );
 
             } catch (e) {
@@ -474,7 +474,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 mediaId: data.media_id,
                 currentTags: (mediaData?.tags || []).map(t => t.name || t),
                 predictedTags,
-                filename: mediaData?.filename || `Media ${data.media_id}`
+                filename: mediaData?.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: data.media_id })
             };
         }
         return null;
@@ -493,7 +493,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 mediaId: result.media_id,
                 currentTags: (mediaData?.tags || []).map(t => t.name || t),
                 predictedTags,
-                filename: mediaData?.filename || `Media ${result.media_id}`
+                filename: mediaData?.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: result.media_id })
             };
         }
         return null;
