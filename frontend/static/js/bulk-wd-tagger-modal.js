@@ -62,7 +62,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     getDownloadConfirmHTML() {
         const prefix = this.options.classPrefix;
         return `
-            <div class="${prefix}-download-confirm text-center py-8" style="display: none;">
+            <div class="${prefix}-download-confirm flex flex-col items-center justify-center text-center py-8" style="display: none;">
                 <div class="mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto text-warning">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -71,10 +71,10 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                     </svg>
                 </div>
                 <p class="text-secondary mb-2">${window.i18n.t('bulk_modal.wd_tagger.download_needed')}</p>
-                <p class="text-secondary text-sm mb-4">
-                    ${window.i18n.t('bulk_modal.wd_tagger.model')}: <strong class="download-model-name">${this.settings.modelName}</strong><br>
-                    ${window.i18n.t('bulk_modal.wd_tagger.size')}: <strong class="download-model-size">~850 MB</strong>
-                </p>
+                <div class="text-secondary text-sm mb-4 flex flex-col gap-1">
+                    <div>${window.i18n.t('bulk_modal.wd_tagger.model')}: <strong class="download-model-name">${this.settings.modelName}</strong></div>
+                    <div>${window.i18n.t('bulk_modal.wd_tagger.size')}: <strong class="download-model-size">~850 MB</strong></div>
+                </div>
                 <div class="flex flex-col sm:flex-row justify-center gap-2">
                     <button class="${prefix}-download-cancel w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
                         ${window.i18n.t('modal.buttons.cancel')}
@@ -90,7 +90,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     getDownloadingHTML() {
         const prefix = this.options.classPrefix;
         return `
-            <div class="${prefix}-downloading text-center py-8" style="display: none;">
+            <div class="${prefix}-downloading flex flex-col items-center justify-center text-center py-8" style="display: none;">
                 <div class="mb-4">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
                 </div>
