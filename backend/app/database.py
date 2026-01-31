@@ -69,6 +69,7 @@ def check_and_migrate_schema(engine):
     
     migrations = [
         migrate_add_parent_id,
+        migrate_add_share_language,
     ]
     
     for migration in migrations:
@@ -100,5 +101,22 @@ def migrate_add_parent_id(engine, inspector):
         
         conn.execute(text(
             "CREATE INDEX ix_blombooru_media_parent_id ON blombooru_media(parent_id)"
+        ))
+        conn.commit()
+
+def migrate_add_share_language(engine, inspector):
+    """Add share_language column to media table"""
+    from sqlalchemy import text
+    
+    columns = [c['name'] for c in inspector.get_columns('blombooru_media')]
+    
+    if 'share_language' in columns:
+        return
+    
+    print("Adding share_language column to blombooru_media...")
+    
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE blombooru_media ADD COLUMN share_language VARCHAR(10)"
         ))
         conn.commit()
