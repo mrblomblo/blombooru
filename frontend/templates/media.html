@@ -346,6 +346,25 @@
             <!-- Share Link Display -->
             <div id="share-link-section" style="display: none;" class="surface p-3 border">
                 <h4 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.share.title') }}</h4>
+                
+                <!-- Language Selection -->
+                <div class="mb-2" id="share-language-container">
+                    <label class="block text-xs font-bold mb-1 text-secondary">{{ t('media.share.language') }}</label>
+                    <div id="share-language-select" class="custom-select" data-value="default">
+                        <button class="custom-select-trigger w-full flex items-center justify-between gap-2 px-2 py-1.5 bg border text-xs cursor-pointer hover:border-primary transition-colors focus:outline-none focus:border-primary" type="button">
+                            <span class="custom-select-value text-secondary truncate">{{ t('common.default') }}</span>
+                            <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="10" height="10" viewBox="0 0 12 12">
+                                <path fill="currentColor" d="M6 9L1 4h10z" />
+                            </svg>
+                        </button>
+                        <div class="custom-select-dropdown bg border border-primary max-h-48 overflow-y-auto shadow-lg z-20">
+                            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="default">{{ t('common.default') }}</div>
+                            {% for lang in available_languages() %}
+                            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="{{ lang.id }}">{{ lang.native_name }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
                 <div id="ai-metadata-share-toggle" class="mb-2 p-2 bg border" style="display: none;">
                     <label class="flex items-center justify-between cursor-pointer">
                         <span class="text-xs text font-medium">{{ t('media.share.include_ai_metadata') }}</span>

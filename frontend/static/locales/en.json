@@ -280,6 +280,7 @@
         "close": "Close",
         "confirm": "Confirm",
         "copy": "Copy",
+        "default": "Default",
         "delete": "Delete",
         "edit": "Edit",
         "error": "Error",
@@ -424,6 +425,7 @@
         "share": {
             "copy_link": "Copy Link",
             "include_ai_metadata": "Include AI metadata",
+            "language": "Share Language",
             "link_copied": "Share link copied to clipboard",
             "title": "Share Actions",
             "share_button": "Share",

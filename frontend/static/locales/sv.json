@@ -280,6 +280,7 @@
         "close": "Stäng",
         "confirm": "Bekräfta",
         "copy": "Kopiera",
+        "default": "Standard",
         "delete": "Radera",
         "edit": "Redigera",
         "error": "Fel",
@@ -424,6 +425,7 @@
         "share": {
             "copy_link": "Kopiera länk",
             "include_ai_metadata": "Inkludera AI-metadata",
+            "language": "Språk för delad sida",
             "link_copied": "Delningslänk kopierad till urklipp",
             "title": "Delningsåtgärder",
             "share_button": "Dela",
