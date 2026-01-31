@@ -62,6 +62,7 @@ class MediaResponse(MediaBase):
     uploaded_at: datetime
     is_shared: bool
     share_uuid: Optional[str]
+    share_language: Optional[str] = None
     source: Optional[str] = None
     parent_id: Optional[int] = None
     has_children: bool = False
@@ -83,6 +84,7 @@ class SharedMediaResponse(MediaBase):
     uploaded_at: datetime
     is_shared: bool
     share_uuid: Optional[str]
+    share_language: Optional[str] = None
     share_ai_metadata: bool
     tags: List[SharedTagResponse] = []
     
@@ -137,6 +139,10 @@ class SettingsUpdate(BaseModel):
     external_share_url: Optional[str] = None
     require_auth: Optional[bool] = None
     redis: Optional[RedisSettings] = None
+
+class ShareSettingsUpdate(BaseModel):
+    share_ai_metadata: Optional[bool] = None
+    share_language: Optional[str] = None
 
 class AlbumBase(BaseModel):
     name: str
