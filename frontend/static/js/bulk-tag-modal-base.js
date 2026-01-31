@@ -594,7 +594,7 @@ class BulkTagModalBase {
                                 <button type="button" 
                                         class="${prefix}-clear w-11 h-11 sm:w-9 sm:h-9 bg-danger hover:bg-danger tag-text flex items-center justify-center transition-colors"
                                         data-index="${index}"
-                                        title="${window.i18n.t('bulk_modal.buttons.clear_tags')}">showError
+                                        title="${window.i18n.t('bulk_modal.buttons.clear_tags')}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-4 sm:h-4">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -620,7 +620,6 @@ class BulkTagModalBase {
     }
 
     // ==================== Button Feedback ====================
-    showError
     flashButton(index, color, buttonType = 'refresh') {
         const prefix = this.options.classPrefix;
         const btn = this.modalElement.querySelector(`.${prefix}-${buttonType}[data-index="${index}"]`);
@@ -695,7 +694,6 @@ class BulkTagModalBase {
         if (typeof this.options.onSave === 'function') {
             this.options.onSave({ successCount, errorCount });
         }
-        showError
         if (typeof app !== 'undefined' && app.showNotification) {
             if (successCount > 0) app.showNotification(window.i18n.t('bulk_modal.notifications.updated_success', { count: successCount }), 'success');
             if (errorCount > 0) app.showNotification(window.i18n.t('bulk_modal.notifications.updated_failed', { count: errorCount }), 'error');
