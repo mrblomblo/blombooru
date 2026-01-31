@@ -75,14 +75,9 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                     <div>${window.i18n.t('bulk_modal.wd_tagger.model')}: <strong class="download-model-name">${this.settings.modelName}</strong></div>
                     <div>${window.i18n.t('bulk_modal.wd_tagger.size')}: <strong class="download-model-size">~850 MB</strong></div>
                 </div>
-                <div class="flex flex-col sm:flex-row justify-center gap-2">
-                    <button class="${prefix}-download-cancel w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
-                        ${window.i18n.t('modal.buttons.cancel')}
-                    </button>
-                    <button class="${prefix}-download-confirm-btn w-full sm:w-auto px-4 py-3 sm:py-2 bg-primary tag-text text-sm font-medium transition-colors hover:bg-primary">
-                        ${window.i18n.t('bulk_modal.buttons.download_continue')}
-                    </button>
-                </div>
+                <button class="${prefix}-download-confirm-btn w-full sm:w-auto px-4 py-3 sm:py-2 bg-primary tag-text text-sm font-medium transition-colors hover:bg-primary">
+                    ${window.i18n.t('bulk_modal.buttons.download_continue')}
+                </button>
             </div>
         `;
     }
