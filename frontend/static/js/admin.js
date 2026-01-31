@@ -1842,6 +1842,7 @@ class AdminPanel {
         document.getElementById('btn-view-changelog')?.addEventListener('click', () => this.showChangelog());
 
         this.currentChangelog = [];
+        this.remoteUrl = null;
     }
 
     async checkUpdateStatus() {
@@ -1898,6 +1899,7 @@ class AdminPanel {
 
             // Changelog
             this.currentChangelog = status.changelog || [];
+            this.remoteUrl = status.remote_url || null;
             const changelogBtn = document.getElementById('btn-view-changelog');
             if (changelogBtn) {
                 if (this.currentChangelog.length > 0) {
@@ -1926,17 +1928,26 @@ class AdminPanel {
             return;
         }
 
-        const changelogHtml = this.currentChangelog.map(commit => `
+        const changelogHtml = this.currentChangelog.map(commit => {
+            let hashHtml = `<span class="font-mono text-xs bg-primary primary-text px-1">${commit.hash}</span>`;
+
+            if (this.remoteUrl) {
+                const baseUrl = this.remoteUrl.endsWith('.git') ? this.remoteUrl.slice(0, -4) : this.remoteUrl;
+                const commitUrl = `${baseUrl}/commit/${commit.hash}`;
+                hashHtml = `<a href="${commitUrl}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 cursor-pointer" title="View on Remote">${commit.hash}</a>`;
+            }
+
+            return `
             <div class="border-b last:border-0 text-left">
                 <div class="flex items-center bg p-2 gap-2">
-                    <span class="font-mono text-xs bg-primary primary-text px-1">${commit.hash}</span>
+                    ${hashHtml}
                     <div class="flex flex-col">
                         <span class="font-bold text-sm">${this.escapeHtml(commit.subject)}</span>
                         ${commit.body ? `<div class="text-xs text-secondary whitespace-pre-wrap">${this.escapeHtml(commit.body)}</div>` : ''}
-                    </div><b>hi!</b>
+                    </div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
         const modal = new ModalHelper({
             id: 'changelog-modal',

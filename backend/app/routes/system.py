@@ -64,6 +64,7 @@ class UpdateStatus(BaseModel):
     requirements_changed: bool
     notices: List[str]
     changelog: List[dict]
+    remote_url: Optional[str] = None
 
 @router.get("/update/check", response_model=UpdateStatus)
 async def check_update_status(current_user: dict = Depends(require_admin_mode)):
@@ -78,6 +79,12 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
         current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
         latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"]).decode().strip()
+        
+        try:
+            remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"]).decode().strip()
+        except subprocess.CalledProcessError:
+            remote_url = None
+
         try:
             latest_stable_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", "origin/main"]).decode().strip()
         except subprocess.CalledProcessError:
@@ -136,7 +143,8 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
             current_branch=current_branch,
             requirements_changed=requirements_changed,
             notices=notices,
-            changelog=changelog[:50]
+            changelog=changelog[:50],
+            remote_url=remote_url
         )
 
     except Exception as e:
