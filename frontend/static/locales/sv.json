@@ -363,7 +363,15 @@
         "info": {
             "save_source": "Spara källa",
             "source_url": "Käll-URL",
-            "title": "Information"
+            "title": "Information",
+            "filename": "Filnamn",
+            "type": "Typ",
+            "size": "Storlek",
+            "dimensions": "Dimensioner",
+            "rating": "Betyg",
+            "uploaded": "Uppladdad",
+            "duration": "Varaktighet",
+            "source": "Källa"
         },
         "progress": {
             "downloading": "Laddar ner...",

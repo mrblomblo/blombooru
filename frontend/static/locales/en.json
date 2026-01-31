@@ -363,7 +363,15 @@
         "info": {
             "save_source": "Save Source",
             "source_url": "Source URL",
-            "title": "Information"
+            "title": "Information",
+            "filename": "Filename",
+            "type": "Type",
+            "size": "Size",
+            "dimensions": "Dimensions",
+            "rating": "Rating",
+            "uploaded": "Uploaded",
+            "duration": "Duration",
+            "source": "Source"
         },
         "progress": {
             "downloading": "Downloading...",

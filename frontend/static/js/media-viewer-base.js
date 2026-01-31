@@ -40,19 +40,19 @@ class MediaViewerBase {
         const { downloadUrl, isShared } = options;
 
         let infoHTML = `
-            <div class="info-row"><span>Filename</span><strong>${media.filename}</strong></div>
-            <div class="info-row"><span>Type</span><strong>${media.file_type}</strong></div>
-            <div class="info-row"><span>Size</span><strong>${this.formatFileSize(media.file_size)}</strong></div>
-            <div class="info-row"><span>Dimensions</span><strong>${media.width}x${media.height}</strong></div>
-            <div class="info-row"><span>Rating</span><strong>${media.rating}</strong></div>
-            <div class="info-row"><span>Uploaded</span><strong>${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
-            ${media.duration ? `<div class="info-row"><span>Duration</span><strong>${this.formatDuration(media.duration)}</strong></div>` : ''}
+            <div class="info-row"><span>${window.i18n.t('media.info.filename')}</span><strong>${media.filename}</strong></div>
+            <div class="info-row"><span>${window.i18n.t('media.info.type')}</span><strong>${media.file_type}</strong></div>
+            <div class="info-row"><span>${window.i18n.t('media.info.size')}</span><strong>${this.formatFileSize(media.file_size)}</strong></div>
+            <div class="info-row"><span>${window.i18n.t('media.info.dimensions')}</span><strong>${media.width}x${media.height}</strong></div>
+            <div class="info-row"><span>${window.i18n.t('media.info.rating')}</span><strong>${media.rating}</strong></div>
+            <div class="info-row"><span>${window.i18n.t('media.info.uploaded')}</span><strong>${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
+            ${media.duration ? `<div class="info-row"><span>${window.i18n.t('media.info.duration')}</span><strong>${this.formatDuration(media.duration)}</strong></div>` : ''}
         `;
 
         if (media.source) {
             infoHTML += `
                 <div class="info-row">
-                    <span>Source</span>
+                    <span>${window.i18n.t('media.info.source')}</span>
                     <strong>
                         <a href="${media.source}" target="_blank" rel="noopener noreferrer" 
                            class="text-primary hover:underline" style="word-break: break-all;">
