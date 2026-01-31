@@ -23,10 +23,8 @@
             "new_username": "New Username",
             "password_changed": "Password changed successfully",
             "password_hint": "6-50 characters",
-            "password_placeholder": "password123",
             "title": "Admin Account Management",
-            "username_changed": "Username changed successfully",
-            "username_placeholder": "admin"
+            "username_changed": "Username changed successfully"
         },
         "actions": {
             "checking": "Checking...",
@@ -119,7 +117,6 @@
             "descending": "Descending",
             "external_share_url": "External Share URL",
             "external_share_url_hint": "Base URL for share links (optional, e.g., https://example.com). Leave empty to use default.",
-            "external_share_url_placeholder": "https://example.com",
             "file_name": "File Name",
             "file_size": "File Size",
             "file_type": "File Type",
@@ -363,7 +360,6 @@
         },
         "info": {
             "save_source": "Save Source",
-            "source_placeholder": "https://example.com/source",
             "source_url": "Source URL",
             "title": "Information"
         },
@@ -407,7 +403,6 @@
             "predict_tags": "Predict Tags (AI)",
             "save_tags": "Save Tags",
             "search_tags_placeholder": "Search tags...",
-            "tags_placeholder": "original highres cat_ears",
             "tags_saved": "Tags saved successfully",
             "title": "Tags"
         },
@@ -688,13 +683,10 @@
             "questionable": "Questionable",
             "safe": "Safe",
             "select_album": "Select album to add...",
-            "source_placeholder": "https://example.com/source",
-            "tags_placeholder": "original highres cat_ears",
             "title": "Base Settings (applies to all media)"
         },
         "preview": {
             "additional_tags": "Additional Tags (base tags are prefixed automatically)",
-            "additional_tags_placeholder": "solo long_hair",
             "editing": "Editing: ",
             "final_tags": "Final tags: ",
             "individual_albums": "Individual Albums",

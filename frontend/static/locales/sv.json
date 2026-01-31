@@ -23,10 +23,8 @@
             "new_username": "Nytt användarnamn",
             "password_changed": "Lösenordet har ändrats",
             "password_hint": "6-50 tecken",
-            "password_placeholder": "lösenord123",
             "title": "Hantering av administratörskonto",
-            "username_changed": "Användarnamnet har ändrats",
-            "username_placeholder": "admin"
+            "username_changed": "Användarnamnet har ändrats"
         },
         "actions": {
             "checking": "Kontrollerar...",
@@ -119,7 +117,6 @@
             "descending": "Fallande",
             "external_share_url": "Extern delnings-URL",
             "external_share_url_hint": "Bas-URL för delningslänkar (valfritt, t.ex. https://example.com). Lämna tomt för standard.",
-            "external_share_url_placeholder": "https://example.com",
             "file_name": "Filnamn",
             "file_size": "Filstorlek",
             "file_type": "Filtyp",
@@ -363,7 +360,6 @@
         },
         "info": {
             "save_source": "Spara källa",
-            "source_placeholder": "https://example.com/source",
             "source_url": "Käll-URL",
             "title": "Information"
         },
@@ -407,7 +403,6 @@
             "predict_tags": "Förutsäg taggar (AI)",
             "save_tags": "Spara taggar",
             "search_tags_placeholder": "Sök taggar...",
-            "tags_placeholder": "original highres cat_ears",
             "tags_saved": "Taggar sparade",
             "title": "Taggar"
         },
@@ -516,7 +511,7 @@
         "admin_panel": "Adminpanel",
         "albums": "Album",
         "logout": "Logga ut",
-        "search_placeholder": "Sök taggar... (t.ex. ?tjej? *_bakgrund kattöron -hund)",
+        "search_placeholder": "Sök taggar... (t.ex. ?girl? *_background cat_ears -dog)",
         "search_syntax_guide": "Söksyntaxguide"
     },
     "notifications": {
@@ -688,13 +683,10 @@
             "questionable": "Tveksam",
             "safe": "Säker",
             "select_album": "Välj album att lägga till...",
-            "source_placeholder": "https://example.com/source",
-            "tags_placeholder": "original highres cat_ears",
             "title": "Basinställningar (gäller för all media)"
         },
         "preview": {
             "additional_tags": "Ytterligare taggar (bastaggar läggs till automatiskt)",
-            "additional_tags_placeholder": "solo long_hair",
             "editing": "Redigerar: ",
             "final_tags": "Slutliga taggar: ",
             "individual_albums": "Individuella album",

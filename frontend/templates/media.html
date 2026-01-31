@@ -178,7 +178,7 @@
                 <!-- Edit Source (Admin Mode Only) -->
                 <div id="edit-source-section" style="display: none;" class="pt-3 border-t">
                     <label class="block text-xs font-bold mb-2">{{ t('media.info.source_url') }}</label>
-                    <input type="url" id="source-input" placeholder="{{ t('media.info.source_placeholder') }}"
+                    <input type="url" id="source-input" placeholder="https://example.com/source"
                         class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary mb-2">
                     <button id="save-source-btn"
                         class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
@@ -207,8 +207,7 @@
                     <div id="edit-tags-content" style="display: none;" class="mt-2">
                         <form id="edit-tags-form">
                             <div class="mb-2" style="position: relative;">
-                                <div id="tags-input" contenteditable="true"
-                                    data-placeholder="{{ t('media.tags.tags_placeholder') }}"
+                                <div id="tags-input" contenteditable="true" data-placeholder="original highres cat_ears"
                                     class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                     style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                             </div>

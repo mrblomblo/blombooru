@@ -233,13 +233,13 @@ class Uploader {
             
             <div class="mb-4">
                 <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_source')}</label>
-                <input type="url" id="base-source" placeholder="${window.i18n.t('upload.base_settings.source_placeholder')}" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                <input type="url" id="base-source" placeholder="https://example.com/source" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
             
             <div>
                 <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_tags')}</label>
                 <div style="position: relative;">
-                    <div id="base-tags" contenteditable="true" data-placeholder="${window.i18n.t('upload.base_settings.tags_placeholder')}" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                    <div id="base-tags" contenteditable="true" data-placeholder="original highres cat_ears" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                 </div>
             </div>
         `;
@@ -357,13 +357,13 @@ class Uploader {
                     
                     <div class="mb-3">
                         <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.individual_source')}</label>
-                        <input type="url" id="individual-source" placeholder="${window.i18n.t('upload.base_settings.source_placeholder')}" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                        <input type="url" id="individual-source" placeholder="https://example.com/source" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                     </div>
                     
                     <div class="mb-3">
                         <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.additional_tags')}</label>
                         <div style="position: relative;">
-                            <div id="individual-tags" contenteditable="true" data-placeholder="${window.i18n.t('upload.preview.additional_tags_placeholder')}" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                            <div id="individual-tags" contenteditable="true" data-placeholder="solo long_hair" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                         </div>
                     </div>
                     

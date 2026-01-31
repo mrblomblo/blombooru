@@ -96,7 +96,7 @@
                             <label class="block text-xs font-bold mb-2">{{ t('admin.settings.external_share_url')
                                 }}</label>
                             <input type="url" id="external-share-url" name="external_share_url"
-                                placeholder="{{ t('admin.settings.external_share_url_placeholder') }}"
+                                placeholder="https://example.com"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                             <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
                                 {{ t('admin.settings.external_share_url_hint') }}
@@ -630,7 +630,7 @@
                         <div class="mb-4">
                             <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_password') }}</label>
                             <input type="password" id="new-admin-password" required minlength="6" maxlength="50"
-                                placeholder="{{ t('admin.account.password_placeholder') }}"
+                                placeholder="password123"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                             <small class="text-secondary text-xs">{{ t('admin.account.password_hint') }}</small>
                         </div>
@@ -651,8 +651,7 @@
                 <form id="change-admin-username-form" class="mt-6">
                     <div class="mb-4">
                         <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_username') }}</label>
-                        <input type="text" id="new-admin-username" required
-                            placeholder="{{ t('admin.account.username_placeholder') }}"
+                        <input type="text" id="new-admin-username" required placeholder="admin"
                             class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                     </div>
 
