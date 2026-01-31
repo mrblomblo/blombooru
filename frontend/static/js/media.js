@@ -7,6 +7,7 @@ class MediaViewer extends MediaViewerBase {
         this.validationTimeout = null;
         this.tooltipHelper = null;
         this.ratingSelect = null;
+        this.shareLanguageSelect = null;
 
         // WD Tagger settings
         this.wdTaggerSettings = {
@@ -128,6 +129,19 @@ class MediaViewer extends MediaViewerBase {
         const predictBtn = this.el('predict-wd-tags-btn');
         if (predictBtn) {
             predictBtn.style.display = 'block';
+        }
+
+        // Initialize custom select for share language
+        const shareLanguageSelectElement = this.el('share-language-select');
+        if (shareLanguageSelectElement) {
+            this.shareLanguageSelect = new CustomSelect(shareLanguageSelectElement);
+            if (this.currentMedia.share_language) {
+                this.shareLanguageSelect.setValue(this.currentMedia.share_language);
+            }
+
+            this.shareLanguageSelect.element.addEventListener('change', async (e) => {
+                await this.updateShareSettings({ share_language: e.detail.value });
+            });
         }
 
         // Load albums
@@ -460,7 +474,7 @@ class MediaViewer extends MediaViewerBase {
         });
 
         this.el('share-ai-metadata-toggle')?.addEventListener('change', async (e) => {
-            await this.updateShareSettings(e.target.checked);
+            await this.updateShareSettings({ share_ai_metadata: e.target.checked });
         });
 
         this.el('append-ai-tags-btn')?.addEventListener('click', async () => {
@@ -818,15 +832,18 @@ class MediaViewer extends MediaViewerBase {
         modal.show();
     }
 
-    async updateShareSettings(shareAIMetadata) {
+    async updateShareSettings(updates) {
         try {
-            await app.apiCall(`/api/media/${this.mediaId}/share-settings?share_ai_metadata=${shareAIMetadata}`, {
-                method: 'PATCH'
+            await app.apiCall(`/api/media/${this.mediaId}/share-settings`, {
+                method: 'PATCH',
+                body: JSON.stringify(updates)
             });
         } catch (err) {
             app.showNotification(err.message, 'error', window.i18n.t('media.errors.updating_share_settings'));
             const toggle = this.el('share-ai-metadata-toggle');
+            const languageSelect = this.el('share-language-select');
             if (toggle) toggle.checked = !toggle.checked;
+            if (languageSelect) languageSelect.value = 'default';
         }
     }
 
