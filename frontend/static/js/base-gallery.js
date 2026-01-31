@@ -426,9 +426,10 @@ class BaseGallery {
         if (bulkWDTaggerBtn) {
             bulkWDTaggerBtn.addEventListener('click', () => this.openBulkWDTaggerModal());
         }
+    }
 
-        // Initialize bulk AI tags modal
-        if (typeof BulkAITagsModal !== 'undefined') {
+    initBulkAITagsModal() {
+        if (typeof BulkAITagsModal !== 'undefined' && !this.bulkAITagsModal) {
             this.bulkAITagsModal = new BulkAITagsModal({
                 onSave: () => {
                     this.clearSelection();
@@ -436,15 +437,34 @@ class BaseGallery {
                 }
             });
         }
+    }
 
-        // Initialize bulk WD tagger modal
-        if (typeof BulkWDTaggerModal !== 'undefined') {
+    initBulkWDTaggerModal() {
+        if (typeof BulkWDTaggerModal !== 'undefined' && !this.bulkWDTaggerModal) {
             this.bulkWDTaggerModal = new BulkWDTaggerModal({
                 onSave: () => {
                     this.clearSelection();
                     this.loadContent();
                 }
             });
+        }
+    }
+
+    openBulkAITagsModal() {
+        if (!this.bulkAITagsModal) {
+            this.initBulkAITagsModal();
+        }
+        if (this.bulkAITagsModal) {
+            this.bulkAITagsModal.show(this.selectedItems);
+        }
+    }
+
+    openBulkWDTaggerModal() {
+        if (!this.bulkWDTaggerModal) {
+            this.initBulkWDTaggerModal();
+        }
+        if (this.bulkWDTaggerModal) {
+            this.bulkWDTaggerModal.show(this.selectedItems);
         }
     }
 
@@ -565,22 +585,6 @@ class BaseGallery {
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;
-        }
-    }
-
-    openBulkAITagsModal() {
-        if (this.selectedItems.size === 0) return;
-
-        if (this.bulkAITagsModal) {
-            this.bulkAITagsModal.show(this.selectedItems);
-        }
-    }
-
-    openBulkWDTaggerModal() {
-        if (this.selectedItems.size === 0) return;
-
-        if (this.bulkWDTaggerModal) {
-            this.bulkWDTaggerModal.show(this.selectedItems);
         }
     }
 
