@@ -6,7 +6,7 @@ class AlbumPicker {
             onConfirm: options.onConfirm || (() => { }),
             onCancel: options.onCancel || (() => { }),
             preSelected: options.preSelected || [], // Array of album IDs
-            title: options.title || 'Select Albums'
+            title: options.title || window.i18n.t('album_picker.title')
         };
 
         this.albums = [];
@@ -24,7 +24,7 @@ class AlbumPicker {
     async loadAlbums() {
         try {
             const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
-            if (!response.ok) throw new Error('Failed to load albums');
+            if (!response.ok) throw new Error(window.i18n.t('album_picker.load_error'));
 
             const data = await response.json();
             this.albums = data.items || [];
@@ -54,7 +54,7 @@ class AlbumPicker {
 
         } catch (error) {
             console.error('Error loading albums:', error);
-            app.showNotification('Failed to load albums', 'error');
+            app.showNotification(window.i18n.t('notifications.album_picker.failed_to_load_albums'), 'error');
             this.albums = [];
         }
     }
@@ -80,7 +80,7 @@ class AlbumPicker {
                 </div>
 
                 <div class="mb-3">
-                    <input type="text" id="album-picker-search" placeholder="Search albums..."
+                    <input type="text" id="album-picker-search" placeholder="${window.i18n.t('album_picker.search_placeholder')}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
@@ -88,13 +88,13 @@ class AlbumPicker {
                     <!-- Albums will be rendered here -->
                 </div>
 
-                <div class="text-xs text-secondary mb-3">
-                    <span id="album-picker-selected-count">0</span> album(s) selected
+                <div id="album-picker-selected-status" class="text-xs text-secondary mb-3">
+                    ${window.i18n.t('album_picker.selected_count', { count: 0 })}
                 </div>
 
                 <div class="flex gap-2 justify-end">
-                    <button id="album-picker-cancel" class="px-4 py-2 border hover:surface text-xs">Cancel</button>
-                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs">Confirm</button>
+                    <button id="album-picker-cancel" class="px-4 py-2 border hover:surface text-xs">${window.i18n.t('album_picker.cancel')}</button>
+                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs">${window.i18n.t('album_picker.confirm')}</button>
                 </div>
             </div>
         `;
@@ -125,7 +125,7 @@ class AlbumPicker {
         const albumsToRender = filteredAlbums || this.albums;
 
         if (albumsToRender.length === 0) {
-            listEl.innerHTML = '<p class="text-secondary text-xs p-4 text-center">No albums found</p>';
+            listEl.innerHTML = `<p class="text-secondary text-xs p-4 text-center">${window.i18n.t('album_picker.no_albums')}</p>`;
             return;
         }
 
@@ -170,10 +170,10 @@ class AlbumPicker {
                        ${isSelected ? 'checked' : ''}>
                 <div class="flex-1 min-w-0">
                     <div class="text-xs font-medium truncate">${album.name}</div>
-                    ${parentPath ? `<div class="text-xs text-secondary truncate">Path: ${parentPath}</div>` : ''}
+                    ${parentPath ? `<div class="text-xs text-secondary truncate">${window.i18n.t('album_picker.path', { path: parentPath })}</div>` : ''}
                     <div class="text-xs text-secondary">
-                        ${album.media_count || 0} items
-                        ${album.depth === 0 ? '<span class="tag meta tag-text text-xs px-1 ml-1">Root</span>' : ''}
+                        ${window.i18n.t('album_picker.items_count', { count: album.media_count || 0 })}
+                        ${album.depth === 0 ? `<span class="tag meta tag-text text-xs px-1 ml-1">${window.i18n.t('album_picker.root')}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -204,9 +204,9 @@ class AlbumPicker {
     }
 
     updateSelectedCount() {
-        const countEl = this.modal.querySelector('#album-picker-selected-count');
-        if (countEl) {
-            countEl.textContent = this.selectedAlbumIds.size;
+        const statusEl = this.modal.querySelector('#album-picker-selected-status');
+        if (statusEl) {
+            statusEl.textContent = window.i18n.t('album_picker.selected_count', { count: this.selectedAlbumIds.size });
         }
     }
 
