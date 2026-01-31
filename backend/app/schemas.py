@@ -133,6 +133,7 @@ class SettingsUpdate(BaseModel):
     default_sort: Optional[str] = None
     default_order: Optional[str] = None
     theme: Optional[str] = None
+    language: Optional[str] = None
     external_share_url: Optional[str] = None
     require_auth: Optional[bool] = None
     redis: Optional[RedisSettings] = None
