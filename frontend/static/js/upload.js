@@ -50,7 +50,7 @@ class Uploader {
         if (!this.baseAlbumSelect) return;
 
         const availableAlbums = this.allAlbums.filter(album => !this.baseAlbumIds.has(album.id));
-        const options = [{ value: '', text: 'Select album to add...', selected: true }];
+        const options = [{ value: '', text: window.i18n.t('upload.base_settings.select_album'), selected: true }];
         availableAlbums.forEach(album => {
             options.push({ value: album.id, text: album.name });
         });
@@ -108,7 +108,7 @@ class Uploader {
             !fileData.individualAlbumIds.has(album.id)
         );
 
-        const options = [{ value: '', text: 'Select album to add...', selected: true }];
+        const options = [{ value: '', text: window.i18n.t('upload.base_settings.select_album'), selected: true }];
         availableAlbums.forEach(album => {
             options.push({ value: album.id, text: album.name });
         });
@@ -132,7 +132,7 @@ class Uploader {
                 badge.className = 'surface px-2 py-1 border text-xs flex items-center gap-2 opacity-70';
                 badge.innerHTML = `
                     <span>${this.escapeHtml(album.name)}</span>
-                    <span class="text-[10px] text-secondary">(Base)</span>
+                    <span class="text-[10px] text-secondary">${window.i18n.t('upload.base_settings.base_badge')}</span>
                 `;
                 container.appendChild(badge);
             }
@@ -196,50 +196,50 @@ class Uploader {
         controlsDiv.className = 'bg p-4 border my-4';
         controlsDiv.style.display = 'none';
         controlsDiv.innerHTML = `
-            <h3 class="text-sm font-bold mb-3">Base Settings (applies to all media)</h3>
+            <h3 class="text-sm font-bold mb-3">${window.i18n.t('upload.base_settings.title')}</h3>
             
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Base Rating</label>
+                <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_rating')}</label>
                 <div id="base-rating" class="custom-select" data-value="safe">
                     <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                        <span class="custom-select-value text-secondary">Safe</span>
+                        <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.safe')}</span>
                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                             <path fill="currentColor" d="M6 9L1 4h10z"/>
                         </svg>
                     </button>
                     <div class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">Safe</div>
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">Questionable</div>
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">Explicit</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('upload.base_settings.safe')}</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('upload.base_settings.questionable')}</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('upload.base_settings.explicit')}</div>
                     </div>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Base Albums</label>
+                <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_albums')}</label>
                 <div class="flex flex-wrap gap-2 mb-2 hidden" id="base-albums-list"></div>
                 <div id="base-album-select" class="custom-select" data-value="">
                     <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                        <span class="custom-select-value text-secondary">Select album to add...</span>
+                        <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                             <path fill="currentColor" d="M6 9L1 4h10z"/>
                         </svg>
                     </button>
                     <div class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
-                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="">Select album to add...</div>
+                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="">${window.i18n.t('upload.base_settings.select_album')}</div>
                     </div>
                 </div>
             </div>
             
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">Base Source URL (optional)</label>
-                <input type="url" id="base-source" placeholder="https://example.com/source" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_source')}</label>
+                <input type="url" id="base-source" placeholder="${window.i18n.t('upload.base_settings.source_placeholder')}" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
             
             <div>
-                <label class="block text-xs font-bold mb-2">Base Tags (prefixed to all media)</label>
+                <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_tags')}</label>
                 <div style="position: relative;">
-                    <div id="base-tags" contenteditable="true" data-placeholder="original highres cat_ears" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                    <div id="base-tags" contenteditable="true" data-placeholder="${window.i18n.t('upload.base_settings.tags_placeholder')}" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                 </div>
             </div>
         `;
@@ -316,35 +316,35 @@ class Uploader {
         gridDiv.style.display = 'none';
         gridDiv.innerHTML = `
             <div class="bg p-4 border mb-4">
-                <h3 class="text-sm font-bold mb-3">Uploaded Media (click to edit individual rating, source, and tags)</h3>
+                <h3 class="text-sm font-bold mb-3">${window.i18n.t('upload.preview.title')}</h3>
                 <div id="preview-thumbnails" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4"></div>
                 
                 <div id="individual-controls" style="display: none;" class="border-t pt-4">
-                    <h4 class="text-xs font-bold mb-3">Editing: <span id="current-filename"></span></h4>
+                    <h4 class="text-xs font-bold mb-3">${window.i18n.t('upload.preview.editing')}<span id="current-filename"></span></h4>
                     
                     <div class="mb-3">
-                        <label class="block text-xs font-bold mb-2">Individual Rating</label>
+                        <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.individual_rating')}</label>
                         <div id="individual-rating" class="custom-select" data-value="safe">
                             <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                                <span class="custom-select-value text-secondary">Safe</span>
+                                <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.safe')}</span>
                                 <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                                     <path fill="currentColor" d="M6 9L1 4h10z"/>
                                 </svg>
                             </button>
                             <div class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">Safe</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">Questionable</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">Explicit</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected" data-value="safe">${window.i18n.t('upload.base_settings.safe')}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="questionable">${window.i18n.t('upload.base_settings.questionable')}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs" data-value="explicit">${window.i18n.t('upload.base_settings.explicit')}</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-xs font-bold mb-2">Individual Albums</label>
+                        <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.individual_albums')}</label>
                         <div class="flex flex-wrap gap-2 mb-2" id="individual-albums-list"></div>
                         <div id="individual-album-select" class="custom-select" data-value="">
                             <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                                <span class="custom-select-value text-secondary">Select album to add...</span>
+                                <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
                                 <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                                     <path fill="currentColor" d="M6 9L1 4h10z"/>
                                 </svg>
@@ -356,22 +356,22 @@ class Uploader {
                     </div>
                     
                     <div class="mb-3">
-                        <label class="block text-xs font-bold mb-2">Individual Source URL (optional)</label>
-                        <input type="url" id="individual-source" placeholder="https://example.com/source" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
+                        <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.individual_source')}</label>
+                        <input type="url" id="individual-source" placeholder="${window.i18n.t('upload.base_settings.source_placeholder')}" class="w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                     </div>
                     
                     <div class="mb-3">
-                        <label class="block text-xs font-bold mb-2">Additional Tags (base tags are prefixed automatically)</label>
+                        <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.additional_tags')}</label>
                         <div style="position: relative;">
-                            <div id="individual-tags" contenteditable="true" data-placeholder="solo long_hair" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
+                            <div id="individual-tags" contenteditable="true" data-placeholder="${window.i18n.t('upload.preview.additional_tags_placeholder')}" class="tag-input w-full surface px-3 py-2 border text-xs focus:outline-none focus:border-primary" style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                         </div>
                     </div>
                     
                     <div class="text-xs text-secondary mb-2">
-                        Final tags: <span id="final-tags-preview" class="text"></span>
+                        ${window.i18n.t('upload.preview.final_tags')}<span id="final-tags-preview" class="text"></span>
                     </div>
                     
-                    <button id="remove-media-btn" class="px-3 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">Remove This Media</button>
+                    <button id="remove-media-btn" class="px-3 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">${window.i18n.t('upload.preview.remove_media')}</button>
                 </div>
             </div>
         `;
@@ -465,8 +465,8 @@ class Uploader {
         submitDiv.style.display = 'none';
         submitDiv.className = 'flex gap-2';
         submitDiv.innerHTML = `
-            <button id="cancel-all-btn" class="flex-1 px-4 py-2 surface-light transition-colors hover:surface-light text text-xs">Cancel & Clear All</button>
-            <button id="submit-all-btn" class="flex-1 px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs font-bold">Submit All Media</button>
+            <button id="cancel-all-btn" class="flex-1 px-4 py-2 surface-light transition-colors hover:surface-light text text-xs">${window.i18n.t('upload.submit.cancel_all')}</button>
+            <button id="submit-all-btn" class="flex-1 px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs font-bold">${window.i18n.t('upload.submit.submit_all')}</button>
         `;
 
         document.getElementById('preview-grid').parentNode.insertBefore(submitDiv, document.getElementById('preview-grid').nextSibling);
@@ -568,7 +568,7 @@ class Uploader {
         // Show loading indicator
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'bg-primary primary-text p-2 mb-2 text-xs';
-        loadingDiv.textContent = `Extracting ${archiveFile.name}...`;
+        loadingDiv.textContent = window.i18n.t('upload.progress.extracting', { filename: archiveFile.name });
         this.uploadArea.parentNode.insertBefore(loadingDiv, this.uploadArea.nextSibling);
 
         try {
@@ -620,13 +620,13 @@ class Uploader {
                 }
             }
 
-            loadingDiv.textContent = `✓ Extracted ${result.files.length} files from ${archiveFile.name}`;
+            loadingDiv.textContent = window.i18n.t('upload.progress.extracted_success', { count: result.files.length, filename: archiveFile.name });
             setTimeout(() => loadingDiv.remove(), 3000);
 
         } catch (error) {
             console.error('Archive extraction error:', error);
             loadingDiv.className = 'bg-danger tag-text p-2 mb-2 text-xs';
-            loadingDiv.textContent = `✗ Error extracting ${archiveFile.name}: ${error.message}`;
+            loadingDiv.textContent = window.i18n.t('upload.progress.extracted_error', { filename: archiveFile.name, error: error.message });
             setTimeout(() => loadingDiv.remove(), 5000);
         }
     }
@@ -669,7 +669,7 @@ class Uploader {
         // Add tags indicator
         const tagsIndicator = document.createElement('div');
         tagsIndicator.className = 'absolute bottom-0 left-0 right-0 surface bg-opacity-75 px-1 text-xs truncate tags-indicator';
-        tagsIndicator.textContent = this.getFullTags(fileData).join(' ') || 'No tags';
+        tagsIndicator.textContent = this.getFullTags(fileData).join(' ') || window.i18n.t('upload.preview.no_tags');
         thumbnailDiv.appendChild(tagsIndicator);
 
         thumbnailDiv.addEventListener('click', (e) => {
@@ -735,7 +735,7 @@ class Uploader {
         if (this.selectedFileIndex !== null) {
             const fileData = this.uploadedFiles[this.selectedFileIndex];
             const finalTags = this.getFullTags(fileData);
-            document.getElementById('final-tags-preview').textContent = finalTags.join(' ') || 'None';
+            document.getElementById('final-tags-preview').textContent = finalTags.join(' ') || window.i18n.t('upload.preview.none');
         }
     }
 
@@ -789,7 +789,7 @@ class Uploader {
 
             if (tagsIndicator) {
                 const fullTags = this.getFullTags(fileData);
-                tagsIndicator.textContent = fullTags.join(' ') || 'No tags';
+                tagsIndicator.textContent = fullTags.join(' ') || window.i18n.t('upload.preview.no_tags');
             }
         }
     }
@@ -835,7 +835,7 @@ class Uploader {
 
         submitBtn.disabled = true;
         cancelBtn.disabled = true;
-        submitBtn.textContent = 'Uploading...';
+        submitBtn.textContent = window.i18n.t('upload.progress.uploading');
 
         let successCount = 0;
         let failCount = 0;
@@ -843,7 +843,7 @@ class Uploader {
 
         for (let i = 0; i < this.uploadedFiles.length; i++) {
             const fileData = this.uploadedFiles[i];
-            submitBtn.textContent = `Uploading ${i + 1}/${this.uploadedFiles.length}...`;
+            submitBtn.textContent = window.i18n.t('upload.progress.uploading_progress', { current: i + 1, total: this.uploadedFiles.length });
 
             try {
                 await this.uploadFile(fileData);
@@ -861,12 +861,12 @@ class Uploader {
         }
 
         // Show results
-        let message = `Successfully uploaded ${successCount} file(s).`;
+        let message = window.i18n.t('upload.progress.upload_success', { count: successCount });
         if (duplicateCount > 0) {
-            message += ` ${duplicateCount} duplicate(s) skipped.`;
+            message += ` ${window.i18n.t('upload.progress.duplicates_skipped', { count: duplicateCount })}`;
         }
         if (failCount > 0) {
-            message += ` ${failCount} failed.`;
+            message += ` ${window.i18n.t('upload.progress.failed', { count: failCount })}`;
         }
 
         app.showNotification(message, 'success');
@@ -1042,7 +1042,7 @@ class Uploader {
                 badge.className = 'surface px-2 py-1 border text-xs flex items-center gap-2 opacity-70';
                 badge.innerHTML = `
                     <span>${this.escapeHtml(album.name)}</span>
-                    <span class="text-[10px] text-secondary">(Base)</span>
+                    <span class="text-[10px] text-secondary">${window.i18n.t('upload.base_settings.base_badge')}</span>
                 `;
                 container.appendChild(badge);
             }
