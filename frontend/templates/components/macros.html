@@ -77,7 +77,8 @@ location='desktop') %}
                         class="custom-select-trigger w-full flex items-center justify-between gap-3 px-2 py-1 bg border text-xs cursor-pointer hover:border-primary focus:outline-none focus:border-primary transition-colors"
                         type="button">
                         <span class="custom-select-value">
-                            {{ t('admin.settings.descending') if default_order == 'desc' else t('admin.settings.ascending') }}
+                            {{ t('admin.settings.descending') if default_order == 'desc' else
+                            t('admin.settings.ascending') }}
                         </span>
                         {{ _select_arrow() }}
                     </button>
@@ -133,16 +134,10 @@ location='desktop') %}
             {{ t('gallery.add_to_albums') }}
         </button>
         {% endif %}
-        {% if 'ai_tags' in buttons %}
-        <button id="bulk-ai-tags-btn"
-            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
-            {{ t('gallery.bulk_ai_tags') }}
-        </button>
-        {% endif %}
-        {% if 'wd_tagger' in buttons %}
-        <button id="bulk-wd-tagger-btn"
-            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
-            {{ t('gallery.bulk_predict_tags') }}
+        {% if 'manage_tags' in buttons %}
+        <button id="bulk-manage-tags-btn"
+            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs flex items-center gap-1.5">
+            {{ t('gallery.manage_tags') }}
         </button>
         {% endif %}
         {% if 'remove' in buttons %}
