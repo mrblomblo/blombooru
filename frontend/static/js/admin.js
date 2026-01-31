@@ -219,7 +219,7 @@ class AdminPanel {
         };
 
         btn.disabled = true;
-        btn.textContent = 'Testing...';
+        btn.textContent = window.i18n.t('admin.actions.testing');
         resultDiv.style.display = 'none';
 
         try {
@@ -295,7 +295,7 @@ class AdminPanel {
             resultDiv.textContent = '✓ ' + result.message;
 
             // Update displayed username if you show it anywhere
-            app.showNotification('Username updated successfully. You are now logged in as: ' + result.new_username, 'success');
+            app.showNotification(window.i18n.t('notifications.admin.username_updated', { username: result.new_username }), 'success');
 
             // Clear the username field
             document.getElementById('new-admin-username').value = '';
@@ -366,7 +366,7 @@ class AdminPanel {
         const tagStrings = text.split(/\s+/).filter(t => t.length > 0);
 
         if (tagStrings.length === 0) {
-            app.showNotification('Please enter at least one tag!', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.enter_at_least_one_tag'), 'error');
             return;
         }
 
@@ -386,7 +386,7 @@ class AdminPanel {
         }
 
         if (tagsToCreate.length === 0) {
-            app.showNotification('All tags already exist or are aliases.', 'error', 'Nothing to add');
+            app.showNotification(window.i18n.t('notifications.admin.tags_already_exist'), 'error', window.i18n.t('notifications.admin.nothing_to_add'));
             return;
         }
 
@@ -527,18 +527,18 @@ class AdminPanel {
         const externalShareUrl = document.getElementById('external-share-url')?.value;
 
         if (!appName || !theme || !itemsPerPage) {
-            app.showNotification('Please fill in all settings fields!', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.fill_all_settings'), 'error');
             return;
         }
 
         if (appName.length < 1 || appName.length > 25) {
-            app.showNotification('Application name must be between 1 and 25 characters!', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.app_name_length'), 'error');
             return;
         }
 
         const itemsPerPageNum = parseInt(itemsPerPage);
         if (isNaN(itemsPerPageNum) || itemsPerPageNum < 20 || itemsPerPageNum > 200) {
-            app.showNotification('Items per page must be between 20 and 200!', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.items_per_page_range'), 'error');
             return;
         }
 
@@ -574,7 +574,7 @@ class AdminPanel {
 
             location.reload();
         } catch (error) {
-            app.showNotification(error.message, 'error', 'Error saving settings');
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_saving_settings'));
         }
     }
 
@@ -582,7 +582,7 @@ class AdminPanel {
         const scanBtn = document.getElementById('scan-media-btn');
         const originalText = scanBtn.textContent;
         scanBtn.disabled = true;
-        scanBtn.textContent = 'Scanning...';
+        scanBtn.textContent = window.i18n.t('admin.actions.scanning');
 
         try {
             const result = await app.apiCall('/api/admin/scan-media', {
@@ -590,19 +590,19 @@ class AdminPanel {
             });
 
             if (result.new_files === 0) {
-                app.showNotification('No new untracked media files found.', 'info');
+                app.showNotification(window.i18n.t('notifications.admin.no_untracked_media'), 'info');
                 scanBtn.disabled = false;
                 scanBtn.textContent = originalText;
                 return;
             }
 
             // Show loading message
-            scanBtn.textContent = `Loading ${result.new_files} file(s)...`;
+            scanBtn.textContent = window.i18n.t('admin.messages.scan_loading', { count: result.new_files });
 
             // Get the uploader instance
             const uploader = window.uploaderInstance;
             if (!uploader) {
-                app.showNotification('Please refresh the page and try again.', 'error', 'Uploader not initialized');
+                app.showNotification(window.i18n.t('notifications.admin.refresh_and_retry'), 'error', window.i18n.t('notifications.admin.uploader_not_initialized'));
                 scanBtn.disabled = false;
                 scanBtn.textContent = originalText;
                 return;
@@ -621,7 +621,7 @@ class AdminPanel {
                         continue;
                     }
 
-                    scanBtn.textContent = `Loading ${loadedCount + 1}/${result.new_files}...`;
+                    scanBtn.textContent = window.i18n.t('admin.messages.scan_progress', { current: loadedCount + 1, total: result.new_files });
 
                     // Fetch the file from the server
                     const response = await fetch(`/api/admin/get-untracked-file?path=${encodeURIComponent(filePath)}`);
@@ -666,7 +666,7 @@ class AdminPanel {
 
         } catch (error) {
             console.error('Scan error:', error);
-            app.showNotification(error.message, 'error', 'Error scanning media');
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_scanning_media'));
         } finally {
             scanBtn.disabled = false;
             scanBtn.textContent = originalText;
@@ -970,20 +970,20 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'delete-tag-modal',
             type: 'danger',
-            title: 'Delete Tag',
-            message: 'Are you sure you want to delete this tag and its aliases? This action cannot be undone.',
-            confirmText: 'Yes, Delete',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.delete_tag.title'),
+            message: window.i18n.t('modal.delete_tag.message'),
+            confirmText: window.i18n.t('modal.delete_tag.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             confirmId: 'delete-tag-confirm-yes',
             cancelId: 'delete-tag-confirm-no',
             onConfirm: async () => {
                 try {
                     await app.apiCall(`/api/admin/tags/${tagId}`, { method: 'DELETE' });
-                    app.showNotification('Tag deleted', 'success');
+                    app.showNotification(window.i18n.t('notifications.admin.tag_deleted'), 'success');
                     await this.searchTags();
                     await this.loadTagStats();
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error deleting tag');
+                    app.showNotification(e.message, 'error', window.i18n.t('notifications.admin.error_deleting_tag'));
                 }
             }
         });
@@ -995,10 +995,10 @@ class AdminPanel {
         const firstModal = new ModalHelper({
             id: 'clear-tags-first-modal',
             type: 'danger',
-            title: 'Clear All Tags',
-            message: 'Are you sure you want to delete ALL tags? This cannot be undone!',
-            confirmText: 'Continue',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.clear_tags.title'),
+            message: window.i18n.t('modal.clear_tags.message'),
+            confirmText: window.i18n.t('modal.clear_tags.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             confirmId: 'clear-tags-first-confirm-yes',
             cancelId: 'clear-tags-first-confirm-no',
             onConfirm: () => {
@@ -1006,20 +1006,20 @@ class AdminPanel {
                 const secondModal = new ModalHelper({
                     id: 'clear-tags-second-modal',
                     type: 'danger',
-                    title: 'Final Confirmation',
-                    message: 'This will delete all tags and aliases. Are you REALLY sure?',
-                    confirmText: 'Yes, Delete All',
-                    cancelText: 'Cancel',
+                    title: window.i18n.t('modal.clear_tags_confirm.title'),
+                    message: window.i18n.t('modal.clear_tags_confirm.message'),
+                    confirmText: window.i18n.t('modal.clear_tags_confirm.confirm'),
+                    cancelText: window.i18n.t('modal.buttons.cancel'),
                     confirmId: 'clear-tags-second-confirm-yes',
                     cancelId: 'clear-tags-second-confirm-no',
                     onConfirm: async () => {
                         try {
                             await app.apiCall('/api/admin/clear-tags', { method: 'DELETE' });
-                            app.showNotification('All tags cleared successfully', 'success');
+                            app.showNotification(window.i18n.t('notifications.admin.all_tags_cleared'), 'success');
                             await this.loadTagStats();
                             document.getElementById('tag-search-results').innerHTML = '';
                         } catch (error) {
-                            app.showNotification(error.message, 'error', 'Error clearing tags');
+                            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_clearing_tags'));
                         }
                     }
                 });
@@ -1182,7 +1182,7 @@ class AdminPanel {
 
         const albumName = nameInput.value.trim();
         if (!albumName) {
-            app.showNotification('Please enter an album name!', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.enter_album_name'), 'error');
             return;
         }
 
@@ -1197,7 +1197,7 @@ class AdminPanel {
                 body: JSON.stringify(albumData)
             });
 
-            app.showNotification('Album created successfully!', 'success');
+            app.showNotification(window.i18n.t('notifications.admin.album_created'), 'success');
 
             // Clear form
             nameInput.value = '';
@@ -1210,7 +1210,7 @@ class AdminPanel {
             await this.loadAlbums();
 
         } catch (error) {
-            app.showNotification(error.message, 'error', 'Error creating album');
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_creating_album'));
         }
     }
 
@@ -1411,7 +1411,7 @@ class AdminPanel {
         const confirmRename = async () => {
             const newName = input.value.trim();
             if (!newName) {
-                app.showNotification('Please enter a name!', 'error');
+                app.showNotification(window.i18n.t('notifications.admin.enter_name'), 'error');
                 return;
             }
             if (newName === currentName) {
@@ -1428,7 +1428,7 @@ class AdminPanel {
                     body: JSON.stringify({ name: newName })
                 });
 
-                app.showNotification('Album renamed successfully!', 'success');
+                app.showNotification(window.i18n.t('notifications.admin.album_renamed'), 'success');
                 await this.searchAlbums();
                 await this.loadAlbums();
                 await this.loadAlbumStats();
@@ -1437,7 +1437,7 @@ class AdminPanel {
                 this.showAlbumManageModal(albumId, newName, currentParentId);
 
             } catch (error) {
-                app.showNotification(error.message, 'error', 'Error renaming album');
+                app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_renaming_album'));
                 // Return to manage modal on error
                 this.showAlbumManageModal(albumId, currentName, currentParentId);
             }
@@ -1513,7 +1513,7 @@ class AdminPanel {
             albums = data.items || [];
         } catch (error) {
             console.error('Error loading albums:', error);
-            app.showNotification('Error loading albums', 'error');
+            app.showNotification(window.i18n.t('notifications.admin.error_loading_albums'), 'error');
             this.showAlbumManageModal(albumId, albumName, currentParentId);
             return;
         }
@@ -1612,7 +1612,7 @@ class AdminPanel {
                     })
                 });
 
-                app.showNotification('Parent album updated successfully!', 'success');
+                app.showNotification(window.i18n.t('notifications.admin.parent_album_updated'), 'success');
                 await this.searchAlbums();
                 await this.loadAlbums();
                 await this.loadAlbumStats();
@@ -1621,7 +1621,7 @@ class AdminPanel {
                 this.showAlbumManageModal(albumId, albumName, newParentId || null);
 
             } catch (error) {
-                app.showNotification(error.message, 'error', 'Error updating parent album');
+                app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_updating_parent'));
                 // Return to manage modal on error
                 this.showAlbumManageModal(albumId, albumName, currentParentId);
             }
@@ -1655,10 +1655,10 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'delete-album-modal',
             type: 'danger',
-            title: 'Delete Album',
-            message: `Are you sure you want to delete "${this.escapeHtml(albumName)}"? This will only delete the album itself. Media and child albums will not be deleted.`,
-            confirmText: 'Yes, Delete',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.delete_album.title'),
+            message: window.i18n.t('modal.delete_album.message', { albumName: this.escapeHtml(albumName) }),
+            confirmText: window.i18n.t('modal.delete_album.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             confirmId: 'delete-album-confirm-yes',
             cancelId: 'delete-album-confirm-no',
             onConfirm: async () => {
@@ -1666,13 +1666,13 @@ class AdminPanel {
                     await app.apiCall(`/api/albums/${albumId}?cascade=false`, {
                         method: 'DELETE'
                     });
-                    app.showNotification('Album deleted successfully!', 'success');
+                    app.showNotification(window.i18n.t('notifications.admin.album_deleted'), 'success');
                     await this.searchAlbums();
                     await this.loadAlbums();
                     await this.loadAlbumStats();
                     // Don't return to manage modal since album is deleted
                 } catch (e) {
-                    app.showNotification(e.message, 'error', 'Error deleting album');
+                    app.showNotification(e.message, 'error', window.i18n.t('notifications.admin.error_deleting_album'));
                     // Return to manage modal on error
                     this.showAlbumManageModal(albumId, albumName, currentParentId);
                 }
@@ -1689,17 +1689,17 @@ class AdminPanel {
         const inputId = 'api-key-name-input';
         const modal = new ModalHelper({
             id: 'api-key-name-modal',
-            title: 'Name your API Key',
+            title: window.i18n.t('modal.api_key_name.title'),
             message: `
                 <div class="text-left">
                     <input type="text" id="${inputId}" 
                         class="w-full bg px-3 py-2 mb-4 border text-xs hover:border-primary transition-colors focus:outline-none focus:border-primary"
-                        placeholder="e.g. My Mobile App, External Script..."
+                        placeholder="${window.i18n.t('modal.api_key_name.placeholder')}"
                         autocomplete="off">
                 </div>
             `,
-            confirmText: 'Generate Key',
-            cancelText: 'Cancel',
+            confirmText: window.i18n.t('modal.api_key_name.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: () => {
                 const nameInput = document.getElementById(inputId);
                 const name = nameInput ? nameInput.value.trim() : '';
@@ -1737,7 +1737,7 @@ class AdminPanel {
             const input = document.getElementById('new-api-key-value');
             input.select();
             document.execCommand('copy');
-            app.showNotification('API Key copied to clipboard!', 'success');
+            app.showNotification(window.i18n.t('notifications.admin.api_key_copied'), 'success');
         });
     }
 
@@ -1797,9 +1797,9 @@ class AdminPanel {
             // Reload list
             this.loadApiKeys();
 
-            app.showNotification('API Key generated successfully!', 'success');
+            app.showNotification(window.i18n.t('notifications.admin.api_key_generated'), 'success');
         } catch (error) {
-            app.showNotification(error.message, 'error', 'Error generating API key');
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_generating_api_key'));
         }
     }
 
@@ -1807,10 +1807,10 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'revoke-api-key-modal',
             type: 'danger',
-            title: 'Revoke API Key',
-            message: 'Are you sure you want to revoke this API Key? This action cannot be undone and any applications using it will lose access immediately.',
-            confirmText: 'Revoke Key',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.revoke_api_key.title'),
+            message: window.i18n.t('modal.revoke_api_key.message'),
+            confirmText: window.i18n.t('modal.revoke_api_key.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: async () => {
                 try {
                     await app.apiCall(`/api/admin/api-keys/${keyId}`, {
@@ -1818,9 +1818,9 @@ class AdminPanel {
                     });
 
                     this.loadApiKeys();
-                    app.showNotification('API Key revoked successfully', 'success');
+                    app.showNotification(window.i18n.t('notifications.admin.api_key_revoked'), 'success');
                 } catch (error) {
-                    app.showNotification(error.message, 'error', 'Error revoking API key');
+                    app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_revoking_api_key'));
                 } finally {
                     modal.destroy();
                 }
@@ -1882,7 +1882,7 @@ class AdminPanel {
             if (devBtn) {
                 if (status.current_hash === status.latest_dev_hash) {
                     devBtn.disabled = true;
-                    devBtn.textContent = 'Already on Latest Dev';
+                    devBtn.textContent = window.i18n.t('admin.messages.already_latest');
                 }
             }
 
@@ -1902,7 +1902,7 @@ class AdminPanel {
             if (changelogBtn) {
                 if (this.currentChangelog.length > 0) {
                     changelogBtn.style.display = 'block';
-                    changelogBtn.textContent = `View Changelog (${this.currentChangelog.length})`;
+                    changelogBtn.textContent = window.i18n.t('admin.messages.view_changelog', { count: this.currentChangelog.length });
                 } else {
                     changelogBtn.style.display = 'none';
                 }
@@ -1911,7 +1911,7 @@ class AdminPanel {
         } catch (e) {
             console.error(e);
             if (loading) {
-                loading.textContent = 'Error checking for updates: ' + e.message;
+                loading.textContent = window.i18n.t('admin.messages.update_error', { error: e.message });
                 loading.classList.remove('hidden');
                 loading.classList.add('text-danger');
             }
@@ -1941,9 +1941,9 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'changelog-modal',
             type: 'info',
-            title: 'Changelog',
+            title: window.i18n.t('modal.changelog.title'),
             message: `<div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">${changelogHtml}</div>`,
-            confirmText: 'Got it',
+            confirmText: window.i18n.t('modal.changelog.confirm'),
             cancelText: '',
             onConfirm: () => {
                 modal.destroy();
@@ -1956,7 +1956,7 @@ class AdminPanel {
     async performUpdate(target) {
         if (typeof ModalHelper === 'undefined') {
             console.error('ModalHelper not available');
-            if (!confirm(`Are you sure you want to update to ${target}? You will need to manually restart the server to fully apply the update.`)) return;
+            if (!confirm(window.i18n.t('notifications.admin.update_confirm', { target }))) return;
             this._execute_update(target);
             return;
         }
@@ -1964,10 +1964,10 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'update-confirm-modal',
             type: 'warning',
-            title: 'System Update',
-            message: `Are you sure you want to update to the latest <strong>${target}</strong> release?<br>You will need to manually restart the server to fully apply the update.<br><br><b>Ensure you have read and understood the changelog and notices before proceeding.</b>`,
-            confirmText: 'Update Now',
-            cancelText: 'Cancel',
+            title: window.i18n.t('modal.system_update.title'),
+            message: window.i18n.t('modal.system_update.message', { target: target }),
+            confirmText: window.i18n.t('modal.system_update.confirm'),
+            cancelText: window.i18n.t('modal.buttons.cancel'),
             onConfirm: () => {
                 this._execute_update(target);
                 modal.destroy();
@@ -1984,7 +1984,7 @@ class AdminPanel {
         const resultDiv = document.getElementById('update-result');
         const resultLog = document.getElementById('update-result-log');
         if (resultDiv) resultDiv.classList.remove('hidden');
-        if (resultLog) resultLog.textContent = 'Starting update process...';
+        if (resultLog) resultLog.textContent = window.i18n.t('admin.messages.update_started');
 
         try {
             const response = await app.apiCall('/api/system/update/perform', {
@@ -1997,11 +1997,11 @@ class AdminPanel {
             }
 
             if (response.success) {
-                app.showNotification('Update initiated successfully', 'success');
+                app.showNotification(window.i18n.t('notifications.admin.update_initiated'), 'success');
             }
         } catch (e) {
             if (resultLog) resultLog.textContent += `\nError: ${e.message}`;
-            app.showNotification('Update failed: ' + e.message, 'error');
+            app.showNotification(window.i18n.t('notifications.admin.update_failed', { error: e.message }), 'error');
         }
     }
 }
