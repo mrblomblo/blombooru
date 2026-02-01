@@ -12,6 +12,8 @@
   
 </div>
 
+<p align="center">Also available in <a href="">Russian</a> (last updated Feb, 01, 2026)</p>
+
 <p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
 
 Blombooru is a private, single-user alternative to image boorus like Danbooru and Gelbooru. It is designed for individuals who want a powerful, easy-to-use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
@@ -384,8 +386,8 @@ Upload a `.zip`, `.tar.gz`, or `.tgz` archive containing your media, and Blomboo
 
 #### 3. Filesystem Scan
 
-Move your media files directly into the configured storage directory. Then, navigate to the Admin Panel and click the **Scan for Untracked Media** button. The server will scan the directory, find new files, generate thumbnails, and add them to your library.
-
+Move your media files directly into the configured storage directory. Then, navigate to the Admin Panel and click the **Scan for Untracked Media** button. The server will scan the /app/media/original dir (notice that it's not easily accessible directory), find new files, generate thumbnails, and add them to your library.
+ 
 *Duplicate media is automatically detected by its hash and will not be re-imported.*
 
 ### Tagging & Searching
@@ -486,16 +488,21 @@ Blombooru includes a built-in system updater in the Admin Panel that allows you 
 #### How to Update
 
 1. Log in as the admin and navigate to the **Admin Panel**.
-2. Scroll to the **System Update** section.
-3. Click **Check for Updates** to fetch the latest version information from GitHub.
-4. Review the changelog by clicking **View Changelog** to see what's new.
-5. If updates are available, click either:
+2. Select **System** tab
+3. Scroll to the **System Update** section.
+4. Click **Check for Updates** to fetch the latest version information from GitHub.
+5. Review the changelog by clicking **View Changelog** to see what's new.
+6. If updates are available, click either:
    - **Update to Latest Dev** - Updates to the latest commit on the `main` branch (bleeding edge)
    - **Update to Latest Stable** - Updates to the latest tagged release (recommended)
 
 The updater will automatically run `git pull` (or `git checkout <tag>`) and display the output. After updating, **restart Blombooru** to apply the changes:
 
 - **Docker:** `docker compose down && docker compose up -d`
+
+> [!NOTE]
+> Docker updates are not supported at the moment. When running in Docker, Blombooru will show a warning, telling you to manually run git pull on host machine and recompose the container.
+
 - **Python:** Stop the server (Ctrl+C) and run `python run.py` again
 
 #### Dependency Changes

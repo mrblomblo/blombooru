@@ -12,167 +12,164 @@
   
 </div>
 
-<div align="center">
+<p align="center"><b>Ваш персональный, Self-Hosted инструмент для тегирования медиафайлов.</b></p> 
 
-<p align="center"><b>Ваш персональный, Self-Hosted инструмент для маркировки медиафайлов.</b></p>
-
-Blombooru - приватная, single-user альтернатива Booru-like доскам (R34, Danbooru или Gelbooru). Она разработана для тех, кому нужно мощное, легкое в использовании и современное решения для организации и маркировки личной коллекции медиа. Благодаря удобному интерфейсу, гибкому администрированию и простой кастомизации Blombooru даёт вам полный контроль над вашей коллекцией.
-
-> [!ВАЖНО]
+> [!IMPORTANT]
 > На данный момент проект находится в стадии **активной разработки**, и в него могут быть внесены существенные изменения без предварительных уведомлений (хоть я и стараюсь уменьшить их влияние на существующих пользователей).  
 > Если вы хотите использовать Blombooru после его официального выпуска (и документирования всех существенных изменений), пожалуйста, нажмите на кнопку **Watch**, чтобы получить уведомление о первом официальном релизе!
+> Локализация на русский язык: @cobaltcobaltcobalt
 
 <details>
-<summary>View Screenshots</summary>
+<summary>Скриншоты:</summary>
 
-**Homepage**
+**Домашняя страница**
 <img width="1920" alt="Homepage" src="https://github.com/user-attachments/assets/eaa9b99e-ff64-439f-bb00-e5a37c53db3a" />
 
-**Media Viewer Page**
+**Страница просмотра медиа**
 <img width="1920" alt="Media-viewer page" src="https://github.com/user-attachments/assets/c3dcebf7-2cee-475b-b428-54986a27c42c" />
 
-**Shared Media Page**
+**Страница публичного медиа**
 <img width="1920" alt="Shared media page" src="https://github.com/user-attachments/assets/6fa43d69-eb44-46a4-85b4-99e85322fbea" />
 
-**Admin Panel**
+**Панель администратора**
 <img width="1920" alt="Admin panel" src="https://github.com/user-attachments/assets/19db7c83-bbcb-48c6-a505-78f03ea6964e" />
 
 </details>
 
-## Table of Contents
+## Содержание
 
-- [Key Features](#key-features)
-- [Installation & Setup](#installation--setup)
-  - [Docker](#docker-recommended)
-    - [Multi-Instance Setup](#running-multiple-instances)
+- [Ключевые особенности](#ключевые-особенности)
+- [Установка и настройка](#установка-и-настройка)
+  - [Docker](#docker)
+    - [Несколько инстансов](#несколько-инстансов)
   - [Python](#python)
-- [Usage Guide](#usage-guide)
-  - [Logging In](#logging-in)
-  - [Admin Mode](#admin-mode)
-  - [Adding Tags](#adding-tags)
-  - [Uploading Media](#uploading-media)
-  - [Tagging & Searching](#tagging--searching)
-  - [Sharing Media](#sharing-media)
-  - [System Updater](#system-updater)
-  - [API & Third-Party Apps](#api--third-party-apps)
-- [Theming](#theming)
-- [Technical Details](#technical-details)
-- [Disclaimer](#disclaimer)
-- [License](#license)
+- [Использование](#использование)
+  - [Вход в систему](#вход-в-систему)
+  - [Режим администратора](#режим-администратора)
+  - [Добавление тегов](#добавление-тегов)
+  - [Загрузка медиа](#загрузка-медиа)
+  - [Простановка тегов и поиск](#простановка-тегов-и-поиск)
+  - [Общий доступ](#общий-доступ)
+  - [Обновление системы](#обновление-системы)
+  - [API и сторонние приложения](#api-и-сторонние-приложения)
+- [Темы](#темы)
+- [Технические детали](#технические-детали)
+- [Отказ от ответственности](#отказ-от-ответственности)
+- [Лицензия](#лицензия)
 
-## Key Features
+## Ключевые особенности
 
-### Core Functionality
+### Основные функции
 
-- **Danbooru-Style Tagging:** A familiar and powerful tagging system with categories (artist, character, copyright, etc.), tag-based searching, and negative tag exclusion.
+- **Теги как в Danbooru:** Знакомая и мощная система тегов по категориям (художник, персонаж, автор и т. д.), поиском по тегам и исключениям тегов.
 
-- **Easy Tag Database Imports:** Import custom tag lists via a simple CSV upload in the admin panel to keep your system current.
+- **Простой импорт тегов:** Доступен импорт пользовательских списков тегов в CSV через панель администратора, чтобы ваша коллекция всегда была актуальной.
 
-- **Albums:** Organize your media into albums, which can hold both media items and other sub-albums for limitless nesting and organization.
+- **Альбомы:** Могут содержать как медиафайлы, так и другие подальбомы для неограниченного вложения (рекурсия!) и простой организации.
 
-- **Media Relations:** Link related media using parent-child relationships. Group image variations, multi-page comics, and more—keeping related content easily accessible.
+- **Связи между медиафайлами:** Создавайте связи «родитель-потомок». Группируйте варианты изображений, многостраничные комиксы и многое другое, чтобы связанный контент был легко доступен.
 
-### AI & Automation
+### ИИ и автоматизация
 
-- **AI-Friendly:** Easily view accompanying AI metadata for almost any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags to the tag editor directly from the AI prompt.
+- **AI-Friendly:** Легко просматривайте сопутствующие метаданные ИИ для практически любых медиафайлов, созданных с помощью SwarmUI, ComfyUI, A1111 и других. Также, вы можете добавлять теги в редактор прямо из промпта.
 
-- **Automatic Tagging:** Fast-track tagging with the WDv3 Auto Tagger integration, which analyzes images and suggests accurate tags with a single click.
+- **Автоматическое тегирование:** Быстрая маркировка с помощью интеграции WDv3 Auto Tagger, анализирующей изображения и предлагающей точные теги одним кликом.
 
-### Security & Sharing
+### Безопасность и общий доступ
 
-- **Secure Mode:** When enabled, users must log in to interact with Blombooru. Public routes such as share links and static files remain public. Perfect for private collections that you don't want anyone else in the house to see!
+- **Приватный режим:** Если включен, пользователи должны войти в аккаунт для взаимодействия с Blombooru. Публичные ссылки и статичные файлы остаются общедоступными. Просто для владельца коллекции, недоступно посторонним.
 
-- **Safe Browsing:** Browse your collection without fear of accidental edits. All management actions (uploading, editing, deleting) require you to be logged in as the admin.
+- **Защита от изменений:** Просматривайте свою коллекцию, не боясь что-либо изменить. Все подобные действия требуют входа под логином администратора.
 
-- **Secure Media Sharing:** Generate unique, persistent links to share specific media. Shared items are presented in a stripped-down, secure view with optional sharing of AI metadata.
+- **Безопасный обмен медиафайлами:** Создавайте уникальные постоянные ссылки, для того, чтобы поделиться конкретными постами. Публичные ссылки представлены в урезаном, безопасном виде, с возможностью дополнительного показа AI метаданных.
 
-### Customization & Theming
+### Кастомизация и темы
 
-- **Modern & Responsive UI:** Built with Tailwind CSS for a beautiful and consistent experience on both desktop and mobile devices.
+- **Современный и быстрый UI:** Построен на Tailwind CSS для красивого и надёжного использования на ПК и мобильных устройствах.
 
-- **Highly Customizable Theming:** Tailor the look and feel using simple CSS variables. Drop new `.css` files into the `themes` folder, register them in `themes.py`, and restart.
+- **Крайне простая кастомизация:** Настройте внешний вид с помощью простого CSS. Добавьте новые файлы `.css` в папку `themes`, внесите их в `themes.py` и перезапустите Blombooru.
 
-- **Many Themes to Choose From:** Blombooru comes with the four Catppuccin color palettes, Gruvbox light & dark, Everforest light & dark, OLED, and more!
+- **Много встроенных тем:** В Blombooru уже вшито 4 Catppuccin темы, Gruvbox light & dark, Everforest light & dark, OLED и другие!
 
-### Flexibility & Integration
+### Гибкость и интеграции
 
-- **Flexible Media Uploads:** Add media via drag-and-drop, by importing a compressed archive, or by placing files in the storage directory and pressing "Scan for Untracked Media."
+- **Гибкость в загрузке медиа:** Добавляйте медиафайлы через drag-and-drop, импортируя архив или положитесь на автоматику: лежащие в директории файлы будут добавлены автоматически по нажатию кнопки "Сканирование неотслеженных медиафайлов"
 
-- **User-Friendly Onboarding:** A simple first-time setup process to configure your admin account, database connection, and branding.
+- **Быстрый старт:** Простой процесс OOBE для настройки аккаунта администратора, базы данных и названия вашей копии Blombooru
 
-- **High-Performance Caching:** Optional Redis integration provides lightning-fast response times for heavy queries, autocompletes, and Danbooru-compatible API requests.
+- **Высокопроизводительное кеширование:** Опциональная интеграция с Redis обеспечивает молниеносное время отклика для сложных запросов, автозаполнения и Danbooru-совместимых API вызовов.
 
-- **Danbooru v2 API Compatibility:** Connect to Blombooru using your favorite third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) thanks to a built-in compatibility layer.
+- **Danbooru v2 API совместимость:** Используйте Blombooru с вашим любимым third-party Booru клиентом (Grabber, Tachiyomi, или BooruNav)
 
-## Installation & Setup
+## Установка и настройка
 
-You can choose to either use Blombooru in a Docker container *(recommended)* or run it directly with Python.
+Вы можете использовать Blombooru в Docker контейнере *(рекомендовано)* или запускать напрямую из Python.
 
-### Docker *(Recommended)*
+### Docker
 
-This is the recommended method for using Blombooru.
+Это рекомендуемый метод для использования Blombooru.
 
-| Prerequisite | Notes |
+| Требование | Пометка |
 |:-------------|:------|
-| Docker | Required |
-| Git | Recommended (alternatively, download the project via the GitHub website) |
+| Docker | Требуется |
+| Git | Рекомендуется (иначе воспользуйтесь кнопкой Code -> Download .ZIP) |
 
-1. **Clone the repository**
+1. **Подготовка файлов**
 
     ```bash
     git clone https://github.com/mrblomblo/blombooru.git
     cd blombooru
     ```
 
-2. **Customize the environment variables**  
-    Create a copy of the `example.env` file and name it `.env`. Then open the newly created file with your favorite text editor and edit the values after the `=` on each row. The most important one to change is the example password assigned to `POSTGRES_PASSWORD`. The others *can* stay as they are, unless, for example, port 8000 is already in use by another program.
+2. **Настройка среды**  
+    Создайте копию `example.env` и переименуйте в `.env`. После, откройте эту копию в текстовом редакторе и измените значения, идущие после  `=` на всех строках. Самое важное, что необходимо поменять, это пароль в поле `POSTGRES_PASSWORD`. Остальные можно не трогать, если вы уверены, что не будет конфликтов. (к примеру, порт 8000 уже используется другим софтом)
 
-3. **First-time run & Onboarding**  
-    Start the Docker container (make sure you are in the root Blombooru folder, the one with the `docker-compose.yml` file):
+3. **Первый запуск и настройка**  
+    Запустите Docker контейнер (убедитесь, что находитесь в корне папки Blombooru, там будет файл `docker-compose.yml`):
 
     ```bash
     docker compose up --build -d
     ```
 
-    *You may need to use `sudo` or run the command from a terminal with elevated privileges.*
+    *Возможно, вам нужно будет выполнить это как `sudo`*
 
-    Now, open your web browser and navigate to `http://localhost:<port>` (replace `<port>` with the port you specified in the `.env` file). You will be greeted by the onboarding page. Here you will:
-    - Set your Admin Username and Password.
-    - Enter your PostgreSQL connection details. The server will test the connection before proceeding. Unless you changed `POSTGRES_DB` and/or `POSTGRES_USER`, you only need to fill in the password you set in the `.env` file. Do not change the DB Host.
-    - *(Optional)* Enable and configure Redis for caching.
-    - Customize the site's Branding Name (defaults to "Blombooru").
+    После, откройте браузер и перейдите по `http://localhost:<port>` (где `<port>` - это порт, который вы указали в `.env`). Откроется страница первой настройки. Теперь необходимо:
+    - Установить имя пользователя и пароль администратора.
+    - Ввести данные от PostgreSQL. Сервер попробует подключиться к ней перед продолжением настройки. Если вы не меняли `POSTGRES_DB` и/или `POSTGRES_USER`, вам потребуется только заполнить пароль, который вы указывали в `.env`. Не меняйте DB Host.
+    - *(опционально)* Включите и настройте кеширование через Redis.
+    - Настройте название сайта (по умолчанию - "Blombooru").
 
-    Once submitted, the server will create the database schema and your admin account.
+    После настройки, сервер создаст БД и аккаунт администратора.
 
-4. **Running the application again**  
-    After the initial setup, you can run the server with the following command (again, make sure you are in the root Blombooru folder):
+4. **Перезапуск приложения**  
+    После первого запуска и настройки, вы можете запускать сервер, используя:
     
     ```bash
     docker compose up -d
     ```
 
-    *You may need to use `sudo` or run the command from a terminal with elevated privileges.*
+    *Возможно, вам нужно будет выполнить это как `sudo`*
 
-    All settings are saved to a `settings.json` file in the `data` folder, and all uploaded media is saved to the `media/original` folder. Note that these folders will not be easily accessible and will not be created in the root Blombooru folder.
+    Все настройки сохраняются в `settings.json` файл в папке `data`, а все загруженные медиа - в `media/original`. Эти папки не будет легкодоступными и находятся не в корне Blombooru.
 
-5. **Shutting down the container**
+5. **Выключение сервера**
 
     ```bash
     docker compose down
     ```
 
-#### Running Multiple Instances
+#### Несколько инстансов
 
-If you need to run multiple independent Blombooru instances (for example, separate libraries for different purposes or users), Docker Compose makes this straightforward. Each instance will have its own isolated database, Redis cache, media storage, and configuration.
+Если вам необходимо запускать несколько инстансов Blombooru (к примеру, для разделения БД по разным типам файлов или для разных пользователей), Docker Compose позволит сделать это. Каждый инстанс будет иметь собственную изолированую БД, Redis кеш, хранилище медиа и конфигурацию.
 
-**Prerequisites:**
-- Completed at least one standard Docker installation (see above)
-- Basic familiarity with the command line
+**Требования:**
+- Хотя бы один полностью настроенный инстанс (см. выше)
+- Базовые навыки работы в консоли
 
-**Setup Steps:**
+**Инструкция:**
 
-1. **Create separate directories for each instance**  
-    Each instance should live in its own folder to keep everything organized and isolated:
+1. **Создайте отдельные директории для каждого инстанса**  
+    Каждый инстанс должен иметь собственную папку для корректного изолирования:
 
     ```bash
     mkdir -p ~/blombooru-instance1
@@ -180,23 +177,23 @@ If you need to run multiple independent Blombooru instances (for example, separa
     cd ~/blombooru-instance1
     ```
 
-2. **Clone or copy Blombooru into each directory**  
-    You can either clone the repository fresh into each folder:
+2. **Клонируйте или вручную скопируйте рантаймы**  
+    Вы можете либо клонировать этот репозиторий в каждую папку по отдельности:
 
     ```bash
     git clone https://github.com/mrblomblo/blombooru.git
     ```
 
-    Or copy an existing installation (faster if you've already cloned it once):
+    Либо, размножить уже созданную папку:
 
     ```bash
     cp -r /path/to/existing/blombooru/* /path/to/other-blombooru-instance/
     ```
 
-3. **Configure unique ports for each instance**  
-    Create a `.env` file in each instance directory (copy from `example.env`) and assign **different port numbers** to avoid conflicts:
+3. **Настройте уникальные порты для каждого инстанса**  
+    Создайте `.env` файл в каждой директории (скопируйте из `example.env`) и назначьте **отличные порты** во избежание конфликтов:
 
-    **Instance 1** (`~/blombooru-instance1/.env`):
+    **Инстанс 1** (`~/blombooru-instance1/.env`):
     ```env
     APP_PORT=8000
     POSTGRES_PORT=5432
@@ -205,7 +202,7 @@ If you need to run multiple independent Blombooru instances (for example, separa
     # ... other settings
     ```
 
-    **Instance 2** (`~/blombooru-instance2/.env`):
+    **Инстанс 2** (`~/blombooru-instance2/.env`):
     ```env
     APP_PORT=8001
     POSTGRES_PORT=5433
@@ -215,13 +212,13 @@ If you need to run multiple independent Blombooru instances (for example, separa
     ```
 
 > [!IMPORTANT]
-> Each instance **must** use unique values for `APP_PORT`, `POSTGRES_PORT`, and `REDIS_PORT`. Using the same ports will cause conflicts and prevent instances from starting.
+> Каждый инстанс обязан иметь уникальные значения для `APP_PORT`, `POSTGRES_PORT`, и `REDIS_PORT`. Использование одинаковых портов вызовет конфликт и не даст запустить серверы.
 
 > [!NOTE] 
-> `POSTGRES_PORT` and `REDIS_PORT` are **only** used for mapping ports to your host machine, or for if an external PostgreSQL or Redis server is using different ports. Inside Docker, the containers always communicate using the default internal ports (PostgreSQL: `5432`, Redis: `6379`).
+> `POSTGRES_PORT` и `REDIS_PORT` используются **только** для маппинга портов до вашего хост-компьютера, либо для внешнего PostgreSQL или Redis сервера, использующего другой порт. Внутри Docker, контейнеры всегда обмениваются данными по стандартным портам (PostgreSQL: `5432`, Redis: `6379`).
 
-4. **Start each instance independently**  
-    Navigate to each instance directory and start it with Docker Compose:
+4. **Запустите каждый инстанс по отдельности**  
+    Перейдите в корневую папку каждого инстанса и запустите через Docker Compose:
 
     ```bash
     cd ~/blombooru-instance1
@@ -233,338 +230,343 @@ If you need to run multiple independent Blombooru instances (for example, separa
     docker compose up --build -d
     ```
 
-    Docker Compose will automatically name containers using the directory name (e.g., `blombooru-instance1-web-1`, `blombooru-instance2-web-1`), preventing naming conflicts.
+    Docker Compose автоматически задаст названия, исходя из названия директории (e.g., `blombooru-instance1-web-1`, `blombooru-instance2-web-1`), тем самым избежав конфликта
 
-5. **Complete onboarding for each instance**  
-    Each instance is completely independent, so you'll need to complete the onboarding process separately:
-    - Instance 1: `http://localhost:8000`
-    - Instance 2: `http://localhost:8001`
+5. **Завершите первую настройку на каждом инстансе**  
+    Как было описано ранее, каждый инстанс существует независимо, поэтому вам нужно будет пройти первоначальную настройку по отдельности.
+    - Инстанс 1: `http://localhost:8000`
+    - Инстанс 2: `http://localhost:8001`
 
 > [!WARNING]
-> During onboarding, the database and Redis port & host fields will be **auto-filled with incorrect values** from your `.env` file. When using Docker, you **must** manually change these to the default internal ports (also noted in the onboarding form):
-> - **PostgreSQL Port:** Always use `5432` (not the `POSTGRES_PORT` value from `.env`)
-> - **Redis Port:** Always use `6379` (not the `REDIS_PORT` value from `.env`)
-> - **DB Host:** Always use `db` (the Docker service name)
-> - **Redis Host:** Always use `redis` (the Docker service name)
+> Во время первоначальной настройки, поля с портами и хостами БД и Redis будут **АВТОМАТИЧЕСКИ ЗАПОЛНЕНЫ КРИВЫМИ ДАННЫМИ** из `.env` файла. При использовании Docker, вам нужно будет **ВРУЧНУЮ** сменить значения на дефолтные внутренние порты (процесс описан в окне настройки):
+> - **PostgreSQL Port:** ВСЕГДА `5432` (не `POSTGRES_PORT` из `.env`)
+> - **Redis Port:** ВСЕГДА `6379` (не `REDIS_PORT` из `.env`)
+> - **DB Host:** ВСЕГДА `db` (название службы в Docker)
+> - **Redis Host:** ВСЕГДА `redis` (название службы в Docker)
 
-**Managing Multiple Instances:**
+**Управление несколькими инстансами:**
 
-- **View running instances:**  
+- **Посмотреть список запущенных:**  
     ```bash
     docker ps
     ```
 
-- **Stop a specific instance:**  
+- **Остановить конкретный:**  
     ```bash
     cd ~/blombooru-instance1
     docker compose down
     ```
 
-- **View logs for a specific instance:**  
+- **Посмотреть логи для конкретного:**  
     ```bash
     cd ~/blombooru-instance1
     docker compose logs -f
     ```
 
-- **Update a specific instance:**  
-    Navigate to the instance directory and use the built-in updater via the Admin Panel, or manually:
+- **Обновить конкретный:**  
+    Перейдите в директорию инстанса и используйте автоматическое обновление из панели администратора, или вручную:
     ```bash
     cd ~/blombooru-instance1
     git pull
     docker compose down && docker compose up --build -d
     ```
 
-**Data Isolation:**
+**Изолирование данных:**
 
-Each instance maintains completely separate:
-- **Databases** – Stored in Docker volumes named after the instance directory (e.g., `blombooru-instance1_pgdata`)
-- **Media files** – Stored in separate Docker volumes (e.g., `blombooru-instance1_media`)
-- **Configuration** – Each instance has its own `settings.json` in its Docker volume
-- **Redis cache** – Separate Redis instances with isolated data
+Каждый инстанс существует по отдельности:
+- **БД** – Хранятся в Docker дисках, названных по имени директории (e.g., `blombooru-instance1_pgdata`)
+- **Медиафайлы** – Хранятся в разделенных Docker дисках (e.g., `blombooru-instance1_media`)
+- **Конфигурация** – У каждого инстанса собственный `settings.json` в Docker диске
+- **Redis кеш** – Отдельные инстансы Redis с изолированными данными
 
-This means you can safely delete, update, or modify one instance without affecting any others.
+Это значит, вы можете спокойно удалять, обновлять или изменять один инстанс, никак не затрагивая другие.
 
 ### Python
 
 > [!NOTE]
-> The Python installation is primarily recommended for development purposes, but can be useful if you are able to use Python venvs but not Docker.
+> Использование Python рекомендовано для разработки, но может пригодиться в случае, если вам доступны venv-ы, а Docker - нет.
 
-| Prerequisite | Notes |
+| Требование | пометка |
 |:-------------|:------|
-| Python 3.10+ | Tested with 3.13.7 & 3.11. Does **not** work with 3.14. |
-| PostgreSQL 17 | Required |
-| Redis 7+ | Optional |
-| Git | Recommended (alternatively, download the project via the GitHub website) |
+| Python 3.10+ | Протестировано на 3.13.7 & 3.11. **НЕ** работает с 3.14. |
+| PostgreSQL 17 | Требуется |
+| Redis 7+ | Опционально |
+| Git | Рекомендуется (иначе воспользуйтесь кнопкой Code -> Download .ZIP) |
 
-1. **Clone the repository**
+1. **Клонируйте репозиторий**
 
     ```bash
     git clone https://github.com/mrblomblo/blombooru.git
     cd blombooru
     ```
 
-2. **Create a Python virtual environment and install dependencies**
+2. **Создайте виртуальную среду и установите зависимости**
 
     ```bash
     python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    source venv/bin/activate  # на Windows, пользуйтесь `venv\Scripts\activate`
     pip install -r requirements.txt
     ```
 
-3. **Create a PostgreSQL database**  
-    Create a new database and a user with permissions for that database. Blombooru will handle creating the necessary tables.
+3. **Создайте БД PostgreSQL**  
+    Создайте новую БД и пользователя с правами к этой БД, Blombooru разметит всё сам.
 
-4. **Start a Redis instance** *(Optional)*  
-    If you wish to use high-performance caching, ensure a Redis server (v7+) is running and accessible. You can install it via your OS package manager (e.g., `apt install redis`, `brew install redis`) or run it in a standalone Docker container.
+4. **Запустите инстанс Redis** *(опционально)*  
+    Если вам необходимо кеширование, у вас должен быть Redis (v7+) сервер. Вы можете установить его встроенным менеджером пакетов (e.g., `apt install redis`, `brew install redis`) или запустить в отдельном Docker контейнере.
 
-5. **First-time run & Onboarding**  
-    Start the server:
+5. **Первый запуск и настройка**  
+    Запустите сервер:
 
     ```bash
     python run.py
     ```
 
-    Now, open your web browser and navigate to [`http://localhost:8000`](http://localhost:8000). You will be greeted by the onboarding page. Here you will:
-    - Set your Admin Username and Password.
-    - Enter your PostgreSQL connection details. The server will test the connection before proceeding.
-    - *(Optional)* Enable and configure Redis for high-performance caching.
-    - Customize the site's Branding Name (defaults to "Blombooru").
+    После, откройте браузер и перейдите по `http://localhost:<port>` (где `<port>` - это порт, который вы указали в `.env`). Откроется страница первой настройки. Теперь необходимо:
+    - Установить имя пользователя и пароль администратора.
+    - Ввести данные от PostgreSQL. Сервер попробует подключиться к ней перед продолжением настройки. Если вы не меняли `POSTGRES_DB` и/или `POSTGRES_USER`, вам потребуется только заполнить пароль, который вы указывали в `.env`. Не меняйте DB Host.
+    - *(опционально)* Включите и настройте кеширование через Redis.
+    - Настройте название сайта (по умолчанию - "Blombooru").
 
-    Once submitted, the server will create the database schema and your admin account.
+    После настройки, сервер создаст БД и аккаунт администратора.
 
-6. **Running the application again**  
-    After the initial setup, you can run the server anytime with the same command. All settings are saved to a `settings.json` file in the `data` folder, and all uploaded media is saved to the `media/original` folder.
+6. **Перезапуск приложения** 
+    После первого запуска и настройки, вы можете запускать сервер той же командой. anytime with the same command. Все настройки сохраняются в `settings.json` файл в папке `data`, а все загруженные медиа - в `media/original`.
 
-## Usage Guide
+## Использование
 
-### Logging In
+### Вход в систему
 
-Navigate to the site and click the **Admin Panel** button in the navbar, then log in using the credentials you created during onboarding. Your login status is preserved with a long-lived cookie for convenience.
+Откройте веб-страницу и нажмите на кнопку **Панель администратора** в навбаре, затем войдите, используя аккаунт, созданный во время первоначальной настройки. Ваш логин сохранится в куки с большим сроком жизни для удобства.
 
-### Admin Mode
+### Режим администратора
 
-To make any changes, you must log in as the admin. This protects you from accidentally deleting or editing media. While logged in as the admin, you can:
+Для внесения любых изменений, вам необходимо быть под учётной записью администратора. Это защитит вас от случайного удаления или изменения медиафайлов. У администратора есть права к:
 
-- Upload, edit, or delete media
-- Add or remove tags
-- Share media
-- Perform bulk operations like multi-deleting items from the gallery
-- Manage system settings, including branding, security, and optional Redis caching
+- Загрузке, редактированию и удалению медиа
+- Добавлению и удалению тегов
+- Генерации публичных ссылок
+- Выполнению массовых операций по отношению к БД
+- Управление настройками системы, включая название, безопасность, Redis
 
-### Adding Tags
+### Добавление тегов
 
-You have two ways to add new tags:
+Есть два способа по добавлению новых тегов:
 
-#### 1. CSV Import
+#### 1. CSV импорт
 
-Either use something like [this script](https://github.com/DraconicDragon/danbooru-e621-tag-list-processor) by DraconicDragon to scrape your own list, or use one of the pre-scraped lists from [here](https://civitai.com/models/950325/danboorue621-autocomplete-tag-lists-incl-aliases-krita-ai-support) or [here](https://github.com/DraconicDragon/dbr-e621-lists-archive/tree/main/tag-lists/danbooru).
+Используйте [этот скрипт](https://github.com/DraconicDragon/danbooru-e621-tag-list-processor) от DraconicDragon чтобы заскрейпить ваш список, или используйте один из списков [отсюда](https://civitai.com/models/950325/danboorue621-autocomplete-tag-lists-incl-aliases-krita-ai-support) или [отсюда](https://github.com/DraconicDragon/dbr-e621-lists-archive/tree/main/tag-lists/danbooru).
 
 > [!IMPORTANT]
-> Ensure your CSV list follows the format specified in the "Import Tags from CSV" section seen below. Currently, only "Danbooru" style CSV lists (generated by the script or found in the linked archives) are fully compatible.
+> Убедитесь, что ваш CSV имеет формат, указанный в секции "Импорт тегов из CSV" (ниже). В данный момент, только "Danbooru"-подобные CSV списки (сгенерированные скриптом или скачанные выше) совместимы.
 
-<img width="1920" alt="'Import Tags from CSV' section" src="https://github.com/user-attachments/assets/68be82e9-c734-4967-8c0c-a4a8cab228cf" />
+<img width="1920" alt="'Импорт тегов из CSV'" src="https://github.com/user-attachments/assets/9c7b63f8-e5b7-4438-811f-8f1d9bd58725" />
 
-#### 2. Manual Tag Creation
+#### 2. Ручное создание тегов
   
-Manually enter the tags you want to create. Prefix a tag with, for example, `meta:` to put it in the "meta" category. The other available tag prefixes are noted in the "Add Tags" section.
+Вручную введите теги, которые хотите создать. Начните тег, к примеру, с `meta:`, чтобы поместить его в "мета" категорию. Прочие доступные префиксы тегов описаны в секции "Добавить теги"
 
-*Duplicate tags are automatically detected and will not be re-added.*
+*Дубликаты тегов автоматически отслеживаются и не будут добавлены.*
 
-<img width="1920" alt="'Add Tags' section" src="https://github.com/user-attachments/assets/31263bc7-5d18-44bc-b58d-72018f6f8190" />
+<img width="1920" alt="Секция 'Добавить теги'" src="https://github.com/user-attachments/assets/e4f618ea-0a40-4321-8656-8da3c3d2d5bc" />
 
-### Uploading Media
+### Загрузка медиа
 
-You have three ways to add new content:
+У вас есть три способа для добавления нового контента:
 
-#### 1. Media Files
+#### 1. Медиафайлы
 
-In the Admin Panel, there is an upload zone where you can simply drag and drop your media files. Alternatively, you can click it to open your file explorer and select media files.
+В панели администратора есть зона для загрузки, куда вы можете просто перетащить желаемые файлы. Альтернативно, вы можете открыть проводник и выбрать файлы через него.
 
-#### 2. Compressed Archives
+#### 2. Сжатые архивы
 
-Upload a `.zip`, `.tar.gz`, or `.tgz` archive containing your media, and Blombooru will extract and process the contents.
+Загрузите `.zip`, `.tar.gz`, или `.tgz` архив, содержащий ваши медиафайлы в то же окно, и Blombooru разархивирует и обработает их.
 
-#### 3. Filesystem Scan
+#### 3. Сканирование директории
 
-Move your media files directly into the configured storage directory. Then, navigate to the Admin Panel and click the **Scan for Untracked Media** button. The server will scan the directory, find new files, generate thumbnails, and add them to your library.
+Поместите ваши медиафайлы напрямую в настроенную директорию. Затем, перейдите в панель администратора и нажмите **"Сканирование неотслеженных медиафайлов"**. Сервер просканирует директорию /app/media/original, найдёт новые файлы, автоматически сгенерирует предпросмотр и добавит их в вашу библиотеку.
 
-*Duplicate media is automatically detected by its hash and will not be re-imported.*
+*Дубликаты медиа отслеживаются по хешу и не будут добавлены.*
 
-### Tagging & Searching
+### Простановка тегов и поиск
 
-- **Tag Autocomplete:** When editing an item, start typing in the tag input field. A scrollable list of suggestions will appear based on existing tags.
+- **Автозаполнение тегов:** При редактировании файла, начните печатать в поле ввода тега. Отобразится список предложений основанный на существующих тегах. 
 
-- **Tag Display:** On a media page, tags are automatically sorted by category (Artist, Character, Copyright, General, Meta) and then alphabetically within each category.
+- **Отображение тегов:** На странице медиа, теги автоматически отсортированы по категориям (Художник, Авторские права, Персонаж, Общие,Мета) и по алфавиту внутри каждой из категорий. 
 
-- **Search Syntax:** Blombooru supports a powerful Danbooru-compatible search syntax.
+- **Синтаксис поиска:** Blombooru поддерживает то же, что и Danbooru.
 
-#### Basic Tags
+#### Базовые теги:
+
+| Запрос | Описание |
+|:-------|:------------|
+| `tag1 tag2` | Поиск медиа с обоими тегами `tag1` И `tag2` |
+| `-tag1` | Исключить медиа с тегом `tag1` |
+| `tag*` | Wildcard-поиск (находит `tag_name`, `tag_stuff`, и т.д.) |
+| `?tag` | Поиск медиа с одним или без символов перед `tag` |
+
+#### Диапазоны
+
+Большинство числовых и дата-фильтров поддерживают операции с диапазонами:
 
 | Syntax | Description |
 |:-------|:------------|
-| `tag1 tag2` | Find media with both `tag1` AND `tag2` |
-| `-tag1` | Exclude media with `tag1` |
-| `tag*` | Wildcard search (finds `tag_name`, `tag_stuff`, etc.) |
-| `?tag` | Find media with one or zero characters before `tag` |
+| `id:100` | Точное совпадение (`x == 100`) |
+| `id:100..200` | Между (включительно) (`100 <= x <= 200`) |
+| `id:>=100` | Больше или равно (`x >= 100`) |
+| `id:>100` | Больше чем (`x > 100`) |
+| `id:<=100` | Меньше или равно (`x <= 100`) |
+| `id:<100` | Меньше чем (`x < 100`) |
+| `id:1,2,3` | В списке (`x` = 1, 2, или 3) |
 
-#### Ranges
+#### Мета-фильтры
 
-Most numeric and date qualifiers support range operators:
-
-| Syntax | Description |
-|:-------|:------------|
-| `id:100` | Exact match (`x == 100`) |
-| `id:100..200` | Between inclusive (`100 <= x <= 200`) |
-| `id:>=100` | Greater than or equal (`x >= 100`) |
-| `id:>100` | Greater than (`x > 100`) |
-| `id:<=100` | Less than or equal (`x <= 100`) |
-| `id:<100` | Less than (`x < 100`) |
-| `id:1,2,3` | In list (`x` is 1, 2, or 3) |
-
-#### Meta Qualifiers
-
-| Qualifier | Description | Example(s) |
+| Фильтр | Описание | Пример(ы) |
 |:----------|:------------|:-----------|
-| `id` | Search by internal ID | `id:100..200`, `id:>500` |
-| `width`, `height` | Search by image dimensions (pixels) | `width:>=1920`, `height:1080` |
-| `filesize` | Search by file size using `kb`, `mb`, `gb`, `b` units. Supports "fuzzy" matching: `filesize:52MB` finds `52.0MB` to `52.99MB`. | `filesize:1mb..5mb`, `filesize:52MB` |
-| `date` | Search by upload date (`YYYY-MM-DD`) | `date:2024-01-01` |
-| `age` | Search by age relative to now (`s`, `mi`, `h`, `d`, `w`, `mo`, `y`). Note: `<` means "newer than" (less age). | `age:<24h` (less than 1 day old), `age:1w..1mo` |
-| `rating` | Filter by rating: `s`/`safe`, `q`/`questionable`, `e`/`explicit`. Supports lists. | `rating:s,q`, `-rating:e` |
-| `source` | Search source. Use `none` for missing sources, `http` for web URLs. | `source:none`, `source:http`, `source:twitter` |
-| `filetype` | Search by file extension | `filetype:png`, `filetype:gif` |
-| `md5` | Search by file hash (exact) | `md5:d34e4c...` |
-| `pool`, `album` | Search by album/pool ID or name. `any`/`none` supported. | `album:any`, `pool:favorites`, `pool:5` |
-| `parent` | Search by parent ID. `any`/`none` supported. | `parent:none`, `parent:123` |
-| `child` | Filter parent posts by children. `any`/`none` supported. | `child:any` (has children), `child:none` |
-| `duration` | Search video/gif duration in seconds | `duration:>60` |
+| `id` | Поиск по внутреннему ID | `id:100..200`, `id:>500` |
+| `width`, `height` | Поиск по размеру в пикселях | `width:>=1920`, `height:1080` |
+| `filesize` | Поиск по весу файла (принимает `kb`, `mb`, `gb`, `b`). Также поддерживается нечеткое совпадение: `filesize:52MB` найдёт от `52.0MB` до `52.99MB`. | `filesize:1mb..5mb`, `filesize:52MB` |
+| `date` | Поиск по дате загрузки (`YYYY-MM-DD`) | `date:2024-01-01` |
+| `age` | Поиск по возрасту (файла) по отношению к сегодня (`s`, `mi`, `h`, `d`, `w`, `mo`, `y`). Внимание: `<` подразумевает "новее, чем" (более молодой). | `age:<24h` (не старше чем 1 день назад), `age:1w..1mo` |
+| `rating` | Фильтр по рейтингу: `s`/`safe`, `q`/`questionable`, `e`/`explicit`. Поддерживаются списки | `rating:s,q`, `-rating:e` |
+| `source` | Поиск по источнику. Используйте `none` для отсутствующих источников, `http` для веб-сайтов | `source:none`, `source:http`, `source:twitter` |
+| `filetype` | Поиск по расширению файла | `filetype:png`, `filetype:gif` |
+| `md5` | Поиск по ТОЧНОМУ хешу файла | `md5:d34e4c...` |
+| `pool`, `album` | Поиск по ID/Названию альбома или пула. `any`/`none` принимается. | `album:any`, `pool:favorites`, `pool:5` |
+| `parent` | Поиск по ID родителя `any`/`none` принимается. | `parent:none`, `parent:123` |
+| `child` | Фильтр родительских постов по дочерним. `any`/`none` принимается. | `child:any` (есть дочерние), `child:none` |
+| `duration` | Поиск по длительности video/gif в секундах | `duration:>60` |
 
 > [!NOTE]
-> `duration` may not be set on all GIFs.
+> `duration` могут иметь не все GIF-файлы.
 
-#### Tag Counts
+#### Количество тегов
 
-Filter by the number of tags on a post:
+Фильтрация по количеству тегов в посте:
 
-| Qualifier | Description |
+| Фильтр | Описание |
 |:----------|:------------|
-| `tagcount` | Total tags |
-| `gentags` | General tags |
-| `arttags` | Artist tags |
-| `chartags` | Character tags |
-| `copytags` | Copyright tags |
-| `metatags` | Meta tags |
+| `tagcount` | Всего тегов |
+| `gentags` | General тегов |
+| `arttags` | Artist тегов |
+| `chartags` | Character тегов |
+| `copytags` | Copyright тегов |
+| `metatags` | Meta тегов |
 
-**Example:** `tagcount:<10` (posts with few tags), `arttags:>=1` (posts with at least 1 artist tag)
+**Пример:** `tagcount:<10` (посты с небольшим кол-вом тегов), `arttags:>=1` (посты с как минимум одним artist (художник) тегом)
 
-#### Sorting
+#### Сортировка
 
-Order results with `order:{value}`. Suffix with `_asc` or `_desc` where applicable (default is usually descending).
+Сортируйте результаты, используя `order:{value}`. Суффикс `_asc` или `_desc` может быть применим. По умолчанию, обычно, descending
 
-| Value | Description |
+| Значение | Описание |
 |:------|:------------|
-| `id` / `id_desc` | Newest uploads first (default) |
-| `id_asc` | Oldest uploads first |
-| `filesize` | Largest files first |
-| `landscape` | Widest aspect ratio first |
-| `portrait` | Tallest aspect ratio first |
-| `md5` | Sort using MD5 hash (deterministic random-like shuffle) |
-| `custom` | Sort by the order given in `id:list`. Example: `id:3,1,2 order:custom` |
+| `id` / `id_desc` | Новейшие загрузки сначала (дефолт) |
+| `id_asc` | Старейшие загрузки сначала |
+| `filesize` | Файлы с наибольшим весом сначала |
+| `landscape` | Ландшафтные (шир>выс) файлы сначала |
+| `portrait` | Портретные (выс>шир) файты сначала |
+| `md5` | Сортировка по MD5 хешу (псевдо-случайная, воиспроизводимая) |
+| `custom` | Сортировка по порядку из `id:list`. Пример: `id:3,1,2 order:custom` |
 
-### Sharing Media
+### Общий доступ
 
-1. Log in as the admin.
-2. Navigate to the page of the media you wish to share.
-3. Click the **Share** button and a unique share URL (`https://localhost:8000/shared/<uuid>`) will be generated.
-4. Anyone with this link can view the media in a simplified, read-only interface. The shared media can optionally include or exclude its accompanying AI metadata. Shared items are marked with a "shared" icon in your private gallery view.
+1. Войдите в аккаунт администратора
+2. Перейдите на страницу файла, которым хотите поделиться.
+3. Нажмите на кнопку **Поделиться** и уникальная ссылка вида (`https://localhost:8000/shared/<uuid>`) будет создана
+4. Любой, кто перейдёт по этой ссылке, сможет просмотреть этот файл в упрощенном read-only виде. Файлы, которыми вы поделились могут на ваш выбор включать или исключать приложенные к ним AI метаданные. Такие посты будут иметь пометку "ДОСТУПЕН ДРУГИМ" в вашей галерее.
 
-### System Updater
+### Обновление системы
 
-Blombooru includes a built-in system updater in the Admin Panel that allows you to easily update your installation to the latest version.
+У панели администратора Blombooru есть встроенная система обновления, позволяющая вам с легкостью обновиться до последней доступной версии.
 
 > [!WARNING]
-> Always back up your data before updating! While updates are designed to be safe, unexpected issues can occur, especially if you're updating to a new major version or the latest dev build.
+> Всегда делайте бекап ваших данных перед обновлением! Несмотря на то, что обновления создаются, подразумевая  безопасность данных, неожиданные проблемы могут возникать, особенно при обновлении на major релиз или на dev билд.
 
-#### How to Update
+#### Как обновиться?
 
-1. Log in as the admin and navigate to the **Admin Panel**.
-2. Scroll to the **System Update** section.
-3. Click **Check for Updates** to fetch the latest version information from GitHub.
-4. Review the changelog by clicking **View Changelog** to see what's new.
-5. If updates are available, click either:
-   - **Update to Latest Dev** - Updates to the latest commit on the `main` branch (bleeding edge)
-   - **Update to Latest Stable** - Updates to the latest tagged release (recommended)
+1. Войдите в аккаунт администратора и перейдите к **Панели администратора**, 
+2. Выберите вкладку **Система**.
+3. Прокрутите до секции **System Update**.
+4. Нажмите **Проверить наличие обновления** для запроса информации о последней версии с GitHub.
+5. Посмотрите список изменений по нажатию на **Просмотр списка изменений**
+6. Если доступно обновление, нажмите:
+   - **Обновиться до последней dev-версии** - Обновляет до последнего коммита ветки `main` 
+   - **Обновиться до последнего релиза** - Обновляет до последнего релиза (рекомендуется)
 
-The updater will automatically run `git pull` (or `git checkout <tag>`) and display the output. After updating, **restart Blombooru** to apply the changes:
+Обновлятор автоматически запустит `git pull` (или `git checkout <tag>`) и выведет результат. После обновления, **перезапустите Blombooru** для применения изменений:
 
 - **Docker:** `docker compose down && docker compose up -d`
-- **Python:** Stop the server (Ctrl+C) and run `python run.py` again
-
-#### Dependency Changes
-
-If the update includes changes to `requirements.txt` or `docker-compose.yml`, the updater will display a notice. You will need to:
-
-- **Docker:** Run `docker compose down && docker compose up --build -d` to rebuild the container
-- **Python:** Stop the server (Ctrl+C) and run `pip install -r requirements.txt` before running `python run.py` again.
-
-### API & Third-Party Apps
-
-Blombooru implements a **Danbooru v2 compatible API**, allowing you to use existing third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) to browse your collection.
-
-#### Connection Details
-
-| Setting | Value |
-|:--------|:------|
-| **Server Type** | Danbooru v2 |
-| **URL** | Your server IP + port (e.g., `http://192.168.1.10:8000`) or your domain (e.g., `https://example.com`) |
-| **Authentication** | Supported via multiple methods (see below) |
-
-**Authentication Methods:**
-- **Query parameters:** `login` + `api_key`
-- **HTTP Basic Auth:** username + API key as password
-- **Bearer token:** `Authorization: Bearer <api_key>`
-
-#### Supported Features
-
-| Feature | Description |
-|:--------|:------------|
-| **Posts** | Full search capability, listing, and media retrieval |
-| **Tags** | Tag listing, search, autocomplete, and related tags |
-| **Albums/Pools** | Blombooru Albums are exposed as Danbooru "Pools" |
-| **Artists** | Blombooru Artist tags are exposed as the Artists endpoint |
 
 > [!NOTE]
-> Write operations (uploading, editing, etc.) via the API are read-only or stubbed to prevent errors in third-party apps. Social features such as voting, favoriting, comments, forums, DMs, and wiki pages return empty results.
+> Docker обновления в данный момент проводятся вручную. Система предупредит о том, что для обновления потребуется вручную выполнить git pull на хост-машине и пересобрать образ заново.
 
-## Theming
+- **Python:** Остановите сервер (Ctrl+C) и запустите `python run.py` снова
 
-Blombooru is designed to be easily themeable.
+#### Изменения зависимостей
 
-- **CSS Variables:** The core colors are controlled by CSS variables defined in the default theme(s).
+Если обновление включает в себя изменения в `requirements.txt` или `docker-compose.yml`, обновлятор отобразит предупреждение. Вам понадобится:
 
-- **Custom Themes:** To create your own theme, simply create a new `.css` file in the `frontend/static/themes/` directory, copy the entire contents of the `default_dark.css` theme, and start customizing! Then register it in the `backend/app/themes.py` file to use it.
+- **Docker:** выполнить `docker compose down && docker compose up --build -d` для пересборки контейнера
+- **Python:** Остановите сервер (Ctrl+C) и выполните `pip install -r requirements.txt` перед запуском `python run.py` вновь.
 
-Your new theme will automatically appear in the theme-picker dropdown in the Admin Panel.
+### API и сторонние приложения
 
-## Technical Details
+В Blombooru включено **Danbooru v2 совместимое API**, позволяющее вам использовать существующие third-party Booru клиенты (Grabber, Tachiyomi, или BooruNav) для просмотра вашей коллекции.
 
-| Component | Technology |
+#### Детали подключения
+
+| Параметр | Значение |
+|:--------|:------|
+| **Server Type** | Danbooru v2 |
+| **URL** | Ваш IP-адрес сервера и порт (e.g., `http://192.168.1.10:8000`) или ваш домен (e.g., `https://example.com`) |
+| **Authentication** | Поддерживаются несколько методов (см. ниже) |
+
+**Методы авторизации:**
+- **Query parameters:** `login` + `api_key`
+- **HTTP Basic Auth:** username + API ключ в кач-ве пароля
+- **Bearer token:** `Authorization: Bearer <api_key>`
+
+#### Поддерживаемые фичи
+
+| Фича | Описание |
+|:--------|:------------|
+| **Posts** | Полная совместимость поиска, списков и медиа |
+| **Tags** | Листинг тегов, поиск, автозаполнение и связанные теги |
+| **Albums/Pools** | Blombooru альбомы идут как Danbooru "Pools" |
+| **Artists** | Blombooru Artist теги идут как Artists endpoint |
+
+> [!NOTE]
+> Операции на запись (загрузка, редактирование, etc.) через API - read-only или отключены для предотвращения ошибок в third-party приложениях. Социальные функции, такие как голосование, добавление в избранное, комментарии, форумы, личные сообщения и вики-страницы, возвращают пустые результаты.
+
+## Темы
+
+Blombooru создан для легкой кастомизации тем.
+
+- **CSS переменные:** Корневые цвета контроллируются CSS переменными описаными в стандартных темах.
+
+- **Кастомные темы:** Для создания собственной темы, просто создайте новый `.css` файл в `frontend/static/themes/` папке, скопируйте целиком содержимое `default_dark.css` темы и начинайте творить! После этого, зарегистрируйте её в `backend/app/themes.py`, чтобы использовать.
+
+Ваша новая тема автоматически появится в списке доступных в панели администратора.
+
+## Технические детали
+
+| Компонент | Технология |
 |:----------|:-----------|
 | **Backend** | FastAPI (Python) |
-| **Frontend** | Tailwind CSS (locally built), Vanilla JavaScript, HTML |
-| **Database** | PostgreSQL 17 |
-| **Caching** | Redis 7+ (Optional) |
-| **Media Storage** | Local filesystem with paths referenced in the database. Original metadata is always preserved but can optionally be stripped on-the-fly in shared media. |
-| **Supported Formats** | JPG, PNG, WEBP, GIF, MP4, WEBM |
+| **Frontend** | Tailwind CSS (локальный билд), Vanilla JavaScript, HTML |
+| **БД** | PostgreSQL 17 |
+| **Кеширование** | Redis 7+ (опционально) |
+| **Хранилище медиа** | Локальная ФС с путями, относящимися с путями из ДБ. Оригинальные метаданные файлов всегда сохранены, но при желании могут быть очищены при шеринге медиа.|
+| **Поддерживаемые форматы** | JPG, PNG, WEBP, GIF, MP4, WEBM |
 
-## Disclaimer
+## Отказ от ответственности
 
-This is a self-hosted, single-user application. As the sole administrator, you are exclusively responsible for all content you upload, manage, and share using this software.
+Это приложение задумано как self-hosted, single-user. Как единственный администратор, именно вы и только вы ответственны за весь контент, который вы загружаете, изменяете и распространяете с использованием этого ПО.
 
-Ensure your use complies with all applicable laws, especially regarding copyright and the privacy of any individuals depicted or identified in your media.
+Убедитесь, что ваше использование соответствует всем применимым законам и нормам, особенно касаемо авторсских прав и частной жизни всех и каждого, кто может быть изображен на файлах, загружаемых вами.
 
-The developers and contributors of this project assume **no liability** for any illegal, infringing, or inappropriate content hosted by any user. The software is provided "as is" without warranty. For the full disclaimer, please see our [Disclaimer of Liability](https://github.com/mrblomblo/blombooru/blob/main/DISCLAIMER.md).
+Разработчики и участники этого проекта **НЕ НЕСУТ ОТВЕТСТВЕННОСТИ** за любое незаконное, неправомерное или антиморальное использование и в принципе за контент, загружаемым любым пользователем. ПО распространяется "as is" без гарантий. С полной версией можно ознакомиться, перейдя по ссылке: [Отказ от ответственности](https://github.com/mrblomblo/blombooru/blob/main/DISCLAIMER.md).
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/mrblomblo/blombooru/blob/main/LICENSE.txt) file for details.
+Этот проект имеет лицензию MIT License. Ознакомьтесь с файлом [Лицензии](https://github.com/mrblomblo/blombooru/blob/main/LICENSE.txt) для деталей.

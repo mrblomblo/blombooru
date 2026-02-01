@@ -88,9 +88,11 @@ class Settings:
     def DB_HOST(self) -> str:
         return self.file_settings.get("database", {}).get('host') or os.getenv("POSTGRES_HOST") or self.settings.get("database", {}).get('host', 'localhost')
 
+    # i'm not sure if that fixes issue with port fetching to HTML onboarding placeholder from docker env variables thus requiring hand-fixing by end user
+    # and breaks multi-instance runtime if not done by one, or that breaks something else (e.g. running in python mode?), but it should be fine now
     @property
     def DB_PORT(self) -> int:
-        return int(self.file_settings.get("database", {}).get('port') or os.getenv("POSTGRES_PORT") or self.settings.get("database", {}).get('port', 5432))
+        return int(self.file_settings.get("database", {}).get('port') or 5432 or self.settings.get("database", {}).get('port', 5432))
 
     @property
     def DB_NAME(self) -> str:
@@ -107,12 +109,14 @@ class Settings:
             return val
         return os.getenv("REDIS_HOST", self.settings.get("redis", {}).get("host", "localhost"))
     
+    # i'm not sure if that fixes issue with port fetching to HTML onboarding placeholder from docker env variables thus requiring hand-fixing by end user
+    # and breaks multi-instance runtime if not done by one, or that breaks something else (e.g. running in python mode?), but it should be fine now
     @property
     def REDIS_PORT(self) -> int:
         val = self.file_settings.get("redis", {}).get("port")
         if val is not None:
             return int(val)
-        return int(os.getenv("REDIS_PORT", self.settings.get("redis", {}).get("port", 6379)))
+        return 6379
     
     @property
     def REDIS_DB(self) -> int:
