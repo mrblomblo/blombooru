@@ -524,6 +524,8 @@ class BaseGallery {
 
     // New handler for smart Select All
     async handleSelectAll() {
+        if (!app.isAdminMode) return;
+
         const visibleItems = document.querySelectorAll('.gallery-item');
         const visibleIds = Array.from(visibleItems).map(item => parseInt(item.dataset.id));
 
@@ -551,6 +553,8 @@ class BaseGallery {
 
     // New handler for smart Deselect All
     handleDeselectAll() {
+        if (!app.isAdminMode) return;
+
         const visibleItems = document.querySelectorAll('.gallery-item');
         const visibleIds = Array.from(visibleItems).map(item => parseInt(item.dataset.id));
 
@@ -712,6 +716,7 @@ class BaseGallery {
     // ==================== Drag & Shift Selection ====================
 
     handleMouseDown(item, id) {
+        if (!app.isAdminMode) return;
         if (!this.isSelectionMode) return;
         this.dragStartItem = item;
         this.selectionSnapshot = new Set(this.selectedItems);
@@ -1027,43 +1032,50 @@ class BaseGallery {
         item.dataset.rating = media.rating;
 
         // Hidden checkbox
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = `select-checkbox ${checkboxClass}`;
-        checkbox.dataset.id = media.id;
-        checkbox.tabIndex = -1; // Not focusable
+        let checkbox = null;
+        let indicator = null;
 
-        // Custom visual indicator (the clickable circle)
-        const indicator = document.createElement('div');
-        indicator.className = 'select-indicator';
-        indicator.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        `;
+        if (app.isAdminMode) {
+            checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = `select-checkbox ${checkboxClass}`;
+            checkbox.dataset.id = media.id;
+            checkbox.tabIndex = -1; // Not focusable
 
-        if (this.selectedItems.has(media.id)) {
-            checkbox.checked = true;
-            item.classList.add('selected');
+            // Custom visual indicator (the clickable circle)
+            indicator = document.createElement('div');
+            indicator.className = 'select-indicator';
+            indicator.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            `;
+
+            if (this.selectedItems.has(media.id)) {
+                checkbox.checked = true;
+                item.classList.add('selected');
+            }
+
+            indicator.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleItemSelection(item, media.id, e);
+            });
         }
-
-        indicator.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.toggleItemSelection(item, media.id, e);
-        });
 
         // ==================== Drag Selection Events ====================
 
         // Start drag on mousedown
-        item.addEventListener('mousedown', (e) => {
-            if (e.button === 0) {
-                if (this.isSelectionMode) {
-                    e.preventDefault();
-                    this.handleMouseDown(item, media.id);
+        if (app.isAdminMode) {
+            item.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    if (this.isSelectionMode) {
+                        e.preventDefault();
+                        this.handleMouseDown(item, media.id);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Continue drag on mouseenter
         item.addEventListener('mouseenter', (e) => {
@@ -1118,7 +1130,7 @@ class BaseGallery {
         link.appendChild(img);
 
         link.addEventListener('click', (e) => {
-            if (this.isSelectionMode) {
+            if (app.isAdminMode && this.isSelectionMode) {
                 e.preventDefault();
                 this.toggleItemSelection(item, media.id, e);
             }
@@ -1162,16 +1174,18 @@ class BaseGallery {
             }
         };
 
-        item.addEventListener('touchstart', startLongPress, { passive: true });
-        item.addEventListener('touchend', endLongPress);
-        item.addEventListener('touchcancel', cancelLongPress);
-        item.addEventListener('touchmove', cancelLongPress, { passive: true });
+        if (app.isAdminMode) {
+            item.addEventListener('touchstart', startLongPress, { passive: true });
+            item.addEventListener('touchend', endLongPress);
+            item.addEventListener('touchcancel', cancelLongPress);
+            item.addEventListener('touchmove', cancelLongPress, { passive: true });
 
-        item.addEventListener('contextmenu', (e) => {
-            if (longPressTriggered) {
-                e.preventDefault();
-            }
-        });
+            item.addEventListener('contextmenu', (e) => {
+                if (longPressTriggered) {
+                    e.preventDefault();
+                }
+            });
+        }
 
         // Tooltip
         if (this.tooltipHelper && media.tags && media.tags.length > 0) {
@@ -1182,8 +1196,8 @@ class BaseGallery {
             }
         }
 
-        item.appendChild(checkbox);
-        item.appendChild(indicator);
+        if (checkbox) item.appendChild(checkbox);
+        if (indicator) item.appendChild(indicator);
         item.appendChild(link);
 
         // Share indicator
