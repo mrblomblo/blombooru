@@ -20,6 +20,7 @@ class I18n {
                     this.translations = await response.json();
                     this.currentLang = targetLang;
                     this.loaded = true;
+                    window.dispatchEvent(new CustomEvent('i18n-loaded'));
                 }
             } catch (error) {
                 console.error('Error loading translations:', error);
