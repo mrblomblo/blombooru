@@ -10,7 +10,7 @@
 {% block content %}
 <div class="container mx-auto px-4 my-4 max-w-2xl">
     <div class="surface p-8 border">
-        <h1 class="text-xl font-bold mb-4">{{ t('onboarding.welcome') }}</h1>
+        <h1 class="text-xl font-bold mb-4">{{ t('onboarding.welcome', app_name=app_name) }}</h1>
         <p class="text-xs text-secondary mb-6">{{ t('onboarding.setup_intro') }}</p>
 
         <div id="error-message" style="display: none;" class="bg-danger tag-text p-3 mb-4 text-xs"></div>
