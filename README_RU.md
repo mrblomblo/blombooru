@@ -14,17 +14,13 @@
 
 <div align="center">
 
-<p align="center">
-Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb 2026)
-</p>
+<p align="center"><b>Ваш персональный, Self-Hosted инструмент для маркировки медиафайлов.</b></p>
 
-<p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
+Blombooru - приватная, single-user альтернатива Booru-like доскам (R34, Danbooru или Gelbooru). Она разработана для тех, кому нужно мощное, легкое в использовании и современное решения для организации и маркировки личной коллекции медиа. Благодаря удобному интерфейсу, гибкому администрированию и простой кастомизации Blombooru даёт вам полный контроль над вашей коллекцией.
 
-Blombooru is a private, single-user alternative to image boorus like Danbooru and Gelbooru. It is designed for individuals who want a powerful, easy-to-use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
-
-> [!IMPORTANT]
-> This project is currently in **heavy development**, and breaking changes may be introduced without prior notice (even if I try my best to limit how much they affect existing users).  
-> If you want to use Blombooru after its official release (when breaking changes will be properly documented), please click the **Watch** button to be notified when the first official release is available!
+> [!ВАЖНО]
+> На данный момент проект находится в стадии **активной разработки**, и в него могут быть внесены существенные изменения без предварительных уведомлений (хоть я и стараюсь уменьшить их влияние на существующих пользователей).  
+> Если вы хотите использовать Blombooru после его официального выпуска (и документирования всех существенных изменений), пожалуйста, нажмите на кнопку **Watch**, чтобы получить уведомление о первом официальном релизе!
 
 <details>
 <summary>View Screenshots</summary>
