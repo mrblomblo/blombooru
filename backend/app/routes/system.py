@@ -119,18 +119,27 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         notices = []
         
         if is_running_in_docker():
-            notices.append("Running in Docker: The built-in updater cannot be used from within a Docker container. To update, run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder.")
+            if settings.CURRENT_LANGUAGE == "ru":
+                notices.append("Запуск в Docker: встроенный обновлятор не может быть использован внутри Docker-контейнера. Чтобы обновить, выполните 'git pull' на хост-машине, затем 'docker compose down && docker compose up --build -d' в корневой папке проекта.")
+            else:
+                notices.append("Running in Docker: The built-in updater cannot be used from within a Docker container. To update, run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder.")
         
         try:
             diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"]).decode()
             if "requirements.txt" in diff_output:
                 requirements_changed = True
                 if not is_running_in_docker():
-                    notices.append("Python dependencies have changed. The updater will automatically install them when you update.")
+                    if settings.CURRENT_LANGUAGE == "ru":
+                        notices.append("Файл requirements.txt изменен. Обновлятор автоматически установит новые зависимости при обновлении.")
+                    else:
+                        notices.append("Python dependencies have changed. The updater will automatically install them when you update.")
             
             if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
                 if not is_running_in_docker():
-                    notices.append("Docker configuration has changed. If you plan to use Docker, you will need to rebuild with 'docker compose up --build -d'.")
+                    if settings.CURRENT_LANGUAGE == "ru":
+                        notices.append("Конфигурация Docker изменена. Если вы планируете использовать Docker, вам нужно будет пересобрать контейнеры с помощью 'docker compose up --build -d'.")
+                    else:
+                        notices.append("Docker configuration has changed. If you plan to use Docker, you will need to rebuild with 'docker compose up --build -d'.")
 
         except subprocess.CalledProcessError:
             pass
