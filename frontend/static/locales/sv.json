@@ -338,6 +338,8 @@
         "jump_to_page": "Gå till sida",
         "manage_tags": "Hantera taggar",
         "no_items_found": "Inga objekt hittades",
+        "no_media_found": "Ingen media hittades",
+        "no_results_found": "Inga resultat hittades",
         "no_tags_found": "Inga taggar hittades",
         "popular_tags": "Populära taggar",
         "rating_filter": "Betygsfilter",

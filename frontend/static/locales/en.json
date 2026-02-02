@@ -338,6 +338,8 @@
         "jump_to_page": "Jump to Page",
         "manage_tags": "Manage Tags",
         "no_items_found": "No items found",
+        "no_media_found": "No media found",
+        "no_results_found": "No results found",
         "no_tags_found": "No tags found",
         "popular_tags": "Popular Tags",
         "rating_filter": "Rating Filter",
