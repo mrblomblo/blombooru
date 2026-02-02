@@ -759,16 +759,14 @@
                         </div>
                     </div>
 
-                    <!-- Top Tags -->
-                    <div class="surface p-4 sm:p-6 border">
-                        <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_tags') }}</h3>
-                        <div class="h-56 sm:h-80">
-                            <canvas id="chart-top-tags"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Top Tags by Category -->
+                    <!-- Top Tags and Top Tags by Category -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="surface p-4 sm:p-6 border">
+                            <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_tags') }}</h3>
+                            <div class="h-56 sm:h-80">
+                                <canvas id="chart-top-tags"></canvas>
+                            </div>
+                        </div>
                         <div class="surface p-4 sm:p-6 border">
                             <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_general_tags') }}</h3>
                             <div class="h-56 sm:h-64">
