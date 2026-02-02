@@ -8,6 +8,7 @@ class SharedViewer extends MediaViewerBase {
     }
 
     async init() {
+        await window.i18n.load();
         this.initFullscreenViewer();
         this.initAgeVerificationModal();
         await this.loadSharedContent();
