@@ -54,6 +54,12 @@ class LanguageRegistry:
             native_name="Svenska"
         ))
 
+        self.register_language(Language(
+            id="ru",
+            name="Russian",
+            native_name="Русский"
+        ))
+
         # Additional languages are registered here
         # Example (Note how "name" should be in English, while "native_name" should be in the native language):
         # self.register_language(Language(

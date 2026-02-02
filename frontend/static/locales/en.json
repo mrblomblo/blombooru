@@ -690,7 +690,7 @@
         "setup_intro": "Let's get your instance configured. This will only take a minute.",
         "setup_title": "Initial Setup",
         "skip": "Skip",
-        "welcome": "Welcome to {app_name}!"
+        "welcome": "Welcome to Blombooru!"
     },
     "search": {
         "basic_desc_both": "Find media with both tags",
