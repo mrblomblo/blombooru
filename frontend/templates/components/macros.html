@@ -28,17 +28,15 @@
 {% endfor %}
 {% endmacro %}
 
-{# Standard Sort Options - used across all pages #}
+{# Sorting Options Component #}
+{% macro sorting_options(sort_options=none, default_sort='uploaded_at', default_order='desc', show_wrapper=true,
+location='desktop') %}
 {% set standard_sort_options = {
 'uploaded_at': t('admin.settings.upload_date'),
 'filename': t('admin.settings.file_name'),
 'file_size': t('admin.settings.file_size'),
 'file_type': t('admin.settings.file_type')
 } %}
-
-{# Sorting Options Component #}
-{% macro sorting_options(sort_options=none, default_sort='uploaded_at', default_order='desc', show_wrapper=true,
-location='desktop') %}
 {% set options = sort_options if sort_options else standard_sort_options %}
 {% set suffix = '-mobile' if location == 'mobile' else '' %}
 
