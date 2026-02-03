@@ -138,10 +138,31 @@
             "title": "Настройки",
             "upload_date": "Дата загрузки"
         },
+        "stats": {
+            "total_storage": "Использовано хранилища",
+            "tags_with_aliases": "Тегов + псевдонимов",
+            "parent_media": "Родительских медиафайлов",
+            "child_media": "Дочерних медиафайлов",
+            "upload_trends": "Тренды загрузок (последние 30 дней)",
+            "media_type_distribution": "Распределение медиафайлов по типам",
+            "rating_distribution": "Распределение по рейтингу",
+            "top_tags": "Топ 10 тегов",
+            "top_general_tags": "Топ 10 общих тегов",
+            "top_artist_tags": "Топ 10 тегов художников",
+            "top_character_tags": "Топ 10 тегов персонажей",
+            "top_copyright_tags": "Топ 10 тегов авторов",
+            "top_meta_tags": "Топ 10 мета-тегов",
+            "tag_category_distribution": "Распределение категорий тегов",
+            "album_size_distribution": "Распределение размеров альбомов",
+            "uploads_per_day": "Загрузок в день",
+            "usage_count": "Количество использований",
+            "empty_albums": "Пустых альбомов"
+        },
         "tabs": {
             "account": "Аккаунт",
             "content": "Контент",
-            "system": "Система"
+            "system": "Система",
+            "stats": "Статистика"
         },
         "tags_management": {
             "add_tags": "Добавить теги",
