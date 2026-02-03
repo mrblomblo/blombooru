@@ -56,11 +56,11 @@ async def complete_onboarding(data: OnboardingData):
         test_engine = sqlalchemy_create_engine(test_url, pool_pre_ping=True)
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            print("✓ Database connection successful")
+            print("Database connection successful")
         test_engine.dispose()
     except OperationalError as e:
         error_msg = str(e)
-        print(f"✗ Database connection failed: {error_msg}")
+        print(f"Database connection failed: {error_msg}")
         
         # Provide more helpful error messages
         if "password authentication failed" in error_msg:
@@ -72,7 +72,7 @@ async def complete_onboarding(data: OnboardingData):
         else:
             raise HTTPException(status_code=400, detail=f"Database connection failed: {error_msg}")
     except Exception as e:
-        print(f"✗ Unexpected database error: {e}")
+        print(f"Unexpected database error: {e}")
         raise HTTPException(status_code=400, detail=f"Database error: {str(e)}")
     
     # Create database schema and admin user (but don't save settings yet)
@@ -89,14 +89,14 @@ async def complete_onboarding(data: OnboardingData):
         new_session_local = sessionmaker(autocommit=False, autoflush=False, bind=temp_engine)
         
         database.Base.metadata.create_all(bind=temp_engine)
-        print("✓ Database schema created")
+        print("Database schema created")
         
         print("3. Creating admin user...")
         db = new_session_local()
         try:
             try:
                 password_hash = get_password_hash(data.admin_password)
-                print(f"✓ Password hashed successfully")
+                print("Password hashed successfully")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Failed to hash password: {str(e)}")
             
@@ -107,12 +107,12 @@ async def complete_onboarding(data: OnboardingData):
             db.add(admin)
             
             db.commit()
-            print("✓ Admin user created")
+            print("Admin user created")
             
         except IntegrityError as e:
             db.rollback()
             error_msg = str(e)
-            print(f"✗ Database integrity error: {error_msg}")
+            print(f"Database integrity error: {error_msg}")
             
             if "unique constraint" in error_msg.lower():
                 raise HTTPException(status_code=400, detail="Username already exists in database")
@@ -120,7 +120,7 @@ async def complete_onboarding(data: OnboardingData):
                 raise HTTPException(status_code=400, detail=f"Database constraint violation: {error_msg}")
         except Exception as e:
             db.rollback()
-            print(f"✗ Error creating admin user: {e}")
+            print(f"Error creating admin user: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to create admin user: {str(e)}")
         finally:
             db.close()
@@ -145,9 +145,9 @@ async def complete_onboarding(data: OnboardingData):
                 },
                 "first_run": False
             })
-            print("✓ Settings saved to file")
+            print("Settings saved to file")
         except Exception as e:
-            print(f"✗ Failed to save settings: {e}")
+            print(f"Failed to save settings: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
         
         # Update module-level database variables
@@ -179,7 +179,7 @@ async def complete_onboarding(data: OnboardingData):
                 temp_engine.dispose()
             except:
                 pass
-        print(f"✗ Error initializing database: {e}")
+        print(f"Error initializing database: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to initialize database: {str(e)}")
     
     return {"message_key": "notifications.admin.onboarding_completed"}

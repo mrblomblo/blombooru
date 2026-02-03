@@ -254,16 +254,16 @@ class AdminPanel {
             if (result.success) {
                 resultDiv.className = 'mt-2 text-xs text-success';
                 const message = result.message_key ? window.i18n.t(result.message_key) : result.message;
-                resultDiv.textContent = '✓ ' + message;
+                resultDiv.textContent = message;
             } else {
                 resultDiv.className = 'mt-2 text-xs text-danger';
                 const message = result.message_key ? window.i18n.t(result.message_key, { error: result.error }) : result.message;
-                resultDiv.textContent = '✗ ' + message;
+                resultDiv.textContent = message;
             }
         } catch (error) {
             resultDiv.style.display = 'block';
             resultDiv.className = 'mt-2 text-xs text-danger';
-            resultDiv.textContent = '✗ Error: ' + error.message;
+            resultDiv.textContent = 'Error: ' + error.message;
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;
@@ -284,7 +284,7 @@ class AdminPanel {
 
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-success';
-            resultDiv.textContent = '✓ ' + window.i18n.t('notifications.admin.password_updated');
+            resultDiv.textContent = window.i18n.t('notifications.admin.password_updated');
 
             // Clear the password field
             document.getElementById('new-admin-password').value = '';
@@ -297,7 +297,7 @@ class AdminPanel {
         } catch (error) {
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-danger';
-            resultDiv.textContent = '✗ ' + error.message;
+            resultDiv.textContent = error.message;
         }
     }
 
@@ -315,7 +315,7 @@ class AdminPanel {
 
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-success';
-            resultDiv.textContent = '✓ ' + window.i18n.t('notifications.admin.username_updated', { username: result.new_username });
+            resultDiv.textContent = window.i18n.t('notifications.admin.username_updated', { username: result.new_username });
 
             // Update displayed username if you show it anywhere
             app.showNotification(window.i18n.t('notifications.admin.username_updated', { username: result.new_username }), 'success');
@@ -331,7 +331,7 @@ class AdminPanel {
         } catch (error) {
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-danger';
-            resultDiv.textContent = '✗ ' + error.message;
+            resultDiv.textContent = error.message;
         }
     }
 
