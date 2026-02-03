@@ -253,10 +253,12 @@ class AdminPanel {
             resultDiv.style.display = 'block';
             if (result.success) {
                 resultDiv.className = 'mt-2 text-xs text-success';
-                resultDiv.textContent = '✓ ' + result.message;
+                const message = result.message_key ? window.i18n.t(result.message_key) : result.message;
+                resultDiv.textContent = '✓ ' + message;
             } else {
                 resultDiv.className = 'mt-2 text-xs text-danger';
-                resultDiv.textContent = '✗ ' + result.message;
+                const message = result.message_key ? window.i18n.t(result.message_key, { error: result.error }) : result.message;
+                resultDiv.textContent = '✗ ' + message;
             }
         } catch (error) {
             resultDiv.style.display = 'block';
@@ -282,7 +284,7 @@ class AdminPanel {
 
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-success';
-            resultDiv.textContent = '✓ ' + result.message;
+            resultDiv.textContent = '✓ ' + window.i18n.t('notifications.admin.password_updated');
 
             // Clear the password field
             document.getElementById('new-admin-password').value = '';
@@ -313,7 +315,7 @@ class AdminPanel {
 
             statusDiv.style.display = 'block';
             resultDiv.className = 'text-success';
-            resultDiv.textContent = '✓ ' + result.message;
+            resultDiv.textContent = '✓ ' + window.i18n.t('notifications.admin.username_updated', { username: result.new_username });
 
             // Update displayed username if you show it anywhere
             app.showNotification(window.i18n.t('notifications.admin.username_updated', { username: result.new_username }), 'success');
@@ -415,7 +417,7 @@ class AdminPanel {
         statusDiv.style.display = 'block';
         resultDiv.innerHTML = `
             <div class="bg-primary primary-text p-3 mb-2">
-                <strong>Adding tags...</strong>
+                <strong>${window.i18n.t('admin.messages.adding_tags')}</strong>
             </div>
         `;
 
@@ -427,19 +429,19 @@ class AdminPanel {
 
             let html = `
                 <div class="bg-success p-3 mb-2 tag-text">
-                    <strong>Tags added successfully!</strong>
+                    <strong>${window.i18n.t('notifications.admin.tags_added_successfully')}</strong>
                 </div>
                 <div class="text-secondary space-y-1">
-                    <div>Tags created: <strong class="text">${response.created}</strong></div>
-                    <div>Tags skipped (already exist): <strong class="text">${response.skipped}</strong></div>
-                    <div>Errors: <strong class="text">${response.errors.length}</strong></div>
+                    <div>${window.i18n.t('notifications.admin.tags_created')} <strong class="text">${response.created}</strong></div>
+                    <div>${window.i18n.t('notifications.admin.tags_skipped')} <strong class="text">${response.skipped}</strong></div>
+                    <div>${window.i18n.t('notifications.admin.tags_errors')} <strong class="text">${response.errors.length}</strong></div>
                 </div>
             `;
 
             if (ignoredTags.length > 0) {
                 html += `
                     <div class="mt-2 p-2 surface-light border text-xs">
-                        <strong>Ignored (already exist or are aliases):</strong><br>
+                        <strong>${window.i18n.t('notifications.admin.tags_ignored')}</strong><br>
                         ${ignoredTags.join(', ')}
                     </div>
                 `;
@@ -448,8 +450,8 @@ class AdminPanel {
             if (response.errors.length > 0) {
                 html += `
                     <div class="mt-2 p-2 bg-warning tag-text text-xs">
-                        <strong>Errors:</strong><br>
-                        ${response.errors.slice(0, 5).join('<br>')}
+                        <strong>${window.i18n.t('notifications.admin.tags_errors')}</strong><br>
+                        ${response.errors.slice(0, 5).map(app.translateError).join('<br>')}
                     </div>
                 `;
             }
@@ -828,8 +830,8 @@ class AdminPanel {
         statusDiv.style.display = 'block';
         progressDiv.innerHTML = `
             <div class="bg-primary primary-text p-3 mb-2">
-                <strong>Uploading and processing...</strong><br>
-                <span class="text-xs">This <em>can</em> take a while. Do not refresh the page.</span>
+                <strong>${window.i18n.t('admin.messages.uploading_processing')}</strong><br>
+                <span class="text-xs">${window.i18n.t('admin.messages.upload_warning')}</span>
             </div>
         `;
 
@@ -851,19 +853,20 @@ class AdminPanel {
 
             let html = `
                 <div class="bg-success p-3 mb-2 tag-text">
-                    <strong>${result.message}</strong>
+                    <strong>${result.message_key ? window.i18n.t(result.message_key) : result.message}</strong>
                 </div>
                 <div class="text-secondary space-y-1">
                     <div>Rows processed: <strong class="text">${result.rows_processed}</strong></div>
                     <div>Tags created: <strong class="text">${result.tags_created}</strong></div>
                     <div>Tags updated: <strong class="text">${result.tags_updated}</strong></div>
                     <div>Aliases created: <strong class="text">${result.aliases_created}</strong></div>
+                </div>
             `;
 
             if (result.skipped_long_tags > 0 || result.skipped_long_aliases > 0) {
                 html += `
                     <div class="pt-2 border-t mt-2">
-                        <div class="text-warning">Skipped (too long):</div>
+                        <div class="text-warning">${window.i18n.t('admin.messages.skipped_too_long')}</div>
                         ${result.skipped_long_tags > 0 ? `<div>Tags: <strong class="text">${result.skipped_long_tags}</strong></div>` : ''}
                         ${result.skipped_long_aliases > 0 ? `<div>Aliases: <strong class="text">${result.skipped_long_aliases}</strong></div>` : ''}
                     </div>
@@ -875,8 +878,8 @@ class AdminPanel {
             if (result.errors && result.errors.length > 0) {
                 html += `
                     <div class="bg-warning p-3 mt-2 tag-text text-xs">
-                        <strong>Warnings (${result.total_errors} total):</strong><br>
-                        ${result.errors.slice(0, 5).join('<br>')}
+                        <strong>${window.i18n.t('admin.messages.warnings_total', { total: result.total_errors })}</strong><br>
+                        ${result.errors.slice(0, 5).map(app.translateError).join('<br>')}
                     </div>
                 `;
             }
@@ -902,9 +905,9 @@ class AdminPanel {
         statusDiv.style.display = 'block';
         progressDiv.innerHTML = `
             <div class="bg-primary primary-text p-3 mb-2">
-                <strong>Uploading and importing backup...</strong><br>
+                <strong>${window.i18n.t('admin.messages.uploading_importing_backup')}</strong><br>
                 <div class="loader mt-2"></div>
-                <span class="text-xs">This operation may take a significant amount of time.<br><strong>DO NOT REFRESH OR CLOSE THE PAGE.</strong></span>
+                <span class="text-xs">${window.i18n.t('admin.messages.upload_warning_strong')}</span>
             </div>
             `;
 
@@ -926,7 +929,7 @@ class AdminPanel {
 
             progressDiv.innerHTML = `
                 <div class="bg-success p-3 mb-2 tag-text">
-                    <strong>Import Completed Successfully!</strong>
+                    <strong>${window.i18n.t('admin.messages.import_completed')}</strong>
                 </div>
             `;
 
@@ -958,7 +961,7 @@ class AdminPanel {
             const data = await response.json();
 
             if (data.tags.length === 0) {
-                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">No tags found</p>';
+                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">' + window.i18n.t('gallery.no_tags_found') + '</p>';
                 return;
             }
 
@@ -999,8 +1002,8 @@ class AdminPanel {
             cancelId: 'delete-tag-confirm-no',
             onConfirm: async () => {
                 try {
-                    await app.apiCall(`/api/admin/tags/${tagId}`, { method: 'DELETE' });
-                    app.showNotification(window.i18n.t('notifications.admin.tag_deleted'), 'success');
+                    const result = await app.apiCall(`/api/admin/tags/${tagId}`, { method: 'DELETE' });
+                    app.showNotification(window.i18n.t('notifications.admin.tag_deleted', { tag_name: result.tag_name }), 'success');
                     await this.searchTags();
                     await this.loadTagStats();
                 } catch (e) {
@@ -1777,7 +1780,7 @@ class AdminPanel {
         if (!listContainer) return;
 
         if (keys.length === 0) {
-            listContainer.innerHTML = '<div class="bg p-6 text-center text-xs text-secondary opacity-70">No active API keys found.</div>';
+            listContainer.innerHTML = `<div class="bg p-6 text-center text-xs text-secondary opacity-70">${window.i18n.t('notifications.admin.no_active_api_keys')}</div>`;
             return;
         }
 
