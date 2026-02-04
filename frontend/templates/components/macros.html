@@ -1,5 +1,25 @@
 {# Rating Filter Component #}
-{% macro rating_filter(location='desktop') %}
+{% macro rating_filter(location='desktop', mode='rating', custom_buttons=[]) %}
+{% if mode == 'off' %}
+{# Hidden mode - render nothing #}
+{% elif mode == 'custom' and custom_buttons %}
+{# Custom button mode #}
+{% if location == 'mobile' %}
+<div class="surface p-3 mb-4 border block lg:hidden">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {{ _custom_buttons(custom_buttons, 'py-2') }}
+    </div>
+</div>
+{% else %}
+<div class="hidden lg:block mb-4">
+    <h3 class="text-sm font-bold mb-3 pb-1 border-b">{{ t('gallery.quick_filter') }}</h3>
+    <div class="grid grid-cols-1 gap-2 mb-3">
+        {{ _custom_buttons(custom_buttons, 'py-1') }}
+    </div>
+</div>
+{% endif %}
+{% else %}
+{# Default rating mode #}
 {% if location == 'mobile' %}
 <div class="surface p-3 mb-4 border block lg:hidden">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -14,6 +34,7 @@
     </div>
 </div>
 {% endif %}
+{% endif %}
 {% endmacro %}
 
 {% macro _rating_options(padding='py-1') %}
@@ -27,6 +48,19 @@
 </label>
 {% endfor %}
 {% endmacro %}
+
+{% macro _custom_buttons(buttons, padding='py-1') %}
+{% for button in buttons %}
+<label class="flex-1">
+    <input type="radio" name="custom_filter" value="{{ button.tags }}" class="hidden custom-filter-input">
+    <span
+        class="block text-center px-3 {{ padding }} border-1 cursor-pointer bg hover:border-primary transition-colors custom-filter-label">
+        {{ button.title }}
+    </span>
+</label>
+{% endfor %}
+{% endmacro %}
+
 
 {# Sorting Options Component #}
 {% macro sorting_options(sort_options=none, default_sort='uploaded_at', default_order='desc', show_wrapper=true,
