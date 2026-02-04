@@ -311,6 +311,12 @@ class Blombooru {
         setTimeout(dismiss, 5000);
     }
 
+    translateError(error) {
+        if (typeof error === 'string') return error;
+        if (error.key) return window.i18n.t(error.key, error);
+        return JSON.stringify(error);
+    }
+
     setRatingFilter(rating) {
         document.querySelectorAll('.rating-filter-label').forEach(label => {
             label.classList.remove('checked');
@@ -363,7 +369,17 @@ class Blombooru {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || 'API call failed');
+            let errorMessage = error.detail || 'API call failed';
+
+            // Check if error detail is an i18n key (starts with error_ or exists in notifications.admin)
+            if (typeof errorMessage === 'string' && (errorMessage.startsWith('error_') || errorMessage.includes('.'))) {
+                const translated = window.i18n.t(`notifications.admin.${errorMessage}`);
+                if (translated !== `notifications.admin.${errorMessage}`) {
+                    errorMessage = translated;
+                }
+            }
+
+            throw new Error(errorMessage);
         }
 
         return response.json();

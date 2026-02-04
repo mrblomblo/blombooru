@@ -240,13 +240,6 @@ If you need to run multiple independent Blombooru instances (for example, separa
     - Instance 1: `http://localhost:8000`
     - Instance 2: `http://localhost:8001`
 
-> [!WARNING]
-> During onboarding, the database and Redis port & host fields will be **auto-filled with incorrect values** from your `.env` file. When using Docker, you **must** manually change these to the default internal ports (also noted in the onboarding form):
-> - **PostgreSQL Port:** Always use `5432` (not the `POSTGRES_PORT` value from `.env`)
-> - **Redis Port:** Always use `6379` (not the `REDIS_PORT` value from `.env`)
-> - **DB Host:** Always use `db` (the Docker service name)
-> - **Redis Host:** Always use `redis` (the Docker service name)
-
 **Managing Multiple Instances:**
 
 - **View running instances:**  
