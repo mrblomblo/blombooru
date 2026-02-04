@@ -10,6 +10,7 @@ from ..schemas import AlbumCreate, AlbumUpdate, AlbumResponse, AlbumListResponse
 from ..auth import get_current_admin_user, require_admin_mode, User
 from ..config import settings
 from ..utils.cache import cache_response, invalidate_album_cache
+from ..utils.search_parser import parse_search_query, apply_search_criteria
 from ..utils.album_utils import (
     get_album_rating,
     get_album_tags,
@@ -365,6 +366,7 @@ async def get_album_contents(
     page: int = Query(default=1, ge=1),
     limit: Optional[int] = Query(default=None),
     rating: Optional[str] = Query(default=None),
+    q: Optional[str] = Query(default=None),
     sort: str = Query(default="uploaded_at"),
     order: str = Query(default="desc"),
     db: Session = Depends(get_db)
@@ -393,13 +395,27 @@ async def get_album_contents(
         blombooru_album_media.c.album_id == album_id
     ).options(selectinload(Media.tags))
     
-    # Filter Rating
-    if rating and rating != "explicit":
-        allowed_ratings = {
-            "safe": [RatingEnum.safe],
-            "questionable": [RatingEnum.safe, RatingEnum.questionable]
-        }
-        media_query = media_query.filter(Media.rating.in_(allowed_ratings.get(rating, [])))
+    # Apply tag filtering if query provided
+    if q:
+        parsed = parse_search_query(q)
+        
+        # Merge rating filter into parsed query if provided
+        if rating and rating != "explicit":
+            rating_value = "safe" if rating == "safe" else "safe,questionable"
+            if 'rating' not in parsed['meta']:
+                parsed['meta']['rating'] = []
+            parsed['meta']['rating'].append({'value': rating_value, 'negated': False})
+        
+        # Apply search criteria to media query
+        media_query = apply_search_criteria(media_query, parsed, db)
+    else:
+        # Filter Rating (only if no tag query provided)
+        if rating and rating != "explicit":
+            allowed_ratings = {
+                "safe": [RatingEnum.safe],
+                "questionable": [RatingEnum.safe, RatingEnum.questionable]
+            }
+            media_query = media_query.filter(Media.rating.in_(allowed_ratings.get(rating, [])))
     
     # Sort Media
     media_sort_mapping = {

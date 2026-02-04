@@ -81,6 +81,10 @@ class AlbumViewer extends BaseGallery {
                 order: this.getOrderValue()
             });
 
+            if (this.currentCustomFilter) {
+                params.set('q', this.currentCustomFilter);
+            }
+
             const response = await fetch(`/api/albums/${this.albumId}/contents?${params}`);
             if (!response.ok) throw new Error(window.i18n.t('albums.failed_load_contents'));
 
