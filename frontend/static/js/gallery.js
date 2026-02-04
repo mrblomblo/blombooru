@@ -45,9 +45,16 @@ class Gallery extends BaseGallery {
 
             let endpoint = '/api/media/';
 
-            if (searchQuery) {
+            // Combine URL search query with custom filter
+            let combinedQuery = '';
+            if (searchQuery) combinedQuery = searchQuery;
+            if (this.currentCustomFilter) {
+                combinedQuery = combinedQuery ? `${combinedQuery} ${this.currentCustomFilter}` : this.currentCustomFilter;
+            }
+
+            if (combinedQuery) {
                 endpoint = '/api/search';
-                apiParams.set('q', searchQuery);
+                apiParams.set('q', combinedQuery);
             }
 
             console.log('Loading gallery:', endpoint, apiParams.toString());
