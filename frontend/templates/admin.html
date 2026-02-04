@@ -174,6 +174,53 @@
                             </div>
                         </div>
 
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.settings.sidebar_filter') }}</label>
+                            <div class="bg p-4 border flex flex-col gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('admin.settings.sidebar_filter_mode') }}
+                                    </label>
+                                    <div id="sidebar-filter-mode" class="custom-select" data-value="rating">
+                                        <button
+                                            class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                            type="button">
+                                            <span class="custom-select-value">
+                                                {{ t('admin.settings.sidebar_mode_rating') }}
+                                            </span>
+                                            <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                                width="12" height="12" viewBox="0 0 12 12">
+                                                <path fill="currentColor" d="M6 9L1 4h10z" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                                data-value="rating">{{ t('admin.settings.sidebar_mode_rating') }}</div>
+                                            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                                data-value="custom">{{ t('admin.settings.sidebar_mode_custom') }}</div>
+                                            <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                                data-value="off">{{ t('admin.settings.sidebar_mode_off') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="custom-buttons-container" style="display: none;">
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('admin.settings.custom_buttons') }}
+                                    </label>
+                                    <p class="text-xs text-secondary opacity-70 mb-2">
+                                        {{ t('admin.settings.custom_buttons_hint') }}
+                                    </p>
+                                    <div id="custom-buttons-list" class="space-y-2 mb-2"></div>
+                                    <button type="button" id="add-custom-button-btn"
+                                        class="w-full px-3 py-2 bg-primary primary-text border-primary text-xs hover:bg-primary transition-colors">
+                                        + {{ t('admin.settings.add_button') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-6">
                             <label class="block text-xs font-bold mb-2">{{ t('admin.caching.title') }}</label>
                             <div class="bg p-4 border">

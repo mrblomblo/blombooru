@@ -14,7 +14,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
                 <h1 id="album-name" class="text-lg font-bold">{{ t('common.loading') }}</h1>
             </div>
 
-            {{ rating_filter('mobile') }}
+            {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
             {{ sorting_options(default_sort=default_sort, default_order=default_order, location='mobile') }}
             {{ bulk_actions(['select_all', 'deselect_all', 'remove', 'album', 'manage_tags', 'delete']) }}
 
@@ -48,7 +48,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
         <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('albums.album_details') }}</h3>
         <div id="album-details" class="text-xs mb-4"></div>
 
-        {{ rating_filter('desktop') }}
+        {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
         {{ sorting_options(default_sort=default_sort, default_order=default_order) }}
         {{ popular_tags_section() }}
         {{ sidebar_end() }}

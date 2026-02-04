@@ -12,7 +12,7 @@ from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
 
-APP_VERSION = "1.30.22"
+APP_VERSION = "1.31.13"
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -75,7 +75,9 @@ async def index(request: Request):
         "request": request,
         "app_name": settings.APP_NAME,
         "default_sort": settings.get_default_sort(),
-        "default_order": settings.get_default_order()
+        "default_order": settings.get_default_order(),
+        "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
+        "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -162,7 +164,9 @@ async def albums_page(request: Request):
         "request": request,
         "app_name": settings.APP_NAME,
         "default_sort": settings.get_default_sort(),
-        "default_order": settings.get_default_order()
+        "default_order": settings.get_default_order(),
+        "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
+        "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
 
 @app.get("/album/{album_id}", response_class=HTMLResponse)
@@ -173,7 +177,9 @@ async def album_detail_page(request: Request, album_id: int):
         "app_name": settings.APP_NAME,
         "album_id": album_id,
         "default_sort": settings.get_default_sort(),
-        "default_order": settings.get_default_order()
+        "default_order": settings.get_default_order(),
+        "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
+        "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
 
 @app.get("/favicon.ico", include_in_schema=False)

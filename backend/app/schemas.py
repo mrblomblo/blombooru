@@ -139,6 +139,8 @@ class SettingsUpdate(BaseModel):
     external_share_url: Optional[str] = None
     require_auth: Optional[bool] = None
     redis: Optional[RedisSettings] = None
+    sidebar_filter_mode: Optional[str] = None
+    sidebar_custom_buttons: Optional[List[dict]] = None
 
 class ShareSettingsUpdate(BaseModel):
     share_ai_metadata: Optional[bool] = None

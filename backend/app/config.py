@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -55,6 +55,8 @@ class Settings:
             "items_per_page": 64,
             "default_sort": "uploaded_at",
             "default_order": "desc",
+            "sidebar_filter_mode": "rating",
+            "sidebar_custom_buttons": [],
             "secret_key": os.urandom(32).hex()
         }
     
@@ -172,5 +174,15 @@ class Settings:
     @property
     def REQUIRE_AUTH(self) -> bool:
         return self.settings.get("require_auth", False)
+    
+    @property
+    def SIDEBAR_FILTER_MODE(self) -> str:
+        """Get sidebar filter mode: 'rating', 'custom', or 'off'"""
+        return self.settings.get("sidebar_filter_mode", "rating")
+    
+    @property
+    def SIDEBAR_CUSTOM_BUTTONS(self) -> List[dict]:
+        """Get custom sidebar buttons: list of {title, tags}"""
+        return self.settings.get("sidebar_custom_buttons", [])
 
 settings = Settings()
