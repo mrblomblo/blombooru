@@ -66,6 +66,121 @@ class AdminPanel {
         if (defaultOrderElement) {
             this.defaultOrderSelect = new CustomSelect(defaultOrderElement);
         }
+
+        const sidebarFilterModeElement = document.getElementById('sidebar-filter-mode');
+        if (sidebarFilterModeElement) {
+            this.sidebarFilterModeSelect = new CustomSelect(sidebarFilterModeElement);
+            this.customButtons = [];
+            this.customButtonInstances = [];
+
+            // Show/hide custom buttons container based on mode
+            sidebarFilterModeElement.addEventListener('change', (e) => {
+                const container = document.getElementById('custom-buttons-container');
+                if (container) {
+                    container.style.display = e.detail.value === 'custom' ? 'block' : 'none';
+                }
+            });
+        }
+
+        const addCustomButtonBtn = document.getElementById('add-custom-button-btn');
+        if (addCustomButtonBtn) {
+            addCustomButtonBtn.addEventListener('click', () => this.addCustomButton());
+        }
+    }
+
+    cleanupCustomButtons() {
+        if (this.customButtonInstances) {
+            this.customButtonInstances.forEach(instance => {
+                if (instance.autocomplete) instance.autocomplete.destroy();
+            });
+            this.customButtonInstances = [];
+        }
+    }
+
+    addCustomButton() {
+        this.customButtons.push({ title: '', tags: '' });
+        this.renderCustomButtons();
+    }
+
+    removeCustomButton(index) {
+        this.customButtons.splice(index, 1);
+        this.renderCustomButtons();
+    }
+
+    updateCustomButton(index, field, value) {
+        if (this.customButtons[index]) {
+            this.customButtons[index][field] = value;
+        }
+    }
+
+    renderCustomButtons() {
+        const container = document.getElementById('custom-buttons-list');
+        if (!container) return;
+
+        this.cleanupCustomButtons();
+        container.innerHTML = '';
+
+        this.customButtons.forEach((btn, index) => {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-start mb-3';
+
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.placeholder = window.i18n.t('admin.settings.button_title');
+            titleInput.value = btn.title || '';
+            titleInput.className = 'w-1/3 bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary';
+            titleInput.addEventListener('change', (e) => {
+                this.updateCustomButton(index, 'title', e.target.value);
+            });
+
+            const tagContainer = document.createElement('div');
+            tagContainer.className = 'flex-1 relative';
+
+            const tagInput = document.createElement('div');
+            tagInput.contentEditable = true;
+            tagInput.className = 'w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary';
+            tagInput.setAttribute('data-placeholder', window.i18n.t('admin.settings.button_tags'));
+            tagInput.style.minHeight = '34px';
+            tagInput.style.maxHeight = '100px';
+            tagInput.style.overflowY = 'auto';
+            tagInput.style.whiteSpace = 'pre-wrap';
+            tagInput.style.overflowWrap = 'break-word';
+            tagInput.textContent = btn.tags || '';
+
+            if (!btn.tags) tagInput.classList.add('empty');
+
+            const instance = { autocomplete: null };
+
+            tagInput.addEventListener('input', () => {
+                const text = tagInput.textContent || '';
+                this.updateCustomButton(index, 'tags', text);
+                if (!text) tagInput.classList.add('empty');
+                else tagInput.classList.remove('empty');
+            });
+
+            tagContainer.appendChild(tagInput);
+
+            if (typeof TagAutocomplete !== 'undefined') {
+                const autocomplete = new TagAutocomplete(tagInput, {
+                    multipleValues: true,
+                    containerClasses: 'max-h-40 overflow-y-auto w-full bg border border-primary shadow-lg z-10'
+                });
+                instance.autocomplete = autocomplete;
+            }
+
+            this.customButtonInstances.push(instance);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'px-3 py-2 bg-danger tag-text text-xs hover:opacity-80 transition-colors h-[34px]';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = () => this.removeCustomButton(index);
+
+            row.appendChild(titleInput);
+            row.appendChild(tagContainer);
+            row.appendChild(removeBtn);
+            container.appendChild(row);
+        });
     }
 
     async checkAuth() {
@@ -535,6 +650,17 @@ class AdminPanel {
                 if (passwordInput) passwordInput.value = settings.redis.password || '';
             }
 
+            if (settings.sidebar_filter_mode && this.sidebarFilterModeSelect) {
+                this.sidebarFilterModeSelect.setValue(settings.sidebar_filter_mode);
+                const container = document.getElementById('custom-buttons-container');
+                if (container) container.style.display = settings.sidebar_filter_mode === 'custom' ? 'block' : 'none';
+            }
+
+            if (settings.sidebar_custom_buttons) {
+                this.customButtons = settings.sidebar_custom_buttons;
+                this.renderCustomButtons();
+            }
+
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -586,7 +712,9 @@ class AdminPanel {
             default_order: defaultOrder,
             external_share_url: externalShareUrl || null,
             require_auth: requireAuth,
-            redis: redisSettings
+            redis: redisSettings,
+            sidebar_filter_mode: this.sidebarFilterModeSelect ? this.sidebarFilterModeSelect.getValue() : 'rating',
+            sidebar_custom_buttons: this.customButtons || []
         };
 
         try {
