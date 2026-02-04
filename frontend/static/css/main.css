@@ -52,13 +52,15 @@ span.checked:hover {
 
 /* Tag input styling */
 #tags-input:empty:before,
-[contenteditable="true"]:empty:before {
+[contenteditable="true"]:empty:before,
+[contenteditable="true"].empty:before {
     content: attr(data-placeholder);
     color: var(--text-tertiary);
 }
 
 #tags-input:focus:before,
-[contenteditable="true"]:focus:before {
+[contenteditable="true"]:focus:before,
+[contenteditable="true"].empty:focus:before {
     content: '';
 }
 
