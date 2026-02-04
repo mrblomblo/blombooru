@@ -46,6 +46,7 @@ class BaseGallery {
 
         // Current state
         this.currentRating = localStorage.getItem('selectedRating') || this.options.defaultRating;
+        this.currentCustomFilter = localStorage.getItem('selectedCustomFilter') || '';
         this.currentSort = this.elements.sortBy?.dataset.value || this.options.defaultSort;
         this.currentOrder = this.elements.sortOrder?.dataset.value || this.options.defaultOrder;
     }
@@ -105,6 +106,65 @@ class BaseGallery {
             savedRadio.checked = true;
             this.updateRatingFilterLabels(this.currentRating);
         }
+
+        this.setupCustomFilterButtons();
+    }
+
+    setupCustomFilterButtons() {
+        document.querySelectorAll('.custom-filter-input').forEach(radio => {
+            // Allow deselecting by clicking already-selected buttons
+            radio.addEventListener('click', (e) => {
+                if (radio.checked && radio.dataset.wasChecked === 'true') {
+                    // Deselect
+                    radio.checked = false;
+                    radio.dataset.wasChecked = 'false';
+                    this.currentCustomFilter = '';
+                    this.updateCustomFilterLabels('');
+                    localStorage.setItem('selectedCustomFilter', '');
+                    this.onCustomFilterChange();
+                    e.preventDefault();
+                } else {
+                    radio.dataset.wasChecked = 'true';
+                    // Clear wasChecked from other radios
+                    document.querySelectorAll('.custom-filter-input').forEach(r => {
+                        if (r !== radio) r.dataset.wasChecked = 'false';
+                    });
+                }
+            });
+
+            radio.addEventListener('change', (e) => {
+                this.currentCustomFilter = e.target.value;
+                this.updateCustomFilterLabels(this.currentCustomFilter);
+                localStorage.setItem('selectedCustomFilter', this.currentCustomFilter);
+                this.onCustomFilterChange();
+            });
+        });
+
+        // Set initial state
+        const savedRadio = document.querySelector(`.custom-filter-input[value="${this.currentCustomFilter}"]`);
+        if (savedRadio) {
+            savedRadio.checked = true;
+            savedRadio.dataset.wasChecked = 'true';
+            this.updateCustomFilterLabels(this.currentCustomFilter);
+        }
+    }
+
+    updateCustomFilterLabels(selectedValue) {
+        document.querySelectorAll('.custom-filter-label').forEach(label => {
+            label.classList.remove('checked');
+        });
+
+        document.querySelectorAll(`.custom-filter-input[value="${selectedValue}"]`).forEach(radio => {
+            radio.checked = true;
+            const label = radio.nextElementSibling;
+            if (label) {
+                label.classList.add('checked');
+            }
+        });
+    }
+
+    onCustomFilterChange() {
+        this.loadContent();
     }
 
     updateRatingFilterLabels(selectedValue) {
