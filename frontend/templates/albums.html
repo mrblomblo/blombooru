@@ -7,7 +7,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Albums Grid -->
         <div class="xl:col-span-4 lg:col-span-3">
-            {{ rating_filter('mobile') }}
+            {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
             {{ sorting_options(default_sort=default_sort, default_order=default_order, location='mobile') }}
 
             <div id="albums-grid"
@@ -20,7 +20,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 
         <!-- Sidebar -->
         {{ sidebar_start() }}
-        {{ rating_filter('desktop') }}
+        {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
         {{ sorting_options(default_sort=default_sort, default_order=default_order) }}
 
         <h3 class="text-sm font-bold mb-2 pb-1 border-b">{{ t('gallery.popular_tags') }}</h3>

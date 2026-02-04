@@ -4,7 +4,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 
 {% block content %}
 <div class="container mx-auto px-4 py-4">
-    {{ rating_filter('mobile') }}
+    {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
     {{ sorting_options(default_sort=default_sort, default_order=default_order, location='mobile') }}
 
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
@@ -22,7 +22,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 
         <!-- Sidebar -->
         {{ sidebar_start() }}
-        {{ rating_filter('desktop') }}
+        {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
         {{ sorting_options(default_sort=default_sort, default_order=default_order) }}
         {{ popular_tags_section() }}
         {{ sidebar_end() }}
