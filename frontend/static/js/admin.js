@@ -158,6 +158,13 @@ class AdminPanel {
                 else tagInput.classList.remove('empty');
             });
 
+            // Prevent Enter key from adding new lines
+            tagInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+
             tagContainer.appendChild(tagInput);
 
             if (typeof TagAutocomplete !== 'undefined') {
