@@ -56,11 +56,11 @@ async def complete_onboarding(data: OnboardingData):
         test_engine = sqlalchemy_create_engine(test_url, pool_pre_ping=True)
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            print("✓ Database connection successful")
+            print("Database connection successful")
         test_engine.dispose()
     except OperationalError as e:
         error_msg = str(e)
-        print(f"✗ Database connection failed: {error_msg}")
+        print(f"Database connection failed: {error_msg}")
         
         # Provide more helpful error messages
         if "password authentication failed" in error_msg:
@@ -72,7 +72,7 @@ async def complete_onboarding(data: OnboardingData):
         else:
             raise HTTPException(status_code=400, detail=f"Database connection failed: {error_msg}")
     except Exception as e:
-        print(f"✗ Unexpected database error: {e}")
+        print(f"Unexpected database error: {e}")
         raise HTTPException(status_code=400, detail=f"Database error: {str(e)}")
     
     # Create database schema and admin user (but don't save settings yet)
@@ -89,14 +89,14 @@ async def complete_onboarding(data: OnboardingData):
         new_session_local = sessionmaker(autocommit=False, autoflush=False, bind=temp_engine)
         
         database.Base.metadata.create_all(bind=temp_engine)
-        print("✓ Database schema created")
+        print("Database schema created")
         
         print("3. Creating admin user...")
         db = new_session_local()
         try:
             try:
                 password_hash = get_password_hash(data.admin_password)
-                print(f"✓ Password hashed successfully")
+                print("Password hashed successfully")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Failed to hash password: {str(e)}")
             
@@ -107,12 +107,12 @@ async def complete_onboarding(data: OnboardingData):
             db.add(admin)
             
             db.commit()
-            print("✓ Admin user created")
+            print("Admin user created")
             
         except IntegrityError as e:
             db.rollback()
             error_msg = str(e)
-            print(f"✗ Database integrity error: {error_msg}")
+            print(f"Database integrity error: {error_msg}")
             
             if "unique constraint" in error_msg.lower():
                 raise HTTPException(status_code=400, detail="Username already exists in database")
@@ -120,7 +120,7 @@ async def complete_onboarding(data: OnboardingData):
                 raise HTTPException(status_code=400, detail=f"Database constraint violation: {error_msg}")
         except Exception as e:
             db.rollback()
-            print(f"✗ Error creating admin user: {e}")
+            print(f"Error creating admin user: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to create admin user: {str(e)}")
         finally:
             db.close()
@@ -145,9 +145,9 @@ async def complete_onboarding(data: OnboardingData):
                 },
                 "first_run": False
             })
-            print("✓ Settings saved to file")
+            print("Settings saved to file")
         except Exception as e:
-            print(f"✗ Failed to save settings: {e}")
+            print(f"Failed to save settings: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
         
         # Update module-level database variables
@@ -179,10 +179,10 @@ async def complete_onboarding(data: OnboardingData):
                 temp_engine.dispose()
             except:
                 pass
-        print(f"✗ Error initializing database: {e}")
+        print(f"Error initializing database: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to initialize database: {str(e)}")
     
-    return {"message": "Onboarding completed successfully"}
+    return {"message_key": "notifications.admin.onboarding_completed"}
 
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin, request: Request, response: Response, db: Session = Depends(get_db)):
@@ -245,7 +245,7 @@ async def logout(response: Response):
     """Admin logout"""
     response.delete_cookie(key="admin_token")
     response.delete_cookie(key="admin_mode")
-    return {"message": "Logged out successfully"}
+    return {"message_key": "notifications.admin.logged_out"}
 
 @router.post("/update-admin-password")
 async def update_admin_password(
@@ -272,7 +272,7 @@ async def update_admin_password(
         
         print(f"Password updated for user: {current_user.username}")
         
-        return {"message": "Password updated successfully"}
+        return {"message_key": "notifications.admin.password_updated"}
         
     except Exception as e:
         db.rollback()
@@ -282,6 +282,7 @@ async def update_admin_password(
 @router.post("/update-admin-username")
 async def update_admin_username(
     data: dict,
+    request: Request,
     response: Response,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
@@ -326,7 +327,7 @@ async def update_admin_username(
         )
         
         return {
-            "message": "Username updated successfully",
+            "message_key": "notifications.admin.username_updated",
             "new_username": new_username
         }
         
@@ -396,9 +397,9 @@ async def test_redis(data: dict, current_user: User = Depends(require_admin_mode
             socket_connect_timeout=2
         )
         client.ping()
-        return {"success": True, "message": "Redis connection successful"}
+        return {"success": True, "message_key": "notifications.admin.redis_connection_successful"}
     except Exception as e:
-        return {"success": False, "message": f"Redis connection failed: {str(e)}"}
+        return {"success": False, "message_key": "notifications.admin.redis_connection_failed", "error": str(e)}
 
 @router.patch("/settings")
 async def update_settings(
@@ -421,7 +422,7 @@ async def update_settings(
         redis_cache._enabled = settings.REDIS_ENABLED
         redis_cache._client = None # Force reconnect
         
-    return {"message": "Settings updated successfully"}
+    return {"message_key": "notifications.admin.settings_updated"}
 
 @router.post("/scan-media")
 async def scan_media(
@@ -701,13 +702,13 @@ def import_tags_csv_logic(csv_text: str, db: Session):
             
             if len(tag_name) > MAX_TAG_LENGTH:
                 skipped_long_tags += 1
-                errors.append(f"Row {row_num}: Tag '{tag_name[:50]}...' too long ({len(tag_name)} chars)")
+                errors.append({"key": "notifications.admin.error_tag_too_long", "row": row_num, "tag": tag_name[:50], "length": len(tag_name)})
                 continue
             
             try:
                 category_num = int(row[1])
             except (ValueError, IndexError):
-                errors.append(f"Row {row_num}: Invalid category")
+                errors.append({"key": "notifications.admin.error_invalid_category", "row": row_num})
                 continue
             
             aliases_str = row[3] if len(row) > 3 else ""
@@ -741,12 +742,12 @@ def import_tags_csv_logic(csv_text: str, db: Session):
                     db.expire_all()
                 except Exception as e:
                     db.rollback()
-                    errors.append(f"Batch error at row {row_num}: {str(e)}")
+                    errors.append({"key": "notifications.admin.error_batch_error", "row": row_num, "error": str(e)})
                     tags_to_create = []
                     existing_tags = {tag.name: tag for tag in db.query(Tag).all()}
         
         except Exception as e:
-            errors.append(f"Row {row_num}: {str(e)}")
+            errors.append({"key": "notifications.admin.error_row_error", "row": row_num, "error": str(e)})
             continue
     
     # Final commit for pass 1
@@ -756,7 +757,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
         db.commit()
     except Exception as e:
         db.rollback()
-        errors.append(f"Final batch error in pass 1: {str(e)}")
+        errors.append({"key": "notifications.admin.error_final_batch_pass1", "error": str(e)})
     
     print(f"Pass 1 complete: {tags_created} tags created, {tags_updated} updated, {skipped_long_tags} skipped")
     
@@ -830,17 +831,17 @@ def import_tags_csv_logic(csv_text: str, db: Session):
                     db.expire_all()
                 except IntegrityError as e:
                     db.rollback()
-                    errors.append(f"Alias batch integrity error at row {rows_processed}: {str(e)}")
+                    errors.append({"key": "notifications.admin.error_alias_batch_integrity", "row": rows_processed, "error": str(e)})
                     aliases_to_create = []
                     existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
                 except Exception as e:
                     db.rollback()
-                    errors.append(f"Alias batch error at row {rows_processed}: {str(e)}")
+                    errors.append({"key": "notifications.admin.error_alias_batch", "row": rows_processed, "error": str(e)})
                     aliases_to_create = []
                     existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
         
         except Exception as e:
-            errors.append(f"Pass 2, tag '{tag_name}': {str(e)}")
+            errors.append({"key": "notifications.admin.error_pass2_tag", "tag": tag_name, "error": str(e)})
             continue
     
     # Final commit for pass 2
@@ -850,12 +851,12 @@ def import_tags_csv_logic(csv_text: str, db: Session):
         db.commit()
     except Exception as e:
         db.rollback()
-        errors.append(f"Final batch error in pass 2: {str(e)}")
+        errors.append({"key": "notifications.admin.error_final_batch_pass2", "error": str(e)})
     
     print(f"Pass 2 complete: {aliases_created} aliases created, {skipped_long_aliases} skipped")
     
     return {
-        "message": "Tags imported successfully",
+        "message_key": "notifications.admin.tags_imported",
         "tags_created": tags_created,
         "tags_updated": tags_updated,
         "aliases_created": aliases_created,
@@ -934,7 +935,7 @@ async def clear_all_tags(
         
         db.commit()
         
-        return {"message": "All tags cleared successfully"}
+        return {"message_key": "notifications.admin.tags_cleared"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Error clearing tags: {str(e)}")
@@ -952,7 +953,7 @@ async def delete_tag(
         tag = db.query(Tag).filter(Tag.id == tag_id).first()
         
         if not tag:
-            raise HTTPException(status_code=404, detail="Tag not found")
+            raise HTTPException(status_code=404, detail="error_tag_not_found")
         
         tag_name = tag.name
         
@@ -960,7 +961,7 @@ async def delete_tag(
         db.delete(tag)
         db.commit()
         
-        return {"message": f"Tag '{tag_name}' deleted successfully"}
+        return {"message_key": "notifications.admin.tag_deleted", "tag_name": tag_name}
     
     except HTTPException:
         raise
@@ -1049,7 +1050,7 @@ async def bulk_create_tags(
             created += 1
             
         except Exception as e:
-            errors.append(f"Error creating tag '{tag_data.get('name')}': {str(e)}")
+            errors.append({"key": "notifications.admin.error_creating_tag", "tag": tag_data.get('name'), "error": str(e)})
             
     try:
         db.commit()
@@ -1058,7 +1059,7 @@ async def bulk_create_tags(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
     return {
-        "message": "Bulk tag creation complete",
+        "message_key": "notifications.admin.bulk_tag_creation_complete",
         "created": created,
         "skipped": skipped,
         "errors": errors
@@ -1346,7 +1347,7 @@ async def revoke_api_key(
     try:
         key.is_active = False
         db.commit()
-        return {"message": "API key revoked successfully"}
+        return {"message_key": "notifications.admin.api_key_revoked"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to revoke API key: {str(e)}")

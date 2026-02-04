@@ -108,8 +108,8 @@
             "already_latest": "Обновление не требуется",
             "scan_loading": "Загрузка {count} файла(ов)...",
             "scan_progress": "Загрузка {current}/{total}...",
-            "scan_result_error": "✗ {message}",
-            "scan_result_success": "✓ {message}",
+            "scan_result_error": "{message}",
+            "scan_result_success": "{message}",
             "update_error": "Ошибка проверки обновлений: {error}",
             "update_output": "Вывод обновления",
             "update_started": "Начало обновления...",
@@ -168,8 +168,8 @@
             "add_tags": "Добавить теги",
             "add_tags_hint": "Добавьте теги с необязательными префиксами категорий:",
             "categories": "Категорий",
-            "csv_categories": "Категории: 0=Общие, 1=Художник, 3=Авторские права, 4=Персонаж, 5=Мета", 
-            "csv_example": "название_тега, номер_категории, число_использований(всегда игнорируется), \"псевдоним1,псевдоним2,псевдоним3\"", 
+            "csv_categories": "Категории: 0=Общие, 1=Художник, 3=Авторские права, 4=Персонаж, 5=Мета",
+            "csv_example": "название_тега, номер_категории, число_использований(всегда игнорируется), \"псевдоним1,псевдоним2,псевдоним3\"",
             "csv_format": "Загрузите CSV файл со следующим форматом:",
             "danger_zone": "Опасная зона",
             "delete_all_tags": "Удалить все теги",
@@ -334,7 +334,7 @@
         "yes": "Да",
         "explicit": "Explicit",
         "questionable": "Questionable",
-        "safe": "Safe" 
+        "safe": "Safe"
     },
     "errors": {
         "forbidden": "Доступ запрещен",
@@ -789,8 +789,8 @@
         },
         "progress": {
             "duplicates_skipped": "{count} дублей пропущено",
-            "extracted_error": "✗ Ошибка извлечения {filename}: {error}",
-            "extracted_success": "✓ Извлечено {count} файл(ов) из {filename}",
+            "extracted_error": "Ошибка извлечения {filename}: {error}",
+            "extracted_success": "Извлечено {count} файл(ов) из {filename}",
             "extracting": "Извлечение {filename}...",
             "failed": "{count} не удалось",
             "upload_success": "Успешно загружен(о) {count} файл(ов)",
@@ -803,4 +803,3 @@
         }
     }
 }
-
