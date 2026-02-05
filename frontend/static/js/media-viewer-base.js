@@ -40,23 +40,23 @@ class MediaViewerBase {
         const { downloadUrl, isShared } = options;
 
         let infoHTML = `
-            <div class="info-row"><span>${window.i18n.t('media.info.filename')}</span><strong>${media.filename}</strong></div>
-            <div class="info-row"><span>${window.i18n.t('media.info.type')}</span><strong>${media.file_type}</strong></div>
-            <div class="info-row"><span>${window.i18n.t('media.info.size')}</span><strong>${this.formatFileSize(media.file_size)}</strong></div>
-            <div class="info-row"><span>${window.i18n.t('media.info.dimensions')}</span><strong>${media.width}x${media.height}</strong></div>
-            <div class="info-row"><span>${window.i18n.t('media.info.rating')}</span><strong>${media.rating}</strong></div>
-            <div class="info-row"><span>${window.i18n.t('media.info.uploaded')}</span><strong>${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
-            ${media.duration ? `<div class="info-row"><span>${window.i18n.t('media.info.duration')}</span><strong>${this.formatDuration(media.duration)}</strong></div>` : ''}
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.filename')}</span><strong class="truncate ml-4 text-right min-w-0" title="${this.escapeHtml(media.filename)}">${this.escapeHtml(media.filename)}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.type')}</span><strong class="text-right">${media.file_type}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.size')}</span><strong class="text-right">${this.formatFileSize(media.file_size)}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.dimensions')}</span><strong class="text-right">${media.width}x${media.height}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.rating')}</span><strong class="text-right">${media.rating}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.uploaded')}</span><strong class="text-right">${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
+            ${media.duration ? `<div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.duration')}</span><strong class="text-right">${this.formatDuration(media.duration)}</strong></div>` : ''}
         `;
 
         if (media.source) {
             infoHTML += `
                 <div class="info-row">
-                    <span>${window.i18n.t('media.info.source')}</span>
-                    <strong>
+                    <span class="flex-shrink-0 mr-4">${window.i18n.t('media.info.source')}</span>
+                    <strong class="truncate min-w-0 text-right flex-1">
                         <a href="${media.source}" target="_blank" rel="noopener noreferrer" 
-                           class="text-primary hover:underline" style="word-break: break-all;">
-                            ${media.source}
+                           class="text-primary hover:underline block truncate" title="${this.escapeHtml(media.source)}">
+                            ${this.escapeHtml(media.source)}
                         </a>
                     </strong>
                 </div>
