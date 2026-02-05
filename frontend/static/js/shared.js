@@ -40,6 +40,7 @@ class SharedViewer extends MediaViewerBase {
             if (response.ok) {
                 if (data.type === 'media') {
                     this.currentMedia = data.data;
+                    await this.updateMediaStatus();
                     this.renderSharedMedia(this.currentMedia);
 
                     // Check if content is explicit and show age verification
@@ -57,6 +58,30 @@ class SharedViewer extends MediaViewerBase {
         } catch (error) {
             console.error('Error loading shared content:', error);
             this.showErrorMessage();
+        }
+    }
+
+    async updateMediaStatus() {
+        if (!this.currentMedia || this.currentMedia.file_type !== 'image') {
+            this.isProcessing = false;
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/shared/${this.shareUuid}/status`);
+            const data = await response.json();
+            this.isProcessing = (data.status === 'processing');
+
+            if (this.isProcessing) {
+                setTimeout(() => {
+                    this.updateMediaStatus().then(() => {
+                        this.renderSharedMedia(this.currentMedia);
+                    });
+                }, 5000);
+            }
+        } catch (error) {
+            console.error('Error checking status:', error);
+            this.isProcessing = false;
         }
     }
 
@@ -119,14 +144,14 @@ class SharedViewer extends MediaViewerBase {
                         <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('shared.actions')}</h3>
                         <div class="space-y-2">
                             <a id="download-btn" href="/api/shared/${this.shareUuid}/file" download="${media.filename}" 
-                               class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-sm font-medium">
+                               class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-sm font-medium ${this.isProcessing ? 'pointer-events-none opacity-50' : ''}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="7 10 12 15 17 10"></polyline>
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
-                                ${window.i18n.t('shared.download')}
+                                ${this.isProcessing ? window.i18n.t('media.progress.processing') : window.i18n.t('shared.download')}
                             </a>
                         </div>
                     </div>
@@ -147,14 +172,28 @@ class SharedViewer extends MediaViewerBase {
         }
 
         // Add click listener for fullscreen
-        if (media.file_type === 'video') {
-            this.setupVideoClickHandler();
-        } else {
-            this.setupImageClickHandler();
+        if (!this.isProcessing) {
+            if (media.file_type === 'video') {
+                this.setupVideoClickHandler();
+            } else {
+                this.setupImageClickHandler();
+            }
         }
     }
 
     getMediaHTML(media) {
+        if (this.isProcessing) {
+            return `
+                <div class="gallery-item" style="aspect-ratio: ${media.width}/${media.height}; max-height: 80vh; margin: 0 auto; width: 100%;">
+                    <a href="#" style="width: 100%; height: 100%; cursor: default;">
+                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
+                             alt="${window.i18n.t('media.progress.processing')}"
+                             style="width: 100%; height: 100%; object-fit: cover; border-width: 0;">
+                    </a>
+                </div>
+            `;
+        }
+
         if (media.file_type === 'video') {
             return `
                 <video controls loop id="shared-media-video" style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
@@ -167,7 +206,7 @@ class SharedViewer extends MediaViewerBase {
             `;
         } else {
             return `
-                <img src="/api/shared/${this.shareUuid}/file" alt="${media.filename}" 
+                <img src="/api/shared/${this.shareUuid}/file?t=${Date.now()}" alt="${media.filename}" 
                      id="shared-media-image" 
                      style="max-width: 100%; max-height: 80vh; margin: 0 auto; cursor: pointer;">
             `;
