@@ -186,6 +186,140 @@ def extract_media_metadata(file_path: Path) -> Dict[str, Any]:
     
     return {}
 
+async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Optional[Path]:
+    """
+    Create a metadata-stripped version of the media file in the cache.
+    Returns the path to the cached file, or None if stripping is not supported/failed.
+    """
+    if not mime_type or not mime_type.startswith('image/'):
+        return None
+        
+    import hashlib
+    from ..config import settings
+    from fastapi.concurrency import run_in_threadpool
+    
+    stat = file_path.stat()
+    cache_key = f"{str(file_path)}_{stat.st_mtime}"
+    cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
+    cache_path = settings.CACHE_DIR / cache_filename
+    
+    # Return cached file if it exists
+    if cache_path.exists():
+        return cache_path
+        
+    try:
+        # Run image processing in threadpool to avoid blocking event loop
+        def process_image():
+            import io
+            with Image.open(file_path) as img:
+                # Check if image is animated
+                is_animated = getattr(img, 'is_animated', False)
+                n_frames = getattr(img, 'n_frames', 1)
+                
+                # Extract frame durations for animated images
+                frame_durations = []
+                if is_animated and n_frames > 1:
+                    try:
+                        if img.format == 'WEBP':                                
+                            # Try different metadata fields
+                            timestamp = img.info.get('timestamp', None)
+                            duration_info = img.info.get('duration', None)
+                            
+                            if timestamp:
+                                # Calculate average frame duration from total timestamp
+                                avg_duration = int(timestamp / n_frames) if n_frames > 0 else 100
+                                frame_durations = [avg_duration] * n_frames
+                            else:
+                                # Fallback: iterate through frames and collect durations
+                                for frame_idx in range(n_frames):
+                                    img.seek(frame_idx)
+                                    duration = img.info.get('duration', 100)
+                                    frame_durations.append(duration)
+                                img.seek(0)
+                        else:
+                            # For GIF and other formats, standard extraction
+                            for frame_idx in range(n_frames):
+                                img.seek(frame_idx)
+                                duration = img.info.get('duration', 100)
+                                frame_durations.append(duration)
+                            img.seek(0)
+                        
+                    except Exception as e:
+                        print(f"Error extracting frame durations: {e}")
+                        frame_durations = [100] * n_frames  # Fallback to 100ms per frame
+                
+                # Convert RGBA to RGB if necessary (for JPEG output)
+                if mime_type == 'image/jpeg' and img.mode in ('RGBA', 'LA', 'P'):
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                    img = background
+                
+                # Determine format from mime type
+                format_map = {
+                    'image/jpeg': 'JPEG',
+                    'image/png': 'PNG',
+                    'image/gif': 'GIF',
+                    'image/webp': 'WEBP',
+                    'image/bmp': 'BMP',
+                }
+                
+                save_format = format_map.get(mime_type, 'PNG')
+                
+                # Save without metadata
+                save_kwargs = {
+                    'format': save_format,
+                    'optimize': True,
+                }
+                
+                # Format-specific options
+                if save_format == 'JPEG':
+                    save_kwargs['quality'] = 95
+                    save_kwargs['exif'] = b''  # Empty EXIF data
+                elif save_format == 'PNG':
+                    save_kwargs['compress_level'] = 6
+                    # PNG doesn't save EXIF by default, but we ensure no chunks
+                    save_kwargs['pnginfo'] = None
+                elif save_format == 'WEBP':
+                    save_kwargs['quality'] = 95
+                    save_kwargs['exif'] = b''
+                    
+                    # Preserve animation for WebP
+                    if is_animated and n_frames > 1:
+                        save_kwargs['save_all'] = True
+                        # Use the extracted frame durations
+                        if frame_durations:
+                            save_kwargs['duration'] = frame_durations
+                        else:
+                            save_kwargs['duration'] = 100
+                elif save_format == 'GIF':
+                    # Preserve animation for GIF
+                    if is_animated and n_frames > 1:
+                        save_kwargs['save_all'] = True
+                        # Use the extracted frame durations
+                        if frame_durations:
+                            save_kwargs['duration'] = frame_durations
+                        else:
+                            save_kwargs['duration'] = 100
+                        # Preserve loop count
+                        try:
+                            loop = img.info.get('loop', 0)
+                            save_kwargs['loop'] = loop
+                        except:
+                            save_kwargs['loop'] = 0
+                
+                img.save(cache_path, **save_kwargs)
+        
+        await run_in_threadpool(process_image)
+        return cache_path
+            
+    except Exception as e:
+        print(f"Error stripping metadata from {file_path}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
     """Serve a media file with error handling and optional metadata stripping."""
     if not file_path.exists():
@@ -195,138 +329,11 @@ async def serve_media_file(file_path: Path, mime_type: str, error_message: str =
         return FileResponse(file_path, media_type=mime_type)
     
     if mime_type and mime_type.startswith('image/'):
-        # Create a unique cache key based on file path and modification time
-        import hashlib
-        from ..config import settings
-        from fastapi.concurrency import run_in_threadpool
-        
-        stat = file_path.stat()
-        cache_key = f"{str(file_path)}_{stat.st_mtime}"
-        cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
-        cache_path = settings.CACHE_DIR / cache_filename
-        
-        # Return cached file if it exists
-        if cache_path.exists():
+        cache_path = await create_stripped_media_cache(file_path, mime_type)
+        if cache_path:
             return FileResponse(cache_path, media_type=mime_type)
-            
-        try:
-            # Run image processing in threadpool to avoid blocking event loop
-            def process_image():
-                import io
-                with Image.open(file_path) as img:
-                    # Check if image is animated
-                    is_animated = getattr(img, 'is_animated', False)
-                    n_frames = getattr(img, 'n_frames', 1)
-                    
-                    # Extract frame durations for animated images
-                    frame_durations = []
-                    if is_animated and n_frames > 1:
-                        try:
-                            if img.format == 'WEBP':                                
-                                # Try different metadata fields
-                                timestamp = img.info.get('timestamp', None)
-                                duration_info = img.info.get('duration', None)
-                                
-                                if timestamp:
-                                    # Calculate average frame duration from total timestamp
-                                    avg_duration = int(timestamp / n_frames) if n_frames > 0 else 100
-                                    frame_durations = [avg_duration] * n_frames
-                                else:
-                                    # Fallback: iterate through frames and collect durations
-                                    for frame_idx in range(n_frames):
-                                        img.seek(frame_idx)
-                                        duration = img.info.get('duration', 100)
-                                        frame_durations.append(duration)
-                                    img.seek(0)
-                            else:
-                                # For GIF and other formats, standard extraction
-                                for frame_idx in range(n_frames):
-                                    img.seek(frame_idx)
-                                    duration = img.info.get('duration', 100)
-                                    frame_durations.append(duration)
-                                img.seek(0)
-                            
-                        except Exception as e:
-                            print(f"Error extracting frame durations: {e}")
-                            frame_durations = [100] * n_frames  # Fallback to 100ms per frame
-                    
-                    # Convert RGBA to RGB if necessary (for JPEG output)
-                    if mime_type == 'image/jpeg' and img.mode in ('RGBA', 'LA', 'P'):
-                        background = Image.new('RGB', img.size, (255, 255, 255))
-                        if img.mode == 'P':
-                            img = img.convert('RGBA')
-                        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                        img = background
-                    
-                    # Determine format from mime type
-                    format_map = {
-                        'image/jpeg': 'JPEG',
-                        'image/png': 'PNG',
-                        'image/gif': 'GIF',
-                        'image/webp': 'WEBP',
-                        'image/bmp': 'BMP',
-                    }
-                    
-                    save_format = format_map.get(mime_type, 'PNG')
-                    
-                    # Save without metadata
-                    save_kwargs = {
-                        'format': save_format,
-                        'optimize': True,
-                    }
-                    
-                    # Format-specific options
-                    if save_format == 'JPEG':
-                        save_kwargs['quality'] = 95
-                        save_kwargs['exif'] = b''  # Empty EXIF data
-                    elif save_format == 'PNG':
-                        save_kwargs['compress_level'] = 6
-                        # PNG doesn't save EXIF by default, but we ensure no chunks
-                        save_kwargs['pnginfo'] = None
-                    elif save_format == 'WEBP':
-                        save_kwargs['quality'] = 95
-                        save_kwargs['exif'] = b''
-                        
-                        # Preserve animation for WebP
-                        if is_animated and n_frames > 1:
-                            save_kwargs['save_all'] = True
-                            # Use the extracted frame durations
-                            if frame_durations:
-                                save_kwargs['duration'] = frame_durations
-                            else:
-                                save_kwargs['duration'] = 100
-                    elif save_format == 'GIF':
-                        # Preserve animation for GIF
-                        if is_animated and n_frames > 1:
-                            save_kwargs['save_all'] = True
-                            # Use the extracted frame durations
-                            if frame_durations:
-                                save_kwargs['duration'] = frame_durations
-                            else:
-                                save_kwargs['duration'] = 100
-                            # Preserve loop count
-                            try:
-                                loop = img.info.get('loop', 0)
-                                save_kwargs['loop'] = loop
-                            except:
-                                save_kwargs['loop'] = 0
-                    
-                    img.save(cache_path, **save_kwargs)
-            
-            await run_in_threadpool(process_image)
-            
-            return FileResponse(cache_path, media_type=mime_type)
-                
-        except Exception as e:
-            print(f"Error stripping metadata from {file_path}: {e}")
-            import traceback
-            traceback.print_exc()
-            return FileResponse(file_path, media_type=mime_type)
     
-    if mime_type and mime_type.startswith('video/'):
-        # Metadata stripping not supported for video files yet
-        return FileResponse(file_path, media_type=mime_type)
-    
+    # Fallback to original file if stripping not supported or failed
     return FileResponse(file_path, media_type=mime_type)
 
 def delete_media_cache(file_path: Path):

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import desc, text, or_, and_
@@ -16,7 +16,7 @@ from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum
 from ..config import settings
 from ..utils.media_processor import process_media_file, calculate_file_hash
 from ..utils.thumbnail_generator import generate_thumbnail
-from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename, delete_media_cache
+from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename, delete_media_cache, create_stripped_media_cache
 from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count, update_album_last_modified
 from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
 from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse, ShareSettingsUpdate
@@ -474,6 +474,7 @@ async def delete_media(
 @router.post("/{media_id}/share")
 async def share_media(
     media_id: int,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -489,6 +490,11 @@ async def share_media(
         import uuid
         media.share_uuid = str(uuid.uuid4())
         media.is_shared = True
+        
+        # Trigger background stripping
+        if media.mime_type and media.mime_type.startswith('image/'):
+            file_path = settings.BASE_DIR / media.path
+            background_tasks.add_task(create_stripped_media_cache, file_path, media.mime_type)
     
     db.commit()
     invalidate_media_item_cache(media_id)
