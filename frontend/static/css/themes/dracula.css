@@ -1,0 +1,34 @@
+/* 
+  * Dracula color scheme by Dracula Theme
+  * Copyright (c) 2023 Dracula Theme
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/dracula/dracula-theme/blob/main/LICENSE
+  */
+
+:root {
+  --primary-color: #bd93f9;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #282a36;
+  --surface: color-mix(in srgb, #282a36 60%, #44475a);
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, white);
+  --surface-light: #44475a;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, white);
+  --text: #f8f8f2;
+  --text-secondary: #6272a4;
+  --text-tertiary: #6272a4;
+  --tag-text: #282a36;
+  --primary-text: #282a36;
+  --border: #6272a4;
+
+  --white: #f8f8f2;
+  --black: #282a36;
+  --green: #50fa7b;
+  --orange: #ffb86c;
+  --red: #ff5555;
+  --blue: #8be9fd;
+
+  --tag-artist: #ff5555;
+  --tag-character: #50fa7b;
+  --tag-copyright: #bd93f9;
+  --tag-general: #8be9fd;
+  --tag-meta: #ffb86c;
+}

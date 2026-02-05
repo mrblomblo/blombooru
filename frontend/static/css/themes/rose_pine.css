@@ -1,0 +1,34 @@
+/* 
+  * Rose Pine color scheme by mvllow
+  * Copyright (c) mvllow
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/rose-pine/rose-pine-palette/blob/main/LICENSE
+  */
+
+:root {
+  --primary-color: #c4a7e7;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #191724;
+  --surface: #1f1d2e;
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, white);
+  --surface-light: #26233a;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, white);
+  --text: #e0def4;
+  --text-secondary: #908caa;
+  --text-tertiary: #6e6a86;
+  --tag-text: #191724;
+  --primary-text: #191724;
+  --border: #524f67;
+
+  --white: #e0def4;
+  --black: #191724;
+  --green: #31748f;
+  --orange: #f6c177;
+  --red: #eb6f92;
+  --blue: #9ccfd8;
+
+  --tag-artist: #eb6f92;
+  --tag-character: #31748f;
+  --tag-copyright: #c4a7e7;
+  --tag-general: #9ccfd8;
+  --tag-meta: #f6c177;
+}

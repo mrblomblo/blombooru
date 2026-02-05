@@ -1,0 +1,34 @@
+/* 
+  * Nord Snow Storm color scheme by Sven Greb
+  * Copyright (c) 2016-present Sven Greb development@svengreb.de (https://www.svengreb.de)
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/nordtheme/nord/blob/develop/license
+  */
+
+:root {
+  --primary-color: #5e81ac;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #eceff4;
+  --surface: #e5e9f0;
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, black);
+  --surface-light: #d8dee9;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, black);
+  --text: #2e3440;
+  --text-secondary: #4c566a;
+  --text-tertiary: #4c566a;
+  --tag-text: #eceff4;
+  --primary-text: #eceff4;
+  --border: #d8dee9;
+
+  --white: #eceff4;
+  --black: #2e3440;
+  --green: #a3be8c;
+  --orange: #d08770;
+  --red: #bf616a;
+  --blue: #5e81ac;
+
+  --tag-artist: #bf616a;
+  --tag-character: #a3be8c;
+  --tag-copyright: #b48ead;
+  --tag-general: #5e81ac;
+  --tag-meta: #d08770;
+}

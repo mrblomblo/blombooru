@@ -1,0 +1,34 @@
+/* 
+  * Vapor color scheme by Anatoliy Kashkin
+  * Copyright (c) 2022 Anatoliy Kashkin
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/tkashkin/Adwaita-for-Steam/blob/master/LICENSE
+  */
+
+:root {
+  --primary-color: #3584e4;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #151c23;
+  --surface: #1a2129;
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, white);
+  --surface-light: #24272f;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, white);
+  --text: #ffffff;
+  --text-secondary: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+  --text-tertiary: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+  --tag-text: #151c23;
+  --primary-text: #151c23;
+  --border: #3a4149;
+
+  --white: #ffffff;
+  --black: #151c23;
+  --green: #26a269;
+  --orange: #cd9309;
+  --red: #c01c28;
+  --blue: #3584e4;
+
+  --tag-artist: #c01c28;
+  --tag-character: #26a269;
+  --tag-copyright: #9141ac;
+  --tag-general: #3584e4;
+  --tag-meta: #cd9309;
+}

@@ -1,0 +1,34 @@
+/* 
+  * Nord Polar Night color scheme by Sven Greb
+  * Copyright (c) 2016-present Sven Greb development@svengreb.de (https://www.svengreb.de)
+  * Licensed under the MIT License - see LICENSE file for details: https://github.com/nordtheme/nord/blob/develop/license
+  */
+
+:root {
+  --primary-color: #88c0d0;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #2e3440;
+  --surface: #3b4252;
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, white);
+  --surface-light: #434c5e;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, white);
+  --text: #eceff4;
+  --text-secondary: #d8dee9;
+  --text-tertiary: #4c566a;
+  --tag-text: #2e3440;
+  --primary-text: #2e3440;
+  --border: #434c5e;
+
+  --white: #eceff4;
+  --black: #2e3440;
+  --green: #a3be8c;
+  --orange: #d08770;
+  --red: #bf616a;
+  --blue: #81a1c1;
+
+  --tag-artist: #bf616a;
+  --tag-character: #a3be8c;
+  --tag-copyright: #b48ead;
+  --tag-general: #81a1c1;
+  --tag-meta: #d08770;
+}

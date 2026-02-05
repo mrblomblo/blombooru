@@ -1,0 +1,28 @@
+:root {
+  --primary-color: #d4741a;
+  --primary-hover: color-mix(in srgb, var(--primary-color) 70%, var(--background));
+  --background: #1a1815;
+  --surface: #221f1a;
+  --surface-hover: color-mix(in srgb, var(--surface) 85%, white);
+  --surface-light: #25241f;
+  --surface-light-hover: color-mix(in srgb, var(--surface-light) 85%, white);
+  --text: #ece6d8;
+  --text-secondary: #b8a898;
+  --text-tertiary: #b8a898;
+  --tag-text: #1a1815;
+  --primary-text: #1a1815;
+  --border: #5a4f3f;
+
+  --white: #ece6d8;
+  --black: #1a1815;
+  --green: #879a39;
+  --orange: #d4741a;
+  --red: #cc523e;
+  --blue: #5da0a4;
+
+  --tag-artist: #cc523e;
+  --tag-character: #879a39;
+  --tag-copyright: #a86ea4;
+  --tag-general: #5da0a4;
+  --tag-meta: #d4741a;
+}

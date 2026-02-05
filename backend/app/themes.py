@@ -127,6 +127,70 @@ class ThemeRegistry:
             background_color="#f3ead3"
         ))
         self.register_theme(Theme(
+            id="autumn", 
+            name="Autumn", 
+            css_path="/static/css/themes/autumn.css", 
+            is_dark=True,
+            primary_color="#d4741a",
+            background_color="#1a1815"
+        ))
+        self.register_theme(Theme(
+            id="dracula", 
+            name="Dracula", 
+            css_path="/static/css/themes/dracula.css", 
+            is_dark=True,
+            primary_color="#bd93f9",
+            background_color="#282a36"
+        ))
+        self.register_theme(Theme(
+            id="nord_polar_night", 
+            name="Nord Polar Night", 
+            css_path="/static/css/themes/nord_polar_night.css", 
+            is_dark=True,
+            primary_color="#88c0d0",
+            background_color="#2e3440"
+        ))
+        self.register_theme(Theme(
+            id="nord_snow_storm", 
+            name="Nord Snow Storm", 
+            css_path="/static/css/themes/nord_snow_storm.css", 
+            is_dark=False,
+            primary_color="#5e81ac",
+            background_color="#eceff4"
+        ))
+        self.register_theme(Theme(
+            id="rose_pine", 
+            name="Rose Pine", 
+            css_path="/static/css/themes/rose_pine.css", 
+            is_dark=True,
+            primary_color="#c4a7e7",
+            background_color="#191724"
+        ))
+        self.register_theme(Theme(
+            id="rose_pine_moon", 
+            name="Rose Pine Moon", 
+            css_path="/static/css/themes/rose_pine_moon.css", 
+            is_dark=True,
+            primary_color="#c4a7e7",
+            background_color="#232136"
+        ))
+        self.register_theme(Theme(
+            id="rose_pine_dawn", 
+            name="Rose Pine Dawn", 
+            css_path="/static/css/themes/rose_pine_dawn.css", 
+            is_dark=False,
+            primary_color="#907aa9",
+            background_color="#faf4ed"
+        ))
+        self.register_theme(Theme(
+            id="vapor",  
+            name="Vapor", 
+            css_path="/static/css/themes/vapor.css", 
+            is_dark=True,
+            primary_color="#3584e4",
+            background_color="#151c23"
+        ))
+        self.register_theme(Theme(
             id="green", 
             name="Green", 
             css_path="/static/css/themes/green.css", 
