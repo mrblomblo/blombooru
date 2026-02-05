@@ -96,10 +96,10 @@ class ModalHelper {
     }
 
     createModal() {
-        // Check if modal already exists
-        if (document.getElementById(this.options.id)) {
-            this.modalElement = document.getElementById(this.options.id);
-            return;
+        // Check if modal already exists and remove it to prevent event listener duplication
+        const existing = document.getElementById(this.options.id);
+        if (existing) {
+            existing.remove();
         }
 
         const modal = document.createElement('div');
