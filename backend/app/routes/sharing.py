@@ -7,7 +7,7 @@ from ..database import get_db
 from ..models import Media
 from ..config import settings
 from ..schemas import SharedMediaResponse
-from ..utils.media_helpers import extract_media_metadata, serve_media_file
+from ..utils.media_helpers import extract_media_metadata, serve_media_file, get_media_cache_status
 from ..utils.rate_limiter import shared_limiter
 
 router = APIRouter(prefix="/api/shared", tags=["sharing"])
@@ -85,3 +85,26 @@ async def get_shared_metadata(share_uuid: str, request: Request, db: Session = D
         raise HTTPException(status_code=404, detail="Media file not found")
     
     return extract_media_metadata(file_path)
+
+@router.get("/{share_uuid}/status")
+async def get_shared_status(share_uuid: str, request: Request, db: Session = Depends(get_db)):
+    """Get status of shared media file (processing/ready)"""
+    shared_limiter.check(request)
+    media = db.query(Media).filter(
+        Media.share_uuid == share_uuid,
+        Media.is_shared == True
+    ).first()
+    
+    if not media:
+        raise HTTPException(status_code=404, detail="Shared media not found")
+        
+    # Serve original file immediately if AI metadata is shared
+    if media.share_ai_metadata:
+        return {"status": "not_stripped"}
+        
+    file_path = settings.BASE_DIR / media.path
+    if not file_path.exists():
+        return {"status": "error"}
+        
+    status = get_media_cache_status(file_path, media.mime_type)
+    return {"status": status}
