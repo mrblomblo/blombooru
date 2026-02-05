@@ -309,7 +309,12 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                         except:
                             save_kwargs['loop'] = 0
                 
-                img.save(cache_path, **save_kwargs)
+                # Save to a temporary file first to ensure atomicity
+                temp_cache_path = cache_path.with_suffix('.tmp')
+                img.save(temp_cache_path, **save_kwargs)
+                
+                # Atomic rename
+                temp_cache_path.replace(cache_path)
         
         await run_in_threadpool(process_image)
         return cache_path
@@ -393,3 +398,24 @@ def get_unique_filename(directory: Path, filename: str) -> str:
         if not new_path.exists():
             return new_filename
         counter += 1
+
+def get_media_cache_status(file_path: Path, mime_type: str) -> str:
+    """
+    Check the status of the media cache file.
+    Returns: 'ready', 'processing', or 'not_stripped'.
+    """
+    if not mime_type or not mime_type.startswith('image/'):
+        return 'not_stripped'
+        
+    import hashlib
+    from ..config import settings
+    
+    stat = file_path.stat()
+    cache_key = f"{str(file_path)}_{stat.st_mtime}"
+    cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
+    cache_path = settings.CACHE_DIR / cache_filename
+    
+    if cache_path.exists():
+        return 'ready'
+        
+    return 'processing'
