@@ -179,6 +179,21 @@ class Blombooru {
                 });
             }
         });
+
+        // Random search buttons
+        const randomBtns = [
+            document.getElementById('search-random-btn'),
+            document.getElementById('search-random-btn-mobile')
+        ];
+
+        randomBtns.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.performRandomSearch();
+                });
+            }
+        });
     }
 
     handleAdminToggle() {
@@ -342,6 +357,31 @@ class Blombooru {
         } else {
             // If no query, just go to home
             window.location.href = '/';
+        }
+    }
+
+    async performRandomSearch() {
+        let rating = null;
+        if (window.SIDEBAR_FILTER_MODE === 'rating') {
+            const ratingInput = document.querySelector('input[name="rating"]:checked');
+            rating = ratingInput ? ratingInput.value : null;
+        }
+
+        try {
+            let url = '/api/search/random?q=';
+            if (rating) {
+                url += `&rating=${rating}`;
+            }
+
+            const response = await this.apiCall(url);
+
+            if (response && response.id) {
+                window.location.href = `/media/${response.id}`;
+            } else {
+                this.showNotification(window.i18n.t('gallery.no_results_found'), 'info');
+            }
+        } catch (error) {
+            console.error('Random search error:', error);
         }
     }
 
