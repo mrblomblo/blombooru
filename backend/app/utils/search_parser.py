@@ -12,7 +12,7 @@ def parse_search_query(query_string: str) -> Dict[str, Any]:
     Parses a Danbooru-style search query string into a structured dictionary.
     """
     if not query_string:
-        return {'tags': {'include': [], 'exclude': []}, 'meta': {}}
+        return {'tags': {'include': [], 'exclude': [], 'wildcards': []}, 'meta': {}}
 
     result = {
         'tags': {
