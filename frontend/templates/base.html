@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+{% from "components/icons.html" import dice_icon %}
 
 <head>
     <meta charset="UTF-8">
@@ -26,8 +27,8 @@
     <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
     <link id="theme-stylesheet" rel="stylesheet" href="{{ current_theme.css_path if current_theme else '' }}">
     <script>
-        // Set current language for i18n
         window.CURRENT_LANGUAGE = '{{ current_language() }}';
+        window.SIDEBAR_FILTER_MODE = '{{ sidebar_filter_mode if sidebar_filter_mode is defined else "" }}';
     </script>
     {% if not current_theme %}
     <script>
@@ -88,6 +89,11 @@
                                 value="{{ request.query_params.get('q', '') }}"
                                 class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                         </div>
+                        <button type="button" id="search-random-btn"
+                            class="p-1 border bg text hover:border-primary transition-colors"
+                            title="{{ t('search.random') }}">
+                            {{ dice_icon() }}
+                        </button>
                         <button type="button" id="search-help-btn"
                             class="p-1 border bg text hover:border-primary transition-colors"
                             title="Search Syntax Guide">
@@ -180,6 +186,10 @@
                             value="{{ request.query_params.get('q', '') }}"
                             class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                     </div>
+                    <button type="button" id="search-random-btn-mobile"
+                        class="p-2 border bg hover:border-primary transition-colors" title="{{ t('search.random') }}">
+                        {{ dice_icon() }}
+                    </button>
                 </form>
             </div>
         </div>
