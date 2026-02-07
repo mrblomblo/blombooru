@@ -1444,6 +1444,7 @@ async def sync_shared_tags(
     from ..database import is_shared_db_available, get_shared_db, reconnect_shared_db
     from ..services.shared_tags import SharedTagService
     from ..utils.cache import invalidate_tag_cache
+    import asyncio
     
     if not settings.SHARED_TAGS_ENABLED:
         raise HTTPException(status_code=400, detail="Shared tags not enabled")
@@ -1463,8 +1464,7 @@ async def sync_shared_tags(
             raise HTTPException(status_code=503, detail="Could not get shared database session")
         
         service = SharedTagService(db, shared_db)
-        result = service.full_sync()
-        
+        result = await asyncio.to_thread(service.full_sync)
         invalidate_tag_cache()
         
         return {
