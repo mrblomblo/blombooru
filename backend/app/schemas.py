@@ -122,6 +122,14 @@ class RedisSettings(BaseModel):
     password: Optional[str] = None
     enabled: bool = False
 
+class SharedTagSettings(BaseModel):
+    enabled: bool = False
+    host: str = "localhost"
+    port: int = 5432
+    name: str = "shared_tags"
+    user: str = "postgres"
+    password: Optional[str] = None
+
 class OnboardingData(BaseModel):
     app_name: str
     admin_username: str
@@ -139,6 +147,7 @@ class SettingsUpdate(BaseModel):
     external_share_url: Optional[str] = None
     require_auth: Optional[bool] = None
     redis: Optional[RedisSettings] = None
+    shared_tags: Optional[SharedTagSettings] = None
     sidebar_filter_mode: Optional[str] = None
     sidebar_custom_buttons: Optional[List[dict]] = None
 
