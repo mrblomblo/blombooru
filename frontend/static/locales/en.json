@@ -78,16 +78,21 @@
             "title": "Backup & Restore"
         },
         "caching": {
-            "connection_failed": "Redis connection failed",
-            "connection_success": "Redis connection successful!",
             "db_index": "DB Index",
             "enable_redis": "Enable Redis Caching",
-            "host": "Host",
-            "password": "Password",
-            "password_placeholder": "Leave empty for none",
-            "port": "Port",
-            "test_connection": "Test Redis Connection",
             "title": "Caching (Redis)"
+        },
+        "shared_tags": {
+            "title": "Shared Tag Database",
+            "enable": "Enable Shared Tag Database",
+            "description": "Share tags across multiple Blombooru instances. Local tags take precedence in case of conflicts.",
+            "sync_now": "Sync Now",
+            "syncing": "Syncing...",
+            "sync_complete": "Sync complete!",
+            "sync_failed": "Sync failed",
+            "imported_count": "Imported: {tags} tags, {aliases} aliases",
+            "exported_count": "Exported: {tags} tags, {aliases} aliases",
+            "shared_count": "Shared"
         },
         "media_management": {
             "archive_hint": "Archives will be extracted and all supported media files inside will be processed.",
@@ -331,12 +336,18 @@
         "clear_selection": "Clear Selection",
         "close": "Close",
         "confirm": "Confirm",
+        "connected": "Connected",
+        "connection_failed": "Connection failed",
+        "connection_successful": "Connection successful!",
         "copy": "Copy",
+        "database": "Database",
         "default": "Default",
         "delete": "Delete",
+        "disconnected": "Disconnected",
         "edit": "Edit",
         "error": "Error",
         "go": "Go",
+        "host": "Host",
         "info": "Info",
         "items_selected": "{count} items selected",
         "load_more": "Load More",
@@ -345,6 +356,9 @@
         "no": "No",
         "no_items_found": "No items found",
         "none": "None",
+        "password": "Password",
+        "password_placeholder": "Leave empty for none",
+        "port": "Port",
         "save": "Save",
         "search": "Search",
         "success": "Success",
@@ -361,7 +375,9 @@
         "tag_category_artist": "Artist",
         "tag_category_character": "Character",
         "tag_category_copyright": "Copyright",
-        "tag_category_meta": "Meta"
+        "tag_category_meta": "Meta",
+        "test_connection": "Test Connection",
+        "username": "Username"
     },
     "errors": {
         "forbidden": "Forbidden",
