@@ -124,23 +124,6 @@ async def create_tag(
     db.refresh(tag)
     invalidate_tag_cache()
     
-    # Sync to shared DB if enabled
-    from ..database import get_shared_db, is_shared_db_available
-    if is_shared_db_available():
-        from ..services.shared_tags import SharedTagService
-        shared_db_gen = get_shared_db()
-        shared_db = next(shared_db_gen, None)
-        try:
-            if shared_db:
-                service = SharedTagService(db, shared_db)
-                service.sync_tag_to_shared(tag)
-        finally:
-            if shared_db:
-                try:
-                    next(shared_db_gen, None)
-                except StopIteration:
-                    pass
-    
     return tag
 
 @router.patch("/{tag_id}")
