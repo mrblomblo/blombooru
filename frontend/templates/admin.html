@@ -804,14 +804,16 @@
             <div class="surface p-2 sm:p-6 border">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.account.title') }}</h2>
 
-                <div class="mb-4">
+                <div class="mb-6">
                     <form id="change-admin-password-form">
                         <div class="mb-4">
                             <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_password') }}</label>
                             <input type="password" id="new-admin-password" required minlength="6" maxlength="50"
                                 placeholder="password123"
                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
-                            <small class="text-secondary text-xs">{{ t('admin.account.password_hint') }}</small>
+                            <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
+                                {{ t('admin.account.password_hint') }}
+                            </p>
                         </div>
 
                         <button type="submit"
@@ -827,7 +829,7 @@
                     </div>
                 </div>
 
-                <form id="change-admin-username-form" class="mt-6">
+                <form id="change-admin-username-form">
                     <div class="mb-4">
                         <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_username') }}</label>
                         <input type="text" id="new-admin-username" required placeholder="admin"
