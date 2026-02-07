@@ -52,6 +52,14 @@ class Settings:
                 "password": "",
                 "enabled": False
             },
+            "shared_tags": {
+                "enabled": False,
+                "host": "localhost",
+                "port": 5432,
+                "name": "shared_tags",
+                "user": "postgres",
+                "password": ""
+            },
             "items_per_page": 64,
             "default_sort": "uploaded_at",
             "default_order": "desc",
@@ -184,5 +192,45 @@ class Settings:
     def SIDEBAR_CUSTOM_BUTTONS(self) -> List[dict]:
         """Get custom sidebar buttons: list of {title, tags}"""
         return self.settings.get("sidebar_custom_buttons", [])
+    
+    @property
+    def SHARED_TAGS_ENABLED(self) -> bool:
+        """Check if shared tag database is enabled"""
+        file_enabled = self.file_settings.get("shared_tags", {}).get("enabled")
+        if file_enabled is not None:
+            if isinstance(file_enabled, bool):
+                return file_enabled
+            return str(file_enabled).lower() in ("true", "1", "yes")
+        
+        env_enabled = os.getenv("SHARED_TAGS_ENABLED")
+        if env_enabled is not None:
+            return env_enabled.lower() in ("true", "1", "yes")
+        
+        return self.settings.get("shared_tags", {}).get("enabled", False)
+    
+    @property
+    def SHARED_TAG_DB_HOST(self) -> str:
+        return self.file_settings.get("shared_tags", {}).get("host") or os.getenv("SHARED_TAG_DB_HOST") or self.settings.get("shared_tags", {}).get("host", "localhost")
+    
+    @property
+    def SHARED_TAG_DB_PORT(self) -> int:
+        return int(self.file_settings.get("shared_tags", {}).get("port") or os.getenv("SHARED_TAG_DB_PORT") or self.settings.get("shared_tags", {}).get("port", 5432))
+    
+    @property
+    def SHARED_TAG_DB_NAME(self) -> str:
+        return self.file_settings.get("shared_tags", {}).get("name") or os.getenv("SHARED_TAG_DB_NAME") or self.settings.get("shared_tags", {}).get("name", "shared_tags")
+    
+    @property
+    def SHARED_TAG_DB_USER(self) -> str:
+        return self.file_settings.get("shared_tags", {}).get("user") or os.getenv("SHARED_TAG_DB_USER") or self.settings.get("shared_tags", {}).get("user", "postgres")
+    
+    @property
+    def SHARED_TAG_DB_PASSWORD(self) -> str:
+        return self.file_settings.get("shared_tags", {}).get("password") or os.getenv("SHARED_TAG_DB_PASSWORD") or self.settings.get("shared_tags", {}).get("password", "")
+    
+    @property
+    def SHARED_TAG_DATABASE_URL(self) -> str:
+        """Get shared tag database connection URL"""
+        return f"postgresql://{self.SHARED_TAG_DB_USER}:{self.SHARED_TAG_DB_PASSWORD}@{self.SHARED_TAG_DB_HOST}:{self.SHARED_TAG_DB_PORT}/{self.SHARED_TAG_DB_NAME}"
 
 settings = Settings()
