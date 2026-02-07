@@ -222,6 +222,7 @@ class SharedTagService:
     def sync_from_shared(self) -> SyncResult:
         """Pull new tags from shared database to local"""
         result = SyncResult()
+        BATCH_SIZE = 5000
         
         if not self.is_available:
             result.errors.append("Shared database not available")
@@ -231,50 +232,61 @@ class SharedTagService:
         from ..shared_tag_models import SharedTag, SharedTagAlias
         
         try:
-            # Get all shared tags
-            shared_tags = self.shared_db.query(SharedTag).all()
-            local_tag_names = {t.name for t in self.local_db.query(Tag.name).all()}
+            local_tag_names = {t[0] for t in self.local_db.query(Tag.name).all()}
+            total_shared = self.shared_db.query(SharedTag).count()
+            offset = 0
+            new_tags = []
             
-            for st in shared_tags:
-                if st.name not in local_tag_names:
-                    # Import new tag
-                    new_tag = Tag(
-                        name=st.name,
-                        category=st.category,
-                        post_count=0
-                    )
-                    self.local_db.add(new_tag)
-                    result.tags_imported += 1
-                else:
-                    # Tag exists locally - local category takes precedence
-                    result.conflicts_resolved += 1
+            while offset < total_shared:
+                batch = self.shared_db.query(SharedTag).offset(offset).limit(BATCH_SIZE).all()
+                
+                for st in batch:
+                    if st.name not in local_tag_names:
+                        new_tags.append(Tag(
+                            name=st.name,
+                            category=st.category,
+                            post_count=0
+                        ))
+                        local_tag_names.add(st.name)
+                        result.tags_imported += 1
+                    else:
+                        result.conflicts_resolved += 1
+                
+                offset += BATCH_SIZE
             
-            # Import aliases
-            shared_aliases = self.shared_db.query(SharedTagAlias).all()
-            local_alias_names = {a.alias_name for a in self.local_db.query(TagAlias.alias_name).all()}
+            # Bulk insert new tags
+            if new_tags:
+                self.local_db.bulk_save_objects(new_tags)
+                self.local_db.commit()
             
-            for sa in shared_aliases:
-                if sa.alias_name not in local_alias_names:
-                    # Find target tag in local DB
-                    shared_target = self.shared_db.query(SharedTag).filter(
-                        SharedTag.id == sa.target_tag_id
-                    ).first()
-                    
-                    if shared_target:
-                        local_target = self.local_db.query(Tag).filter(
-                            Tag.name == shared_target.name
-                        ).first()
-                        
-                        if local_target:
-                            new_alias = TagAlias(
+            local_tag_map = {t.name: t.id for t in self.local_db.query(Tag.id, Tag.name).all()}
+            local_alias_names = {a[0] for a in self.local_db.query(TagAlias.alias_name).all()}
+            shared_tag_id_to_name = {t.id: t.name for t in self.shared_db.query(SharedTag.id, SharedTag.name).all()}
+            total_aliases = self.shared_db.query(SharedTagAlias).count()
+            offset = 0
+            new_aliases = []
+            
+            while offset < total_aliases:
+                batch = self.shared_db.query(SharedTagAlias).offset(offset).limit(BATCH_SIZE).all()
+                
+                for sa in batch:
+                    if sa.alias_name not in local_alias_names:
+                        target_name = shared_tag_id_to_name.get(sa.target_tag_id)
+                        if target_name and target_name in local_tag_map:
+                            new_aliases.append(TagAlias(
                                 alias_name=sa.alias_name,
-                                target_tag_id=local_target.id
-                            )
-                            self.local_db.add(new_alias)
+                                target_tag_id=local_tag_map[target_name]
+                            ))
+                            local_alias_names.add(sa.alias_name)
                             result.aliases_imported += 1
+                
+                offset += BATCH_SIZE
             
-            self.local_db.commit()
-            
+            # Bulk insert new aliases
+            if new_aliases:
+                self.local_db.bulk_save_objects(new_aliases)
+                self.local_db.commit()
+
         except Exception as e:
             result.errors.append(str(e))
             self.local_db.rollback()
@@ -284,6 +296,7 @@ class SharedTagService:
     def sync_to_shared(self) -> SyncResult:
         """Push all local tags to the shared database"""
         result = SyncResult()
+        BATCH_SIZE = 5000
         
         if not self.is_available:
             result.errors.append("Shared database not available")
@@ -293,41 +306,57 @@ class SharedTagService:
         from ..shared_tag_models import SharedTag, SharedTagAlias
         
         try:
-            local_tags = self.local_db.query(Tag).all()
-            shared_tag_names = {t.name for t in self.shared_db.query(SharedTag.name).all()}
+            shared_tag_names = {t[0] for t in self.shared_db.query(SharedTag.name).all()}
+            total_local = self.local_db.query(Tag).count()
+            offset = 0
+            new_shared_tags = []
+
+            while offset < total_local:
+                batch = self.local_db.query(Tag).offset(offset).limit(BATCH_SIZE).all()
+                
+                for lt in batch:
+                    if lt.name not in shared_tag_names:
+                        new_shared_tags.append(SharedTag(
+                            name=lt.name,
+                            category=lt.category
+                        ))
+                        shared_tag_names.add(lt.name)
+                        result.tags_exported += 1
+                
+                offset += BATCH_SIZE
             
-            for lt in local_tags:
-                if lt.name not in shared_tag_names:
-                    new_shared = SharedTag(
-                        name=lt.name,
-                        category=lt.category
-                    )
-                    self.shared_db.add(new_shared)
-                    result.tags_exported += 1
+            # Bulk insert new shared tags
+            if new_shared_tags:
+                self.shared_db.bulk_save_objects(new_shared_tags)
+                self.shared_db.commit()
             
-            self.shared_db.commit()
+            shared_tag_map = {t.name: t.id for t in self.shared_db.query(SharedTag.id, SharedTag.name).all()}
+            shared_alias_names = {a[0] for a in self.shared_db.query(SharedTagAlias.alias_name).all()}
+            local_tag_id_to_name = {t.id: t.name for t in self.local_db.query(Tag.id, Tag.name).all()}
+            total_aliases = self.local_db.query(TagAlias).count()
+            offset = 0
+            new_shared_aliases = []
             
-            # Refresh shared tag mapping for aliases
-            shared_tag_map = {t.name: t.id for t in self.shared_db.query(SharedTag).all()}
-            shared_alias_names = {a.alias_name for a in self.shared_db.query(SharedTagAlias.alias_name).all()}
+            while offset < total_aliases:
+                batch = self.local_db.query(TagAlias).offset(offset).limit(BATCH_SIZE).all()
+                
+                for la in batch:
+                    if la.alias_name not in shared_alias_names:
+                        target_name = local_tag_id_to_name.get(la.target_tag_id)
+                        if target_name and target_name in shared_tag_map:
+                            new_shared_aliases.append(SharedTagAlias(
+                                alias_name=la.alias_name,
+                                target_tag_id=shared_tag_map[target_name]
+                            ))
+                            shared_alias_names.add(la.alias_name)
+                            result.aliases_exported += 1
+                
+                offset += BATCH_SIZE
             
-            local_aliases = self.local_db.query(TagAlias).all()
-            for la in local_aliases:
-                if la.alias_name not in shared_alias_names:
-                    local_target = self.local_db.query(Tag).filter(
-                        Tag.id == la.target_tag_id
-                    ).first()
-                    
-                    if local_target and local_target.name in shared_tag_map:
-                        new_alias = SharedTagAlias(
-                            alias_name=la.alias_name,
-                            target_tag_id=shared_tag_map[local_target.name]
-                        )
-                        self.shared_db.add(new_alias)
-                        result.aliases_exported += 1
-            
-            self.shared_db.commit()
-            
+            # Bulk insert new shared aliases
+            if new_shared_aliases:
+                self.shared_db.bulk_save_objects(new_shared_aliases)
+                self.shared_db.commit()
         except Exception as e:
             result.errors.append(str(e))
             self.shared_db.rollback()
