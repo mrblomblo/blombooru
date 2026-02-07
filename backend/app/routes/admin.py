@@ -373,6 +373,8 @@ async def get_settings(current_user: User = Depends(get_current_admin_user)):
         safe_settings["database"] = {**safe_settings["database"], "password": "***"}
     if "redis" in safe_settings:
         safe_settings["redis"] = {**safe_settings["redis"], "password": "***"}
+    if "shared_tags" in safe_settings:
+        safe_settings["shared_tags"] = {**safe_settings["shared_tags"], "password": "***"}
     safe_settings.pop("secret_key", None)
     return safe_settings
 
