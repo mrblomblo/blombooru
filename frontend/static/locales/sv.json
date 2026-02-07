@@ -133,7 +133,6 @@
             "file_size": "Filstorlek",
             "file_type": "Filtyp",
             "items_per_page": "Objekt per sida",
-            "items_per_page_hint": "Antal objekt att visa per sida (20-200)",
             "language": "Språk",
             "loading_themes": "Laddar teman...",
             "app_name": "Applikationsnamn",

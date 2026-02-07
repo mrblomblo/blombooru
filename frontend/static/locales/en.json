@@ -138,7 +138,6 @@
             "file_size": "File Size",
             "file_type": "File Type",
             "items_per_page": "Items Per Page",
-            "items_per_page_hint": "Number of items to display per page (20-200)",
             "language": "Language",
             "loading_themes": "Loading themes...",
             "app_name": "Application Name",
