@@ -102,6 +102,8 @@ Blombooru is a private, single-user alternative to image boorus like Danbooru an
 
 - **High-Performance Caching:** Optional Redis integration provides lightning-fast response times for heavy queries, autocompletes, and Danbooru-compatible API requests.
 
+- **Shared Tag Database:** Optionally share tags across multiple Blombooru instances using a centralized PostgreSQL database dedicated to just tags.
+
 - **Danbooru v2 API Compatibility:** Connect to Blombooru using your favorite third-party Booru clients (like Grabber, Tachiyomi, or BooruNav) thanks to a built-in compatibility layer.
 
 ## Installation & Setup
@@ -276,6 +278,29 @@ Each instance maintains completely separate:
 - **Redis cache** – Separate Redis instances with isolated data
 
 This means you can safely delete, update, or modify one instance without affecting any others.
+
+#### Sharing Tags Between Instances
+
+If you want multiple Blombooru instances to share the same tag database (so tags created in one instance are available in others), you can enable the optional **Shared Tag Database** feature:
+
+1. **Start the shared tag database container:**
+   ```bash
+   docker compose -f docker-compose.shared-tags.yml up -d
+   ```
+
+2. **Configure each Blombooru instance:**
+   - Go to **Admin Panel > Settings**
+   - Enable "Shared Tag Database"
+   - Enter the connection details
+   - Click "Test Connection" to verify, then save
+
+3. **Sync tags:**
+   - Use the "Sync Now" button to manually sync tags between instances
+   - New tags are automatically shared when created
+
+> [!NOTE]
+> Local tags always take precedence. If a tag exists locally with a different category than the shared database, your local category is kept.
+> **Tags are never deleted from your local database, only new tags are imported.**
 
 ### Python
 
@@ -552,6 +577,7 @@ Your new theme will automatically appear in the theme-picker dropdown in the Adm
 | **Frontend** | Tailwind CSS (locally built), Vanilla JavaScript, HTML |
 | **Database** | PostgreSQL 17 |
 | **Caching** | Redis 7+ (Optional) |
+| **Shared Tags** | Optional external PostgreSQL instance for sharing tags between instances |
 | **Media Storage** | Local filesystem with paths referenced in the database. Original metadata is always preserved but can optionally be stripped on-the-fly in shared media. |
 | **Supported Formats** | JPG, PNG, WEBP, GIF, MP4, WEBM |
 

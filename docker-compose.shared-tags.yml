@@ -1,0 +1,18 @@
+# Usage:
+#   docker compose -f docker-compose.shared-tags.yml up
+
+services:
+  shared-tag-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${SHARED_TAG_DB_USER}
+      - POSTGRES_PASSWORD=${SHARED_TAG_DB_PASSWORD}
+      - POSTGRES_DB=${SHARED_TAG_DB}
+    volumes:
+      - sharedpgtagdata:/var/lib/postgresql/data
+    ports:
+      - "${SHARED_TAG_DB_PORT:-5431}:5432"
+
+volumes:
+  sharedpgtagdata:

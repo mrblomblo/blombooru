@@ -373,6 +373,8 @@ async def get_settings(current_user: User = Depends(get_current_admin_user)):
         safe_settings["database"] = {**safe_settings["database"], "password": "***"}
     if "redis" in safe_settings:
         safe_settings["redis"] = {**safe_settings["redis"], "password": "***"}
+    if "shared_tags" in safe_settings:
+        safe_settings["shared_tags"] = {**safe_settings["shared_tags"], "password": "***"}
     safe_settings.pop("secret_key", None)
     return safe_settings
 
@@ -381,7 +383,7 @@ async def test_redis(data: dict, current_user: User = Depends(require_admin_mode
     """Test Redis connection"""
     import redis
     try:
-        host = data.get('host', 'localhost')
+        host = data.get('host', 'redis')
         port = data.get('port', 6379)
         db = data.get('db', 0)
         password = data.get('password')
@@ -410,9 +412,12 @@ async def update_settings(
     """Update settings"""
     update_dict = updates.dict(exclude_unset=True)
     
-    # Special handling for Redis to avoid overwriting password with placeholder
+    # Special handling for Redis and shared tag DB to avoid overwriting password with placeholder
     if "redis" in update_dict and update_dict["redis"].get("password") == "***":
         update_dict["redis"]["password"] = settings.REDIS_PASSWORD
+    
+    if "shared_tags" in update_dict and update_dict["shared_tags"].get("password") == "***":
+        update_dict["shared_tags"]["password"] = settings.SHARED_TAG_DB_PASSWORD
 
     settings.save_settings(update_dict)
     
@@ -421,6 +426,13 @@ async def update_settings(
     if "redis" in update_dict:
         redis_cache._enabled = settings.REDIS_ENABLED
         redis_cache._client = None # Force reconnect
+    
+    # Reconnect shared tag database if settings changed
+    if "shared_tags" in update_dict:
+        from ..database import reconnect_shared_db, init_shared_db
+        reconnect_shared_db()
+        if settings.SHARED_TAGS_ENABLED:
+            init_shared_db()
         
     return {"message_key": "notifications.admin.settings_updated"}
 
@@ -961,6 +973,23 @@ async def delete_tag(
         db.delete(tag)
         db.commit()
         
+        # Also delete from shared database if enabled
+        if settings.SHARED_TAGS_ENABLED:
+            from ..database import is_shared_db_available, get_shared_db
+            if is_shared_db_available():
+                shared_db_gen = get_shared_db()
+                shared_db = next(shared_db_gen, None)
+                if shared_db:
+                    try:
+                        from ..services.shared_tags import SharedTagService
+                        service = SharedTagService(db, shared_db)
+                        service.delete_from_shared(tag_name)
+                    finally:
+                        try:
+                            next(shared_db_gen, None)
+                        except StopIteration:
+                            pass
+        
         return {"message_key": "notifications.admin.tag_deleted", "tag_name": tag_name}
     
     except HTTPException:
@@ -1351,3 +1380,143 @@ async def revoke_api_key(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to revoke API key: {str(e)}")
+
+@router.post("/test-shared-tag-db")
+async def test_shared_tag_db(data: dict, current_user: User = Depends(require_admin_mode)):
+    """Test shared tag database connection"""
+    from sqlalchemy import create_engine as sqlalchemy_create_engine, text
+    
+    try:
+        host = data.get('host', 'shared-tag-db')
+        port = data.get('port', 5432)
+        name = data.get('name', 'shared_tags')
+        user = data.get('user', 'postgres')
+        password = data.get('password', '')
+        
+        if password == "***":
+            password = settings.SHARED_TAG_DB_PASSWORD
+        
+        test_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
+        
+        test_engine = sqlalchemy_create_engine(
+            test_url, 
+            pool_pre_ping=True,
+            connect_args={"connect_timeout": 5}
+        )
+        with test_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        test_engine.dispose()
+        
+        return {"success": True, "message": "Connection successful"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@router.get("/shared-tags/status")
+async def get_shared_tags_status(
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Get shared tag database status"""
+    from ..database import is_shared_db_available, get_shared_db_error, get_shared_db
+    from ..models import Tag, TagAlias
+    
+    status = {
+        "enabled": settings.SHARED_TAGS_ENABLED,
+        "connected": is_shared_db_available(),
+        "error": get_shared_db_error() if not is_shared_db_available() else None,
+        "config": {
+            "host": settings.SHARED_TAG_DB_HOST,
+            "port": settings.SHARED_TAG_DB_PORT,
+            "name": settings.SHARED_TAG_DB_NAME,
+            "user": settings.SHARED_TAG_DB_USER
+        }
+    }
+    
+    # Get local tag counts
+    status["local_tags"] = db.query(Tag).count()
+    status["local_aliases"] = db.query(TagAlias).count()
+    
+    # Get shared tag counts if connected
+    if is_shared_db_available():
+        shared_db_gen = get_shared_db()
+        shared_db = next(shared_db_gen, None)
+        try:
+            if shared_db:
+                from ..shared_tag_models import SharedTag, SharedTagAlias
+                status["shared_tags"] = shared_db.query(SharedTag).count()
+                status["shared_aliases"] = shared_db.query(SharedTagAlias).count()
+        finally:
+            if shared_db:
+                try:
+                    next(shared_db_gen, None)
+                except StopIteration:
+                    pass
+    
+    return status
+
+@router.post("/shared-tags/sync")
+async def sync_shared_tags(
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Trigger manual sync with shared tag database"""
+    from ..database import is_shared_db_available, get_shared_db, reconnect_shared_db
+    from ..services.shared_tags import SharedTagService
+    from ..utils.cache import invalidate_tag_cache
+    import asyncio
+    
+    if not settings.SHARED_TAGS_ENABLED:
+        raise HTTPException(status_code=400, detail="Shared tags not enabled")
+    
+    # Try to reconnect if not available
+    if not is_shared_db_available():
+        reconnect_shared_db()
+        
+    if not is_shared_db_available():
+        raise HTTPException(status_code=503, detail="Shared tag database not available")
+    
+    shared_db_gen = get_shared_db()
+    shared_db = next(shared_db_gen, None)
+    
+    try:
+        if not shared_db:
+            raise HTTPException(status_code=503, detail="Could not get shared database session")
+        
+        service = SharedTagService(db, shared_db)
+        result = await asyncio.to_thread(service.full_sync)
+        invalidate_tag_cache()
+        
+        return {
+            "success": len(result.errors) == 0,
+            "tags_imported": result.tags_imported,
+            "tags_exported": result.tags_exported,
+            "aliases_imported": result.aliases_imported,
+            "aliases_exported": result.aliases_exported,
+            "conflicts_resolved": result.conflicts_resolved,
+            "errors": result.errors
+        }
+    finally:
+        if shared_db:
+            try:
+                next(shared_db_gen, None)
+            except StopIteration:
+                pass
+
+@router.post("/shared-tags/reconnect")
+async def reconnect_shared_tags(
+    current_user: User = Depends(require_admin_mode)
+):
+    """Attempt to reconnect to the shared tag database"""
+    from ..database import reconnect_shared_db, is_shared_db_available, get_shared_db_error, init_shared_db
+    
+    if not settings.SHARED_TAGS_ENABLED:
+        raise HTTPException(status_code=400, detail="Shared tags not enabled")
+    
+    reconnect_shared_db()
+    
+    if is_shared_db_available():
+        init_shared_db()
+        return {"success": True, "message": "Reconnected successfully"}
+    else:
+        return {"success": False, "message": get_shared_db_error()}
+

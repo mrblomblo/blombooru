@@ -51,9 +51,26 @@ async def autocomplete_tags(
     q: str = Query(..., min_length=1),
     db: Session = Depends(get_db)
 ):
-    """Autocomplete tag suggestions"""
+    """Autocomplete tag suggestions (includes shared tags if enabled)"""
+    from ..database import get_shared_db, is_shared_db_available
+    from ..services.shared_tags import SharedTagService
     from ..models import TagAlias
     
+    # If shared tags enabled, use merged autocomplete
+    if is_shared_db_available():
+        shared_db_gen = get_shared_db()
+        shared_db = next(shared_db_gen, None)
+        try:
+            service = SharedTagService(db, shared_db)
+            return service.autocomplete_merged(q, limit=50)
+        finally:
+            if shared_db:
+                try:
+                    next(shared_db_gen, None)
+                except StopIteration:
+                    pass
+    
+    # Fall back to local-only autocomplete
     alias = db.query(TagAlias).filter(TagAlias.alias_name.ilike(q)).first()
     
     if alias:
@@ -138,9 +155,29 @@ async def delete_tag(
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     
+    tag_name = tag.name  # Save name before deletion
+    
     db.delete(tag)
     db.commit()
     invalidate_tag_cache()
+    
+    # Also delete from shared database if enabled
+    from ..config import settings
+    if settings.SHARED_TAGS_ENABLED:
+        from ..database import is_shared_db_available, get_shared_db
+        if is_shared_db_available():
+            shared_db_gen = get_shared_db()
+            shared_db = next(shared_db_gen, None)
+            if shared_db:
+                try:
+                    from ..services.shared_tags import SharedTagService
+                    service = SharedTagService(db, shared_db)
+                    service.delete_from_shared(tag_name)
+                finally:
+                    try:
+                        next(shared_db_gen, None)
+                    except StopIteration:
+                        pass
     
     return {"message": "Tag deleted successfully"}
 
