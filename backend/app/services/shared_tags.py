@@ -219,6 +219,53 @@ class SharedTagService:
             self.shared_db.rollback()
             return False
     
+    def delete_from_shared(self, tag_name: str) -> bool:
+        """Delete a tag from the shared database"""
+        if not self.is_available:
+            return False
+        
+        from ..shared_tag_models import SharedTag, SharedTagAlias
+        
+        try:
+            shared_tag = self.shared_db.query(SharedTag).filter(
+                SharedTag.name == tag_name.lower()
+            ).first()
+            
+            if shared_tag:
+                # Delete associated aliases first
+                self.shared_db.query(SharedTagAlias).filter(
+                    SharedTagAlias.target_tag_id == shared_tag.id
+                ).delete()
+                
+                # Delete the tag
+                self.shared_db.delete(shared_tag)
+                self.shared_db.commit()
+                return True
+            
+            return False  # Tag didn't exist in shared DB
+                
+        except Exception as e:
+            print(f"Error deleting tag from shared DB: {e}")
+            self.shared_db.rollback()
+            return False
+    
+    def clear_all_shared(self) -> bool:
+        """Clear all tags and aliases from the shared database"""
+        if not self.is_available:
+            return False
+        
+        from ..shared_tag_models import SharedTag, SharedTagAlias
+        
+        try:
+            self.shared_db.query(SharedTagAlias).delete()
+            self.shared_db.query(SharedTag).delete()
+            self.shared_db.commit()
+            return True
+        except Exception as e:
+            print(f"Error clearing shared DB: {e}")
+            self.shared_db.rollback()
+            return False
+    
     def sync_from_shared(self) -> SyncResult:
         """Pull new tags from shared database to local"""
         result = SyncResult()
