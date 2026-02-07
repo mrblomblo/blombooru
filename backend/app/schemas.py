@@ -124,7 +124,7 @@ class RedisSettings(BaseModel):
 
 class SharedTagSettings(BaseModel):
     enabled: bool = False
-    host: str = "localhost"
+    host: str = "shared-tag-db"
     port: int = 5432
     name: str = "shared_tags"
     user: str = "postgres"

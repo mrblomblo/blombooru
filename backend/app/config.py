@@ -39,14 +39,14 @@ class Settings:
             "app_name": "Blombooru",
             "first_run": True,
             "database": {
-                "host": "localhost",
+                "host": "db",
                 "port": 5432,
                 "name": "blombooru",
                 "user": "postgres",
                 "password": ""
             },
             "redis": {
-                "host": "localhost",
+                "host": "redis",
                 "port": 6379,
                 "db": 0,
                 "password": "",
@@ -54,7 +54,7 @@ class Settings:
             },
             "shared_tags": {
                 "enabled": False,
-                "host": "localhost",
+                "host": "shared-tag-db",
                 "port": 5432,
                 "name": "shared_tags",
                 "user": "postgres",

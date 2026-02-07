@@ -769,7 +769,7 @@ class AdminPanel {
                 }
 
                 const hostInput = document.getElementById('redis-host');
-                if (hostInput) hostInput.value = settings.redis.host || 'localhost';
+                if (hostInput) hostInput.value = settings.redis.host || 'redis';
 
                 const portInput = document.getElementById('redis-port');
                 if (portInput) portInput.value = settings.redis.port || 6379;
@@ -858,7 +858,7 @@ class AdminPanel {
 
         const redisSettings = {
             enabled: document.getElementById('redis-enabled')?.checked || false,
-            host: document.getElementById('redis-host')?.value || 'localhost',
+            host: document.getElementById('redis-host')?.value || 'redis',
             port: parseInt(document.getElementById('redis-port')?.value || '6379'),
             db: parseInt(document.getElementById('redis-db')?.value || '0'),
             password: document.getElementById('redis-password')?.value || ''
@@ -894,7 +894,7 @@ class AdminPanel {
             redis: redisSettings,
             shared_tags: {
                 enabled: document.getElementById('shared-tags-enabled')?.checked || false,
-                host: document.getElementById('shared-tags-host')?.value || 'localhost',
+                host: document.getElementById('shared-tags-host')?.value || 'shared-tag-db',
                 port: parseInt(document.getElementById('shared-tags-port')?.value || '5432'),
                 name: document.getElementById('shared-tags-name')?.value || 'shared_tags',
                 user: document.getElementById('shared-tags-user')?.value || 'postgres',

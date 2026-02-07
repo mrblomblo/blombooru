@@ -381,7 +381,7 @@ async def test_redis(data: dict, current_user: User = Depends(require_admin_mode
     """Test Redis connection"""
     import redis
     try:
-        host = data.get('host', 'localhost')
+        host = data.get('host', 'redis')
         port = data.get('port', 6379)
         db = data.get('db', 0)
         password = data.get('password')
@@ -1368,7 +1368,7 @@ async def test_shared_tag_db(data: dict, current_user: User = Depends(require_ad
     from sqlalchemy import create_engine as sqlalchemy_create_engine, text
     
     try:
-        host = data.get('host', 'localhost')
+        host = data.get('host', 'shared-tag-db')
         port = data.get('port', 5432)
         name = data.get('name', 'shared_tags')
         user = data.get('user', 'postgres')
