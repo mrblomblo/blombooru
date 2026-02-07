@@ -801,6 +801,10 @@ class AdminPanel {
                     if (container) container.style.display = settings.shared_tags.enabled ? 'block' : 'none';
                 }
 
+                // Show/hide sync button based on whether shared tags are enabled
+                const syncBtn = document.getElementById('sync-shared-tags-btn');
+                if (syncBtn) syncBtn.style.display = settings.shared_tags.enabled ? 'inline-block' : 'none';
+
                 const hostInput = document.getElementById('shared-tags-host');
                 if (hostInput) hostInput.value = settings.shared_tags.host || 'shared-tag-db';
 
