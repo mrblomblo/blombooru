@@ -160,7 +160,7 @@ class ThemeRegistry:
         ))
         self.register_theme(Theme(
             id="rose_pine", 
-            name="Rose Pine", 
+            name="Rosé Pine", 
             css_path="/static/css/themes/rose_pine.css", 
             is_dark=True,
             primary_color="#c4a7e7",
@@ -168,7 +168,7 @@ class ThemeRegistry:
         ))
         self.register_theme(Theme(
             id="rose_pine_moon", 
-            name="Rose Pine Moon", 
+            name="Rosé Pine Moon", 
             css_path="/static/css/themes/rose_pine_moon.css", 
             is_dark=True,
             primary_color="#c4a7e7",
@@ -176,7 +176,7 @@ class ThemeRegistry:
         ))
         self.register_theme(Theme(
             id="rose_pine_dawn", 
-            name="Rose Pine Dawn", 
+            name="Rosé Pine Dawn", 
             css_path="/static/css/themes/rose_pine_dawn.css", 
             is_dark=False,
             primary_color="#907aa9",
