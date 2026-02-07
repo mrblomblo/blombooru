@@ -971,6 +971,23 @@ async def delete_tag(
         db.delete(tag)
         db.commit()
         
+        # Also delete from shared database if enabled
+        if settings.SHARED_TAGS_ENABLED:
+            from ..database import is_shared_db_available, get_shared_db
+            if is_shared_db_available():
+                shared_db_gen = get_shared_db()
+                shared_db = next(shared_db_gen, None)
+                if shared_db:
+                    try:
+                        from ..services.shared_tags import SharedTagService
+                        service = SharedTagService(db, shared_db)
+                        service.delete_from_shared(tag_name)
+                    finally:
+                        try:
+                            next(shared_db_gen, None)
+                        except StopIteration:
+                            pass
+        
         return {"message_key": "notifications.admin.tag_deleted", "tag_name": tag_name}
     
     except HTTPException:

@@ -164,6 +164,24 @@ async def clear_all_tags(
         db.commit()
         invalidate_tag_cache()
         
+        # Also clear shared database if enabled
+        from ..config import settings
+        if settings.SHARED_TAGS_ENABLED:
+            from ..database import is_shared_db_available, get_shared_db
+            if is_shared_db_available():
+                shared_db_gen = get_shared_db()
+                shared_db = next(shared_db_gen, None)
+                if shared_db:
+                    try:
+                        from ..services.shared_tags import SharedTagService
+                        service = SharedTagService(db, shared_db)
+                        service.clear_all_shared()
+                    finally:
+                        try:
+                            next(shared_db_gen, None)
+                        except StopIteration:
+                            pass
+        
         return {"success": True, "message": "All tags cleared"}
     except Exception as e:
         db.rollback()
@@ -216,12 +234,33 @@ async def delete_tag(
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     
+    tag_name = tag.name  # Save name before deletion
+    
     try:
         db.delete(tag)
         db.commit()
         invalidate_tag_cache()
         
-        return {"success": True, "message": f"Tag '{tag.name}' deleted"}
+        # Also delete from shared database if enabled
+        from ..config import settings
+        if settings.SHARED_TAGS_ENABLED:
+            from ..database import is_shared_db_available, get_shared_db
+            if is_shared_db_available():
+                shared_db_gen = get_shared_db()
+                shared_db = next(shared_db_gen, None)
+                if shared_db:
+                    try:
+                        from ..services.shared_tags import SharedTagService
+                        service = SharedTagService(db, shared_db)
+                        service.delete_from_shared(tag_name)
+                    finally:
+                        try:
+                            next(shared_db_gen, None)
+                        except StopIteration:
+                            pass
+        
+        return {"success": True, "message": f"Tag '{tag_name}' deleted"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+

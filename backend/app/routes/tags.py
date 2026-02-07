@@ -172,9 +172,29 @@ async def delete_tag(
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     
+    tag_name = tag.name  # Save name before deletion
+    
     db.delete(tag)
     db.commit()
     invalidate_tag_cache()
+    
+    # Also delete from shared database if enabled
+    from ..config import settings
+    if settings.SHARED_TAGS_ENABLED:
+        from ..database import is_shared_db_available, get_shared_db
+        if is_shared_db_available():
+            shared_db_gen = get_shared_db()
+            shared_db = next(shared_db_gen, None)
+            if shared_db:
+                try:
+                    from ..services.shared_tags import SharedTagService
+                    service = SharedTagService(db, shared_db)
+                    service.delete_from_shared(tag_name)
+                finally:
+                    try:
+                        next(shared_db_gen, None)
+                    except StopIteration:
+                        pass
     
     return {"message": "Tag deleted successfully"}
 
