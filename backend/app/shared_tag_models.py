@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -23,8 +23,7 @@ class SharedTag(SharedBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    aliases = relationship('SharedTagAlias', foreign_keys='SharedTagAlias.target_tag_id', 
-                          back_populates='target_tag', cascade="all, delete-orphan")
+    aliases = relationship('SharedTagAlias', back_populates='target_tag', cascade="all, delete-orphan")
 
 class SharedTagAlias(SharedBase):
     """Tag alias model for the shared tag database"""
@@ -32,6 +31,6 @@ class SharedTagAlias(SharedBase):
     
     id = Column(Integer, primary_key=True, index=True)
     alias_name = Column(String(255), unique=True, nullable=False, index=True)
-    target_tag_id = Column(Integer, nullable=False, index=True)
+    target_tag_id = Column(Integer, ForeignKey('shared_tags.id'), nullable=False, index=True)
     
-    target_tag = relationship('SharedTag', foreign_keys=[target_tag_id], back_populates='aliases')
+    target_tag = relationship('SharedTag', back_populates='aliases')
