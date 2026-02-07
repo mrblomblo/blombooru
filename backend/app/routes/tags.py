@@ -51,9 +51,26 @@ async def autocomplete_tags(
     q: str = Query(..., min_length=1),
     db: Session = Depends(get_db)
 ):
-    """Autocomplete tag suggestions"""
+    """Autocomplete tag suggestions (includes shared tags if enabled)"""
+    from ..database import get_shared_db, is_shared_db_available
+    from ..services.shared_tags import SharedTagService
     from ..models import TagAlias
     
+    # If shared tags enabled, use merged autocomplete
+    if is_shared_db_available():
+        shared_db_gen = get_shared_db()
+        shared_db = next(shared_db_gen, None)
+        try:
+            service = SharedTagService(db, shared_db)
+            return service.autocomplete_merged(q, limit=50)
+        finally:
+            if shared_db:
+                try:
+                    next(shared_db_gen, None)
+                except StopIteration:
+                    pass
+    
+    # Fall back to local-only autocomplete
     alias = db.query(TagAlias).filter(TagAlias.alias_name.ilike(q)).first()
     
     if alias:
@@ -106,6 +123,23 @@ async def create_tag(
     db.commit()
     db.refresh(tag)
     invalidate_tag_cache()
+    
+    # Sync to shared DB if enabled
+    from ..database import get_shared_db, is_shared_db_available
+    if is_shared_db_available():
+        from ..services.shared_tags import SharedTagService
+        shared_db_gen = get_shared_db()
+        shared_db = next(shared_db_gen, None)
+        try:
+            if shared_db:
+                service = SharedTagService(db, shared_db)
+                service.sync_tag_to_shared(tag)
+        finally:
+            if shared_db:
+                try:
+                    next(shared_db_gen, None)
+                except StopIteration:
+                    pass
     
     return tag
 
