@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from pydantic import BaseModel
 from pathlib import Path
-import logging
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -17,8 +16,6 @@ from ..models import Media, User
 from ..services.wd_tagger import get_wd_tagger, WDTagger
 from ..config import settings
 
-logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/api/ai-tagger", tags=["ai-tagger"])
 
 # Dedicated thread pool for inference
@@ -26,14 +23,12 @@ _inference_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="wd_i
 
 def shutdown_tagger_resources():
     """Cleanup tagger resources on application shutdown."""
-    logger.info("Shutting down AI tagger resources...")
     _inference_executor.shutdown(wait=False)
     try:
         from ..services.wd_tagger import get_wd_tagger
         get_wd_tagger().shutdown()
     except Exception as e:
-        logger.error(f"Error shutting down WD tagger: {e}")
-
+        pass
 
 def find_media_file(filename: str) -> Optional[Path]:
     """Find a media file in ORIGINAL_DIR or its subdirectories."""
@@ -50,14 +45,12 @@ def find_media_file(filename: str) -> Optional[Path]:
     
     return None
 
-
 class PredictTagsRequest(BaseModel):
     general_threshold: float = 0.35
     character_threshold: float = 0.85
     hide_rating_tags: bool = True
     character_tags_first: bool = True
     model_name: str = "wd-eva02-large-tagger-v3"
-
 
 class BatchPredictRequest(BaseModel):
     media_ids: List[int]
@@ -67,18 +60,15 @@ class BatchPredictRequest(BaseModel):
     character_tags_first: bool = True
     model_name: str = "wd-eva02-large-tagger-v3"
 
-
 class PredictedTag(BaseModel):
     name: str
     category: str
     confidence: float
 
-
 class PredictTagsResponse(BaseModel):
     media_id: int
     tags: List[PredictedTag]
     model_used: str
-
 
 class BatchPredictResponse(BaseModel):
     results: List[PredictTagsResponse]
@@ -86,14 +76,12 @@ class BatchPredictResponse(BaseModel):
     model_used: str
     processing_time_ms: float
 
-
 class ModelStatusResponse(BaseModel):
     model_name: str
     is_downloaded: bool
     is_loaded: bool
     download_size_mb: Optional[float] = None
     optimal_batch_size: Optional[int] = None
-
 
 @router.get("/status")
 async def get_tagger_status():
@@ -112,7 +100,6 @@ async def get_tagger_status():
             "error": str(e),
             "available_models": list(WDTagger.AVAILABLE_MODELS.keys())
         }
-
 
 @router.get("/model-status/{model_name}", response_model=ModelStatusResponse)
 async def get_model_status(
@@ -172,7 +159,6 @@ async def get_model_status(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
 
-
 @router.post("/download/{model_name}")
 async def download_model(
     model_name: str,
@@ -205,9 +191,7 @@ async def download_model(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
     except Exception as e:
-        logger.error(f"Error downloading model {model_name}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/predict/{media_id}", response_model=PredictTagsResponse)
 async def predict_tags(
@@ -258,12 +242,10 @@ async def predict_tags(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
     except Exception as e:
-        logger.error(f"Error predicting tags for media {media_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error predicting tags: {str(e)}"
         )
-
 
 @router.post("/predict-batch", response_model=BatchPredictResponse)
 async def predict_tags_batch(
@@ -369,12 +351,10 @@ async def predict_tags_batch(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
     except Exception as e:
-        logger.error(f"Error in batch prediction: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error predicting tags: {str(e)}"
         )
-
 
 @router.post("/predict-stream")
 async def predict_tags_stream(
@@ -448,7 +428,6 @@ async def predict_tags_stream(
             ):
                 # Check for client disconnect
                 if await request.is_disconnected():
-                    logger.info("Client disconnected, stopping stream")
                     return
                 
                 media_id = path_to_id.get(file_path)
@@ -467,7 +446,6 @@ async def predict_tags_stream(
             yield f"data: {json.dumps({'type': 'complete', 'total': processed})}\n\n"
             
         except Exception as e:
-            logger.error(f"Error in streaming prediction: {e}", exc_info=True)
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
     
     return StreamingResponse(
@@ -479,7 +457,6 @@ async def predict_tags_stream(
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
-
 
 @router.post("/load")
 async def load_model(
@@ -512,5 +489,4 @@ async def load_model(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error loading model {model_name}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

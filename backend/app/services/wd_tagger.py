@@ -5,13 +5,9 @@ import onnxruntime as rt
 from PIL import Image
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple, Generator
-import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import queue
-
-logger = logging.getLogger(__name__)
-
 
 class WDTagger:
     """
@@ -115,7 +111,6 @@ class WDTagger:
             raise ImportError("huggingface_hub is required. Install with: pip install huggingface_hub")
         
         model_repo = self.AVAILABLE_MODELS[model_name]
-        logger.info(f"Loading WD Tagger model: {model_name} from {model_repo}")
         
         # Download files
         csv_path = huggingface_hub.hf_hub_download(model_repo, self.LABEL_FILENAME)
@@ -142,20 +137,13 @@ class WDTagger:
                 providers=['CPUExecutionProvider']
             )
         except Exception as e:
-            logger.error(f"Failed to load model: {e}")
             raise
 
         input_info = self._model.get_inputs()[0]
         self._target_size = input_info.shape[2]
         self._input_name = input_info.name
         self._current_model_name = model_name
-        
-        logger.info(
-            f"WD Tagger loaded successfully. "
-            f"Model: {model_name}, Target size: {self._target_size}, "
-            f"Optimal batch size: {self.OPTIMAL_BATCH_SIZES.get(model_name, 4)}"
-        )
-    
+
     def ensure_loaded(self, model_name: str = "wd-eva02-large-tagger-v3"):
         """Ensure the model is loaded."""
         if self._model is None or self._current_model_name != model_name:
@@ -224,7 +212,6 @@ class WDTagger:
             
             return (file_path, prepared)
         except Exception as e:
-            logger.warning(f"Error preparing image {file_path}: {e}")
             return (file_path, None)
     
     def _prepare_images_parallel(
@@ -589,11 +576,9 @@ class WDTagger:
         if hasattr(self, '_preprocess_executor'):
             self._preprocess_executor.shutdown(wait=False)
 
-
 # Global singleton instance
 _tagger_instance: Optional[WDTagger] = None
 _tagger_lock = threading.Lock()
-
 
 def get_wd_tagger() -> WDTagger:
     """Get the singleton WD Tagger instance."""
