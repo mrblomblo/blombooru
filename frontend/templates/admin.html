@@ -168,7 +168,7 @@
                                         class="w-4 h-4 accent-primary">
                                     <span class="text-xs">{{ t('admin.settings.require_auth') }}</span>
                                 </label>
-                                <p class="text-xs text-secondary opacity-70 mt-2 ml-6">
+                                <p class="text-xs text-secondary opacity-70 ml-6">
                                     {{ t('admin.settings.require_auth_hint') }}
                                 </p>
                             </div>
@@ -224,18 +224,18 @@
                         <div class="mb-6">
                             <label class="block text-xs font-bold mb-2">{{ t('admin.caching.title') }}</label>
                             <div class="bg p-4 border">
-                                <label class="flex items-center gap-2 cursor-pointer mb-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" id="redis-enabled" name="redis_enabled"
                                         class="w-4 h-4 accent-primary">
                                     <span class="text-xs font-bold">{{ t('admin.caching.enable_redis') }}</span>
                                 </label>
 
-                                <div id="redis-settings-container" style="display: none;">
+                                <div id="redis-settings-container" class="mt-4" style="display: none;">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <label
                                                 class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
-                                                {{ t('admin.caching.host') }}
+                                                {{ t('common.host') }}
                                             </label>
                                             <input type="text" id="redis-host"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
@@ -244,7 +244,7 @@
                                         <div>
                                             <label
                                                 class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
-                                                {{ t('admin.caching.port') }}
+                                                {{ t('common.port') }}
                                             </label>
                                             <input type="number" id="redis-port"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
@@ -264,18 +264,102 @@
                                         <div>
                                             <label
                                                 class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
-                                                {{ t('admin.caching.password') }}
+                                                {{ t('common.password') }}
                                             </label>
                                             <input type="password" id="redis-password"
                                                 class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
-                                                placeholder="{{ t('admin.caching.password_placeholder') }}">
+                                                placeholder="{{ t('common.password_placeholder') }}">
                                         </div>
                                     </div>
                                     <button type="button" id="test-redis-btn"
                                         class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
-                                        {{ t('admin.caching.test_connection') }}
+                                        {{ t('common.test_connection') }}
                                     </button>
                                     <div id="redis-test-result" class="mt-2 text-xs" style="display: none;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.shared_tags.title') }}</label>
+                            <div class="bg p-4 border">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="shared-tags-enabled" name="shared_tags_enabled"
+                                        class="w-4 h-4 accent-primary">
+                                    <span class="text-xs font-bold">{{ t('admin.shared_tags.enable') }}</span>
+                                </label>
+                                <p class="text-xs text-secondary opacity-70 ml-6">
+                                    {{ t('admin.shared_tags.description') }}
+                                </p>
+
+                                <div id="shared-tags-settings-container" class="mt-4" style="display: none;">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('common.host') }}
+                                            </label>
+                                            <input type="text" id="shared-tags-host"
+                                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                                placeholder="shared-tag-db">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('common.port') }}
+                                            </label>
+                                            <input type="number" id="shared-tags-port"
+                                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                                placeholder="5432">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('common.database') }}
+                                            </label>
+                                            <input type="text" id="shared-tags-name"
+                                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                                placeholder="shared_tags">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('common.username') }}
+                                            </label>
+                                            <input type="text" id="shared-tags-user"
+                                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                                placeholder="postgres">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('common.password') }}
+                                            </label>
+                                            <input type="password" id="shared-tags-password"
+                                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                                placeholder="{{ t('common.password_placeholder') }}">
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2 mb-2">
+                                        <button type="button" id="test-shared-tags-btn"
+                                            class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                                            {{ t('common.test_connection') }}
+                                        </button>
+                                        <button type="button" id="sync-shared-tags-btn"
+                                            class="px-4 py-2 surface border transition-colors hover:border-primary text-xs">
+                                            {{ t('admin.shared_tags.sync_now') }}
+                                        </button>
+                                    </div>
+                                    <div id="shared-tags-test-result" class="mt-2 text-xs" style="display: none;"></div>
+                                    <div id="shared-tags-status" class="mt-3 p-3 surface border text-xs"
+                                        style="display: none;">
+                                        <div class="flex items-center justify-between">
+                                            <span id="shared-tags-connection-status"></span>
+                                            <span id="shared-tags-counts"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

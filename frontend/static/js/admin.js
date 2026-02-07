@@ -283,6 +283,27 @@ class AdminPanel {
         if (testRedisBtn) {
             testRedisBtn.addEventListener('click', () => this.testRedisConnection());
         }
+
+        // Shared tags settings toggle
+        const sharedTagsEnabled = document.getElementById('shared-tags-enabled');
+        if (sharedTagsEnabled) {
+            sharedTagsEnabled.addEventListener('change', (e) => {
+                const container = document.getElementById('shared-tags-settings-container');
+                if (container) container.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // Shared tags test button
+        const testSharedTagsBtn = document.getElementById('test-shared-tags-btn');
+        if (testSharedTagsBtn) {
+            testSharedTagsBtn.addEventListener('click', () => this.testSharedTagsConnection());
+        }
+
+        // Shared tags sync button
+        const syncSharedTagsBtn = document.getElementById('sync-shared-tags-btn');
+        if (syncSharedTagsBtn) {
+            syncSharedTagsBtn.addEventListener('click', () => this.syncSharedTags());
+        }
     }
 
     setupTabs() {
@@ -389,6 +410,109 @@ class AdminPanel {
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;
+        }
+    }
+
+    async testSharedTagsConnection() {
+        const btn = document.getElementById('test-shared-tags-btn');
+        const resultDiv = document.getElementById('shared-tags-test-result');
+        const originalText = btn.textContent;
+
+        const data = {
+            host: document.getElementById('shared-tags-host').value,
+            port: parseInt(document.getElementById('shared-tags-port').value || '5432'),
+            name: document.getElementById('shared-tags-name').value,
+            user: document.getElementById('shared-tags-user').value,
+            password: document.getElementById('shared-tags-password').value
+        };
+
+        btn.disabled = true;
+        btn.textContent = window.i18n.t('admin.actions.testing');
+        resultDiv.style.display = 'none';
+
+        try {
+            const result = await app.apiCall('/api/admin/test-shared-tag-db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            resultDiv.style.display = 'block';
+            if (result.success) {
+                resultDiv.className = 'mt-2 text-xs text-success';
+                resultDiv.textContent = result.message || window.i18n.t('common.connection_successful');
+            } else {
+                resultDiv.className = 'mt-2 text-xs text-danger';
+                resultDiv.textContent = result.message || window.i18n.t('common.connection_failed');
+            }
+        } catch (error) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'mt-2 text-xs text-danger';
+            resultDiv.textContent = 'Error: ' + error.message;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async syncSharedTags() {
+        const btn = document.getElementById('sync-shared-tags-btn');
+        const resultDiv = document.getElementById('shared-tags-test-result');
+        const originalText = btn.textContent;
+
+        btn.disabled = true;
+        btn.textContent = window.i18n.t('admin.shared_tags.syncing');
+        resultDiv.style.display = 'none';
+
+        try {
+            const result = await app.apiCall('/api/admin/shared-tags/sync', {
+                method: 'POST'
+            });
+
+            resultDiv.style.display = 'block';
+            if (result.success) {
+                resultDiv.className = 'mt-2 text-xs text-success';
+                resultDiv.innerHTML = `
+                    ${window.i18n.t('admin.shared_tags.sync_complete')}<br>
+                    ${window.i18n.t('admin.shared_tags.imported_count', { tags: result.tags_imported, aliases: result.aliases_imported })}<br>
+                    ${window.i18n.t('admin.shared_tags.exported_count', { tags: result.tags_exported, aliases: result.aliases_exported })}
+                `;
+            } else {
+                resultDiv.className = 'mt-2 text-xs text-danger';
+                resultDiv.textContent = result.errors?.join(', ') || window.i18n.t('admin.shared_tags.sync_failed');
+            }
+
+            // Refresh status
+            this.loadSharedTagsStatus();
+        } catch (error) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'mt-2 text-xs text-danger';
+            resultDiv.textContent = window.i18n.t('common.error', { error: error.message });
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async loadSharedTagsStatus() {
+        try {
+            const result = await app.apiCall('/api/admin/shared-tags/status');
+            const statusDiv = document.getElementById('shared-tags-status');
+            const connectionStatus = document.getElementById('shared-tags-connection-status');
+            const counts = document.getElementById('shared-tags-counts');
+
+            if (statusDiv && result.enabled) {
+                statusDiv.style.display = 'block';
+                if (result.connected) {
+                    connectionStatus.innerHTML = `<span class="text-success">● ${window.i18n.t('common.connected')}</span>`;
+                    counts.textContent = `${window.i18n.t('admin.shared_tags.shared_count')}: ${result.shared_tags || 0} tags, ${result.shared_aliases || 0} aliases`;
+                } else {
+                    connectionStatus.innerHTML = `<span class="text-danger">● ${window.i18n.t('common.disconnected')}</span>`;
+                    counts.textContent = result.error || '';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading shared tags status:', error);
         }
     }
 
@@ -668,6 +792,36 @@ class AdminPanel {
                 this.renderCustomButtons();
             }
 
+            // Load shared tags settings
+            if (settings.shared_tags) {
+                const sharedTagsEnabled = document.getElementById('shared-tags-enabled');
+                if (sharedTagsEnabled) {
+                    sharedTagsEnabled.checked = settings.shared_tags.enabled;
+                    const container = document.getElementById('shared-tags-settings-container');
+                    if (container) container.style.display = settings.shared_tags.enabled ? 'block' : 'none';
+                }
+
+                const hostInput = document.getElementById('shared-tags-host');
+                if (hostInput) hostInput.value = settings.shared_tags.host || 'shared-tag-db';
+
+                const portInput = document.getElementById('shared-tags-port');
+                if (portInput) portInput.value = settings.shared_tags.port || 5432;
+
+                const nameInput = document.getElementById('shared-tags-name');
+                if (nameInput) nameInput.value = settings.shared_tags.name || 'shared_tags';
+
+                const userInput = document.getElementById('shared-tags-user');
+                if (userInput) userInput.value = settings.shared_tags.user || 'postgres';
+
+                const passwordInput = document.getElementById('shared-tags-password');
+                if (passwordInput) passwordInput.value = settings.shared_tags.password || '';
+
+                // Load status if enabled
+                if (settings.shared_tags.enabled) {
+                    this.loadSharedTagsStatus();
+                }
+            }
+
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -738,6 +892,14 @@ class AdminPanel {
             external_share_url: externalShareUrl || null,
             require_auth: requireAuth,
             redis: redisSettings,
+            shared_tags: {
+                enabled: document.getElementById('shared-tags-enabled')?.checked || false,
+                host: document.getElementById('shared-tags-host')?.value || 'localhost',
+                port: parseInt(document.getElementById('shared-tags-port')?.value || '5432'),
+                name: document.getElementById('shared-tags-name')?.value || 'shared_tags',
+                user: document.getElementById('shared-tags-user')?.value || 'postgres',
+                password: document.getElementById('shared-tags-password')?.value || ''
+            },
             sidebar_filter_mode: sidebarMode,
             sidebar_custom_buttons: validButtons
         };
