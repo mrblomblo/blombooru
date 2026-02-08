@@ -73,7 +73,7 @@
             "full_backup": "Fullständig säkerhetskopia (ZIP)",
             "import_backup": "Importera fullständig säkerhetskopia",
             "import_hint": "Återställ en fullständig säkerhetskopia (ZIP). Detta lägger till saknade taggar och mediefiler.",
-            "import_time_warning": "Varning: Denna process kan ta en stund för stora säkerhetskopior.",
+            "import_time_warning": "Denna process kan ta en stund för stora säkerhetskopior.",
             "import_warning": "Existerande filer med matchande innehåll (hashar) kommer att hoppas över.",
             "title": "Säkerhetskopia & återställning"
         },
