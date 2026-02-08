@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from PIL import Image
@@ -7,7 +7,7 @@ from ..database import get_db
 from ..models import Media
 from ..config import settings
 from ..schemas import SharedMediaResponse
-from ..utils.media_helpers import extract_media_metadata, serve_media_file, get_media_cache_status
+from ..utils.media_helpers import extract_media_metadata, serve_media_file, get_media_cache_status, create_stripped_media_cache
 from ..utils.rate_limiter import shared_limiter
 
 router = APIRouter(prefix="/api/shared", tags=["sharing"])
@@ -87,7 +87,12 @@ async def get_shared_metadata(share_uuid: str, request: Request, db: Session = D
     return extract_media_metadata(file_path)
 
 @router.get("/{share_uuid}/status")
-async def get_shared_status(share_uuid: str, request: Request, db: Session = Depends(get_db)):
+async def get_shared_status(
+    share_uuid: str, 
+    request: Request, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     """Get status of shared media file (processing/ready)"""
     shared_limiter.check(request)
     media = db.query(Media).filter(
@@ -107,4 +112,9 @@ async def get_shared_status(share_uuid: str, request: Request, db: Session = Dep
         return {"status": "error"}
         
     status = get_media_cache_status(file_path, media.mime_type)
+    
+    # If processing (not in cache), trigger generation
+    if status == 'processing':
+        background_tasks.add_task(create_stripped_media_cache, file_path, media.mime_type)
+        
     return {"status": status}

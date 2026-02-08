@@ -6,6 +6,7 @@ import json
 import mimetypes
 from typing import Dict, Any, Optional
 import cv2
+import uuid
 
 def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from media files (EXIF, PNG chunks, XMP, etc.)"""
@@ -203,6 +204,10 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
     cache_filename = hashlib.md5(cache_key.encode()).hexdigest() + "_" + file_path.name
     cache_path = settings.CACHE_DIR / cache_filename
     
+    # Ensure cache directory exists (in case it was deleted)
+    if not cache_path.parent.exists():
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+    
     # Return cached file if it exists
     if cache_path.exists():
         return cache_path
@@ -309,12 +314,21 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                         except:
                             save_kwargs['loop'] = 0
                 
-                # Save to a temporary file first to ensure atomicity
-                temp_cache_path = cache_path.with_suffix('.tmp')
-                img.save(temp_cache_path, **save_kwargs)
-                
-                # Atomic rename
-                temp_cache_path.replace(cache_path)
+                # Save to a temporary file first to ensure atomicity using unique filename to avoid race conditions
+                temp_cache_path = cache_path.with_suffix(f'.{uuid.uuid4()}.tmp')
+                try:
+                    img.save(temp_cache_path, **save_kwargs)
+                    
+                    # Atomic rename
+                    temp_cache_path.replace(cache_path)
+                except Exception as save_err:
+                    # Clean up temp file on error
+                    if temp_cache_path.exists():
+                        try:
+                            temp_cache_path.unlink()
+                        except:
+                            pass
+                    raise save_err
         
         await run_in_threadpool(process_image)
         return cache_path
