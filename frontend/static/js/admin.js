@@ -1500,7 +1500,7 @@ class AdminPanel {
                     if (parentAlbumContainer) parentAlbumContainer.style.display = 'block';
 
                     const options = [
-                        { value: '', text: 'None (Root Album)', selected: true }
+                        { value: '', text: window.i18n.t('admin.albums_management.none_root'), selected: true }
                     ];
 
                     for (const album of items) {
@@ -1878,7 +1878,7 @@ class AdminPanel {
         // Build options HTML for custom select
         let optionsHtml = `
             <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs ${!currentParentId ? 'selected' : ''}"
-                data-value="">None (Root Album)</div>
+                data-value="">${window.i18n.t('admin.albums_management.none_root')}</div>
         `;
         for (const album of validAlbums) {
             const isSelected = currentParentId && album.id.toString() === currentParentId.toString();
@@ -1889,7 +1889,7 @@ class AdminPanel {
         }
 
         // Determine initial display text
-        let initialDisplayText = 'None (Root Album)';
+        let initialDisplayText = window.i18n.t('admin.albums_management.none_root');
         if (currentParentId) {
             const currentParent = validAlbums.find(a => a.id.toString() === currentParentId.toString());
             if (currentParent) {
