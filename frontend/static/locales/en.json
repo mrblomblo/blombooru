@@ -73,7 +73,7 @@
             "full_backup": "Full Backup (ZIP)",
             "import_backup": "Import Full Backup",
             "import_hint": "Restore a full backup ZIP. This will add missing tags and media files.",
-            "import_time_warning": "Warning: This process might take a while for large backups.",
+            "import_time_warning": "This process might take a while for large backups.",
             "import_warning": "Existing files with matching content (hashes) will be skipped.",
             "title": "Backup & Restore"
         },
