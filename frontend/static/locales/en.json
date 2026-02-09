@@ -435,11 +435,6 @@
             "title": "AI Generation Data"
         },
         "fullscreen_close_hint": "Press ESC or click outside the media to close",
-        "hierarchy": {
-            "remove_parent": "Remove Parent",
-            "title": "Parent & Sibling Media",
-            "view_parent": "View Parent"
-        },
         "info": {
             "save_source": "Save Source",
             "source_url": "Source URL",

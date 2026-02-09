@@ -435,11 +435,6 @@
             "title": "AI-genereringsdata"
         },
         "fullscreen_close_hint": "Tryck ESC eller klicka utanför media för att stänga",
-        "hierarchy": {
-            "remove_parent": "Ta bort förälder",
-            "title": "Förälder- & syskenmedia",
-            "view_parent": "Visa förälder"
-        },
         "info": {
             "save_source": "Spara källa",
             "source_url": "Käll-URL",

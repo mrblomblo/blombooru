@@ -250,22 +250,6 @@
             <div class="surface p-3 border">
                 <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.actions.title') }}</h3>
 
-                {% if media and media.parent_id %}
-                <div class="mb-4">
-                    <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ t('media.hierarchy.title') }}</h4>
-                    <div class="flex items-center gap-2">
-                        <a href="{{ url_for('media_page', media_id=media.parent_id) }}"
-                            class="flex-1 px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs text-center">
-                            {{ t('media.hierarchy.view_parent') }}
-                        </a>
-                        <button id="remove-parent-btn"
-                            class="flex-1 px-3 py-1.5 bg-danger tag-text transition-colors hover:opacity-90 text-xs">
-                            {{ t('media.hierarchy.remove_parent') }}
-                        </button>
-                    </div>
-                </div>
-                {% endif %}
-
                 <div class="flex flex-col gap-3">
                     <!-- Primary Action -->
                     <a id="download-btn" href="#" download
