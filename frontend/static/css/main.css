@@ -622,9 +622,6 @@ span.checked:hover {
     right: 0.25rem;
     background-color: var(--primary-color);
     color: var(--primary-text);
-    padding: 0.2rem 0.4rem;
-    font-size: 0.65rem;
-    font-weight: 600;
     z-index: 5;
 }
 

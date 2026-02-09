@@ -410,7 +410,6 @@
         "remove_from_album": "Ta bort från album",
         "select_all": "Välj alla",
         "selecting_all": "Väljer alla...",
-        "shared_badge": "DELAD",
         "sort_by": "Sortera efter"
     },
     "login": {
@@ -478,7 +477,6 @@
             "search_results": "Sökresultat för: {query}",
             "selected": "{count} valda",
             "set_parent": "Sätt som förälder",
-            "shared": "DELAD",
             "showing_related_items": "Visar {count} relaterade objekt",
             "title": "Hantera relationer",
             "has_one_child": "Detta objekt har 1 barn",

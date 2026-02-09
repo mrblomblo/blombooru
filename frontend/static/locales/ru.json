@@ -377,7 +377,7 @@
         "tag_category_meta": "Мета",
         "test_connection": "Проверить подключение",
         "username": "Имя пользователя"
-        },
+    },
     "errors": {
         "forbidden": "Доступ запрещен",
         "not_found": "Не найдено",
@@ -410,7 +410,6 @@
         "remove_from_album": "Удалить из альбома",
         "select_all": "Выбрать все",
         "selecting_all": "Выбираем все...",
-        "shared_badge": "ОБЩ. ДОСТУП",
         "sort_by": "Сортировать по"
     },
     "login": {
@@ -478,7 +477,6 @@
             "search_results": "Результаты поиска для: {query}",
             "selected": "{count} выбрано",
             "set_parent": "Установить как родителя",
-            "shared": "ОБЩИЙ",
             "showing_related_items": "Отображается {count} связанный(х) элемент(ов)",
             "title": "Управление",
             "has_one_child": "Этот элемент имеет 1 дочерний элемент",

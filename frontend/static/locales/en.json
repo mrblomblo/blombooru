@@ -410,7 +410,6 @@
         "remove_from_album": "Remove from Album",
         "select_all": "Select All",
         "selecting_all": "Selecting All...",
-        "shared_badge": "SHARED",
         "sort_by": "Sort By"
     },
     "login": {
@@ -478,7 +477,6 @@
             "search_results": "Search results for: {query}",
             "selected": "{count} selected",
             "set_parent": "Set as Parent",
-            "shared": "SHARED",
             "showing_related_items": "Showing {count} related items",
             "title": "Manage Relations",
             "has_one_child": "This item has 1 child",
