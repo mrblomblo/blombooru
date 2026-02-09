@@ -124,7 +124,9 @@ This is the recommended method for using Blombooru. Pre-built images are availab
 | Option | Image Tag | Use Case |
 |:-------|:----------|:---------|
 | **Latest Stable** | `latest` (default) | Production use, tracks the latest GitHub release |
-| **Edge/Nightly** | `nightly` | Testing new features, tracks the `main` branch |
+| **Pre-release** | `pre` | Testing upcoming versions, tracks the latest GitHub pre-release |
+| **Pinned Version** | `1.2.3` / `1.2` / `1` | Pinning to a specific stable version |
+| **Pinned Pre-release** | `1.2.3-rc.1` | Pinning to a specific pre-release |
 | **Development** | Local build | Contributing, modifying source code |
 
 #### Quick Start (Pre-built Image)
@@ -173,18 +175,18 @@ This is the recommended method for using Blombooru. Pre-built images are availab
     docker compose down
     ```
 
-#### Using Nightly Builds
+#### Using Pre-release Builds
 
-To use the latest nightly version (built from the `main` branch), set the `BLOMBOORU_TAG` environment variable:
+To use the latest pre-release version, set the `BLOMBOORU_TAG` environment variable:
 
 ```bash
-BLOMBOORU_TAG=nightly docker compose up -d
+BLOMBOORU_TAG=pre docker compose up -d
 ```
 
-Or add `BLOMBOORU_TAG=nightly` to your `.env` file.
+Or add `BLOMBOORU_TAG=pre` to your `.env` file.
 
 > [!WARNING]
-> Nightly builds may contain breaking changes or bugs. Use for testing new features only.
+> Pre-release builds may contain breaking changes or bugs. Use for testing upcoming versions only.
 
 #### Development Builds (Local)
 

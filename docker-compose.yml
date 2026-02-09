@@ -1,5 +1,5 @@
-# To use nightly builds:
-#   BLOMBOORU_TAG=nightly docker compose up -d
+# To use pre-release builds:
+#   BLOMBOORU_TAG=pre docker compose up -d
 
 services:
   web:
