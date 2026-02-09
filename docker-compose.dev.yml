@@ -1,9 +1,11 @@
-# To use nightly builds:
-#   BLOMBOORU_TAG=nightly docker compose up -d
+# Usage:
+#   docker compose -f docker-compose.dev.yml up --build
 
 services:
   web:
-    image: ghcr.io/mrblomblo/blombooru:${BLOMBOORU_TAG:-latest}
+    build:
+      context: .
+    image: blombooru:dev
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     env_file:

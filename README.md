@@ -112,12 +112,22 @@ You can choose to either use Blombooru in a Docker container *(recommended)* or 
 
 ### Docker *(Recommended)*
 
-This is the recommended method for using Blombooru.
+This is the recommended method for using Blombooru. Pre-built images are available on GitHub Container Registry.
 
 | Prerequisite | Notes |
 |:-------------|:------|
 | Docker | Required |
 | Git | Recommended (alternatively, download the project via the GitHub website) |
+
+#### Deployment Options
+
+| Option | Image Tag | Use Case |
+|:-------|:----------|:---------|
+| **Latest Stable** | `latest` (default) | Production use, tracks the latest GitHub release |
+| **Edge/Nightly** | `nightly` | Testing new features, tracks the `main` branch |
+| **Development** | Local build | Contributing, modifying source code |
+
+#### Quick Start (Pre-built Image)
 
 1. **Clone the repository**
 
@@ -133,7 +143,7 @@ This is the recommended method for using Blombooru.
     Start the Docker container (make sure you are in the root Blombooru folder, the one with the `docker-compose.yml` file):
 
     ```bash
-    docker compose up --build -d
+    docker compose up -d
     ```
 
     *You may need to use `sudo` or run the command from a terminal with elevated privileges.*
@@ -162,6 +172,29 @@ This is the recommended method for using Blombooru.
     ```bash
     docker compose down
     ```
+
+#### Using Nightly Builds
+
+To use the latest nightly version (built from the `main` branch), set the `BLOMBOORU_TAG` environment variable:
+
+```bash
+BLOMBOORU_TAG=nightly docker compose up -d
+```
+
+Or add `BLOMBOORU_TAG=nightly` to your `.env` file.
+
+> [!WARNING]
+> Nightly builds may contain breaking changes or bugs. Use for testing new features only.
+
+#### Development Builds (Local)
+
+For contributors or those who want to build from source:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+```
+
+This uses `docker-compose.dev.yml` which builds the image locally from your source code.
 
 #### Running Multiple Instances
 
