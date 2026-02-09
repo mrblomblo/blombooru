@@ -36,8 +36,8 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/tooltip-helper.js?v={{ app_version }}"></script>
-<script src="/static/js/custom-select.js?v={{ app_version }}"></script>
-<script src="/static/js/base-gallery.js?v={{ app_version }}"></script>
-<script src="/static/js/albums.js?v={{ app_version }}"></script>
+<script src="/static/js/tooltip-helper.js?v={{ cache_buster }}"></script>
+<script src="/static/js/custom-select.js?v={{ cache_buster }}"></script>
+<script src="/static/js/base-gallery.js?v={{ cache_buster }}"></script>
+<script src="/static/js/albums.js?v={{ cache_buster }}"></script>
 {% endblock %}

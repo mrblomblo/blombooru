@@ -7,11 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     {% block pwa %}
-    <link rel="manifest" href="/manifest.json?v={{ app_version }}">
+    <link rel="manifest" href="/manifest.json?v={{ cache_buster }}">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js?v={{ app_version }}')
+                navigator.serviceWorker.register('/sw.js?v={{ cache_buster }}')
                     .then(registration => {
                         console.log('ServiceWorker registration successful');
                     })
@@ -22,9 +22,9 @@
         }
     </script>
     {% endblock %}
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v={{ app_version }}">
-    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ app_version }}">
-    <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v={{ cache_buster }}">
+    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ cache_buster }}">
+    <link rel="stylesheet" href="/static/css/main.css?v={{ cache_buster }}">
     <link id="theme-stylesheet" rel="stylesheet" href="{{ current_theme.css_path if current_theme else '' }}">
     <script>
         window.CURRENT_LANGUAGE = '{{ current_language() }}';
@@ -40,14 +40,14 @@
 
                 const themeLink = document.getElementById('theme-stylesheet');
                 if (themeLink && theme.css_path) {
-                    themeLink.href = theme.css_path + '?v={{ app_version }}';
+                    themeLink.href = theme.css_path + '?v={{ cache_buster }}';
                 }
             } catch (error) {
                 console.error('Error loading theme:', error);
                 // Fallback to default dark theme
                 const themeLink = document.getElementById('theme-stylesheet');
                 if (themeLink) {
-                    themeLink.href = '/static/css/themes/default_dark.css?v={{ app_version }}';
+                    themeLink.href = '/static/css/themes/default_dark.css?v={{ cache_buster }}';
                 }
             }
         })();
@@ -231,9 +231,9 @@
         {% endif %}
     </main>
 
-    <script src="/static/js/modal-helper.js?v={{ app_version }}"></script>
-    <script src="/static/js/main.js?v={{ app_version }}"></script>
-    <script src="/static/js/tag-autocomplete.js?v={{ app_version }}"></script>
+    <script src="/static/js/modal-helper.js?v={{ cache_buster }}"></script>
+    <script src="/static/js/main.js?v={{ cache_buster }}"></script>
+    <script src="/static/js/tag-autocomplete.js?v={{ cache_buster }}"></script>
 
     {% if show_header is not defined or show_header %}
     <script>

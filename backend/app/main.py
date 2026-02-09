@@ -11,8 +11,20 @@ from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danb
 from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
+import subprocess
 
-APP_VERSION = "1.34.1"
+APP_VERSION = "1.35.0"
+
+def get_cache_buster():
+    """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""
+    try:
+        # Get short git hash
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Fallback to app version if git is not available
+        return APP_VERSION
+
+CACHE_BUSTER = get_cache_buster()
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)
@@ -23,6 +35,7 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 templates = Jinja2Templates(directory=str(templates_path))
 
 templates.env.globals['app_version'] = APP_VERSION
+templates.env.globals['cache_buster'] = CACHE_BUSTER
 templates.env.globals['get_current_year'] = lambda: datetime.now().year
 templates.env.globals['t'] = lambda key, **kwargs: translation_helper.get(key, settings.CURRENT_LANGUAGE, **kwargs)
 templates.env.globals['current_language'] = lambda: settings.CURRENT_LANGUAGE
@@ -218,13 +231,13 @@ async def manifest(request: Request):
         "orientation": "any",
         "icons": [
             {
-                "src": f"/static/images/pwa-icon.png?v={APP_VERSION}",
+                "src": f"/static/images/pwa-icon.png?v={CACHE_BUSTER}",
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
             },
             {
-                "src": f"/static/images/pwa-icon-192.png?v={APP_VERSION}",
+                "src": f"/static/images/pwa-icon-192.png?v={CACHE_BUSTER}",
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any maskable"
