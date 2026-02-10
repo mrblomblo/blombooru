@@ -204,6 +204,11 @@ class TagInputHelper {
             }
         }
 
+        const currentText = this.getPlainTextFromDiv(inputElement);
+        if (currentText !== text) {
+            return;
+        }
+
         // Update content if changed
         if (inputElement.innerHTML !== html) {
             inputElement.innerHTML = html || '';
