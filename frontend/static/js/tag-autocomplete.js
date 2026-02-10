@@ -6,6 +6,7 @@ class TagAutocomplete {
             onSelect: null,
             multipleValues: false,
             containerClasses: '',
+            appendSpace: true,
             ...options
         };
 
@@ -212,17 +213,20 @@ class TagAutocomplete {
             const beforeCursor = value.substring(0, cursorPos);
             const afterCursor = value.substring(cursorPos);
             const lastSpace = beforeCursor.lastIndexOf(' ');
+            const shouldAppendSpace = this.options.appendSpace;
+            const suffix = (shouldAppendSpace && !afterCursor.startsWith(' ')) ? ' ' : '';
 
             const newValue = lastSpace === -1
-                ? tagName + (afterCursor.startsWith(' ') ? '' : ' ') + afterCursor
-                : beforeCursor.substring(0, lastSpace + 1) + tagName + (afterCursor.startsWith(' ') ? '' : ' ') + afterCursor;
+                ? tagName + suffix + afterCursor
+                : beforeCursor.substring(0, lastSpace + 1) + tagName + suffix + afterCursor;
 
             this.setInputValue(newValue);
 
-            // Set cursor position after the inserted tag
+            // Set cursor position after the inserted tag and advance cursor past any appended space
+            const increment = shouldAppendSpace ? 1 : 0;
             const newCursorPos = lastSpace === -1
-                ? tagName.length + 1
-                : lastSpace + 1 + tagName.length + 1;
+                ? tagName.length + increment
+                : lastSpace + 1 + tagName.length + increment;
             this.setCursorPosition(newCursorPos);
 
             // Trigger input event for validation
