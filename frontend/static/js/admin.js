@@ -41,7 +41,8 @@ class AdminPanel {
         const tagsSearch = document.getElementById('tag-search-input');
         if (tagsSearch && typeof TagAutocomplete !== 'undefined') {
             new TagAutocomplete(tagsSearch, {
-                multipleValues: true
+                multipleValues: true,
+                appendSpace: false
             });
         }
     }
