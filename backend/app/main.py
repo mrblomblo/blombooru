@@ -13,7 +13,7 @@ from .translations import translation_helper, language_registry
 from datetime import datetime
 import subprocess
 
-APP_VERSION = "1.35.1"
+APP_VERSION = "1.35.2"
 
 def get_cache_buster():
     """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""
