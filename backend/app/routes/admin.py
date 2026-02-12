@@ -16,6 +16,7 @@ from ..config import settings
 from ..utils.file_scanner import find_untracked_media
 from ..themes import theme_registry
 from ..utils.backup import generate_tags_dump, stream_zip_generator, get_media_files_generator, import_full_backup, generate_tags_csv_stream
+from ..utils.cache import invalidate_media_cache
 from fastapi.responses import StreamingResponse
 import tempfile
 import shutil
@@ -433,6 +434,8 @@ async def update_settings(
         reconnect_shared_db()
         if settings.SHARED_TAGS_ENABLED:
             init_shared_db()
+        
+    invalidate_media_cache()
         
     return {"message_key": "notifications.admin.settings_updated"}
 
