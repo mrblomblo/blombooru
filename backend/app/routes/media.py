@@ -54,6 +54,7 @@ def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
     return tags
 
 @router.get("/")
+@router.get("")
 @cache_response(expire=300, key_prefix="media_list")
 async def get_media_list(
     request: Request,

@@ -12,6 +12,7 @@ from fastapi import Request
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
 @router.get("/", response_model=List[TagResponse])
+@router.get("", response_model=List[TagResponse])
 @cache_response(expire=3600, key_prefix="tags")
 async def get_tags(
     request: Request,

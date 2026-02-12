@@ -14,6 +14,7 @@ from ..utils.cache import cache_response
 router = APIRouter(prefix="/api/search", tags=["search"])
 
 @router.get("/")
+@router.get("")
 @cache_response(expire=3600, key_prefix="search")
 async def search_media(
     request: Request,

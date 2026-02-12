@@ -32,6 +32,7 @@ def get_effective_limit(limit: Optional[int]) -> int:
     return limit
 
 
+@router.get("/", response_model=dict)
 @router.get("", response_model=dict)
 @cache_response(expire=3600, key_prefix="album_list")
 async def get_albums(
