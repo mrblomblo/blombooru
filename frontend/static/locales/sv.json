@@ -748,6 +748,7 @@
             "parent_set": "Förälder satt",
             "removed_from_album": "Borttagen från album",
             "source_updated": "Källa uppdaterad",
+            "rating_updated": "Betyg uppdaterat",
             "tags_added": "Lade till {count} förutsagda tagg(ar)"
         },
         "save_success": "Sparat",

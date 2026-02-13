@@ -763,6 +763,7 @@ class MediaViewer extends MediaViewerBase {
                 method: 'PATCH',
                 body: JSON.stringify({ rating })
             });
+            app.showNotification(window.i18n.t('notifications.media.rating_updated'), 'success');
         } catch (e) {
             app.showNotification(e.message, 'error', window.i18n.t('media.errors.updating_rating'));
         }

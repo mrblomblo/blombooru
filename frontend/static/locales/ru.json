@@ -748,6 +748,7 @@
             "parent_set": "Родитель успешно установлен",
             "removed_from_album": "Удалено из альбома",
             "source_updated": "Источник успешно обновлен",
+            "rating_updated": "",
             "tags_added": "Добавлено {count} предсказанных тегов"
         },
         "save_success": "Сохранено успешно",

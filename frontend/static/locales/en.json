@@ -748,6 +748,7 @@
             "parent_set": "Parent set successfully",
             "removed_from_album": "Removed from album",
             "source_updated": "Source updated successfully",
+            "rating_updated": "Rating updated successfully",
             "tags_added": "Added {count} predicted tag(s)"
         },
         "save_success": "Saved successfully",
