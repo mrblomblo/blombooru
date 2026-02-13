@@ -1,7 +1,9 @@
 {
     "_meta": {
-        "_comment": "This file contains English translations for Blombooru. Use this as a template for new languages.",
-        "contributors": [],
+        "_comment": "This file contains English translations for Blombooru.",
+        "translators": [
+            "mrblomblo"
+        ],
         "language_code": "en",
         "language_name": "English",
         "native_name": "English",

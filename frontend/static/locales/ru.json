@@ -1,7 +1,9 @@
 {
     "_meta": {
-        "_comment": "Этот файл содержит русскую локализацию для Blombooru. Используйте его как шаблон для перевода на иные языки",
-        "contributors": [],
+        "_comment": "Этот файл содержит русскую локализацию для Blombooru.",
+        "translators": [
+            "cobaltcobaltcobalt"
+        ],
         "language_code": "ru",
         "language_name": "Russian",
         "native_name": "Русский",

@@ -1,7 +1,9 @@
 {
     "_meta": {
         "_comment": "Denna fil innehåller svenska översättningar för Blombooru.",
-        "contributors": [],
+        "translators": [
+            "mrblomblo"
+        ],
         "language_code": "sv",
         "language_name": "Swedish",
         "native_name": "Svenska",
