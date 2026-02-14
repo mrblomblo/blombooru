@@ -12,6 +12,7 @@ from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
 import subprocess
+import uuid
 
 APP_VERSION = "1.35.3"
 
@@ -24,7 +25,21 @@ def get_cache_buster():
         # Fallback to app version if git is not available
         return APP_VERSION
 
-CACHE_BUSTER = get_cache_buster()
+
+class DynamicCacheBuster:
+    """Dynamic cache buster that returns a random UUID in debug mode"""
+    def __init__(self, static_val):
+        self.static_val = static_val
+        
+    def __str__(self):
+        if settings.DEBUG:
+            return str(uuid.uuid4())
+        return self.static_val
+        
+    def __repr__(self):
+        return str(self)
+
+CACHE_BUSTER = DynamicCacheBuster(get_cache_buster())
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(AuthMiddleware)

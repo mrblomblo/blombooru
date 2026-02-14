@@ -25,6 +25,10 @@ class Settings:
         self.settings = self._get_default_settings()
         self.settings.update(self.file_settings)
         
+    @property
+    def DEBUG(self) -> bool:
+        return os.getenv("BLOMBOORU_DEBUG", "false").lower() == "true"
+    
     def _load_file_settings(self) -> dict:
         if self.SETTINGS_FILE.exists():
             with open(self.SETTINGS_FILE, 'r') as f:
