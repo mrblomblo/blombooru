@@ -410,6 +410,81 @@
                     </form>
                 </div>
 
+                <!-- Booru Configuration Section -->
+                <div id="booru-config-section" class="surface p-2 sm:p-6 border mb-4">
+                    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.settings.booru_config.title') }}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Config Form -->
+                        <div>
+                            <form id="booru-config-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold mb-2">
+                                        {{ t('admin.settings.booru_config.domain') }}
+                                    </label>
+                                    <input type="text" name="domain" placeholder="safebooru.org"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                                    <p class="text-[10px] text-secondary mt-1">
+                                        {{ t('admin.settings.booru_config.domain_hint') }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold mb-2">
+                                        {{ t('admin.settings.booru_config.username') }}
+                                    </label>
+                                    <input type="text" name="username" placeholder="123456"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold mb-2">
+                                        {{ t('admin.settings.booru_config.api_key') }}
+                                    </label>
+                                    <input type="text" name="api_key" placeholder="1234567890abcdef1234567890abcdef"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                                    <p class="text-[10px] text-secondary mt-1">
+                                        {{ t('admin.settings.booru_config.api_key_hint') }}
+                                    </p>
+                                </div>
+                                <div class="mt-4">
+                                    <button type="submit"
+                                        class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                                        {{ t('common.save') }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Config List -->
+                        <div>
+                            <h3 class="text-sm font-bold mb-1">
+                                {{ t('admin.settings.booru_config.configured_sites') }}
+                            </h3>
+                            <div class="overflow-x-auto max-h-60 overflow-y-auto border border-surface">
+                                <table id="booru-config-table" class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-surface text-secondary text-xs">
+                                            <th class="sticky top-0 bg-surface z-10 py-2 px-3 font-medium">
+                                                {{ t('admin.settings.booru_config.domain') }}
+                                            </th>
+                                            <th class="sticky top-0 bg-surface z-10 py-2 px-3 font-medium">
+                                                {{ t('admin.settings.booru_config.username') }}
+                                            </th>
+                                            <th class="sticky top-0 bg-surface z-10 py-2 px-3 font-medium">
+                                                {{ t('admin.settings.booru_config.key') }}
+                                            </th>
+                                            <th class="sticky top-0 bg-surface z-10 py-2 px-3 font-medium text-right">
+                                                {{ t('admin.settings.booru_config.action') }}
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- API Access Section -->
                 <div class="surface p-2 sm:p-6 border mb-4">
                     <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.api_access.title') }}</h2>
@@ -1007,6 +1082,7 @@
 {% block extra_js %}
 <script src="/static/js/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
 <script src="/static/js/tag-input-helper.js?v={{ cache_buster }}"></script>
+<script src="/static/js/booru-config.js?v={{ cache_buster }}"></script>
 <script src="/static/js/custom-select.js?v={{ cache_buster }}"></script>
 <script src="/static/js/vendor/chart.min.js?v={{ cache_buster }}"></script>
 <script src="/static/js/admin-stats.js?v={{ cache_buster }}"></script>
