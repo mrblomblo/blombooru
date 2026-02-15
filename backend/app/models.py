@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Table, Float, Enum, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from .database import Base
+from datetime import datetime
 import enum
+
+from .database import Base
 
 class RatingEnum(str, enum.Enum):
     safe = "safe"
@@ -82,6 +84,15 @@ class Tag(Base):
     
     media = relationship('Media', secondary=blombooru_media_tags, back_populates='tags')
     aliases = relationship('TagAlias', foreign_keys='TagAlias.target_tag_id', back_populates='target_tag', cascade="all, delete-orphan")
+
+class BooruConfig(Base):
+    __tablename__ = "blombooru_booru_config"
+
+    domain = Column(String, primary_key=True, index=True)
+    username = Column(String, nullable=True)
+    api_key = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class TagAlias(Base):
     __tablename__ = 'blombooru_tag_aliases'
