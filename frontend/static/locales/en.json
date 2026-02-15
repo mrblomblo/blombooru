@@ -109,7 +109,24 @@
             "total_media": "Total Media",
             "total_videos": "Total Videos",
             "upload_hint": "You can upload images, videos, or compressed archives (ZIP, TAR.GZ).",
-            "upload_media": "Upload Media"
+            "upload_media": "Upload Media",
+            "booru_import": {
+                "title": "Import From External Booru",
+                "hint": "Enter a post URL to import media with tags, rating, and source. Supports Danbooru-style sites.",
+                "url_placeholder": "Enter a post URL here",
+                "fetch": "Fetch",
+                "fetching": "Fetching post data...",
+                "fetch_error": "Failed to fetch post data",
+                "unsupported_url": "Unsupported booru URL",
+                "auto_create_tags": "Auto-create missing tags",
+                "import_now": "Import Now",
+                "add_to_queue": "Add to Upload Queue",
+                "added_to_queue": "Added to upload queue",
+                "importing": "Downloading and importing...",
+                "import_success": "Media imported successfully!",
+                "import_error": "Import failed: {error}",
+                "already_exists": "This media already exists in the database"
+            }
         },
         "messages": {
             "adding_tags": "Adding tags...",
@@ -385,7 +402,8 @@
         "not_found": "Not Found",
         "page_not_found": "The page you're looking for doesn't exist.",
         "server_error": "Server Error",
-        "unauthorized": "Unauthorized"
+        "unauthorized": "Unauthorized",
+        "error_403": "Access denied (403). You likely need an API key/login for this action."
     },
     "footer": {
         "back_to_top": "Back to Top"
