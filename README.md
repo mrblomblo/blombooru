@@ -119,7 +119,6 @@ This is the recommended method for using Blombooru. Pre-built images are availab
 | Prerequisite | Notes |
 |:-------------|:------|
 | Docker | Required |
-| Git | Recommended (alternatively, download the project via the GitHub website) |
 
 #### Deployment Options
 
@@ -133,18 +132,15 @@ This is the recommended method for using Blombooru. Pre-built images are availab
 
 #### Quick Start (Pre-built Image)
 
-1. **Clone the repository**
+1. **Download the required files**
 
-    ```bash
-    git clone https://github.com/mrblomblo/blombooru.git
-    cd blombooru
-    ```
+    Create a folder for Blombooru (e.g., `blombooru`), then download the `docker-compose.yml` and `example.env` files from the [latest release](https://github.com/mrblomblo/blombooru/releases/latest) and place them inside it.
 
 2. **Customize the environment variables**  
     Create a copy of the `example.env` file and name it `.env`. Then open the newly created file with your favorite text editor and edit the values after the `=` on each row. The most important one to change is the example password assigned to `POSTGRES_PASSWORD`. The others *can* stay as they are, unless, for example, port 8000 is already in use by another program.
 
 3. **First-time run & Onboarding**  
-    Start the Docker container (make sure you are in the root Blombooru folder, the one with the `docker-compose.yml` file):
+    Start the Docker container (make sure you are inside the folder where you placed the `docker-compose.yml` file):
 
     ```bash
     docker compose up -d
@@ -161,7 +157,7 @@ This is the recommended method for using Blombooru. Pre-built images are availab
     Once submitted, the server will create the database schema and your admin account.
 
 4. **Running the application again**  
-    After the initial setup, you can run the server with the following command (again, make sure you are in the root Blombooru folder):
+    After the initial setup, you can run the server with the following command (again, make sure you are inside the folder with the `docker-compose.yml` file):
     
     ```bash
     docker compose up -d
@@ -219,17 +215,13 @@ If you need to run multiple independent Blombooru instances (for example, separa
     cd ~/blombooru-instance1
     ```
 
-2. **Clone or copy Blombooru into each directory**  
-    You can either clone the repository fresh into each folder:
+2. **Setup the files for each instance**  
+    Copy the `docker-compose.yml` and `example.env` files into each directory:
 
     ```bash
-    git clone https://github.com/mrblomblo/blombooru.git
-    ```
-
-    Or copy an existing installation (faster if you've already cloned it once):
-
-    ```bash
-    cp -r /path/to/existing/blombooru/* /path/to/other-blombooru-instance/
+    # Only an example, replace with the actual path to the files
+    cp ~/blombooru/docker-compose.yml ~/blombooru/example.env ~/blombooru-instance1/
+    cp ~/blombooru/docker-compose.yml ~/blombooru/example.env ~/blombooru-instance2/
     ```
 
 3. **Configure unique ports for each instance**  
@@ -300,6 +292,7 @@ If you need to run multiple independent Blombooru instances (for example, separa
 
 - **Update a specific instance:**  
     Navigate to the instance directory and use the built-in updater via the Admin Panel, or manually:
+
     ```bash
     cd ~/blombooru-instance1
     git pull
@@ -318,20 +311,32 @@ This means you can safely delete, update, or modify one instance without affecti
 
 #### Sharing Tags Between Instances
 
-If you want multiple Blombooru instances to share the same tag database (so tags created in one instance are available in others), you can enable the optional **Shared Tag Database** feature:
+If you want multiple Blombooru instances to share the same tag database (so tags created in one instance are available in others), you can enable the optional **Shared Tag Database** feature by downloading the `docker-compose.shared-tags.yml` file from the [latest release](https://github.com/mrblomblo/blombooru/releases/latest), placing it in the same directory as one of your `docker-compose.yml` files, and following these steps (alternatively, you can skip steps 1 and 2 and use an existing PostgreSQL database if you have one):
 
-1. **Start the shared tag database container:**
+1. **Edit the .env file of the instance that will host the shared tag database:**
+   - Adjust the following lines in the instance's `.env` file:
+
+   ```env
+   SHARED_TAGS_ENABLED=false # Set to true to enable the shared tag database
+   SHARED_TAG_DB_USER=postgres
+   SHARED_TAG_DB_PASSWORD=supersecretsharedtagdbpassword # Change this to a secure password
+   SHARED_TAG_DB=shared_tags
+   SHARED_TAG_DB_HOST=shared-tag-db
+   SHARED_TAG_DB_PORT=5431 # Change this to a different port if needed
+   ```
+
+2. **Start the shared tag database container:**
    ```bash
    docker compose -f docker-compose.shared-tags.yml up -d
    ```
 
-2. **Configure each Blombooru instance:**
+3. **Configure each Blombooru instance:**
    - Go to **Admin Panel > Settings**
    - Enable "Shared Tag Database"
    - Enter the connection details
    - Click "Test Connection" to verify, then save
 
-3. **Sync tags:**
+4. **Sync tags:**
    - Use the "Sync Now" button to manually sync tags between instances
    - New tags are automatically shared when created
 
