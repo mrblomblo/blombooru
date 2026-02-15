@@ -125,7 +125,24 @@
                 "importing": "",
                 "import_success": "",
                 "import_error": "",
-                "already_exists": ""
+                "already_exists": "",
+                "error_unsupported_url": "",
+                "error_access_denied_403": "",
+                "error_post_not_found": "",
+                "error_booru_api": "",
+                "error_fetch_failed": "",
+                "error_no_file": "",
+                "error_download_403": "",
+                "error_file_not_found": "",
+                "error_download_api": "",
+                "error_download_failed": "",
+                "error_save_failed": "",
+                "error_duplicate": "",
+                "error_invalid_url": "",
+                "error_image_403": "",
+                "error_image_404": "",
+                "error_proxy_failed": "",
+                "no_downloadable_file": ""
             }
         },
         "messages": {
@@ -177,7 +194,29 @@
             "button_tags": "Теги (показывать только медиафайлы с этими тегами)",
             "theme": "Тема",
             "title": "Настройки",
-            "upload_date": "Дата загрузки"
+            "upload_date": "Дата загрузки",
+            "booru_config": {
+                "action": "",
+                "api_key": "",
+                "api_key_hint": "",
+                "configured_sites": "",
+                "delete_confirm": "",
+                "delete_confirm_title": "",
+                "domain": "",
+                "domain_hint": "",
+                "has_key": "",
+                "key": "",
+                "no_configs": "",
+                "none": "",
+                "save_success": "",
+                "title": "",
+                "username": "",
+                "error_domain_required": "",
+                "error_save_failed": "",
+                "error_not_found": "",
+                "error_delete_failed": "",
+                "delete_success": ""
+            }
         },
         "stats": {
             "total_storage": "Использовано хранилища",

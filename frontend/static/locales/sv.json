@@ -125,7 +125,24 @@
                 "importing": "Laddar ned och importerar...",
                 "import_success": "Media importerad!",
                 "import_error": "Import misslyckades: {error}",
-                "already_exists": "Detta media finns redan i databasen"
+                "already_exists": "Detta media finns redan i databasen",
+                "error_unsupported_url": "Ostödd booru URL.",
+                "error_access_denied_403": "Åtkomst nekad av booru-sidan (403)",
+                "error_post_not_found": "Inlägget hittades inte på booru-sidan",
+                "error_booru_api": "Booru API-fel: {error}",
+                "error_fetch_failed": "Kunde inte hämta från booru: {error}",
+                "error_no_file": "Inlägget har ingen nedladdningsbar fil (kan kräva autentisering på källwebbplatsen)",
+                "error_download_403": "Åtkomst nekad vid nedladdning av mediefil (403)",
+                "error_file_not_found": "Mediefil hittades inte (404)",
+                "error_download_api": "Booru-filnedladdningsfel: {error}",
+                "error_download_failed": "Kunde inte ladda ned mediefil: {error}",
+                "error_save_failed": "Kunde inte spara nedladdad fil: {error}",
+                "error_duplicate": "Media finns redan (duplikat av {filename})",
+                "error_invalid_url": "Ogiltig URL",
+                "error_image_403": "Åtkomst nekad av booru-sidan (403)",
+                "error_image_404": "Bilden hittades inte (404)",
+                "error_proxy_failed": "Kunde inte hämta bilden: {error}",
+                "no_downloadable_file": "Ingen nedladdningsbar fil-URL"
             }
         },
         "messages": {
@@ -177,7 +194,29 @@
             "button_tags": "Taggar (visa endast media med dessa taggar)",
             "theme": "Tema",
             "title": "Inställningar",
-            "upload_date": "Uppladdningsdatum"
+            "upload_date": "Uppladdningsdatum",
+            "booru_config": {
+                "action": "Handling",
+                "api_key": "API Nyckel / Lösenord",
+                "api_key_hint": "Sparas säkert, visas aldrig igen.",
+                "configured_sites": "Konfigurerade Webbplatser",
+                "delete_confirm": "Ta bort konfiguration för {domain}?",
+                "delete_confirm_title": "Radera konfiguration",
+                "domain": "Domän",
+                "domain_hint": "Endast domännamn (utan https://)",
+                "has_key": "Har Nyckel",
+                "key": "Nyckel",
+                "no_configs": "Inga konfigurationer hittades",
+                "none": "Ingen",
+                "save_success": "Konfiguration sparad",
+                "title": "Booru Konfiguration",
+                "username": "Användare",
+                "error_domain_required": "Domän krävs",
+                "error_save_failed": "Kunde inte spara konfigurationen",
+                "error_not_found": "Konfigurationen hittades inte",
+                "error_delete_failed": "Kunde inte ta bort konfigurationen",
+                "delete_success": "Konfiguration för {domain} borttagen"
+            }
         },
         "stats": {
             "total_storage": "Använt Lagringsutrymme",

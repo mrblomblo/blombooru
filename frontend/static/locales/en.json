@@ -125,7 +125,24 @@
                 "importing": "Downloading and importing...",
                 "import_success": "Media imported successfully!",
                 "import_error": "Import failed: {error}",
-                "already_exists": "This media already exists in the database"
+                "already_exists": "This media already exists in the database",
+                "error_unsupported_url": "Unsupported booru URL.",
+                "error_access_denied_403": "Access denied by booru site (403)",
+                "error_post_not_found": "Post not found on booru site",
+                "error_booru_api": "Booru API error: {error}",
+                "error_fetch_failed": "Failed to fetch from booru: {error}",
+                "error_no_file": "Post has no downloadable file (may require authentication on the source site)",
+                "error_download_403": "Access denied when downloading media file (403)",
+                "error_file_not_found": "Media file not found (404)",
+                "error_download_api": "Booru file download error: {error}",
+                "error_download_failed": "Failed to download media file: {error}",
+                "error_save_failed": "Failed to save downloaded file: {error}",
+                "error_duplicate": "Media already exists (duplicate of {filename})",
+                "error_invalid_url": "Invalid URL",
+                "error_image_403": "Access denied by booru site (403)",
+                "error_image_404": "Image not found (404)",
+                "error_proxy_failed": "Failed to fetch image: {error}",
+                "no_downloadable_file": "No downloadable file URL"
             }
         },
         "messages": {
@@ -177,7 +194,29 @@
             "button_tags": "Tags (only show media with these tags)",
             "theme": "Theme",
             "title": "Settings",
-            "upload_date": "Upload Date"
+            "upload_date": "Upload Date",
+            "booru_config": {
+                "action": "Action",
+                "api_key": "API Key / Password",
+                "api_key_hint": "Stored securely, never displayed back.",
+                "configured_sites": "Configured Sites",
+                "delete_confirm": "Remove configuration for {domain}?",
+                "delete_confirm_title": "Delete Configuration",
+                "domain": "Domain",
+                "domain_hint": "Hostname only (no https://)",
+                "has_key": "Has Key",
+                "key": "Key",
+                "no_configs": "No configurations found",
+                "none": "None",
+                "save_success": "Configuration saved",
+                "title": "Booru Configuration",
+                "username": "User",
+                "error_domain_required": "Domain is required",
+                "error_save_failed": "Failed to save configuration",
+                "error_not_found": "Configuration not found",
+                "error_delete_failed": "Failed to delete configuration",
+                "delete_success": "Configuration for {domain} deleted"
+            }
         },
         "stats": {
             "total_storage": "Used Storage",
