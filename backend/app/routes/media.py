@@ -36,8 +36,17 @@ def update_tag_counts(db: Session, tag_ids: List[int]):
             synchronize_session=False
         )
         
-def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
-    """Get or create tags by name"""
+def get_or_create_tags(db: Session, tag_names: List[str], category_hints: Optional[dict] = None) -> List[Tag]:
+    """Get or create tags by name.
+    
+    Args:
+        db: Database session
+        tag_names: List of tag name strings
+        category_hints: Optional dict mapping tag names to category strings
+                       (e.g. {"artist_name": "artist", "char_name": "character"}).
+                       When a tag doesn't exist and a hint is provided, the tag
+                       is created with that category instead of the default "general".
+    """
     tags = []
     for name in tag_names:
         name = name.strip().lower()
@@ -46,7 +55,10 @@ def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
         
         tag = db.query(Tag).filter(Tag.name == name).first()
         if not tag:
-            tag = Tag(name=name, post_count=0)
+            category = "general"
+            if category_hints and name in category_hints:
+                category = category_hints[name]
+            tag = Tag(name=name, post_count=0, category=category)
             db.add(tag)
             db.flush()
         tags.append(tag)
@@ -211,6 +223,7 @@ async def upload_media(
     tags: str = Form(""),
     album_ids: Optional[str] = Form(None),
     source: Optional[str] = Form(None),
+    category_hints: Optional[str] = Form(None),
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -309,7 +322,14 @@ async def upload_media(
         tag_ids_to_update = []
         if tags:
             tag_list = [t.strip() for t in tags.split() if t.strip()]
-            media.tags = get_or_create_tags(db, tag_list)
+            parsed_hints = None
+            if category_hints:
+                try:
+                    import json
+                    parsed_hints = json.loads(category_hints)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
             tag_ids_to_update = [tag.id for tag in media.tags]
             print(f"Tags added: {tag_list}")
             
