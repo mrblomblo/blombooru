@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel
@@ -242,7 +243,34 @@ async def download_and_import(
         if 'thumbnail_path' in locals() and thumbnail_path.exists():
             thumbnail_path.unlink(missing_ok=True)
 
-        print(f"Error importing from booru: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+@router.get("/proxy-image")
+async def proxy_image(url: str, current_user: User = Depends(require_admin_mode)):
+    """
+    Proxy an image request through the backend to bypass CORS.
+    """
+    if not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid URL")
+    
+    try:
+        # Stream the response
+        external_resp = requests.get(url, stream=True, timeout=60, headers={"User-Agent": "Blombooru/1.0 (booru-import)"})
+        if external_resp.status_code == 403:
+            raise HTTPException(status_code=403, detail="Access denied by booru site (403)")
+        if external_resp.status_code == 404:
+            raise HTTPException(status_code=404, detail="Image not found (404)")
+             
+        external_resp.raise_for_status()
+        
+        return StreamingResponse(
+            external_resp.iter_content(chunk_size=8192),
+            media_type=external_resp.headers.get("content-type"),
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch image: {str(e)}")
