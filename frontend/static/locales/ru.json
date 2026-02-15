@@ -109,7 +109,24 @@
             "total_media": "Всего медиафайлов",
             "total_videos": "Всего видео",
             "upload_hint": "Вы можете загружать изображения, видео или сжатые архивы (ZIP, TAR.GZ)",
-            "upload_media": "Загрузка медиафайлов"
+            "upload_media": "Загрузка медиафайлов",
+            "booru_import": {
+                "title": "",
+                "hint": "",
+                "url_placeholder": "",
+                "fetch": "",
+                "fetching": "",
+                "fetch_error": "",
+                "unsupported_url": "",
+                "auto_create_tags": "",
+                "import_now": "",
+                "add_to_queue": "",
+                "added_to_queue": "",
+                "importing": "",
+                "import_success": "",
+                "import_error": "",
+                "already_exists": ""
+            }
         },
         "messages": {
             "adding_tags": "Добавление тегов...",
@@ -385,7 +402,8 @@
         "not_found": "Не найдено",
         "page_not_found": "Страница, которую вы ищете, не существует",
         "server_error": "Ошибка сервера",
-        "unauthorized": "Неавторизованный доступ"
+        "unauthorized": "Неавторизованный доступ",
+        "error_403": ""
     },
     "footer": {
         "back_to_top": "К началу страницы"

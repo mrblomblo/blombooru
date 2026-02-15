@@ -7,14 +7,14 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system
+from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system, booru_import
 from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
 import subprocess
 import uuid
 
-APP_VERSION = "1.35.3"
+APP_VERSION = "1.36.0"
 
 def get_cache_buster():
     """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""
@@ -65,6 +65,7 @@ app.include_router(albums.router)
 app.include_router(ai_tagger.router)
 app.include_router(danbooru.router)
 app.include_router(system.router)
+app.include_router(booru_import.router)
 
 @app.on_event("startup")
 async def startup_event():

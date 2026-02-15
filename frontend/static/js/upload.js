@@ -903,6 +903,10 @@ class Uploader {
             formData.append('source', fileData.source);
         }
 
+        if (fileData.autoCreateTags && fileData.categoryHints) {
+            formData.append('category_hints', JSON.stringify(fileData.categoryHints));
+        }
+
         const response = await fetch('/api/media/', {
             method: 'POST',
             body: formData
@@ -992,6 +996,36 @@ class Uploader {
                 document.getElementById('submit-controls').style.display = 'flex';
             }
         }
+    }
+
+    async addBooruImport(file, metadata) {
+        const hash = await this.computeFileHash(file);
+
+        if (this.fileHashes.has(hash)) {
+            return;
+        }
+
+        this.fileHashes.add(hash);
+
+        const fileData = {
+            file: file,
+            hash: hash,
+            rating: metadata.rating || this.baseRating,
+            source: metadata.source || this.baseSource,
+            additionalTags: metadata.tags || [],
+            individualAlbumIds: new Set(),
+            preview: null,
+            scannedPath: null,
+            categoryHints: metadata.categoryHints || null,
+            autoCreateTags: metadata.autoCreateTags || false,
+        };
+
+        this.uploadedFiles.push(fileData);
+        this.createPreview(fileData, this.uploadedFiles.length - 1);
+
+        document.getElementById('base-controls').style.display = 'block';
+        document.getElementById('preview-grid').style.display = 'block';
+        document.getElementById('submit-controls').style.display = 'flex';
     }
 
     isFileQueued(filePath) {

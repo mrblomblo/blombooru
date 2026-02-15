@@ -109,7 +109,24 @@
             "total_media": "Totalt antal media",
             "total_videos": "Totalt antal videor",
             "upload_hint": "Du kan ladda upp bilder, videor eller komprimerade arkiv (ZIP, TAR.GZ).",
-            "upload_media": "Ladda upp media"
+            "upload_media": "Ladda upp media",
+            "booru_import": {
+                "title": "Importera Från Extern Booru",
+                "hint": "Skriv en inläggs-URL för att importera media med taggar, betyg och källa. Stöder webbplatser i Danbooru-stil.",
+                "url_placeholder": "Skriv en inläggs-URL här",
+                "fetch": "Hämta",
+                "fetching": "Hämtar inläggdata...",
+                "fetch_error": "Kunde inte hämta inläggdata",
+                "unsupported_url": "Ostödd booru URL",
+                "auto_create_tags": "Auto-skapa taggar",
+                "import_now": "Importera nu",
+                "add_to_queue": "Lägg till i uppladdningskö",
+                "added_to_queue": "Lagt till i uppladdningskö",
+                "importing": "Laddar ned och importerar...",
+                "import_success": "Media importerad!",
+                "import_error": "Import misslyckades: {error}",
+                "already_exists": "Detta media finns redan i databasen"
+            }
         },
         "messages": {
             "adding_tags": "Lägger till taggar...",
@@ -385,7 +402,8 @@
         "not_found": "Hittades inte",
         "page_not_found": "Sidan du letar efter finns inte.",
         "server_error": "Serverfel",
-        "unauthorized": "Obehörig"
+        "unauthorized": "Obehörig",
+        "error_403": "Åtkomst nekad (403). Du behöver troligtvis en API-nyckel eller ett login för detta."
     },
     "footer": {
         "back_to_top": "Tillbaka till toppen"
