@@ -38,6 +38,7 @@ class ImportRequest(BaseModel):
 async def fetch_booru_post(
     req: FetchRequest,
     current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
 ):
     """
     Fetch metadata from a booru post URL.
@@ -45,7 +46,7 @@ async def fetch_booru_post(
     Returns post data (tags with categories, rating, source, file URLs)
     without downloading the media file.
     """
-    client = get_client_for_url(req.url)
+    client = get_client_for_url(req.url, db=db)
     if not client:
         raise HTTPException(
             status_code=400,
@@ -93,7 +94,7 @@ async def download_and_import(
     it through the standard upload pipeline (hash check, thumbnails, etc.).
     """
     # Fetch post metadata
-    client = get_client_for_url(req.url)
+    client = get_client_for_url(req.url, db=db)
     if not client:
         raise HTTPException(
             status_code=400,
@@ -118,7 +119,11 @@ async def download_and_import(
 
     # Download media file to temp location
     try:
-        response = requests.get(post.file_url, timeout=60, stream=True)
+        if client and hasattr(client, "session"):
+            response = client.session.get(post.file_url, timeout=60, stream=True)
+        else:
+            response = requests.get(post.file_url, timeout=60, stream=True)
+
         response.raise_for_status()
     except requests.HTTPError as e:
         if e.response.status_code == 403:
@@ -248,7 +253,11 @@ async def download_and_import(
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 @router.get("/proxy-image")
-async def proxy_image(url: str, current_user: User = Depends(require_admin_mode)):
+async def proxy_image(
+    url: str, 
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
     """
     Proxy an image request through the backend to bypass CORS.
     """
@@ -256,8 +265,12 @@ async def proxy_image(url: str, current_user: User = Depends(require_admin_mode)
         raise HTTPException(status_code=400, detail="Invalid URL")
     
     try:
-        # Stream the response
-        external_resp = requests.get(url, stream=True, timeout=60, headers={"User-Agent": "Blombooru/1.0 (booru-import)"})
+        client = get_client_for_url(url, db=db)
+        if client:
+            external_resp = client.session.get(url, stream=True, timeout=60)
+        else:
+            external_resp = requests.get(url, stream=True, timeout=60, headers={"User-Agent": "Blombooru/1.0 (booru-import)"})
+            
         if external_resp.status_code == 403:
             raise HTTPException(status_code=403, detail="Access denied by booru site (403)")
         if external_resp.status_code == 404:
