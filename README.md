@@ -72,6 +72,8 @@ Blombooru is a private, single-user alternative to image boorus like Danbooru an
 
 - **Media Relations:** Link related media using parent-child relationships. Group image variations, multi-page comics, and more—keeping related content easily accessible.
 
+- **External Booru Import:** Seamlessly import posts from Danbooru and other booru sites (like Danbooru, Gelbooru, etc.) by simply pasting the post URL. Tags, rating, source, and media are all automatically fetched and mapped.
+
 ### AI & Automation
 
 - **AI-Friendly:** Easily view accompanying AI metadata for almost any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags to the tag editor directly from the AI prompt.
@@ -402,7 +404,7 @@ To make any changes, you must log in as the admin. This protects you from accide
 - Add or remove tags
 - Share media
 - Perform bulk operations like multi-deleting items from the gallery
-- Manage system settings, including branding, security, and optional Redis caching
+- Manage system settings, including branding, security, external booru credentials, and optional Redis caching
 
 ### Adding Tags
 
@@ -427,7 +429,7 @@ Manually enter the tags you want to create. Prefix a tag with, for example, `met
 
 ### Uploading Media
 
-You have three ways to add new content:
+You have four ways to add new content:
 
 #### 1. Media Files
 
@@ -442,6 +444,13 @@ Upload a `.zip`, `.tar.gz`, or `.tgz` archive containing your media, and Blomboo
 Move your media files directly into the configured storage directory. Then, navigate to the Admin Panel and click the **Scan for Untracked Media** button. The server will scan the `media/original` dir (notice that it's not an easily accessible directory), find new files, generate thumbnails, and add them to your library.
  
 *Duplicate media is automatically detected by its hash and will not be re-imported.*
+
+#### 4. External URL Import
+
+Paste a URL from a supported booru site (e.g., those using the Danbooru or Gelbooru API) into the import tool. Blombooru will fetch the metadata (tags, rating, source) and download the highest-quality version of the media available, optionally automagically creating missing tags with the correct category (if available).
+
+> [!NOTE]
+> Some boorus may require an API key or login credentials to use the API or to access certain posts. You can configure these in the Booru Configuration section in the System tab of the Admin Panel.
 
 ### Tagging & Searching
 
