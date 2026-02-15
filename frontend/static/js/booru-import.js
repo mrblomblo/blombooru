@@ -52,6 +52,15 @@ class BooruImporter {
         this.statusArea.innerHTML = '';
     }
 
+    _t(keyOrString) {
+        if (!keyOrString) return '';
+        if (keyOrString.includes(':::')) {
+            const [key, arg] = keyOrString.split(':::');
+            return window.i18n.t(key, { error: arg });
+        }
+        return window.i18n.t(keyOrString);
+    }
+
     async fetchPost() {
         const url = this.urlInput?.value?.trim();
         if (!url) return;
@@ -88,7 +97,7 @@ class BooruImporter {
         } catch (e) {
             console.error('Booru fetch error:', e);
             this.showStatus(
-                window.i18n.t('admin.media_management.booru_import.fetch_error') + ': ' + e.message,
+                window.i18n.t('admin.media_management.booru_import.fetch_error') + ': ' + this._t(e.message),
                 'error'
             );
         } finally {
@@ -361,7 +370,7 @@ class BooruImporter {
             console.error('Booru import error:', e);
             const errorMsg = e.message.includes('duplicate')
                 ? window.i18n.t('admin.media_management.booru_import.already_exists')
-                : window.i18n.t('admin.media_management.booru_import.import_error', { error: e.message });
+                : this._t(e.message);
             this.showStatus(errorMsg, 'error');
 
             if (typeof app !== 'undefined' && app.showNotification) {
@@ -382,7 +391,7 @@ class BooruImporter {
         const post = this.currentPost;
 
         if (!post.file_url) {
-            this.showStatus('No downloadable file URL', 'error');
+            this.showStatus(window.i18n.t('admin.media_management.booru_import.no_downloadable_file'), 'error');
             return;
         }
 
@@ -400,7 +409,7 @@ class BooruImporter {
                 if (response.status === 403) {
                     throw new Error(window.i18n.t('errors.error_403'));
                 }
-                throw new Error(`Failed to download: HTTP ${response.status}`);
+                throw new Error(window.i18n.t('admin.media_management.booru_import.error_download_failed', { error: `HTTP ${response.status}` }));
             }
 
             const blob = await response.blob();

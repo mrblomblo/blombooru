@@ -50,7 +50,7 @@ async def fetch_booru_post(
     if not client:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported booru URL."
+            detail="admin.media_management.booru_import.error_unsupported_url"
         )
 
     try:
@@ -59,12 +59,12 @@ async def fetch_booru_post(
         raise HTTPException(status_code=400, detail=str(e))
     except requests.HTTPError as e:
         if e.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="Access denied by booru site (403)")
+            raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_access_denied_403")
         if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Post not found on booru site")
-        raise HTTPException(status_code=502, detail=f"Booru API error: {str(e)}")
+            raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_post_not_found")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_booru_api:::{str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch from booru: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.error_fetch_failed:::{str(e)}")
 
     return {
         "id": post.id,
@@ -98,7 +98,7 @@ async def download_and_import(
     if not client:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported booru URL."
+            detail="admin.media_management.booru_import.error_unsupported_url"
         )
 
     try:
@@ -107,15 +107,15 @@ async def download_and_import(
         raise HTTPException(status_code=400, detail=str(e))
     except requests.HTTPError as e:
         if e.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="Access denied by booru site (403)")
+            raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_access_denied_403")
         if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Post not found on booru site")
-        raise HTTPException(status_code=502, detail=f"Booru API error: {str(e)}")
+            raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_post_not_found")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_booru_api:::{str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch from booru: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.error_fetch_failed:::{str(e)}")
 
     if not post.file_url:
-        raise HTTPException(status_code=400, detail="Post has no downloadable file (may require authentication on the source site)")
+        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_no_file")
 
     # Download media file to temp location
     try:
@@ -127,12 +127,12 @@ async def download_and_import(
         response.raise_for_status()
     except requests.HTTPError as e:
         if e.response.status_code == 403:
-            raise HTTPException(status_code=403, detail="Access denied when downloading media file (403)")
+            raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_download_403")
         if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Media file not found (404)")
-        raise HTTPException(status_code=502, detail=f"Booru file download error: {str(e)}")
+            raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_file_not_found")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_download_api:::{str(e)}")
     except requests.RequestException as e:
-        raise HTTPException(status_code=502, detail=f"Failed to download media file: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_download_failed:::{str(e)}")
 
     try:
         suffix = Path(post.filename).suffix or ".png"
@@ -141,7 +141,7 @@ async def download_and_import(
                 tmp.write(chunk)
             tmp_path = Path(tmp.name)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save downloaded file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.error_save_failed:::{str(e)}")
 
     try:
         # Check for duplicates
@@ -250,7 +250,7 @@ async def download_and_import(
 
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.import_error:::{str(e)}")
 
 @router.get("/proxy-image")
 async def proxy_image(
@@ -262,7 +262,7 @@ async def proxy_image(
     Proxy an image request through the backend to bypass CORS.
     """
     if not url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid URL")
+        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
     
     try:
         client = get_client_for_url(url, db=db)
@@ -272,9 +272,9 @@ async def proxy_image(
             external_resp = requests.get(url, stream=True, timeout=60, headers={"User-Agent": "Blombooru/1.0 (booru-import)"})
             
         if external_resp.status_code == 403:
-            raise HTTPException(status_code=403, detail="Access denied by booru site (403)")
+            raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_image_403")
         if external_resp.status_code == 404:
-            raise HTTPException(status_code=404, detail="Image not found (404)")
+            raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_image_404")
              
         external_resp.raise_for_status()
         
@@ -286,4 +286,4 @@ async def proxy_image(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Failed to fetch image: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_proxy_failed:::{str(e)}")
