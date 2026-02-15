@@ -617,6 +617,33 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="booru-import-section">
+                    <h3 class="text-sm font-bold mb-3">{{ t('admin.media_management.booru_import.title') }}</h3>
+                    <div class="bg p-4 border">
+                        <p class="text-xs text-secondary mb-3">
+                            {{ t('admin.media_management.booru_import.hint') }}
+                        </p>
+
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="booru-url-input"
+                                class="flex-1 bg px-3 py-2 border text-xs focus:outline-none focus:border-primary"
+                                placeholder="{{ t('admin.media_management.booru_import.url_placeholder') }}">
+                            <button id="booru-fetch-btn"
+                                class="px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs whitespace-nowrap">
+                                {{ t('admin.media_management.booru_import.fetch') }}
+                            </button>
+                        </div>
+
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="booru-auto-create-tags" class="w-4 h-4 accent-primary" checked>
+                            <span class="text-xs">{{ t('admin.media_management.booru_import.auto_create_tags') }}</span>
+                        </label>
+
+                        <div id="booru-status" class="mt-3" style="display: none;"></div>
+                        <div id="booru-preview-area" class="mt-3" style="display: none;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Tags Management Section -->
@@ -985,4 +1012,5 @@
 <script src="/static/js/admin-stats.js?v={{ cache_buster }}"></script>
 <script src="/static/js/admin.js?v={{ cache_buster }}"></script>
 <script src="/static/js/upload.js?v={{ cache_buster }}"></script>
+<script src="/static/js/booru-import.js?v={{ cache_buster }}"></script>
 {% endblock %}
