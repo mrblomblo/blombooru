@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pathlib import Path
 from .config import settings
 from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system, booru_import
+from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system, booru_import, booru_config
 from .auth_middleware import AuthMiddleware
 from .translations import translation_helper, language_registry
 from datetime import datetime
@@ -24,7 +24,6 @@ def get_cache_buster():
     except (subprocess.CalledProcessError, FileNotFoundError):
         # Fallback to app version if git is not available
         return APP_VERSION
-
 
 class DynamicCacheBuster:
     """Dynamic cache buster that returns a random UUID in debug mode"""
@@ -66,6 +65,7 @@ app.include_router(ai_tagger.router)
 app.include_router(danbooru.router)
 app.include_router(system.router)
 app.include_router(booru_import.router)
+app.include_router(booru_config.router)
 
 @app.on_event("startup")
 async def startup_event():
