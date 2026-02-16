@@ -1,4 +1,3 @@
-// Internationalization helper
 class I18n {
     constructor() {
         this.translations = {};
@@ -24,8 +23,6 @@ class I18n {
                 }
             } catch (error) {
                 console.error('Error loading translations:', error);
-            } finally {
-                this.loadPromise = null;
             }
         })();
 
@@ -79,8 +76,8 @@ class Blombooru {
         this.init();
     }
 
-    init() {
-        window.i18n.load();
+    async init() {
+        await window.i18n.load();
 
         this.setupEventListeners();
         this.updateUI();
