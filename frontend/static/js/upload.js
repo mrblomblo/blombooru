@@ -1109,14 +1109,7 @@ class Uploader {
     }
 }
 
-// Initialize uploader if upload area exists and expose globally, but wait for i18n to load before creating it
+// Initialize uploader if upload area exists and expose globally
 if (document.getElementById('upload-area')) {
-    if (window.i18n && window.i18n.loaded) {
-        window.uploaderInstance = new Uploader();
-    } else {
-        // Wait for i18n to load
-        window.addEventListener('i18n-loaded', () => {
-            window.uploaderInstance = new Uploader();
-        });
-    }
+    window.uploaderInstance = new Uploader();
 }
