@@ -1036,80 +1036,16 @@ class Uploader {
         const filename = filePath.split('/').pop().split('\\').pop();
         return this.uploadedFiles.some(f => f.file.name === filename);
     }
-
-    renderIndividualAlbumSelect() {
-        if (this.selectedFileIndex === null) return;
-        const selectEl = document.getElementById('individual-album-select');
-        if (!selectEl) return;
-
-        if (!this.individualAlbumSelect) return;
-
-        const fileData = this.uploadedFiles[this.selectedFileIndex];
-        if (!fileData) return;
-
-        const availableAlbums = this.allAlbums.filter(album =>
-            !this.baseAlbumIds.has(album.id) &&
-            !fileData.individualAlbumIds.has(album.id)
-        );
-
-        const options = [{ value: '', text: 'Select album to add...', selected: true }];
-        availableAlbums.forEach(album => {
-            options.push({ value: album.id, text: album.name });
-        });
-
-        this.individualAlbumSelect.setOptions(options);
-    }
-
-    renderIndividualAlbumBadges() {
-        const container = document.getElementById('individual-albums-list');
-        if (!container || this.selectedFileIndex === null) return;
-
-        const fileData = this.uploadedFiles[this.selectedFileIndex];
-        if (!fileData) return;
-
-        container.innerHTML = '';
-
-        this.baseAlbumIds.forEach(id => {
-            const album = this.allAlbums.find(a => a.id == id);
-            if (album) {
-                const badge = document.createElement('div');
-                badge.className = 'surface px-2 py-1 border text-xs flex items-center gap-2 opacity-70';
-                badge.innerHTML = `
-                    <span>${this.escapeHtml(album.name)}</span>
-                    <span class="text-[10px] text-secondary">${window.i18n.t('upload.base_settings.base_badge')}</span>
-                `;
-                container.appendChild(badge);
-            }
-        });
-
-        fileData.individualAlbumIds.forEach(id => {
-            const album = this.allAlbums.find(a => a.id == id);
-            if (album) {
-                const badge = document.createElement('div');
-                badge.className = 'surface px-2 py-1 border text-xs flex items-center gap-2';
-                badge.innerHTML = `
-                    <span>${this.escapeHtml(album.name)}</span>
-                    <button class="bg-danger tag-text px-1 hover:bg-danger transition-colors" data-id="${id}">×</button>
-                `;
-                badge.querySelector('button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    fileData.individualAlbumIds.delete(parseInt(id));
-                    this.renderIndividualAlbumBadges();
-                    this.renderIndividualAlbumSelect();
-                });
-                container.appendChild(badge);
-            }
-        });
-
-        if (container.children.length === 0) {
-            container.classList.add('hidden');
-        } else {
-            container.classList.remove('hidden');
-        }
-    }
 }
 
-// Initialize uploader if upload area exists and expose globally
+// Initialize uploader if upload area exists and expose globally, but wait for i18n to load before creating it
 if (document.getElementById('upload-area')) {
-    window.uploaderInstance = new Uploader();
+    if (window.i18n && window.i18n.loaded) {
+        window.uploaderInstance = new Uploader();
+    } else {
+        // Wait for i18n to load
+        window.addEventListener('i18n-loaded', () => {
+            window.uploaderInstance = new Uploader();
+        });
+    }
 }
