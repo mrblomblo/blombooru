@@ -141,7 +141,7 @@ class BooruImporter {
                     <!-- Thumbnail -->
                     <div class="flex-shrink-0">
                         ${post.preview_url
-                ? `<img src="${this.escapeHtml(post.preview_url)}" alt="Preview" 
+                ? `<img src="/api/booru-import/proxy-image?url=${encodeURIComponent(post.preview_url)}" alt="Preview" 
                                     class="w-32 h-32 object-contain surface border" 
                                     onerror="this.style.display='none'">`
                 : '<div class="w-32 h-32 surface border flex items-center justify-center text-xs text-secondary">' + window.i18n.t('upload.preview.none') + '</div>'
@@ -237,7 +237,7 @@ class BooruImporter {
             img.addEventListener('click', () => {
                 if (this.uploader && this.uploader.fullscreenViewer) {
                     const isVideo = post.file_url.endsWith('.mp4') || post.file_url.endsWith('.webm'); // Could be better
-                    this.uploader.fullscreenViewer.open(post.file_url, isVideo);
+                    this.uploader.fullscreenViewer.open(`/api/booru-import/proxy-image?url=${encodeURIComponent(post.file_url)}`, isVideo);
                 }
             });
         }
