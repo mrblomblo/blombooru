@@ -66,12 +66,7 @@ class Media(Base):
 
     @property
     def has_children(self) -> bool:
-        from .database import SessionLocal
-        db = SessionLocal()
-        try:
-            return db.query(Media).filter(Media.parent_id == self.id).first() is not None
-        finally:
-            db.close()
+        return bool(self.children)
 
 class Tag(Base):
     __tablename__ = 'blombooru_tags'
