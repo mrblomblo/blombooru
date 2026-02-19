@@ -1,10 +1,10 @@
 from pathlib import Path
 from sqlalchemy.orm import Session
+import uuid
 from ..models import Media
 from ..config import settings
 from .media_processor import calculate_file_hash
-import uuid
-import re
+from .media_helpers import sanitize_filename
 
 SUPPORTED_EXTENSIONS = {
     'image': ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'],
@@ -19,22 +19,6 @@ def is_supported_file(filename: str) -> bool:
         if ext in extensions:
             return True
     return False
-
-def sanitize_filename(filename: str) -> str:
-    """Sanitize filename to be safe for filesystem and web"""
-    # Get the stem and extension separately
-    path = Path(filename)
-    stem = path.stem
-    ext = path.suffix
-    
-    stem = re.sub(r'[^\w\s\-\.]', '_', stem)
-    stem = re.sub(r'[\s_]+', '_', stem)
-    stem = stem.strip('_')
-    
-    if not stem:
-        stem = str(uuid.uuid4())
-    
-    return f"{stem}{ext}"
 
 def find_untracked_media(db: Session) -> dict:
     """Find untracked media files without processing them"""
