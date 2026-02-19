@@ -88,7 +88,7 @@ def reconnect_shared_db():
     if shared_engine:
         try:
             shared_engine.dispose()
-        except:
+        except Exception:
             pass
     
     shared_engine = None
@@ -124,13 +124,10 @@ def get_shared_db():
     db = SharedSessionLocal()
     try:
         yield db
-    except Exception as e:
-        print(f"Error with shared DB session: {e}")
-        yield None
     finally:
         try:
             db.close()
-        except:
+        except Exception:
             pass
 
 def init_db():

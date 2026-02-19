@@ -44,14 +44,14 @@ def find_untracked_media(db: Session) -> dict:
             try:
                 abs_path = (settings.BASE_DIR / media.path).resolve()
                 tracked_paths.add(str(abs_path))
-            except:
+            except Exception:
                 pass
         
         if hasattr(media, 'original_path') and media.original_path:
             try:
                 abs_path = Path(media.original_path).resolve()
                 tracked_paths.add(str(abs_path))
-            except:
+            except Exception:
                 pass
     
     print(f"Scanning directory: {original_dir}")

@@ -97,7 +97,7 @@ class RedisClient:
             if self._client is None:
                 self.connect()
             return self._client.ping() if self._client else False
-        except:
+        except Exception:
             return False
 
 # Global instance

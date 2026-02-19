@@ -161,24 +161,24 @@ async def complete_onboarding(data: OnboardingData):
         if new_session_local:
             try:
                 new_session_local.close_all()
-            except:
+            except Exception:
                 pass
         if temp_engine:
             try:
                 temp_engine.dispose()
-            except:
+            except Exception:
                 pass
         raise
     except Exception as e:
         if new_session_local:
             try:
                 new_session_local.close_all()
-            except:
+            except Exception:
                 pass
         if temp_engine:
             try:
                 temp_engine.dispose()
-            except:
+            except Exception:
                 pass
         print(f"Error initializing database: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to initialize database: {str(e)}")

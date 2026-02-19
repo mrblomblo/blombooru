@@ -33,7 +33,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                                 metadata[key] = json.loads(decoded)
                             except (json.JSONDecodeError, ValueError):
                                 metadata[key] = decoded
-                        except:
+                        except Exception:
                             pass
                     else:
                         metadata[key] = value
@@ -48,7 +48,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                             try:
                                 user_comment = user_comment.decode('utf-8', errors='ignore')
                                 user_comment = user_comment.replace('\x00', '').strip()
-                            except:
+                            except Exception:
                                 pass
                         
                         # Try to parse as JSON
@@ -64,7 +64,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                         if isinstance(description, bytes):
                             try:
                                 description = description.decode('utf-8', errors='ignore').replace('\x00', '').strip()
-                            except:
+                            except Exception:
                                 pass
                         
                         if isinstance(description, str) and description:
@@ -89,7 +89,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                                         metadata['parameters'] = json.loads(decoded)
                                     except (json.JSONDecodeError, ValueError):
                                         metadata['parameters'] = decoded
-                            except:
+                            except Exception:
                                 pass
                     
                     # XPKeywords tag (0x9C9E)
@@ -103,7 +103,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                                         metadata['keywords'] = json.loads(decoded)
                                     except (json.JSONDecodeError, ValueError):
                                         metadata['keywords'] = decoded
-                            except:
+                            except Exception:
                                 pass
             
             # For WebP specifically, try to get XMP data
@@ -112,7 +112,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                     xmp_data = img.getxmp()
                     if xmp_data:
                         metadata['xmp'] = xmp_data
-                except:
+                except Exception:
                     pass
             
             # Legacy EXIF method (for older PIL versions)
@@ -128,7 +128,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
                                 metadata['parameters'] = json.loads(user_comment)
                             except (json.JSONDecodeError, ValueError):
                                 metadata['parameters'] = user_comment
-                except:
+                except Exception:
                     pass
         
         return metadata
@@ -311,7 +311,7 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                         try:
                             loop = img.info.get('loop', 0)
                             save_kwargs['loop'] = loop
-                        except:
+                        except Exception:
                             save_kwargs['loop'] = 0
                 
                 # Save to a temporary file first to ensure atomicity using unique filename to avoid race conditions
@@ -326,7 +326,7 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                     if temp_cache_path.exists():
                         try:
                             temp_cache_path.unlink()
-                        except:
+                        except Exception:
                             pass
                     raise save_err
         
