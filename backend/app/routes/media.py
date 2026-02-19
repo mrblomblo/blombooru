@@ -163,21 +163,17 @@ async def get_media(media_id: int, db: Session = Depends(get_db)):
     hierarchy = []
     if media.parent_id:
         # I am a child
-        parent = db.query(Media).filter(Media.id == media.parent_id).first()
-        if parent:
-            hierarchy.append(MediaResponse.model_validate(parent).model_dump())
-        
-        siblings = db.query(Media).filter(
-            Media.parent_id == media.parent_id,
-            Media.id != media.id
+        related = db.query(Media).filter(
+            or_(
+                Media.id == media.parent_id,
+                and_(Media.parent_id == media.parent_id, Media.id != media.id)
+            )
         ).all()
-        for sibling in siblings:
-            hierarchy.append(MediaResponse.model_validate(sibling).model_dump())
+        hierarchy = [MediaResponse.model_validate(r).model_dump() for r in related]
     else:
         # I might be a parent
         children = db.query(Media).filter(Media.parent_id == media.id).all()
-        for child in children:
-            hierarchy.append(MediaResponse.model_validate(child).model_dump())
+        hierarchy = [MediaResponse.model_validate(c).model_dump() for c in children]
     
     result['hierarchy'] = hierarchy
     return result
