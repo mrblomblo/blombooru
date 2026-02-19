@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Tuple
 from fastapi import Request, HTTPException
 
@@ -29,7 +29,7 @@ class LoginRateLimiter:
     
     def _cleanup_expired(self):
         """Remove expired bans and old failed attempts"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         expired_bans = [ip for ip, expiry in self.banned_ips.items() if now >= expiry]
         for ip in expired_bans:
@@ -54,7 +54,7 @@ class LoginRateLimiter:
         self._cleanup_expired()
         
         ip = self._get_client_ip(request)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if ip in self.banned_ips:
             ban_expiry = self.banned_ips[ip]
@@ -74,7 +74,7 @@ class LoginRateLimiter:
         self._cleanup_expired()
         
         ip = self._get_client_ip(request)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if ip in self.failed_attempts:
             count, first_attempt = self.failed_attempts[ip]

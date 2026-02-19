@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ..database import get_db
 from ..auth import require_admin_mode
@@ -67,7 +67,7 @@ async def create_or_update_booru_config(
             config.username = idx.username
         if idx.api_key is not None:
             config.api_key = idx.api_key
-        config.updated_at = datetime.utcnow()
+        config.updated_at = datetime.now(timezone.utc)
     else:
         # Create
         config = BooruConfig(
