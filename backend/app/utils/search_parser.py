@@ -167,90 +167,57 @@ def parse_age(value: str) -> Dict[str, Any]:
 
     return {'op': 'eq', 'value': d}
 
+def _strip_size_unit(s: str):
+    """Strip filesize unit suffix and return (numeric_string, multiplier)."""
+    s = s.lower()
+    mul = 1
+    if s.endswith('kb'):
+        mul = 1024
+        s = s[:-2]
+    elif s.endswith('k'):
+        mul = 1024
+        s = s[:-1]
+    elif s.endswith('mb'):
+        mul = 1024 * 1024
+        s = s[:-2]
+    elif s.endswith('m'):
+        mul = 1024 * 1024
+        s = s[:-1]
+    elif s.endswith('gb'):
+        mul = 1024 * 1024 * 1024
+        s = s[:-2]
+    elif s.endswith('g'):
+        mul = 1024 * 1024 * 1024
+        s = s[:-1]
+    elif s.endswith('b'):
+        s = s[:-1]
+    return s, mul
+
+def _parse_size_bytes(s: str) -> int:
+    """Parse a filesize string with unit into bytes."""
+    s_stripped, mul = _strip_size_unit(s)
+    try:
+        return int(float(s_stripped) * mul)
+    except ValueError:
+        return 0
+
 def parse_filesize(value: str) -> Dict[str, Any]:
     """Parse filesize string like 200kb, 1.5M."""
-    def parse_size(s, multiplier):
-        try:
-            return int(float(s) * multiplier)
-        except ValueError:
-            return 0
-
-    val_lower = value.lower()
-    
-    # Check for units to determine range
-    multiplier = 1
-    unit_found = False
-    
-    if val_lower.endswith('kb'):
-        multiplier = 1024
-        val_lower = val_lower[:-2]
-        unit_found = True
-    elif val_lower.endswith('k'):
-        multiplier = 1024
-        val_lower = val_lower[:-1]
-        unit_found = True
-    elif val_lower.endswith('mb'):
-        multiplier = 1024 * 1024
-        val_lower = val_lower[:-2]
-        unit_found = True
-    elif val_lower.endswith('m'):
-        multiplier = 1024 * 1024
-        val_lower = val_lower[:-1]
-        unit_found = True
-    elif val_lower.endswith('gb'):
-        multiplier = 1024 * 1024 * 1024
-        val_lower = val_lower[:-2]
-        unit_found = True
-    elif val_lower.endswith('g'):
-        multiplier = 1024 * 1024 * 1024
-        val_lower = val_lower[:-1]
-        unit_found = True
-    elif val_lower.endswith('b'):
-        val_lower = val_lower[:-1]
+    val_stripped, multiplier = _strip_size_unit(value)
+    unit_found = multiplier > 1
         
     if unit_found and '..' not in value and not any(op in value for op in ['>', '<', ',']):
         # If a specific unit was given without an operator, assume fuzzy range [val, val+1_unit)
         try:
-            base_val = float(val_lower)
+            base_val = float(val_stripped)
             start_bytes = int(base_val * multiplier)
-            # Use 1 of the unit as the range width
             end_bytes = start_bytes + multiplier
             
             return {'op': 'between', 'value': (start_bytes, end_bytes - 1)}
         except ValueError:
             pass
 
-    # Fallback if no unit inference needed
-    def simple_parse_size(s):
-        s = s.lower()
-        mul = 1
-        if s.endswith('kb'):
-            mul = 1024
-            s = s[:-2]
-        elif s.endswith('k'):
-            mul = 1024
-            s = s[:-1]
-        elif s.endswith('mb'):
-            mul = 1024 * 1024
-            s = s[:-2]
-        elif s.endswith('m'):
-            mul = 1024 * 1024
-            s = s[:-1]
-        elif s.endswith('gb'):
-            mul = 1024 * 1024 * 1024
-            s = s[:-2]
-        elif s.endswith('g'):
-            mul = 1024 * 1024 * 1024
-            s = s[:-1]
-        elif s.endswith('b'):
-            s = s[:-1]
-            
-        try:
-            return int(float(s) * mul)
-        except ValueError:
-            return 0
-            
-    return parse_range(value, converter=simple_parse_size)
+    return parse_range(value, converter=_parse_size_bytes)
 
 def wildcard_to_regex(pattern: str) -> str:
     """Convert wildcard pattern to PostgreSQL regex pattern"""
