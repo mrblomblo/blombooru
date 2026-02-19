@@ -298,36 +298,29 @@ async def add_media_to_album(
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
     
-    added_count = 0
-    for media_id in data.media_ids:
-        media = db.query(Media).filter(Media.id == media_id).first()
-        if not media:
-            continue
-        
-        # Check if already in album
-        existing = db.query(blombooru_album_media).filter(
-            and_(
-                blombooru_album_media.c.album_id == album_id,
-                blombooru_album_media.c.media_id == media_id
-            )
-        ).first()
-        
-        if not existing:
-            db.execute(
-                blombooru_album_media.insert().values(
-                    album_id=album_id,
-                    media_id=media_id
-                )
-            )
-            added_count += 1
+    # Verify which media IDs exist
+    valid_ids = {row[0] for row in db.query(Media.id).filter(Media.id.in_(data.media_ids)).all()}
     
-    # Update last_modified
+    # Find which are already in this album
+    existing_ids = {row[0] for row in db.query(blombooru_album_media.c.media_id).filter(
+        and_(
+            blombooru_album_media.c.album_id == album_id,
+            blombooru_album_media.c.media_id.in_(valid_ids)
+        )
+    ).all()}
+    
+    # Insert only new memberships
+    new_ids = valid_ids - existing_ids
+    if new_ids:
+        db.execute(
+            blombooru_album_media.insert(),
+            [{"album_id": album_id, "media_id": mid} for mid in new_ids]
+        )
+    
     update_album_last_modified(album_id, db)
-    
-    # Invalidate cache
     invalidate_album_cache()
     
-    return {"message": f"Added {added_count} media item(s) to album"}
+    return {"message": f"Added {len(new_ids)} media item(s) to album"}
 
 @router.delete("/{album_id}/media")
 async def remove_media_from_album(
