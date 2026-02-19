@@ -1,8 +1,9 @@
 import re
 import time
+from typing import Any, Dict, List, Optional
+from urllib.parse import parse_qs, urlparse
+
 import requests
-from typing import List, Optional, Dict, Any
-from urllib.parse import urlparse, parse_qs
 
 from .base import BooruClient
 from .types import BooruPost, BooruTag

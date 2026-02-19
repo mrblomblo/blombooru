@@ -1,18 +1,21 @@
-from fastapi import APIRouter, Depends, Query, Request, HTTPException, Header
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from sqlalchemy.orm import Session, selectinload, load_only
-from sqlalchemy import desc, asc, case, exists, and_, or_, func
-from typing import List, Optional, Union, Set
+import re
 from collections import deque
 from pathlib import Path
-import re
+from typing import List, Optional, Set, Union
 
-from ..database import get_db
-from ..models import Media, Tag, TagAlias, User, Album, ApiKey, TagCategoryEnum, blombooru_album_media, blombooru_media_tags, blombooru_album_hierarchy
-from ..config import settings
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlalchemy import and_, asc, case, desc, exists, func, or_
+from sqlalchemy.orm import Session, load_only, selectinload
+
 from ..auth import verify_api_key
-from ..utils.search_parser import parse_search_query, apply_search_criteria
+from ..config import settings
+from ..database import get_db
+from ..models import (Album, ApiKey, Media, Tag, TagAlias, TagCategoryEnum,
+                      User, blombooru_album_hierarchy, blombooru_album_media,
+                      blombooru_media_tags)
 from ..utils.cache import cache_response, invalidate_cache
+from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 # --- AUTHENTICATION ---
 

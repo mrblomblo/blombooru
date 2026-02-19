@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import desc
-from typing import List, Optional
 import random
+from typing import List, Optional
 
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import desc
+from sqlalchemy.orm import Session, selectinload
+
+from ..config import settings
 from ..database import get_db
 from ..models import Media
 from ..schemas import MediaResponse
-from ..config import settings
-from ..utils.search_parser import parse_search_query, apply_search_criteria
 from ..utils.cache import cache_response
+from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 

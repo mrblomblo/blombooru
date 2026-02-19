@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, case, func, or_, and_
 from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import and_, case, desc, func, or_
+from sqlalchemy.orm import Session
+
+from ..auth import get_current_user, require_admin_mode
 from ..database import get_db
-from ..auth import require_admin_mode, get_current_user
-from ..models import Tag, Media, User, blombooru_media_tags
-from ..schemas import TagResponse, TagCreate, TagCategoryEnum
+from ..models import Media, Tag, User, blombooru_media_tags
+from ..schemas import TagCategoryEnum, TagCreate, TagResponse
 from ..utils.cache import cache_response, invalidate_tag_cache
-from fastapi import Request
 
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
@@ -54,9 +55,9 @@ async def autocomplete_tags(
 ):
     """Autocomplete tag suggestions (includes shared tags if enabled)"""
     from ..database import get_shared_db, is_shared_db_available
-    from ..services.shared_tags import SharedTagService
     from ..models import TagAlias
-    
+    from ..services.shared_tags import SharedTagService
+
     # If shared tags enabled, use merged autocomplete
     if is_shared_db_available():
         shared_db_gen = get_shared_db()
@@ -165,7 +166,7 @@ async def delete_tag(
     # Also delete from shared database if enabled
     from ..config import settings
     if settings.SHARED_TAGS_ENABLED:
-        from ..database import is_shared_db_available, get_shared_db
+        from ..database import get_shared_db, is_shared_db_available
         if is_shared_db_available():
             shared_db_gen = get_shared_db()
             shared_db = next(shared_db_gen, None)

@@ -1,7 +1,9 @@
-import redis
-from .config import settings
-from typing import Optional, Any
 import json
+from typing import Any, Optional
+
+import redis
+
+from .config import settings
 
 class RedisClient:
     def __init__(self):

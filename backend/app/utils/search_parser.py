@@ -1,9 +1,13 @@
 import re
-from typing import List, Dict, Any, Optional, Tuple, Union
 from datetime import datetime, timedelta
-from sqlalchemy import or_, and_, not_, desc, asc, func, exists, cast, Date, Float, case, text, literal
-from sqlalchemy.orm import Session, Query, aliased
-from ..models import Media, Tag, RatingEnum, blombooru_media_tags, Album, blombooru_album_media, TagCategoryEnum
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from sqlalchemy import (Date, Float, and_, asc, case, cast, desc, exists, func,
+                        literal, not_, or_, text)
+from sqlalchemy.orm import Query, Session, aliased
+
+from ..models import (Album, Media, RatingEnum, Tag, TagCategoryEnum,
+                      blombooru_album_media, blombooru_media_tags)
 
 TOKEN_PATTERN = re.compile(r'(-?)(?:([a-zA-Z0-9_]+):)?("[^"]*"|[^\s"]+)')
 

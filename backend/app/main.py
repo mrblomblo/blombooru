@@ -1,18 +1,21 @@
-from fastapi import FastAPI, Request, Depends
-from sqlalchemy.orm import Session
-from .models import Media
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from pathlib import Path
-from .config import settings
-from .database import get_db, init_db, init_engine
-from .routes import admin, media, tags, search, sharing, albums, ai_tagger, danbooru, system, booru_import, booru_config
-from .auth_middleware import AuthMiddleware
-from .translations import translation_helper, language_registry
-from datetime import datetime
 import subprocess
 import uuid
+from datetime import datetime
+from pathlib import Path
+
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+
+from .auth_middleware import AuthMiddleware
+from .config import settings
+from .database import get_db, init_db, init_engine
+from .models import Media
+from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
+                     danbooru, media, search, sharing, system, tags)
+from .translations import language_registry, translation_helper
 
 APP_VERSION = "1.36.0"
 

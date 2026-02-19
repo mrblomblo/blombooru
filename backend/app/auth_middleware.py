@@ -1,9 +1,11 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+import base64
+from urllib.parse import quote
+
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-from urllib.parse import quote
-import base64
+
 from .config import settings
 from .database import get_db
 
@@ -96,7 +98,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return None, None
     
     def verify_auth(self, request: Request, db) -> bool:
-        from .auth import verify_api_key, get_current_user
+        from .auth import get_current_user, verify_api_key
         
         auth_header = request.headers.get("Authorization", "")
         path = request.url.path

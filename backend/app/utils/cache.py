@@ -1,10 +1,12 @@
-from functools import wraps
-from typing import Optional, Callable
-from fastapi import Request
-from fastapi.encoders import jsonable_encoder
-from ..redis_client import redis_cache
 import hashlib
 import json
+from functools import wraps
+from typing import Callable, Optional
+
+from fastapi import Request
+from fastapi.encoders import jsonable_encoder
+
+from ..redis_client import redis_cache
 
 def cache_response(expire: int = 3600, key_prefix: str = "cache"):
     """

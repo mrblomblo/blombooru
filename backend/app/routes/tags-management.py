@@ -1,15 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from typing import List, Dict
 import csv
 import io
-from ..database import get_db
+from typing import Dict, List
+
+from fastapi import (APIRouter, Depends, File, HTTPException, Request,
+                     UploadFile)
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from ..auth import require_admin_mode
-from ..models import User, Tag, TagAlias, TagCategoryEnum
+from ..database import get_db
+from ..models import Tag, TagAlias, TagCategoryEnum, User
 from ..schemas import TagResponse
 from ..utils.cache import cache_response, invalidate_tag_cache
-from fastapi import Request
 
 router = APIRouter(prefix="/api/tags-management", tags=["tag-management"])
 
@@ -167,7 +169,7 @@ async def clear_all_tags(
         # Also clear shared database if enabled
         from ..config import settings
         if settings.SHARED_TAGS_ENABLED:
-            from ..database import is_shared_db_available, get_shared_db
+            from ..database import get_shared_db, is_shared_db_available
             if is_shared_db_available():
                 shared_db_gen = get_shared_db()
                 shared_db = next(shared_db_gen, None)
@@ -244,7 +246,7 @@ async def delete_tag(
         # Also delete from shared database if enabled
         from ..config import settings
         if settings.SHARED_TAGS_ENABLED:
-            from ..database import is_shared_db_available, get_shared_db
+            from ..database import get_shared_db, is_shared_db_available
             if is_shared_db_available():
                 shared_db_gen = get_shared_db()
                 shared_db = next(shared_db_gen, None)

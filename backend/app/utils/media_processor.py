@@ -1,9 +1,11 @@
 import hashlib
 from pathlib import Path
-from PIL import Image
+from typing import Optional, Tuple
+
 import cv2
 import magic
-from typing import Tuple, Optional
+from PIL import Image
+
 from ..schemas import FileTypeEnum
 
 def calculate_file_hash(file_path: Path) -> str:

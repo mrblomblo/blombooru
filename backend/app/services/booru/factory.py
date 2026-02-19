@@ -1,5 +1,6 @@
 from typing import List, Optional
 from urllib.parse import urlparse
+
 from sqlalchemy.orm import Session
 
 from ...models import BooruConfig

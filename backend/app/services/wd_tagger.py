@@ -1,13 +1,14 @@
 import os
-import numpy as np
-import pandas as pd
-import onnxruntime as rt
-from PIL import Image
-from pathlib import Path
-from typing import Optional, List, Dict, Any, Tuple, Generator
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 import queue
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Any, Dict, Generator, List, Optional, Tuple
+
+import numpy as np
+import onnxruntime as rt
+import pandas as pd
+from PIL import Image
 
 class WDTagger:
     """

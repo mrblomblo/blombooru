@@ -1,8 +1,9 @@
-from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
 @dataclass
 class SyncResult:
@@ -35,7 +36,7 @@ class SharedTagService:
         Local tag takes precedence for category if both exist.
         """
         from ..models import Tag
-        
+
         # Always check local first
         local_tag = self.local_db.query(Tag).filter(Tag.name == name.lower()).first()
         if local_tag:
@@ -66,7 +67,7 @@ class SharedTagService:
         Local tags take precedence.
         """
         from ..models import Tag
-        
+
         # Query local
         local_query = self.local_db.query(Tag)
         if search:
@@ -102,8 +103,9 @@ class SharedTagService:
     
     def autocomplete_merged(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Get autocomplete suggestions from both databases"""
-        from ..models import Tag, TagAlias
         from sqlalchemy import case
+
+        from ..models import Tag, TagAlias
         
         results = []
         seen_names = set()

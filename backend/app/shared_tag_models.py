@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
-import enum
 
 SharedBase = declarative_base()
 

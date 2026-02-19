@@ -1,6 +1,8 @@
 from pathlib import Path
-from PIL import Image
+
 import cv2
+from PIL import Image
+
 from ..schemas import FileTypeEnum
 
 THUMBNAIL_SIZE = (300, 300)

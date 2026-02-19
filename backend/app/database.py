@@ -168,7 +168,7 @@ def init_shared_db():
 
 def check_and_migrate_schema(engine):
     """Run schema migrations"""
-    from sqlalchemy import text, inspect
+    from sqlalchemy import inspect, text
     
     inspector = inspect(engine)
     tables = inspector.get_table_names()

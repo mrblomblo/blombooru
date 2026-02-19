@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Tuple
-from fastapi import Request, HTTPException
+
+from fastapi import HTTPException, Request
 
 class LoginRateLimiter:
     """

@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session, joinedload
-from PIL import Image
 import json
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
+from PIL import Image
+from sqlalchemy.orm import Session, joinedload
+
+from ..config import settings
 from ..database import get_db
 from ..models import Media
-from ..config import settings
 from ..schemas import SharedMediaResponse
-from ..utils.media_helpers import extract_media_metadata, serve_media_file, get_media_cache_status, create_stripped_media_cache
+from ..utils.media_helpers import (create_stripped_media_cache,
+                                   extract_media_metadata,
+                                   get_media_cache_status, serve_media_file)
 from ..utils.rate_limiter import shared_limiter
 
 router = APIRouter(prefix="/api/shared", tags=["sharing"])

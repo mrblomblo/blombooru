@@ -1,6 +1,7 @@
 import time
-from fastapi import Request, HTTPException
 from typing import Dict, Tuple
+
+from fastapi import HTTPException, Request
 
 class SimpleRateLimiter:
     def __init__(self, requests_per_minute: int = 60):

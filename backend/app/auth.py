@@ -1,14 +1,16 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 import hashlib
 import secrets
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status, Cookie
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+
+from .config import settings
 from .database import get_db
 from .models import User
-from .config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
@@ -120,8 +122,9 @@ def verify_api_key(db: Session, key: str) -> Optional[User]:
     Verify an API key and return the associated User if valid.
     Also updates the last_used_at timestamp.
     """
-    from .models import ApiKey
     from datetime import datetime
+
+    from .models import ApiKey
     
     key_hash = hash_api_key(key)
     

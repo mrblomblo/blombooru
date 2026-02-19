@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+
 from .types import BooruPost
 
 class BooruClient(ABC):

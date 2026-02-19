@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime, timezone
+from typing import List, Optional
 
-from ..database import get_db
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from ..auth import require_admin_mode
+from ..database import get_db
 from ..models import BooruConfig, User
 
 router = APIRouter(prefix="/api/booru-config", tags=["booru-config"])

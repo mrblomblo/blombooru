@@ -1,20 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from typing import Optional, List
-from pydantic import BaseModel
-from pathlib import Path
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import List, Optional
 
-from ..database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from ..auth import require_admin_mode
-from ..models import Media, User
-from ..services.wd_tagger import get_wd_tagger, WDTagger
 from ..config import settings
+from ..database import get_db
+from ..models import Media, User
+from ..services.wd_tagger import WDTagger, get_wd_tagger
 
 router = APIRouter(prefix="/api/ai-tagger", tags=["ai-tagger"])
 

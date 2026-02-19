@@ -1,8 +1,8 @@
-from .types import BooruPost, BooruTag
 from .base import BooruClient
 from .danbooru import DanbooruClient
-from .gelbooru import GelbooruClient
 from .factory import get_client_for_url
+from .gelbooru import GelbooruClient
+from .types import BooruPost, BooruTag
 
 __all__ = [
     "BooruPost",

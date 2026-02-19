@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 class RatingEnum(str, Enum):
     safe = "safe"

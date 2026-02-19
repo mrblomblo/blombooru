@@ -1,27 +1,36 @@
-import os
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, File, Request
-import json
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import OperationalError, IntegrityError
-from sqlalchemy import create_engine as sqlalchemy_create_engine, text
-from typing import Optional
-from datetime import timedelta
 import csv
 import io
-from ..database import get_db, init_db
-from ..auth import get_password_hash, create_access_token, get_current_admin_user, require_admin_mode, generate_api_key, hash_api_key
-from ..models import User, Tag, TagAlias, ApiKey
-from ..schemas import OnboardingData, SettingsUpdate, UserLogin, Token, ApiKeyCreate, ApiKeyResponse, ApiKeyListResponse
-from ..config import settings
-from ..utils.file_scanner import find_untracked_media
-from ..themes import theme_registry
-from ..utils.backup import generate_tags_dump, stream_zip_generator, get_media_files_generator, import_full_backup, generate_tags_csv_stream
-from ..utils.cache import invalidate_media_cache
-from fastapi.responses import StreamingResponse
-import tempfile
+import json
+import os
 import shutil
+import tempfile
 import zipfile
+from datetime import timedelta
 from pathlib import Path
+from typing import Optional
+
+from fastapi import (APIRouter, Depends, File, HTTPException, Request,
+                     Response, UploadFile)
+from fastapi.responses import StreamingResponse
+from sqlalchemy import create_engine as sqlalchemy_create_engine
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.orm import Session, joinedload
+
+from ..auth import (create_access_token, generate_api_key,
+                    get_current_admin_user, get_password_hash, hash_api_key,
+                    require_admin_mode)
+from ..config import settings
+from ..database import get_db, init_db
+from ..models import ApiKey, Tag, TagAlias, User
+from ..schemas import (ApiKeyCreate, ApiKeyListResponse, ApiKeyResponse,
+                       OnboardingData, SettingsUpdate, Token, UserLogin)
+from ..themes import theme_registry
+from ..utils.backup import (generate_tags_csv_stream, generate_tags_dump,
+                            get_media_files_generator, import_full_backup,
+                            stream_zip_generator)
+from ..utils.cache import invalidate_media_cache
+from ..utils.file_scanner import find_untracked_media
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -82,8 +91,9 @@ async def complete_onboarding(data: OnboardingData):
     temp_engine = None
     
     try:
-        from .. import database
         from sqlalchemy.orm import sessionmaker
+
+        from .. import database
         
         temp_db_url = f"postgresql://{data.database.user}:{data.database.password}@{data.database.host}:{data.database.port}/{data.database.name}"
         temp_engine = sqlalchemy_create_engine(temp_db_url, pool_pre_ping=True)
@@ -430,7 +440,7 @@ async def update_settings(
     
     # Reconnect shared tag database if settings changed
     if "shared_tags" in update_dict:
-        from ..database import reconnect_shared_db, init_shared_db
+        from ..database import init_shared_db, reconnect_shared_db
         reconnect_shared_db()
         if settings.SHARED_TAGS_ENABLED:
             init_shared_db()
@@ -458,8 +468,9 @@ async def get_untracked_file(
     current_user: User = Depends(require_admin_mode)
 ):
     """Serve an untracked file for importing"""
-    from pathlib import Path
     import mimetypes
+    from pathlib import Path
+
     from fastapi.responses import FileResponse
     
     file_path = Path(path)
@@ -495,8 +506,9 @@ async def get_media_stats(
     db: Session = Depends(get_db)
 ):
     """Get media statistics"""
-    from ..models import Media
     from sqlalchemy import func
+
+    from ..models import Media
     
     total_media = db.query(Media).count()
     total_images = db.query(Media).filter(Media.file_type == 'image').count()
@@ -516,10 +528,12 @@ async def get_comprehensive_stats(
     db: Session = Depends(get_db)
 ):
     """Get comprehensive statistics for admin dashboard"""
-    from ..models import Media, Tag, TagAlias, Album
-    from sqlalchemy import func
     from datetime import datetime, timedelta
-    
+
+    from sqlalchemy import func
+
+    from ..models import Album, Media, Tag, TagAlias
+
     # Media statistics
     total_media = db.query(Media).count()
     media_by_type = {
@@ -588,7 +602,8 @@ async def get_comprehensive_stats(
     # Album statistics
     total_albums = db.query(Album).count()
     
-    from sqlalchemy import select, func as sql_func
+    from sqlalchemy import func as sql_func
+    from sqlalchemy import select
     
     album_media_counts = db.query(
         Album.id,
@@ -675,6 +690,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
     """
     import csv
     import io
+
     from ..models import Tag, TagAlias
     
     category_map = {
@@ -978,7 +994,7 @@ async def delete_tag(
         
         # Also delete from shared database if enabled
         if settings.SHARED_TAGS_ENABLED:
-            from ..database import is_shared_db_available, get_shared_db
+            from ..database import get_shared_db, is_shared_db_available
             if is_shared_db_available():
                 shared_db_gen = get_shared_db()
                 shared_db = next(shared_db_gen, None)
@@ -1145,8 +1161,9 @@ async def backup_full_db(
     dump_data = generate_tags_dump(db)
     
     from sqlalchemy.orm import selectinload
-    from ..models import Media, Album
-    
+
+    from ..models import Album, Media
+
     # Export Albums
     album_list = []
     media_list = [] # Initialize media list
@@ -1387,7 +1404,8 @@ async def revoke_api_key(
 @router.post("/test-shared-tag-db")
 async def test_shared_tag_db(data: dict, current_user: User = Depends(require_admin_mode)):
     """Test shared tag database connection"""
-    from sqlalchemy import create_engine as sqlalchemy_create_engine, text
+    from sqlalchemy import create_engine as sqlalchemy_create_engine
+    from sqlalchemy import text
     
     try:
         host = data.get('host', 'shared-tag-db')
@@ -1420,7 +1438,8 @@ async def get_shared_tags_status(
     db: Session = Depends(get_db)
 ):
     """Get shared tag database status"""
-    from ..database import is_shared_db_available, get_shared_db_error, get_shared_db
+    from ..database import (get_shared_db, get_shared_db_error,
+                            is_shared_db_available)
     from ..models import Tag, TagAlias
     
     status = {
@@ -1463,10 +1482,12 @@ async def sync_shared_tags(
     db: Session = Depends(get_db)
 ):
     """Trigger manual sync with shared tag database"""
-    from ..database import is_shared_db_available, get_shared_db, reconnect_shared_db
+    import asyncio
+
+    from ..database import (get_shared_db, is_shared_db_available,
+                            reconnect_shared_db)
     from ..services.shared_tags import SharedTagService
     from ..utils.cache import invalidate_tag_cache
-    import asyncio
     
     if not settings.SHARED_TAGS_ENABLED:
         raise HTTPException(status_code=400, detail="Shared tags not enabled")
@@ -1510,7 +1531,8 @@ async def reconnect_shared_tags(
     current_user: User = Depends(require_admin_mode)
 ):
     """Attempt to reconnect to the shared tag database"""
-    from ..database import reconnect_shared_db, is_shared_db_available, get_shared_db_error, init_shared_db
+    from ..database import (get_shared_db_error, init_shared_db,
+                            is_shared_db_available, reconnect_shared_db)
     
     if not settings.SHARED_TAGS_ENABLED:
         raise HTTPException(status_code=400, detail="Shared tags not enabled")

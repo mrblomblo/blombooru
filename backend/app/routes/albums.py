@@ -1,36 +1,33 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import desc, asc, func, text, or_, and_
-from typing import List, Optional
-from datetime import datetime
 import random
-from ..database import get_db
-from ..models import Album, Media, RatingEnum, blombooru_album_media, blombooru_album_hierarchy
-from ..schemas import AlbumCreate, AlbumUpdate, AlbumResponse, AlbumListResponse, MediaIds
-from ..auth import get_current_admin_user, require_admin_mode, User
+from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import and_, asc, desc, func, or_, text
+from sqlalchemy.orm import Session, joinedload, selectinload
+
+from ..auth import User, get_current_admin_user, require_admin_mode
 from ..config import settings
+from ..database import get_db
+from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
+                      blombooru_album_media)
+from ..schemas import (AlbumCreate, AlbumListResponse, AlbumResponse,
+                       AlbumUpdate, MediaIds)
+from ..utils.album_utils import (get_album_popular_tags, get_album_rating,
+                                 get_album_tags, get_bulk_album_metrics,
+                                 get_media_count, get_parent_ids,
+                                 get_random_thumbnails,
+                                 update_album_last_modified)
 from ..utils.cache import cache_response, invalidate_album_cache
-from ..utils.search_parser import parse_search_query, apply_search_criteria
-from ..utils.album_utils import (
-    get_album_rating,
-    get_album_tags,
-    get_random_thumbnails,
-    update_album_last_modified,
-    get_parent_ids,
-    get_media_count,
-    get_album_popular_tags,
-    get_bulk_album_metrics
-)
+from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
-
 
 def get_effective_limit(limit: Optional[int]) -> int:
     """Get effective limit, falling back to settings if not provided or invalid."""
     if limit is None or limit <= 0:
         return settings.get_items_per_page()
     return limit
-
 
 @router.get("/", response_model=dict)
 @router.get("", response_model=dict)

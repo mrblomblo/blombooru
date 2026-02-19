@@ -1,10 +1,12 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, text
-from typing import List
 import random
 from datetime import datetime
+from typing import List
 
-from ..models import Album, Media, RatingEnum, blombooru_album_media, blombooru_album_hierarchy
+from sqlalchemy import func, text
+from sqlalchemy.orm import Session
+
+from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
+                      blombooru_album_media)
 
 def get_album_rating(album_id: int, db: Session, visited: set = None) -> RatingEnum:
     """Recursively compute the highest rating of all media in album and its children"""
@@ -211,7 +213,7 @@ def get_album_popular_tags(album_id: int, db: Session, limit: int = 20, visited:
     visited.add(album_id)
     
     from ..models import Tag, blombooru_media_tags
-    
+
     # Get all media IDs in this album and children
     def get_all_media_ids(aid: int, v: set) -> List[int]:
         if aid in v: return []

@@ -1,24 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import desc, text, or_, and_, func
-from typing import List, Optional
-import uuid
-import shutil
 import hashlib
-from pathlib import Path
-from PIL import Image
 import json
-from ..database import get_db
-from ..auth import require_admin_mode, get_current_user
-from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
-from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse, ShareSettingsUpdate
+import shutil
+import uuid
+from pathlib import Path
+from typing import List, Optional
+
+from fastapi import (APIRouter, BackgroundTasks, Depends, File, Form,
+                     HTTPException, Query, Request, UploadFile)
+from fastapi.responses import FileResponse
+from PIL import Image
+from sqlalchemy import and_, desc, func, or_, text
+from sqlalchemy.orm import Session, joinedload, selectinload
+
+from ..auth import get_current_user, require_admin_mode
 from ..config import settings
-from ..utils.media_processor import process_media_file, calculate_file_hash
+from ..database import get_db
+from ..models import (Album, Media, Tag, User, blombooru_album_media,
+                      blombooru_media_tags)
+from ..schemas import (AlbumListResponse, MediaCreate, MediaResponse,
+                       MediaUpdate, RatingEnum, ShareSettingsUpdate)
+from ..utils.album_utils import (get_album_rating, get_media_count,
+                                 get_random_thumbnails,
+                                 update_album_last_modified)
+from ..utils.cache import (cache_response, invalidate_album_cache,
+                           invalidate_media_cache, invalidate_media_item_cache,
+                           invalidate_tag_cache)
+from ..utils.media_helpers import (create_stripped_media_cache,
+                                   delete_media_cache, extract_image_metadata,
+                                   get_unique_filename, sanitize_filename,
+                                   serve_media_file)
+from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail
-from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename, delete_media_cache, create_stripped_media_cache
-from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count, update_album_last_modified
-from ..utils.cache import cache_response, invalidate_media_cache, invalidate_tag_cache, invalidate_album_cache, invalidate_media_item_cache
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -500,6 +512,7 @@ async def share_media(
 ):
     """Create or update share link for media"""
     from fastapi import Query
+
     from ..database import get_db
     
     media = db.query(Media).filter(Media.id == media_id).first()
@@ -621,12 +634,12 @@ async def extract_archive(
     current_user: User = Depends(require_admin_mode)
 ):
     """Extract files from zip or tar.gz archive"""
-    import zipfile
+    import base64
     import tarfile
     import tempfile
-    import base64
+    import zipfile
     from pathlib import Path
-    
+
     # Security: limit file size (100MB max for archives)
     MAX_ARCHIVE_SIZE = 100 * 1024 * 1024
     MAX_EXTRACTED_SIZE = 500 * 1024 * 1024

@@ -1,14 +1,16 @@
-import os
-import zipfile
-import json
 import io
+import json
+import os
 import shutil
-from typing import Generator, BinaryIO, List
+import zipfile
 from pathlib import Path
-from sqlalchemy.orm import Session, joinedload
-from ..models import Tag, TagAlias, Media, blombooru_media_tags
-from ..config import settings
+from typing import BinaryIO, Generator, List
+
 from fastapi import HTTPException
+from sqlalchemy.orm import Session, joinedload
+
+from ..config import settings
+from ..models import Media, Tag, TagAlias, blombooru_media_tags
 
 # Constants for batch processing
 DB_BATCH_SIZE = 10000
@@ -236,8 +238,8 @@ def import_tags_logical(db: Session, tags: List[dict], aliases: List[dict]):
             db.commit()
 
 def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict]):
-    from ..utils.thumbnail_generator import generate_thumbnail
     from ..schemas import FileTypeEnum
+    from ..utils.thumbnail_generator import generate_thumbnail
     
     print(f"Starting logical media import for {len(media_list)} items...")
     
@@ -363,8 +365,10 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
     print(f"Media import complete. Imported: {imported_count}, Skipped: {skipped_count}")
 
 def import_albums_logical(db: Session, albums_list: List[dict]):
-    from ..models import Album, blombooru_album_media, blombooru_album_hierarchy, Media
     from datetime import datetime
+
+    from ..models import (Album, Media, blombooru_album_hierarchy,
+                          blombooru_album_media)
     
     print(f"Starting album import for {len(albums_list)} albums...")
     

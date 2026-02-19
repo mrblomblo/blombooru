@@ -1,12 +1,13 @@
+import json
+import mimetypes
+import uuid
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import cv2
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from PIL import Image
-from pathlib import Path
-import json
-import mimetypes
-from typing import Dict, Any, Optional
-import cv2
-import uuid
 
 def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from media files (EXIF, PNG chunks, XMP, etc.)"""
@@ -196,8 +197,10 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
         return None
         
     import hashlib
-    from ..config import settings
+
     from fastapi.concurrency import run_in_threadpool
+
+    from ..config import settings
     
     stat = file_path.stat()
     cache_key = f"{str(file_path)}_{stat.st_mtime}"
@@ -364,6 +367,7 @@ def delete_media_cache(file_path: Path):
             return
             
         import hashlib
+
         from ..config import settings
         
         stat = file_path.stat()
@@ -424,6 +428,7 @@ def get_media_cache_status(file_path: Path, mime_type: str) -> str:
         return 'not_stripped'
         
     import hashlib
+
     from ..config import settings
     
     stat = file_path.stat()
