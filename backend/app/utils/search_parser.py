@@ -542,7 +542,7 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
                          id_list = [int(x) for x in item['value'].split(',')]
                          whens = {id_: i for i, id_ in enumerate(id_list)}
                          query = query.order_by(case(whens, value=Media.id))
-                     except: pass
+                     except (ValueError, TypeError): pass
     else:
         if not query._order_by_clauses:
              query = query.order_by(desc(Media.uploaded_at))
