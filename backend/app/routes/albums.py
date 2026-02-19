@@ -569,14 +569,16 @@ async def get_parent_albums(
         raise HTTPException(status_code=404, detail="Album not found")
     
     parent_ids = get_parent_ids(album_id, db)
-    parents = []
+    if not parent_ids:
+        return {"parents": []}
     
-    for parent_id in parent_ids:
-        parent = db.query(Album).filter(Album.id == parent_id).first()
-        if parent:
-            parents.append({
-                "id": parent.id,
-                "name": parent.name
-            })
+    # Fetch all parents
+    parent_map = {a.id: a for a in db.query(Album).filter(Album.id.in_(parent_ids)).all()}
+    
+    # Preserve breadcrumb order from parent_ids
+    parents = [
+        {"id": parent_map[pid].id, "name": parent_map[pid].name}
+        for pid in parent_ids if pid in parent_map
+    ]
     
     return {"parents": parents}
