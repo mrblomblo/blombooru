@@ -70,7 +70,7 @@ def get_or_create_tags(db: Session, tag_names: List[str], category_hints: Option
 
 @router.get("/")
 @router.get("")
-@cache_response(expire=300, key_prefix="media_list")
+@cache_response(expire=3600, key_prefix="media_list")
 async def get_media_list(
     request: Request,
     page: int = 1,
