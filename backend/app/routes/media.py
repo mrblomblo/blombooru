@@ -11,15 +11,13 @@ from PIL import Image
 import json
 from ..database import get_db
 from ..auth import require_admin_mode, get_current_user
-from ..models import Media, Tag, User, blombooru_media_tags
-from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum
+from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
+from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse, ShareSettingsUpdate
 from ..config import settings
 from ..utils.media_processor import process_media_file, calculate_file_hash
 from ..utils.thumbnail_generator import generate_thumbnail
 from ..utils.media_helpers import extract_image_metadata, serve_media_file, sanitize_filename, get_unique_filename, delete_media_cache, create_stripped_media_cache
 from ..utils.album_utils import get_random_thumbnails, get_album_rating, get_media_count, update_album_last_modified
-from ..models import Media, Tag, User, blombooru_media_tags, Album, blombooru_album_media
-from ..schemas import MediaResponse, MediaUpdate, MediaCreate, RatingEnum, AlbumListResponse, ShareSettingsUpdate
 from ..utils.cache import cache_response, invalidate_media_cache, invalidate_tag_cache, invalidate_album_cache, invalidate_media_item_cache
 
 router = APIRouter(prefix="/api/media", tags=["media"])
