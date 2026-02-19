@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import desc, text, or_, and_
+from sqlalchemy import desc, text, or_, and_, func
 from typing import List, Optional
 import uuid
 import shutil
@@ -24,13 +24,18 @@ router = APIRouter(prefix="/api/media", tags=["media"])
 
 def update_tag_counts(db: Session, tag_ids: List[int]):
     """Update post counts for given tags"""
+    if not tag_ids:
+        return
+    counts = db.query(
+        blombooru_media_tags.c.tag_id,
+        func.count(blombooru_media_tags.c.media_id)
+    ).filter(
+        blombooru_media_tags.c.tag_id.in_(tag_ids)
+    ).group_by(blombooru_media_tags.c.tag_id).all()
+    count_map = dict(counts)
     for tag_id in tag_ids:
-        count = db.query(blombooru_media_tags).filter(
-            blombooru_media_tags.c.tag_id == tag_id
-        ).count()
-        
         db.query(Tag).filter(Tag.id == tag_id).update(
-            {"post_count": count},
+            {"post_count": count_map.get(tag_id, 0)},
             synchronize_session=False
         )
         
