@@ -340,20 +340,22 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
         return None
 
 async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
-    """Serve a media file with error handling and optional metadata stripping."""
+    """Serve a media file with error handling, optional metadata stripping, and browser caching."""
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
     
+    cache_headers = {"Cache-Control": "public, max-age=86400, immutable"}
+    
     if not strip_metadata:
-        return FileResponse(file_path, media_type=mime_type)
+        return FileResponse(file_path, media_type=mime_type, headers=cache_headers)
     
     if mime_type and mime_type.startswith('image/'):
         cache_path = await create_stripped_media_cache(file_path, mime_type)
         if cache_path:
-            return FileResponse(cache_path, media_type=mime_type)
+            return FileResponse(cache_path, media_type=mime_type, headers=cache_headers)
     
     # Fallback to original file if stripping not supported or failed
-    return FileResponse(file_path, media_type=mime_type)
+    return FileResponse(file_path, media_type=mime_type, headers=cache_headers)
 
 def delete_media_cache(file_path: Path):
     """Delete the cached version of a media file if it exists."""
