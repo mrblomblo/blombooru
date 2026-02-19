@@ -56,9 +56,8 @@ def invalidate_cache(*prefixes: str):
     try:
         all_keys = []
         for prefix in prefixes:
-            keys = c.keys(f"{prefix}:*")
-            if keys:
-                all_keys.extend(keys)
+            for key in c.scan_iter(f"{prefix}:*", count=100):
+                all_keys.append(key)
         
         if all_keys:
             c.delete(*all_keys)
@@ -89,13 +88,11 @@ def invalidate_media_item_cache(media_id: int):
         return
     
     try:
-        media_keys = c.keys(f"media_detail:{media_id}:*")
-        all_keys = list(media_keys) if media_keys else []
+        all_keys = list(c.scan_iter(f"media_detail:{media_id}:*", count=100))
         
         for prefix in ["media_list", "search", "danbooru"]:
-            keys = c.keys(f"{prefix}:*")
-            if keys:
-                all_keys.extend(keys)
+            for key in c.scan_iter(f"{prefix}:*", count=100):
+                all_keys.append(key)
         
         if all_keys:
             c.delete(*all_keys)
