@@ -118,7 +118,7 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         update_available = current_hash != latest_dev_hash
         requirements_changed = False
         notices = []
-        
+        # TODO: Move translations to i18n system instead of being hardcoded
         if is_running_in_docker():
             if settings.CURRENT_LANGUAGE == "ru":
                 notices.append("Запуск в Docker: встроенный обновлятор не может быть использован внутри Docker-контейнера. Чтобы обновить, выполните 'git pull' на хост-машине, затем 'docker compose down && docker compose up --build -d' в корневой папке проекта.")
