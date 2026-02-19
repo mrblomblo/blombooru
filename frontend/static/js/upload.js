@@ -612,7 +612,9 @@ class Uploader {
                         rating: this.baseRating,
                         source: this.baseSource,
                         additionalTags: [],
-                        preview: null
+                        individualAlbumIds: new Set(),
+                        preview: null,
+                        scannedPath: null
                     };
 
                     this.uploadedFiles.push(fileData);
