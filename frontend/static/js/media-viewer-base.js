@@ -103,7 +103,7 @@ class MediaViewerBase {
             `;
         });
 
-        container.innerHTML = html || '<p class="text-xs text-secondary mb-3">No tags</p>';
+        container.innerHTML = html || '<p class="text-xs text-secondary mb-3">' + window.i18n.t('bulk_modal.messages.no_tags') + '</p>';
     }
 
     async renderAIMetadata(media, options = {}) {
