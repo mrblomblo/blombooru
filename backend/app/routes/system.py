@@ -75,11 +75,21 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         raise HTTPException(status_code=503, detail=error_msg)
     
     try:
-        subprocess.run(["git", "fetch"], check=True, capture_output=True)
+        # Prevent git from ever prompting for credentials interactively
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        
+        in_docker = is_running_in_docker()
+        build_env = os.environ.get("BUILD_ENV", "local")
+        
+        # Skip git fetch in GHCR Docker images as those use HTTPS remotes with no
+        # credentials configured, so fetch would fail with an auth prompt.
+        # Locally built images are allowed to fetch updates.
+        if not (in_docker and build_env == "ghcr"):
+            subprocess.run(["git", "fetch"], check=True, capture_output=True, env=env)
 
-        current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-        current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
-        latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"]).decode().strip()
+        current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], env=env).decode().strip()
+        current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], env=env).decode().strip()
+        latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], env=env).decode().strip()
         
         try:
             remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"]).decode().strip()
@@ -129,14 +139,14 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
             diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"]).decode()
             if "requirements.txt" in diff_output:
                 requirements_changed = True
-                if not is_running_in_docker():
+                if not in_docker:
                     if settings.CURRENT_LANGUAGE == "ru":
                         notices.append("Файл requirements.txt изменен. Обновлятор автоматически установит новые зависимости при обновлении.")
                     else:
                         notices.append("Python dependencies have changed. The updater will automatically install them when you update.")
             
             if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
-                if not is_running_in_docker():
+                if not in_docker:
                     if settings.CURRENT_LANGUAGE == "ru":
                         notices.append("Конфигурация Docker изменена. Если вы планируете использовать Docker, вам нужно будет пересобрать контейнеры с помощью 'docker compose up --build -d'.")
                     else:
