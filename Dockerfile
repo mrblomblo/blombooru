@@ -25,8 +25,10 @@ USER appuser
 
 EXPOSE ${UVICORN_PORT:-8000}
 
+ARG BUILD_ENV=local
 ENV APP_MODULE=backend.app.main:app \
     UVICORN_HOST=0.0.0.0 \
-    UVICORN_PORT=${UVICORN_PORT:-8000}
+    UVICORN_PORT=${UVICORN_PORT:-8000} \
+    BUILD_ENV=${BUILD_ENV}
 
 CMD ["sh", "-c", "uvicorn ${APP_MODULE} --host ${UVICORN_HOST} --port ${UVICORN_PORT} --workers ${UVICORN_WORKERS:-1}"]
