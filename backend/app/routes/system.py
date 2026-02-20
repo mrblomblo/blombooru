@@ -89,21 +89,29 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
 
         current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], env=env).decode().strip()
         current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], env=env).decode().strip()
-        latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], env=env).decode().strip()
         
         try:
-            remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"]).decode().strip()
+            if not (in_docker and build_env == "ghcr"):
+                latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], env=env).decode().strip()
+            else:
+                ls_remote = subprocess.check_output(["git", "ls-remote", "origin", "refs/heads/main"], env=env).decode().strip()
+                latest_dev_hash = ls_remote.split()[0] if ls_remote else current_hash
+        except subprocess.CalledProcessError:
+            latest_dev_hash = current_hash
+        
+        try:
+            remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"], env=env).decode().strip()
         except subprocess.CalledProcessError:
             remote_url = None
 
         try:
-            latest_stable_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", "origin/main"]).decode().strip()
+            latest_stable_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", latest_dev_hash], env=env).decode().strip()
         except subprocess.CalledProcessError:
             latest_stable_tag = None
 
         changelog = []
         try:
-            log_output = subprocess.check_output(["git", "log", "--pretty=format:%h|%B<END>", f"HEAD..origin/main"]).decode()
+            log_output = subprocess.check_output(["git", "log", "--pretty=format:%h|%B<END>", f"HEAD..{latest_dev_hash}"], env=env).decode()
             if log_output:
                 commits = log_output.split('<END>')
                 for commit_str in commits:
@@ -136,7 +144,7 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
                 notices.append("Running in Docker: The built-in updater cannot be used from within a Docker container. To update, run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder.")
         
         try:
-            diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"]).decode()
+            diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", latest_dev_hash], env=env).decode()
             if "requirements.txt" in diff_output:
                 requirements_changed = True
                 if not in_docker:
