@@ -12,7 +12,7 @@
   
 </div>
 
-<p align="center">Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb, 08, 2026)</p>
+<p align="center">Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb, 20, 2026)</p>
 
 <p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
 
