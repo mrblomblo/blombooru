@@ -180,7 +180,7 @@ class AdminPanel {
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'px-3 py-2 bg-danger tag-text text-xs hover:opacity-80 transition-colors h-[34px]';
+            removeBtn.className = 'px-3 py-2 bg-danger tag-text text-xs hover:bg-danger transition-colors h-[34px]';
             removeBtn.textContent = '×';
             removeBtn.onclick = () => this.removeCustomButton(index);
 
