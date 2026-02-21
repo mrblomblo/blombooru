@@ -586,10 +586,6 @@
                         {{ t('admin.update.title') }}
                     </h2>
                     <p class="text-xs text-secondary mb-3">
-                        <a href="https://github.com/mrblomblo/blombooru/releases/latest" target="_blank"
-                            class="text-primary transition-colors hover:text-primary">
-                            {{ t('admin.update.update_warning') }}
-                        </a><br>
                         <strong>{{ t('common.warning') }}:</strong> {{ t('admin.update.backup_warning') }}
                     </p>
 
@@ -598,12 +594,12 @@
                             {{ t('admin.update.contact_github') }}
                         </p>
                         <button id="btn-check-updates"
-                            class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors">
+                            class="px-4 py-2 bg-primary primary-text text-xs hover:bg-primary transition-colors">
                             {{ t('admin.update.check_updates') }}
                         </button>
                     </div>
 
-                    <div id="update-loading" class="text-xs text-secondary mb-4 hidden">
+                    <div id="update-loading" class="bg p-2 border text-xs text-secondary hidden">
                         {{ t('admin.update.checking') }}
                     </div>
 
@@ -611,29 +607,39 @@
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <div class="text-xs text-secondary mb-1">{{ t('admin.update.current_version') }}</div>
-                                <div class="text-sm font-bold font-mono" id="current-version-hash">...</div>
-                                <div class="text-[10px] text-secondary" id="current-branch">...</div>
+                                <div class="text-sm font-bold font-mono" id="current-version-display">...</div>
                             </div>
                             <div>
                                 <div class="text-xs text-secondary mb-1">{{ t('admin.update.latest_version') }}</div>
-                                <div class="text-sm font-bold font-mono" id="latest-version-hash">...</div>
-                                <div class="text-[10px] text-secondary" id="latest-version-tag">...</div>
+                                <div class="text-sm font-bold font-mono" id="latest-version-display">...</div>
                             </div>
                         </div>
 
                         <div id="update-notices" class="mb-4 hidden"></div>
 
+                        <div id="update-instructions" class="mb-4 hidden">
+                            <div class="text-xs text-secondary mb-1">{{ t('admin.update.update_instructions') }}</div>
+                            <pre class="bg bg-opacity-20 p-2 border font-mono text-[10px] whitespace-pre-wrap select-all"
+                                id="update-command-text"></pre>
+                        </div>
+
+                        <div id="config-files-notice" class="mb-4 hidden">
+                            <div class="text-xs tag-text p-2 border border-warning bg-warning bg-opacity-10"
+                                id="config-files-message"></div>
+                            <div id="config-files-links" class="mt-2 flex flex-wrap gap-2"></div>
+                        </div>
+
                         <div class="flex gap-3 mb-4">
-                            <button id="btn-update-dev"
+                            <button id="btn-update-now" style="display: none;"
                                 class="px-4 py-2 bg-primary primary-text text-xs hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ t('admin.update.update_dev') }}
+                                {{ t('admin.update.update_now') }}
                             </button>
-                            <button id="btn-update-stable"
-                                class="px-4 py-2 surface border text-xs hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ t('admin.update.update_stable') }}
-                            </button>
+                            <a id="btn-view-release" href="#" target="_blank" style="display: none;"
+                                class="px-4 py-2 bg border text-xs hover:border-primary transition-colors inline-block">
+                                {{ t('admin.update.view_release') }}
+                            </a>
                             <button id="btn-view-changelog" style="display: none;"
-                                class="px-4 py-2 surface border text-xs hover:border-primary transition-colors">
+                                class="px-4 py-2 bg border text-xs hover:border-primary transition-colors">
                                 {{ t('admin.update.view_changelog') }}
                             </button>
                         </div>
