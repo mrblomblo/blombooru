@@ -89,6 +89,14 @@
         color: var(--primary-text);
     }
 
+    .text-primary {
+        color: var(--primary-color);
+    }
+
+    .hover\:text-primary:hover {
+        color: var(--primary-hover);
+    }
+
     .text-success {
         color: var(--success);
     }
