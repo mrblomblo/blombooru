@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from typing import List, Optional
 
 import requests
@@ -294,12 +295,12 @@ async def perform_update(
 
                         if os.path.exists(requirements_path):
                             install = subprocess.run(
-                                ["pip", "install", "-r", requirements_path],
+                                [sys.executable, "-m", "pip", "install", "-r", requirements_path],
                                 capture_output=True,
                                 text=True,
                                 timeout=300,
                             )
-                            output_log.append(f"$ pip install -r {requirements_path}")
+                            output_log.append(f"$ {sys.executable} -m pip install -r {requirements_path}")
                             output_log.append(install.stdout)
                             if install.stderr:
                                 output_log.append(install.stderr)
@@ -308,13 +309,13 @@ async def perform_update(
                                 output_log.append("Dependencies installed successfully!")
                                 post_update_actions.append(
                                     "Dependencies were automatically installed. "
-                                    "Please restart Blombooru to apply the changes."
+                                    "Please restart Blombooru to fully apply the changes."
                                 )
                             else:
                                 output_log.append("Failed to install dependencies automatically.")
                                 post_update_actions.append(
                                     f"WARNING: Automatic dependency installation failed. "
-                                    f"Please manually run 'pip install -r {requirements_path}' "
+                                    f"Please manually run '{sys.executable} -m pip install -r {requirements_path}' "
                                     "and restart Blombooru."
                                 )
                         else:
@@ -326,14 +327,14 @@ async def perform_update(
                         output_log.append("Dependency installation timed out.")
                         post_update_actions.append(
                             "WARNING: Automatic dependency installation timed out. "
-                            "Please manually run 'pip install -r requirements.txt' "
+                            f"Please manually run '{sys.executable} -m pip install -r {requirements_path}' "
                             "and restart Blombooru."
                         )
                     except Exception as e:
                         output_log.append(f"Error installing dependencies: {e}")
                         post_update_actions.append(
                             "WARNING: Could not automatically install dependencies. "
-                            "Please manually run 'pip install -r requirements.txt' "
+                            f"Please manually run '{sys.executable} -m pip install -r {requirements_path}' "
                             "and restart Blombooru."
                         )
 
