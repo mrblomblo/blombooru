@@ -10,14 +10,12 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .auth_middleware import AuthMiddleware
-from .config import settings
+from .config import APP_VERSION, settings
 from .database import get_db, init_db, init_engine
 from .models import Media
 from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
                      danbooru, media, search, sharing, system, tags)
 from .translations import language_registry, translation_helper
-
-APP_VERSION = "1.36.2"
 
 def get_cache_buster():
     """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""

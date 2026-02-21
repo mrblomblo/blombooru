@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+APP_VERSION = "1.36.2"
+
 class Settings:
     def __init__(self):
         self.BASE_DIR = Path(__file__).resolve().parent.parent.parent
