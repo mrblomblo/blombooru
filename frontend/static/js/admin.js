@@ -2181,12 +2181,10 @@ class AdminPanel {
         if (document.getElementById('btn-check-updates')) {
             document.getElementById('btn-check-updates').addEventListener('click', () => this.checkUpdateStatus());
         }
-        document.getElementById('btn-update-dev')?.addEventListener('click', () => this.performUpdate('dev'));
-        document.getElementById('btn-update-stable')?.addEventListener('click', () => this.performUpdate('stable'));
+        document.getElementById('btn-update-now')?.addEventListener('click', () => this.performUpdate());
         document.getElementById('btn-view-changelog')?.addEventListener('click', () => this.showChangelog());
 
-        this.currentChangelog = [];
-        this.remoteUrl = null;
+        this.updateData = null;
     }
 
     async checkUpdateStatus() {
@@ -2206,49 +2204,106 @@ class AdminPanel {
             if (!response.ok) throw new Error('Failed to check for updates');
 
             const status = await response.json();
+            this.updateData = status;
 
             loading.style.display = 'none';
             loading.classList.add('hidden');
             statusDiv.style.display = 'block';
 
-            const currentHashEl = document.getElementById('current-version-hash');
-            if (currentHashEl) currentHashEl.textContent = status.current_hash.substring(0, 8);
+            const currentEl = document.getElementById('current-version-display');
+            if (currentEl) currentEl.textContent = status.current_version;
 
-            const currentBranchEl = document.getElementById('current-branch');
-            if (currentBranchEl) currentBranchEl.textContent = status.current_branch;
-
-            const latestHashEl = document.getElementById('latest-version-hash');
-            if (latestHashEl) latestHashEl.textContent = status.latest_dev_hash.substring(0, 8);
-
-            const latestTagEl = document.getElementById('latest-version-tag');
-            if (latestTagEl) latestTagEl.textContent = status.latest_stable_tag || 'main';
-
-            const devBtn = document.getElementById('btn-update-dev');
-            if (devBtn) {
-                if (status.current_hash === status.latest_dev_hash) {
-                    devBtn.disabled = true;
-                    devBtn.textContent = window.i18n.t('admin.messages.already_latest');
-                }
-            }
+            const latestEl = document.getElementById('latest-version-display');
+            if (latestEl) latestEl.textContent = status.latest_version;
 
             const noticesDiv = document.getElementById('update-notices');
             if (noticesDiv) {
                 if (status.notices && status.notices.length > 0) {
                     noticesDiv.classList.remove('hidden');
-                    noticesDiv.innerHTML = status.notices.map(n => `<div class="bg text-xs p-2 mb-1 border-l-4 border-warning text-warning font-bold">${this.escapeHtml(n)}</div>`).join('');
+                    noticesDiv.innerHTML = status.notices.map(n => {
+                        const translated = window.i18n ? window.i18n.t(n) : n;
+                        return `<div class="bg text-xs p-2 mb-1 border-l-4 border-warning text-warning font-bold">${this.escapeHtml(translated)}</div>`;
+                    }).join('');
                 } else {
                     noticesDiv.classList.add('hidden');
                 }
             }
 
-            // Changelog
-            this.currentChangelog = status.changelog || [];
-            this.remoteUrl = status.remote_url || null;
+            // Update instructions for Docker users
+            const instructionsDiv = document.getElementById('update-instructions');
+            const commandText = document.getElementById('update-command-text');
+            if (instructionsDiv && commandText && status.update_available) {
+                if (status.deployment_type === 'ghcr') {
+                    instructionsDiv.classList.remove('hidden');
+                    commandText.textContent = 'docker compose up -d --pull always';
+                } else if (status.deployment_type === 'docker_local') {
+                    instructionsDiv.classList.remove('hidden');
+                    commandText.textContent = 'docker compose down && docker compose -f docker-compose.dev.yml up --build';
+                } else {
+                    instructionsDiv.classList.add('hidden');
+                }
+            } else if (instructionsDiv) {
+                instructionsDiv.classList.add('hidden');
+            }
+
+            // Config files notice
+            const configNotice = document.getElementById('config-files-notice');
+            const configMessage = document.getElementById('config-files-message');
+            const configLinks = document.getElementById('config-files-links');
+            if (configNotice && status.config_files_changed && status.update_available) {
+                configNotice.classList.remove('hidden');
+                const fileNames = (status.changed_config_files || []).join(', ');
+                const msg = window.i18n ? window.i18n.t('admin.update.config_files_changed', { files: fileNames }) : `Configuration files changed: ${fileNames}`;
+                if (configMessage) configMessage.textContent = msg;
+                if (configLinks) {
+                    configLinks.innerHTML = Object.entries(status.asset_urls || {}).map(([name, url]) =>
+                        `<a href="${this.escapeHtml(url)}" target="_blank" class="px-3 py-1 surface border text-[10px] hover:border-primary transition-colors">${this.escapeHtml(name)}</a>`
+                    ).join('');
+                }
+            } else if (configNotice) {
+                configNotice.classList.add('hidden');
+            }
+
+            // Update Now button (only for local/non-Docker)
+            const updateBtn = document.getElementById('btn-update-now');
+            if (updateBtn) {
+                if (status.update_available && status.deployment_type === 'local') {
+                    updateBtn.style.display = 'block';
+                    updateBtn.disabled = false;
+                } else if (!status.update_available && status.deployment_type === 'local') {
+                    updateBtn.style.display = 'block';
+                    updateBtn.disabled = true;
+                    updateBtn.textContent = window.i18n ? window.i18n.t('admin.messages.already_latest') : 'Already up to date';
+                } else {
+                    updateBtn.style.display = 'none';
+                }
+            }
+
+            // View Release button
+            const releaseBtn = document.getElementById('btn-view-release');
+            if (releaseBtn && status.release_url) {
+                releaseBtn.style.display = 'inline-block';
+                releaseBtn.href = status.release_url;
+            }
+
+            // Up to date message
+            if (!status.update_available) {
+                const noticesDiv2 = document.getElementById('update-notices');
+                if (noticesDiv2) {
+                    noticesDiv2.classList.remove('hidden');
+                    const msg = window.i18n ? window.i18n.t('admin.update.up_to_date') : 'You are running the latest version.';
+                    noticesDiv2.innerHTML = `<div class="text-xs tag-text p-2 border border-success bg-success bg-opacity-10">${this.escapeHtml(msg)}</div>`;
+                }
+            }
+
+            // Changelog button
             const changelogBtn = document.getElementById('btn-view-changelog');
             if (changelogBtn) {
-                if (this.currentChangelog.length > 0) {
+                const hasContent = (status.releases && status.releases.length > 0) || (status.commits && status.commits.length > 0);
+                if (hasContent && status.update_available) {
                     changelogBtn.style.display = 'block';
-                    changelogBtn.textContent = window.i18n.t('admin.messages.view_changelog', { count: this.currentChangelog.length });
+                    const count = (status.commits || []).length;
+                    changelogBtn.textContent = window.i18n ? window.i18n.t('admin.messages.view_changelog', { count }) : `View Changelog (${count})`;
                 } else {
                     changelogBtn.style.display = 'none';
                 }
@@ -2257,7 +2312,7 @@ class AdminPanel {
         } catch (e) {
             console.error(e);
             if (loading) {
-                loading.textContent = window.i18n.t('admin.messages.update_error', { error: e.message });
+                loading.textContent = window.i18n ? window.i18n.t('admin.messages.update_error', { error: e.message }) : `Error: ${e.message}`;
                 loading.classList.remove('hidden');
                 loading.classList.add('text-danger');
             }
@@ -2265,40 +2320,101 @@ class AdminPanel {
     }
 
     showChangelog() {
-        if (!this.currentChangelog || this.currentChangelog.length === 0) return;
+        if (!this.updateData) return;
+        const { releases, commits, compare_url, current_version, latest_version } = this.updateData;
+        if ((!releases || releases.length === 0) && (!commits || commits.length === 0)) return;
 
         if (typeof ModalHelper === 'undefined') {
             console.error('ModalHelper not available');
             return;
         }
 
-        const changelogHtml = this.currentChangelog.map(commit => {
-            let hashHtml = `<span class="font-mono text-xs bg-primary primary-text px-1">${commit.hash}</span>`;
+        const t = (key, params) => window.i18n ? window.i18n.t(key, params) : key;
 
-            if (this.remoteUrl) {
-                const baseUrl = this.remoteUrl.endsWith('.git') ? this.remoteUrl.slice(0, -4) : this.remoteUrl;
-                const commitUrl = `${baseUrl}/commit/${commit.hash}`;
-                hashHtml = `<a href="${commitUrl}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 cursor-pointer" title="View on Remote">${commit.hash}</a>`;
-            }
+        const extractWhatsChanged = (body) => {
+            if (!body) return '';
+            const marker = "## What's Changed";
+            const idx = body.indexOf(marker);
+            if (idx === -1) return '';
+            const afterMarker = body.substring(idx + marker.length);
+            const nextHeading = afterMarker.indexOf('\n## ');
+            let section = nextHeading !== -1 ? afterMarker.substring(0, nextHeading) : afterMarker;
+            // Strip the "**Full Changelog**: ..." line
+            section = section.replace(/\*\*Full Changelog\*\*:.*$/gm, '').trim();
+            return section;
+        };
 
-            return `
-            <div class="border-b last:border-0 text-left">
-                <div class="flex items-center bg p-2 gap-2">
-                    ${hashHtml}
-                    <div class="flex flex-col">
-                        <span class="font-bold text-sm">${this.escapeHtml(commit.subject)}</span>
-                        ${commit.body ? `<div class="text-xs text-secondary whitespace-pre-wrap">${this.escapeHtml(commit.body)}</div>` : ''}
+        const parseMarkdownList = (text) => {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const listItems = lines.map(line => {
+                // Strip leading "* " or "- "
+                const cleaned = line.replace(/^[\*\-]\s+/, '');
+                return `<li class="mb-1 last:mb-0">${this.escapeHtml(cleaned)}</li>`;
+            });
+            return `<ul class="list-disc list-inside text-xs">${listItems.join('')}</ul>`;
+        };
+
+        // What's Changed Tab
+        let changesHtml = '';
+        if (releases && releases.length > 0) {
+            for (const rel of releases) {
+                const changes = extractWhatsChanged(rel.body);
+                if (!changes) continue;
+                changesHtml += `
+                <div class="bg p-2 border-b last:border-0 text-left">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="${this.escapeHtml(rel.url)}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 hover:bg-primary transition-colors">${this.escapeHtml(rel.tag)}</a>
+                        <a href="${this.escapeHtml(rel.url)}" target="_blank" class="text-xs text-primary hover:text-primary ml-auto">GitHub</a>
                     </div>
-                </div>
+                    ${parseMarkdownList(changes)}
+                </div>`;
+            }
+        }
+
+        // Commits Tab
+        let commitsHtml = '';
+        if (commits && commits.length > 0) {
+            for (const c of commits) {
+                commitsHtml += `
+                <div class="border-b last:border-0 text-left">
+                    <div class="flex items-center bg p-2 gap-2">
+                        <a href="https://github.com/mrblomblo/blombooru/commit/${this.escapeHtml(c.hash)}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 hover:bg-primary transition-colors">${this.escapeHtml(c.hash)}</a>
+                        <span class="text-xs">${this.escapeHtml(c.message)}</span>
+                    </div>
+                </div>`;
+            }
+        }
+
+        const hasChanges = changesHtml.length > 0;
+        const hasCommits = commitsHtml.length > 0;
+
+        const tabLabelChanges = t('admin.update.tab_whats_changed');
+        const tabLabelCommits = t('admin.update.tab_commits', { count: (commits || []).length });
+        const noReleasesMsg = t('admin.update.no_release_notes');
+        const noCommitsMsg = t('admin.update.no_commits');
+        const fullChangelogMsg = t('admin.update.view_full_changelog', { current: current_version, latest: latest_version });
+
+        // Build tabbed UI
+        const tabsHtml = `
+        <div>
+            ${(hasChanges && hasCommits) ? `
+            <div class="flex border-b mb-3" id="changelog-tabs">
+                <button class="px-3 py-1 text-xs font-bold border-b-2 border-primary text-primary" data-tab="changes">${this.escapeHtml(tabLabelChanges)}</button>
+                <button class="px-3 py-1 text-xs text-secondary hover:text-primary" data-tab="commits">${this.escapeHtml(tabLabelCommits)}</button>
+            </div>` : ''}
+            <div class="max-h-80 overflow-y-auto custom-scrollbar">
+                <div id="tab-changes" ${!hasChanges ? 'style="display:none"' : ''}>${changesHtml || `<div class="text-xs text-secondary">${this.escapeHtml(noReleasesMsg)}</div>`}</div>
+                <div id="tab-commits" style="display:${hasChanges ? 'none' : 'block'}">${commitsHtml || `<div class="text-xs text-secondary">${this.escapeHtml(noCommitsMsg)}</div>`}</div>
             </div>
-        `}).join('');
+            ${compare_url ? `<div class="mt-3 pt-2 border-t text-center"><a href="${this.escapeHtml(compare_url)}" target="_blank" class="text-xs text-primary hover:text-primary transition-colors">${this.escapeHtml(fullChangelogMsg)}</a></div>` : ''}
+        </div>`;
 
         const modal = new ModalHelper({
             id: 'changelog-modal',
             type: 'info',
-            title: window.i18n.t('modal.changelog.title'),
-            message: `<div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">${changelogHtml}</div>`,
-            confirmText: window.i18n.t('modal.changelog.confirm'),
+            title: window.i18n ? window.i18n.t('modal.changelog.title') : 'Changelog',
+            message: tabsHtml,
+            confirmText: window.i18n ? window.i18n.t('modal.changelog.confirm') : 'Got it',
             cancelText: '',
             onConfirm: () => {
                 modal.destroy();
@@ -2306,25 +2422,45 @@ class AdminPanel {
         });
 
         modal.show();
+
+        // Wire up tab switching
+        const tabContainer = document.getElementById('changelog-tabs');
+        if (tabContainer) {
+            tabContainer.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.dataset.tab;
+                    // Update active tab styles
+                    tabContainer.querySelectorAll('button').forEach(b => {
+                        b.classList.remove('border-b-2', 'border-primary', 'text-primary');
+                        b.classList.add('text-secondary');
+                    });
+                    btn.classList.add('border-b-2', 'border-primary', 'text-primary');
+                    btn.classList.remove('text-secondary');
+                    // Show/hide tab content
+                    document.getElementById('tab-changes').style.display = tabName === 'changes' ? 'block' : 'none';
+                    document.getElementById('tab-commits').style.display = tabName === 'commits' ? 'block' : 'none';
+                });
+            });
+        }
     }
 
-    async performUpdate(target) {
+    async performUpdate() {
         if (typeof ModalHelper === 'undefined') {
             console.error('ModalHelper not available');
-            if (!confirm(window.i18n.t('notifications.admin.update_confirm', { target }))) return;
-            this._execute_update(target);
+            if (!confirm(window.i18n ? window.i18n.t('notifications.admin.update_confirm', { target: 'latest' }) : 'Update now?')) return;
+            this._execute_update();
             return;
         }
 
         const modal = new ModalHelper({
             id: 'update-confirm-modal',
             type: 'warning',
-            title: window.i18n.t('modal.system_update.title'),
-            message: window.i18n.t('modal.system_update.message', { target: target }),
-            confirmText: window.i18n.t('modal.system_update.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            title: window.i18n ? window.i18n.t('modal.system_update.title') : 'System Update',
+            message: window.i18n ? window.i18n.t('modal.system_update.message', { target: 'latest' }) : 'Are you sure you want to update?',
+            confirmText: window.i18n ? window.i18n.t('modal.system_update.confirm') : 'Update Now',
+            cancelText: window.i18n ? window.i18n.t('modal.buttons.cancel') : 'Cancel',
             onConfirm: () => {
-                this._execute_update(target);
+                this._execute_update();
                 modal.destroy();
             },
             onCancel: () => {
@@ -2335,16 +2471,16 @@ class AdminPanel {
         modal.show();
     }
 
-    async _execute_update(target) {
+    async _execute_update() {
         const resultDiv = document.getElementById('update-result');
         const resultLog = document.getElementById('update-result-log');
         if (resultDiv) resultDiv.classList.remove('hidden');
-        if (resultLog) resultLog.textContent = window.i18n.t('admin.messages.update_started');
+        if (resultLog) resultLog.textContent = window.i18n ? window.i18n.t('admin.messages.update_started') : 'Starting update...';
 
         try {
             const response = await app.apiCall('/api/system/update/perform', {
                 method: 'POST',
-                body: JSON.stringify({ target })
+                body: JSON.stringify({ target: 'latest' })
             });
 
             if (resultLog) {
@@ -2352,11 +2488,17 @@ class AdminPanel {
             }
 
             if (response.success) {
-                app.showNotification(window.i18n.t('notifications.admin.update_initiated'), 'success');
+                app.showNotification(
+                    window.i18n ? window.i18n.t('notifications.admin.update_initiated') : 'Update initiated',
+                    'success'
+                );
             }
         } catch (e) {
             if (resultLog) resultLog.textContent += `\nError: ${e.message}`;
-            app.showNotification(window.i18n.t('notifications.admin.update_failed', { error: e.message }), 'error');
+            app.showNotification(
+                window.i18n ? window.i18n.t('notifications.admin.update_failed', { error: e.message }) : `Update failed: ${e.message}`,
+                'error'
+            );
         }
     }
 }
