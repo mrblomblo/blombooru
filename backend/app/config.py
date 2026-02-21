@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-APP_VERSION = "1.36.2"
+APP_VERSION = "1.37.0"
 
 class Settings:
     def __init__(self):
