@@ -1,9 +1,22 @@
 // Login page functionality
-(function () {
+(async function () {
     const loginForm = document.getElementById('login-form');
     const errorDiv = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
     const returnUrlInput = document.getElementById('return-url');
+
+    // Check if user is already logged in
+    try {
+        const authResponse = await fetch('/api/admin/settings');
+        if (authResponse.ok) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('return') || (returnUrlInput ? returnUrlInput.value : '/');
+            window.location.href = returnUrl;
+            return;
+        }
+    } catch (e) {
+        // Not logged in or error, continue normally
+    }
 
     if (!loginForm) return;
 
