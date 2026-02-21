@@ -2,14 +2,19 @@ import os
 import subprocess
 from typing import List, Optional
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
-from ..config import settings
+from ..config import APP_VERSION, settings
 
 router = APIRouter(prefix="/api/system", tags=["system"])
+
+GITHUB_REPO = "mrblomblo/blombooru"
+GITHUB_API_BASE = f"https://api.github.com/repos/{GITHUB_REPO}"
+CONFIG_ASSET_NAMES = {"docker-compose.yml", "example.env", "docker-compose.shared-tags.yml"}
+GITHUB_TIMEOUT = 10
 
 def is_running_in_docker() -> bool:
     """Check if the application is running in a Docker container"""
@@ -25,300 +30,335 @@ def is_running_in_docker() -> bool:
     
     return False
 
-def is_git_available() -> tuple[bool, str]:
-    """Check if git repo is available and properly configured"""
+def detect_deployment_type() -> str:
+    """Detect how the application is deployed.
+
+    Returns one of:
+        - "ghcr": running in a pre-built GHCR Docker image
+        - "docker_local": running in a locally-built Docker container
+        - "local": running directly via Python (no Docker)
+    """
+    if is_running_in_docker():
+        return "ghcr" if os.environ.get("BUILD_ENV", "local") == "ghcr" else "docker_local"
+    return "local"
+
+def parse_version(version_str: str) -> tuple:
+    """Parse a version string like 'v1.36.2' or '1.36.2' into a tuple of ints."""
+    cleaned = version_str.lstrip("v").strip()
     try:
-        # Check if git is installed
-        subprocess.run(["git", "--version"], check=True, capture_output=True)
+        return tuple(int(p) for p in cleaned.split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+def github_get(path: str, params: dict = None) -> requests.Response:
+    """Make a GET request to the GitHub API with standard headers and timeout."""
+    url = f"{GITHUB_API_BASE}{path}" if path.startswith("/") else path
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
         
-        # Check if in a git repo
-        subprocess.run(
-            ["git", "rev-parse", "--git-dir"], 
-            check=True, 
-            capture_output=True,
-            text=True
-        )
-        
-        # Check if a remote is configured
-        subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            check=True,
-            capture_output=True
-        )
-        
-        return True, ""
-    except subprocess.CalledProcessError as e:
-        if "not a git repository" in e.stderr.decode() if e.stderr else "":
-            return False, "Not running in a git repository. If you're using Docker, rebuild the image with: docker compose up --build"
-        return False, f"Git is not properly configured: {e.stderr.decode() if e.stderr else str(e)}"
-    except FileNotFoundError:
-        return False, "Git is not installed"
-    except Exception as e:
-        return False, f"Unable to access git: {str(e)}"
+    return requests.get(url, headers=headers, params=params, timeout=GITHUB_TIMEOUT)
+
+class ReleaseInfo(BaseModel):
+    tag: str
+    name: str
+    body: str
+    url: str
+
+class CommitInfo(BaseModel):
+    hash: str
+    message: str
 
 class UpdateStatus(BaseModel):
-    current_hash: str
-    latest_dev_hash: str
-    latest_stable_tag: Optional[str] = None
+    current_version: str
+    latest_version: str
     update_available: bool
-    current_branch: str
-    requirements_changed: bool
-    notices: List[str]
-    changelog: List[dict]
-    remote_url: Optional[str] = None
+    release_url: Optional[str] = None
+    compare_url: Optional[str] = None
+    releases: List[ReleaseInfo] = []
+    commits: List[CommitInfo] = []
+    notices: List[str] = []
+    config_files_changed: bool = False
+    changed_config_files: List[str] = []
+    asset_urls: dict = {}
+    deployment_type: str = "local"
 
 @router.get("/update/check", response_model=UpdateStatus)
 async def check_update_status(current_user: dict = Depends(require_admin_mode)):
-    """Check for available updates"""
-    git_available, error_msg = is_git_available()
-    if not git_available:
-        raise HTTPException(status_code=503, detail=error_msg)
-    
+    """Check for available updates via the GitHub Releases API."""
+    deployment = detect_deployment_type()
+
     try:
-        # Prevent git from ever prompting for credentials interactively
-        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
-        
-        in_docker = is_running_in_docker()
-        build_env = os.environ.get("BUILD_ENV", "local")
-        
-        # Skip git fetch in GHCR Docker images as those use HTTPS remotes with no
-        # credentials configured, so fetch would fail with an auth prompt.
-        # Locally built images are allowed to fetch updates.
-        if not (in_docker and build_env == "ghcr"):
-            subprocess.run(["git", "fetch"], check=True, capture_output=True, env=env)
+        resp = github_get("/releases/latest")
+        if resp.status_code == 403 and "rate limit" in resp.text.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="GitHub API rate limit exceeded (60 requests/hr for unauthenticated users). Please try again later or add a GITHUB_TOKEN to your .env file.",
+            )
+        elif resp.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=f"GitHub API returned {resp.status_code}: {resp.text[:200]}",
+            )
 
-        current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], env=env).decode().strip()
-        current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], env=env).decode().strip()
-        
-        try:
-            if not (in_docker and build_env == "ghcr"):
-                latest_dev_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], env=env).decode().strip()
-            else:
-                ls_remote = subprocess.check_output(["git", "ls-remote", "origin", "refs/heads/main"], env=env).decode().strip()
-                latest_dev_hash = ls_remote.split()[0] if ls_remote else current_hash
-        except subprocess.CalledProcessError:
-            latest_dev_hash = current_hash
-        
-        try:
-            remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"], env=env).decode().strip()
-        except subprocess.CalledProcessError:
-            remote_url = None
+        latest_release = resp.json()
+        latest_tag = latest_release.get("tag_name", "")
+        latest_version = latest_tag.lstrip("v")
 
-        try:
-            latest_stable_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", latest_dev_hash], env=env).decode().strip()
-        except subprocess.CalledProcessError:
-            latest_stable_tag = None
+        current_version = APP_VERSION.lstrip("v")
+        update_available = parse_version(latest_version) > parse_version(current_version)
 
-        changelog = []
-        try:
-            log_output = subprocess.check_output(["git", "log", "--pretty=format:%h|%B<END>", f"HEAD..{latest_dev_hash}"], env=env).decode()
-            if log_output:
-                commits = log_output.split('<END>')
-                for commit_str in commits:
-                    if not commit_str.strip():
-                        continue
-                    parts = commit_str.split('|', 1)
-                    if len(parts) >= 2:
-                        commit_hash = parts[0].strip()
-                        full_msg = parts[1].strip()
-                        msg_lines = full_msg.split('\n', 1)
-                        subject = msg_lines[0].strip()
-                        body = msg_lines[1].strip() if len(msg_lines) > 1 else ""
-                        
-                        changelog.append({
-                            "hash": commit_hash,
-                            "subject": subject,
-                            "body": body
-                        })
-        except subprocess.CalledProcessError:
-            pass
+        asset_urls = {}
+        for asset in latest_release.get("assets", []):
+            name = asset.get("name", "")
+            if name in CONFIG_ASSET_NAMES:
+                asset_urls[name] = asset.get("browser_download_url", "")
 
-        update_available = current_hash != latest_dev_hash
-        requirements_changed = False
-        notices = []
-        # TODO: Move translations to i18n system instead of being hardcoded
-        if is_running_in_docker():
-            if settings.CURRENT_LANGUAGE == "ru":
-                notices.append("Запуск в Docker: встроенный обновлятор не может быть использован внутри Docker-контейнера. Чтобы обновить, выполните 'git pull' на хост-машине, затем 'docker compose down && docker compose up --build -d' в корневой папке проекта.")
-            else:
-                notices.append("Running in Docker: The built-in updater cannot be used from within a Docker container. To update, run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder.")
-        
-        try:
-            diff_output = subprocess.check_output(["git", "diff", "--name-only", "HEAD", latest_dev_hash], env=env).decode()
-            if "requirements.txt" in diff_output:
-                requirements_changed = True
-                if not in_docker:
-                    if settings.CURRENT_LANGUAGE == "ru":
-                        notices.append("Файл requirements.txt изменен. Обновлятор автоматически установит новые зависимости при обновлении.")
-                    else:
-                        notices.append("Python dependencies have changed. The updater will automatically install them when you update.")
-            
-            if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
-                if not in_docker:
-                    if settings.CURRENT_LANGUAGE == "ru":
-                        notices.append("Конфигурация Docker изменена. Если вы планируете использовать Docker, вам нужно будет пересобрать контейнеры с помощью 'docker compose up --build -d'.")
-                    else:
-                        notices.append("Docker configuration has changed. If you plan to use Docker, you will need to rebuild with 'docker compose up --build -d'.")
+        notices: List[str] = []
+        if update_available and deployment == "ghcr":
+            notices.append("admin.update.ghcr_notice")
+        elif update_available and deployment == "docker_local":
+            notices.append("admin.update.docker_local_notice")
 
-        except subprocess.CalledProcessError:
-            pass
+        releases: List[ReleaseInfo] = []
+        if update_available:
+            try:
+                all_resp = github_get("/releases", params={"per_page": 100})
+                if all_resp.status_code == 200:
+                    for rel in all_resp.json():
+                        rel_tag = rel.get("tag_name", "")
+                        rel_ver = parse_version(rel_tag)
+                        cur_ver = parse_version(current_version)
+                        if rel_ver > cur_ver:
+                            releases.append(
+                                ReleaseInfo(
+                                    tag=rel_tag,
+                                    name=rel.get("name", rel_tag),
+                                    body=rel.get("body", ""),
+                                    url=rel.get("html_url", ""),
+                                )
+                            )
+                    # Sort newest first
+                    releases.sort(key=lambda r: parse_version(r.tag), reverse=True)
+            except Exception as e:
+                pass
+
+        commits: List[CommitInfo] = []
+        changed_config_files: List[str] = []
+        compare_url = None
+        if update_available:
+            try:
+                compare_resp = github_get(
+                    f"/compare/v{current_version}...{latest_tag}"
+                )
+                if compare_resp.status_code == 200:
+                    compare_data = compare_resp.json()
+                    compare_url = compare_data.get("html_url")
+                    for c in compare_data.get("commits", []):
+                        commits.append(
+                            CommitInfo(
+                                hash=c.get("sha", "")[:7],
+                                message=c.get("commit", {})
+                                .get("message", "")
+                                .split("\n")[0],
+                            )
+                        )
+                    # Detect config file changes from actually modified files
+                    for f in compare_data.get("files", []):
+                        fname = f.get("filename", "")
+                        if fname in CONFIG_ASSET_NAMES:
+                            changed_config_files.append(fname)
+            except Exception as e:
+                pass
+
+        config_files_changed = bool(changed_config_files)
+
+        if update_available and config_files_changed:
+            notices.append("admin.update.config_files_changed")
+
+        # Filter asset_urls to only include actually changed config files
+        if config_files_changed:
+            asset_urls = {k: v for k, v in asset_urls.items() if k in changed_config_files}
+        else:
+            asset_urls = {}
 
         return UpdateStatus(
-            current_hash=current_hash,
-            latest_dev_hash=latest_dev_hash,
-            latest_stable_tag=latest_stable_tag,
+            current_version=f"v{current_version}",
+            latest_version=f"v{latest_version}",
             update_available=update_available,
-            current_branch=current_branch,
-            requirements_changed=requirements_changed,
+            release_url=latest_release.get("html_url"),
+            compare_url=compare_url,
+            releases=releases,
+            commits=commits[:100],
             notices=notices,
-            changelog=changelog[:50],
-            remote_url=remote_url
+            config_files_changed=config_files_changed,
+            changed_config_files=changed_config_files,
+            asset_urls=asset_urls,
+            deployment_type=deployment,
         )
 
+    except HTTPException:
+        raise
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=502, detail=f"Failed to reach GitHub API: {str(e)}"
+        )
     except Exception as e:
-        print(f"Error checking for updates: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to check for updates: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to check for updates: {str(e)}"
+        )
 
 @router.post("/update/perform")
 async def perform_update(
-    target: dict, 
-    current_user: dict = Depends(require_admin_mode)
+    target: dict,
+    current_user: dict = Depends(require_admin_mode),
 ):
-    """Perform update and automatically handle dependencies"""
-    git_available, error_msg = is_git_available()
-    if not git_available:
-        raise HTTPException(status_code=503, detail=error_msg)
-    
-    in_docker = is_running_in_docker()
-    if in_docker:
+    """Perform an update.
+
+    Only supported for 'local' (direct Python) deployments. Docker users
+    are directed to use docker compose commands on the host machine.
+    """
+    deployment = detect_deployment_type()
+
+    if deployment == "ghcr":
         raise HTTPException(
-            status_code=400, 
-            detail="Cannot update from within Docker container. Please run 'git pull' on the host machine, then 'docker compose down && docker compose up --build -d' in the project root folder."
+            status_code=400,
+            detail="Cannot update from within a pre-built Docker container. "
+            "Run 'docker compose up -d --pull always' on the host machine to update.",
         )
-    
-    target_type = target.get("target", "dev") # "dev" or "stable"
-    
+
+    if deployment == "docker_local":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot update from within a locally-built Docker container. "
+            "Run 'docker compose down && docker compose -f docker-compose.dev.yml up --build' on the host machine to update.",
+        )
+
+    # Direct Python (local) deployment
     try:
-        current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-        commands = []
-        if target_type == "stable":
-            latest_tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0", "origin/main"]).decode().strip()
-            commands = [
-                ["git", "fetch"],   
-                ["git", "checkout", latest_tag]
-            ]
-        else:
-            commands = [
-                ["git", "checkout", "main"],
-                ["git", "pull"]
-            ]
-             
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+
+        current_hash = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], env=env
+        ).decode().strip()
+
+        try:
+            resp = github_get("/releases/latest")
+            if resp.status_code == 200:
+                latest_tag = resp.json().get("tag_name", "")
+            else:
+                raise HTTPException(status_code=502, detail="Failed to fetch latest release from GitHub")
+        except requests.RequestException as e:
+            raise HTTPException(status_code=502, detail=f"Failed to reach GitHub API: {e}")
+
+        commands = [
+            ["git", "fetch", "--tags"],
+            ["git", "checkout", latest_tag],
+        ]
+
         output_log = []
         for cmd in commands:
-            process = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            process = subprocess.run(cmd, check=True, capture_output=True, text=True, env=env)
             output_log.append(f"$ {' '.join(cmd)}")
             output_log.append(process.stdout)
             if process.stderr:
-                 output_log.append(process.stderr)
-        
-        new_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()        
-        requirements_changed = False
-        docker_files_changed = False
+                output_log.append(process.stderr)
+
+        new_hash = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], env=env
+        ).decode().strip()
+
         post_update_actions = []
-        
+
+        # Handle changed dependencies
         if current_hash != new_hash:
             try:
                 diff_output = subprocess.check_output(
-                    ["git", "diff", "--name-only", current_hash, new_hash]
+                    ["git", "diff", "--name-only", current_hash, new_hash], env=env
                 ).decode()
-                
+
                 if "requirements.txt" in diff_output:
-                    requirements_changed = True
-                
-                if "docker-compose.yml" in diff_output or "Dockerfile" in diff_output:
-                    docker_files_changed = True
-                    
+                    output_log.append("\n=== Python Dependencies Changed ===")
+                    output_log.append("Installing updated dependencies...")
+
+                    try:
+                        base_dir = subprocess.check_output(
+                            ["git", "rev-parse", "--show-toplevel"], env=env
+                        ).decode().strip()
+                        requirements_path = os.path.join(base_dir, "requirements.txt")
+
+                        if os.path.exists(requirements_path):
+                            install = subprocess.run(
+                                ["pip", "install", "-r", requirements_path],
+                                capture_output=True,
+                                text=True,
+                                timeout=300,
+                            )
+                            output_log.append(f"$ pip install -r {requirements_path}")
+                            output_log.append(install.stdout)
+                            if install.stderr:
+                                output_log.append(install.stderr)
+
+                            if install.returncode == 0:
+                                output_log.append("Dependencies installed successfully!")
+                                post_update_actions.append(
+                                    "Dependencies were automatically installed. "
+                                    "Please restart Blombooru to apply the changes."
+                                )
+                            else:
+                                output_log.append("Failed to install dependencies automatically.")
+                                post_update_actions.append(
+                                    f"WARNING: Automatic dependency installation failed. "
+                                    f"Please manually run 'pip install -r {requirements_path}' "
+                                    "and restart Blombooru."
+                                )
+                        else:
+                            post_update_actions.append(
+                                "WARNING: requirements.txt not found. "
+                                "Please manually install dependencies."
+                            )
+                    except subprocess.TimeoutExpired:
+                        output_log.append("Dependency installation timed out.")
+                        post_update_actions.append(
+                            "WARNING: Automatic dependency installation timed out. "
+                            "Please manually run 'pip install -r requirements.txt' "
+                            "and restart Blombooru."
+                        )
+                    except Exception as e:
+                        output_log.append(f"Error installing dependencies: {e}")
+                        post_update_actions.append(
+                            "WARNING: Could not automatically install dependencies. "
+                            "Please manually run 'pip install -r requirements.txt' "
+                            "and restart Blombooru."
+                        )
+
             except subprocess.CalledProcessError:
                 pass
-        
-        # Handle dependencies automatically when running locally, not in Docker
-        if requirements_changed:
-            output_log.append("\n=== Python Dependencies Changed ===")
-            output_log.append("Installing updated dependencies...")
-            
-            # Try to install dependencies
-            try:
-                base_dir = subprocess.check_output(
-                    ["git", "rev-parse", "--show-toplevel"]
-                ).decode().strip()
-                requirements_path = os.path.join(base_dir, "requirements.txt")
-                
-                if os.path.exists(requirements_path):
-                    install_process = subprocess.run(
-                        ["pip", "install", "-r", requirements_path],
-                        capture_output=True,
-                        text=True,
-                        timeout=300  # 5 minute timeout
-                    )
-                    
-                    output_log.append(f"$ pip install -r {requirements_path}")
-                    output_log.append(install_process.stdout)
-                    if install_process.stderr:
-                        output_log.append(install_process.stderr)
-                    
-                    if install_process.returncode == 0:
-                        output_log.append("Dependencies installed successfully!")
-                        post_update_actions.append(
-                            "Dependencies were automatically installed. Please restart Blombooru to apply the changes."
-                        )
-                    else:
-                        output_log.append("Failed to install dependencies automatically.")
-                        post_update_actions.append(
-                            f"WARNING: Automatic dependency installation failed. Please manually run 'pip install -r {requirements_path}' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
-                        )
-                else:
-                    post_update_actions.append(
-                        "WARNING: requirements.txt not found. Please manually install dependencies."
-                    )
-                    
-            except subprocess.TimeoutExpired:
-                output_log.append("Dependency installation timed out.")
-                post_update_actions.append(
-                    "WARNING: Automatic dependency installation timed out. Please manually run 'pip install -r requirements.txt' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
-                )
-            except Exception as e:
-                output_log.append(f"Error installing dependencies: {str(e)}")
-                post_update_actions.append(
-                    f"WARNING: Could not automatically install dependencies. Please manually run 'pip install -r requirements.txt' and restart Blombooru. You will need to run said command in the venv you created for Blombooru."
-                )
-        
-        if docker_files_changed:
-            output_log.append("\n=== Docker Configuration Changed ===")
-            output_log.append("Note: Docker configuration files have changed.")
-            post_update_actions.append(
-                "INFO: Docker configuration has changed. If you plan to run in Docker, rebuild with 'docker compose up --build -d'."
-            )
-        
-        if post_update_actions:
-            message = "\n\n".join(post_update_actions)
-        else:
-            message = "Update successful. Please restart Blombooru to apply the changes!"
-                 
+
+        message = (
+            "\n\n".join(post_update_actions)
+            if post_update_actions
+            else "Update successful. Please restart Blombooru to apply the changes!"
+        )
+
         return {
-            "success": True, 
-            "log": "\n".join(output_log), 
+            "success": True,
+            "log": "\n".join(output_log),
             "message": message,
             "actions_taken": {
                 "git_updated": True,
-                "dependencies_installed": requirements_changed,
-                "needs_restart": True
-            }
+                "dependencies_installed": "requirements.txt" in "\n".join(output_log),
+                "needs_restart": True,
+            },
         }
 
     except subprocess.CalledProcessError as e:
         error_msg = f"Command failed: {e.cmd}\nStdout: {e.stdout}\nStderr: {e.stderr}"
-        print(error_msg)
         raise HTTPException(status_code=500, detail=f"Update failed: {e.stderr}")
     except Exception as e:
-        print(f"Update error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
