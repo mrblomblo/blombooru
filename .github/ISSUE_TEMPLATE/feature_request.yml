@@ -1,0 +1,40 @@
+name: Feature Request
+description: You have a suggestion for how Blombooru can be improved.
+title: '[FEATURE REQ] '
+labels:
+  - enhancement
+assignees:
+  - mrblomblo
+body:
+  - type: checkboxes
+    id: '1'
+    attributes:
+      label: Preflight checklist
+      description: Make sure you completed this before creating an issue.
+      options:
+        - label: I have searched the [issue tracker](https://github.com/mrblomblo/blombooru/issues) for a feature request that matches the one I want to file without success.
+          required: true
+        - label: I have checked that I'm using the latest [stable version](https://github.com/mrblomblo/blombooru/releases/latest) of the app.
+          required: true
+  - type: textarea
+    id: '2'
+    attributes:
+      label: Problem Description
+      description: Is your feature request related to a problem? If so, please describe. If not, you can skip this part.
+  - type: textarea
+    id: '3'
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution to the problem, or the feature you'd like, in a clear and concise manner.
+    validations:
+      required: true
+  - type: textarea
+    id: '4'
+    attributes:
+      label: Alternatives Considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+  - type: textarea
+    id: '5'
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.

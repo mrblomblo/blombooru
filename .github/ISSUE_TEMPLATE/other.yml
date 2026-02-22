@@ -1,0 +1,13 @@
+name: Other
+description: You have something to say, but it isn't about a bug or feature request.
+title: ''
+labels: []
+assignees:
+  - mrblomblo
+body:
+  - type: textarea
+    id: '1'
+    attributes:
+      label: What's on your mind?
+    validations:
+      required: true
