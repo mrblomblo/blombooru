@@ -12,8 +12,7 @@
   
 </div>
 
-<p align="center">Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb, 20, 2026)</p>
-
+<p align="center">Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb, 20, 2026) and <a href="https://github.com/mrblomblo/blombooru/blob/main/README_ZH_CN.md">Chinese(Simplified)</a> (last updated Feb, 23, 2026)</p>
 <p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
 
 Blombooru is a private, single-user alternative to image boorus like Danbooru and Gelbooru. It is designed for individuals who want a powerful, easy-to-use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
@@ -37,20 +36,46 @@ Blombooru is a private, single-user alternative to image boorus like Danbooru an
 
 ## Table of Contents
 
+- [Table of Contents](#table-of-contents)
 - [Key Features](#key-features)
-- [Installation & Setup](#installation--setup)
-  - [Docker](#docker-recommended)
-    - [Multi-Instance Setup](#running-multiple-instances)
+  - [Core Functionality](#core-functionality)
+  - [AI \& Automation](#ai--automation)
+  - [Security \& Sharing](#security--sharing)
+  - [Customization \& Theming](#customization--theming)
+  - [Flexibility \& Integration](#flexibility--integration)
+- [Installation \& Setup](#installation--setup)
+  - [Docker *(Recommended)*](#docker-recommended)
+    - [Deployment Options](#deployment-options)
+    - [Quick Start (Pre-built Image)](#quick-start-pre-built-image)
+    - [Using Pre-release Builds](#using-pre-release-builds)
+    - [Development Builds (Local)](#development-builds-local)
+    - [Running Multiple Instances](#running-multiple-instances)
+    - [Sharing Tags Between Instances](#sharing-tags-between-instances)
   - [Python](#python)
 - [Usage Guide](#usage-guide)
   - [Logging In](#logging-in)
   - [Admin Mode](#admin-mode)
   - [Adding Tags](#adding-tags)
+    - [1. CSV Import](#1-csv-import)
+    - [2. Manual Tag Creation](#2-manual-tag-creation)
   - [Uploading Media](#uploading-media)
-  - [Tagging & Searching](#tagging--searching)
+    - [1. Media Files](#1-media-files)
+    - [2. Compressed Archives](#2-compressed-archives)
+    - [3. Filesystem Scan](#3-filesystem-scan)
+    - [4. External URL Import](#4-external-url-import)
+  - [Tagging \& Searching](#tagging--searching)
+    - [Basic Tags](#basic-tags)
+    - [Ranges](#ranges)
+    - [Meta Qualifiers](#meta-qualifiers)
+    - [Tag Counts](#tag-counts)
+    - [Sorting](#sorting)
   - [Sharing Media](#sharing-media)
   - [System Updater](#system-updater)
-  - [API & Third-Party Apps](#api--third-party-apps)
+    - [How to Update](#how-to-update)
+    - [Dependency Changes](#dependency-changes)
+  - [API \& Third-Party Apps](#api--third-party-apps)
+    - [Connection Details](#connection-details)
+    - [Supported Features](#supported-features)
 - [Theming](#theming)
 - [Technical Details](#technical-details)
 - [Disclaimer](#disclaimer)
