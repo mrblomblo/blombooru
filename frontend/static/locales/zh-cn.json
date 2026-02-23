@@ -380,22 +380,22 @@
             "downloading_model": "正在下载 AI 模型...",
             "fetching_media": "正在获取媒体信息...",
             "fetching_metadata": "正在获取元数据...",
-            "initializing_tagger": "正在初始化 AI 打标器...",
-            "items_fetched": "个项目已获取",
-            "items_processed": "个项目已处理",
+            "initializing_tagger": "正在初始化 AI 标注器...",
+            "items_fetched": "项目已获取",
+            "items_processed": "项目已处理",
             "predicting_tags": "正在使用 AI 预测标签...",
             "processing": "正在处理...",
-            "tags_checked": "个标签已检查",
+            "tags_checked": "标签已检查",
             "validating_tags": "正在验证标签..."
         },
         "wd_tagger": {
-            "character_threshold": "角色置信度阈值",
+            "character_threshold": "角色标签置信度阈值",
             "download_needed": "需要先下载 AI 模型。",
             "empty_message": "未为选定项目预测出标签。",
-            "general_threshold": "常规置信度阈值",
+            "general_threshold": "常规标签置信度阈值",
             "model": "模型",
             "size": "大小",
-            "title": "批量预测标签 (WD 打标器)"
+            "title": "批量预测标签 (WD 标注器)"
         }
     },
     "common": {
@@ -672,7 +672,7 @@
         },
         "download_model": {
             "confirm": "下载并预测",
-            "message": "需要先下载 AI 打标模型。<br><br><strong>模型:</strong> {modelName}<br><strong>大小:</strong> 约 {size} MB<br><br>此操作仅需执行一次。",
+            "message": "需要先下载 AI 标注模型。<br><br><strong>模型:</strong> {modelName}<br><strong>大小:</strong> 约 {size} MB<br><br>此操作仅需执行一次。",
             "title": "下载 AI 模型"
         },
         "remove_children": {
@@ -863,7 +863,7 @@
         "guide_title": "搜索语法指南",
         "meta_date": "上传日期或相对时长",
         "meta_dimensions": "图片尺寸 (像素)",
-        "meta_filesize": "文件大小 (kb, mb, gb)",
+        "meta_filesize": "文件大小 (KB, MB, GB)",
         "meta_filetype": "扩展名 (png, gif 等)",
         "meta_qualifiers": "元限定符",
         "meta_rating": "safe (全年龄), questionable (限制级), explicit (成人级)",
