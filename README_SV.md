@@ -16,6 +16,10 @@
 
 Blombooru är ett privat enanvändaralternativ till bild-boorus som Danbooru och Gelbooru. Det är utformat för individer som vill ha en kraftfull, lättanvänd och modern lösning för att organisera och tagga sina personliga mediasamlingar. Med fokus på en stilren användarupplevelse, robust administration och enkel anpassning ger Blombooru dig full kontroll över ditt bibliotek.
 
+> [!NOTE]
+> Lokalisering till svenska: @mrblomblo  
+> Senast uppdaterad 25 februari 2026
+
 <details>
 <summary>Visa skärmdumpar</summary>
 
