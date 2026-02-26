@@ -710,7 +710,8 @@
         "albums": "Album",
         "logout": "Logga ut",
         "search_placeholder": "Sök taggar... (t.ex. ?girl? *_background cat_ears -dog)",
-        "search_syntax_guide": "Söksyntaxguide"
+        "search_syntax_guide": "Söksyntaxguide",
+        "upload": "Ladda upp"
     },
     "notifications": {
         "admin": {

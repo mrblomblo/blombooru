@@ -117,10 +117,18 @@
                                 {{ t('nav.albums') }}
                             </a>
                         </li>
+                        {% if is_admin(request) %}
+                        <li>
+                            <a href="/admin?tab=content#media-management"
+                                class="bg border px-3 py-1.5 hover:border-primary transition-colors text">
+                                {{ t('nav.upload') }}
+                            </a>
+                        </li>
+                        {% endif %}
                         <li>
                             <a href="#" id="admin-mode-toggle"
                                 class="bg border px-3 py-1.5 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                                <span id="admin-mode-text">{{ t('nav.admin_panel') }}</span>
+                                {{ t('nav.admin_panel') }}
                             </a>
                         </li>
                         <li>
@@ -176,10 +184,18 @@
                             {{ t('nav.albums') }}
                         </a>
                     </li>
+                    {% if is_admin(request) %}
+                    <li>
+                        <a href="/admin?tab=content#media-management"
+                            class="block px-4 py-2 border bg hover:border-primary transition-colors text">
+                            {{ t('nav.upload') }}
+                        </a>
+                    </li>
+                    {% endif %}
                     <li>
                         <a href="#" id="admin-mode-toggle-mobile"
                             class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                            <span id="admin-mode-text-mobile">{{ t('nav.admin_panel') }}</span>
+                            {{ t('nav.admin_panel') }}
                         </a>
                     </li>
                     <li>

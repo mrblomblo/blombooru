@@ -710,7 +710,8 @@
         "albums": "Альбомы",
         "logout": "Выйти",
         "search_placeholder": "Поиск тегов... (например, ?girl? *_background cat_ears -dog)",
-        "search_syntax_guide": "Руководство по синтаксису поиска"
+        "search_syntax_guide": "Руководство по синтаксису поиска",
+        "upload": ""
     },
     "notifications": {
         "admin": {
