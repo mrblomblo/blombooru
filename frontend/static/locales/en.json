@@ -501,6 +501,8 @@
             "unshare": "Unshare"
         },
         "ai_metadata": {
+            "show_less": "Show Less",
+            "show_more": "Show More",
             "title": "AI Generation Data"
         },
         "fullscreen_close_hint": "Press ESC or click outside the media to close",

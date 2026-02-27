@@ -501,6 +501,8 @@
             "unshare": "Sluta dela"
         },
         "ai_metadata": {
+            "show_less": "Visa Mindre",
+            "show_more": "Visa Mer",
             "title": "AI-genereringsdata"
         },
         "fullscreen_close_hint": "Tryck ESC eller klicka utanför media för att stänga",

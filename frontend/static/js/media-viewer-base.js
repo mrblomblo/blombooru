@@ -211,11 +211,11 @@ class MediaViewerBase {
                 if (isCollapsed) {
                     textDiv.classList.remove('is-collapsed');
                     btn.classList.add('is-expanded');
-                    btn.textContent = 'Show less';
+                    btn.textContent = window.i18n.t('media.ai_metadata.show_less');
                 } else {
                     textDiv.classList.add('is-collapsed');
                     btn.classList.remove('is-expanded');
-                    btn.textContent = 'Show more';
+                    btn.textContent = window.i18n.t('media.ai_metadata.show_more');
                 }
             }
         };
@@ -273,18 +273,18 @@ class MediaViewerBase {
 
     formatValue(value, isExpandable = true) {
         if (value === null || value === undefined) {
-            return '<span class="text-secondary text-xs italic">Empty</span>';
+            return '<span class="text-secondary text-xs italic">' + window.i18n.t('admin.stats.empty_albums') + '</span>';
         }
 
         if (typeof value === 'boolean') {
             return value
-                ? '<span class="text text-xs">Yes</span>'
-                : '<span class="text text-xs">No</span>';
+                ? '<span class="text text-xs">' + window.i18n.t('common.yes') + '</span>'
+                : '<span class="text text-xs">' + window.i18n.t('common.no') + '</span>';
         }
 
         if (Array.isArray(value)) {
             if (value.length === 0) {
-                return '<span class="text-secondary text-xs italic">None</span>';
+                return '<span class="text-secondary text-xs italic">' + window.i18n.t('common.none') + '</span>';
             }
 
             // Handle arrays of objects (like LoRAs)
@@ -324,7 +324,7 @@ class MediaViewerBase {
             return `
             <div class="ai-expandable-wrapper">
                 <div class="ai-text-content is-collapsed">${escaped}</div>
-                <button type="button" class="ai-toggle-btn">Show more</button>
+                <button type="button" class="ai-toggle-btn">${window.i18n.t('media.ai_metadata.show_more')}</button>
             </div>
         `;
         }

@@ -501,6 +501,8 @@
             "unshare": "Убрать общий доступ"
         },
         "ai_metadata": {
+            "show_less": "",
+            "show_more": "",
             "title": "Дата AI генерации"
         },
         "fullscreen_close_hint": "Нажмите ESC или кликните вне медиафайла для закрытия",
