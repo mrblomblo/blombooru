@@ -62,12 +62,17 @@ def get_or_create_tags(db: Session, tag_names: List[str], category_hints: Option
                        When a tag doesn't exist and a hint is provided, the tag
                        is created with that category instead of the default "general".
     """
-    tags = []
+    seen = set()
+    unique_names = []
     for name in tag_names:
         name = name.strip().lower()
-        if not name:
+        if not name or name in seen:
             continue
-        
+        seen.add(name)
+        unique_names.append(name)
+
+    tags = []
+    for name in unique_names:
         tag = db.query(Tag).filter(Tag.name == name).first()
         if not tag:
             category = "general"
