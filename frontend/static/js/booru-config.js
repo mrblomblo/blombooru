@@ -47,7 +47,7 @@ class BooruConfigManager {
         }
 
         this.tableBody.innerHTML = configs.map(config => `
-            <tr class="border-b border-surface hover:bg-surface transition-colors">
+            <tr class="border-b last:border-b-0 hover:surface transition-colors">
                 <td class="py-2 px-3 text-xs font-mono">${this.escapeHtml(config.domain)}</td>
                 <td class="py-2 px-3 text-xs">${this.escapeHtml(config.username || '-')}</td>
                 <td class="py-2 px-3 text-xs">
