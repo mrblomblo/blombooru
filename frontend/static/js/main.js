@@ -1,12 +1,30 @@
 class I18n {
     constructor() {
-        this.translations = {};
         this.currentLang = window.CURRENT_LANGUAGE || 'en';
-        this.loaded = false;
         this.loadPromise = null;
+
+        // Use inlined translations from the data block if available
+        const translationsDataTag = document.getElementById('translations-data');
+        if (translationsDataTag) {
+            try {
+                this.translations = JSON.parse(translationsDataTag.textContent);
+                this.loaded = true;
+            } catch (e) {
+                console.error("Failed to parse inline translations data:", e);
+                this.translations = {};
+                this.loaded = false;
+            }
+        } else {
+            this.translations = {};
+            this.loaded = false;
+        }
     }
 
     async load(lang = null) {
+        if (this.loaded && (!lang || lang === this.currentLang)) {
+            return;
+        }
+
         if (this.loadPromise) {
             return this.loadPromise;
         }
