@@ -30,6 +30,9 @@
         window.CURRENT_LANGUAGE = '{{ current_language() }}';
         window.SIDEBAR_FILTER_MODE = '{{ sidebar_filter_mode if sidebar_filter_mode is defined else "" }}';
     </script>
+    <script id="translations-data" type="application/json">
+        {{ get_translations_json() | safe }}
+    </script>
     {% if not current_theme %}
     <script>
         // Load theme on page load
