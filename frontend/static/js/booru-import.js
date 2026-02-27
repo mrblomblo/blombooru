@@ -155,7 +155,7 @@ class BooruImporter {
                                 <span class="text-secondary shrink-0">${window.i18n.t('media.info.rating')}</span>
                                 <div id="booru-rating-select" class="custom-select w-32" data-value="${post.rating}">
                                     <div class="custom-select-trigger w-full flex items-center justify-between gap-2 px-2 py-1 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors">
-                                        <span class="custom-select-value capitalize">${post.rating}</span>
+                                        <span class="custom-select-value text capitalize">${post.rating}</span>
                                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </div>
                                     <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50">

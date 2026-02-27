@@ -202,7 +202,7 @@ class Uploader {
                 <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.base_settings.base_rating')}</label>
                 <div id="base-rating" class="custom-select" data-value="safe">
                     <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                        <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.safe')}</span>
+                        <span class="custom-select-value text">${window.i18n.t('upload.base_settings.safe')}</span>
                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                             <path fill="currentColor" d="M6 9L1 4h10z"/>
                         </svg>
@@ -220,7 +220,7 @@ class Uploader {
                 <div class="flex flex-wrap gap-2 mb-2 hidden" id="base-albums-list"></div>
                 <div id="base-album-select" class="custom-select" data-value="">
                     <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                        <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
+                        <span class="custom-select-value text">${window.i18n.t('upload.base_settings.select_album')}</span>
                         <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                             <path fill="currentColor" d="M6 9L1 4h10z"/>
                         </svg>
@@ -326,7 +326,7 @@ class Uploader {
                         <label class="block text-xs font-bold mb-2">${window.i18n.t('upload.preview.individual_rating')}</label>
                         <div id="individual-rating" class="custom-select" data-value="safe">
                             <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                                <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.safe')}</span>
+                                <span class="custom-select-value text">${window.i18n.t('upload.base_settings.safe')}</span>
                                 <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                                     <path fill="currentColor" d="M6 9L1 4h10z"/>
                                 </svg>
@@ -344,7 +344,7 @@ class Uploader {
                         <div class="flex flex-wrap gap-2 mb-2" id="individual-albums-list"></div>
                         <div id="individual-album-select" class="custom-select" data-value="">
                             <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none focus:border-primary" type="button">
-                                <span class="custom-select-value text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
+                                <span class="custom-select-value text">${window.i18n.t('upload.base_settings.select_album')}</span>
                                 <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
                                     <path fill="currentColor" d="M6 9L1 4h10z"/>
                                 </svg>

@@ -89,7 +89,7 @@ location='desktop') %}
                     <button
                         class="custom-select-trigger w-full flex items-center justify-between gap-3 px-2 py-1 bg border text-xs cursor-pointer hover:border-primary focus:outline-none focus:border-primary transition-colors"
                         type="button">
-                        <span class="custom-select-value">
+                        <span class="custom-select-value text">
                             {{ options[default_sort] if default_sort in options else options.values()|first }}
                         </span>
                         {{ _select_arrow() }}
@@ -108,7 +108,7 @@ location='desktop') %}
                     <button
                         class="custom-select-trigger w-full flex items-center justify-between gap-3 px-2 py-1 bg border text-xs cursor-pointer hover:border-primary focus:outline-none focus:border-primary transition-colors"
                         type="button">
-                        <span class="custom-select-value">
+                        <span class="custom-select-value text">
                             {{ t('admin.settings.descending') if default_order == 'desc' else
                             t('admin.settings.ascending') }}
                         </span>

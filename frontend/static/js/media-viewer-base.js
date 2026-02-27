@@ -309,7 +309,7 @@ class MediaViewerBase {
         if (this.isPlainObject(value)) {
             try {
                 const jsonStr = JSON.stringify(value, null, 2);
-                return `<code class="block bg-surface-dark p-2 text-xs overflow-x-auto">${this.escapeHtml(jsonStr)}</code>`;
+                return `<code class="block bg p-2 text-xs overflow-x-auto">${this.escapeHtml(jsonStr)}</code>`;
             } catch {
                 return '<span class="text-secondary text-xs italic">[Complex Object]</span>';
             }

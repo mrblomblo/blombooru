@@ -104,7 +104,7 @@ class BulkTagModalBase {
                 </div>
                 
                 <!-- Footer -->
-                <div class="flex-shrink-0 p-4 border-t border-color bg-surface">
+                <div class="flex-shrink-0 p-4 border-t border-color surface">
                     <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
                         ${footerLeft ? `
                             <div class="flex gap-2">

@@ -93,7 +93,7 @@ class AlbumsOverview extends BaseGallery {
             `;
         } else {
             collageHTML = `
-                <div class="aspect-square bg-surface-light flex items-center justify-center">
+                <div class="aspect-square surface-light flex items-center justify-center">
                     <img src="/static/images/no-thumbnail.png" class="w-full h-full object-cover" loading="lazy">
                 </div>
             `;
