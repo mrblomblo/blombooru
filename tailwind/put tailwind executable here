@@ -1,0 +1,5 @@
+Download from https://github.com/tailwindlabs/tailwindcss/releases/tag/v4.2.1, then move to this folder.
+
+If you are on Linux or macOS, you can make it executable with `chmod +x <filename>` (replace "<filename>" with the actual filename, e.g. "tailwindcss-linux-x64").
+
+For how to use it, see `CONTRIBUTING.md`.
