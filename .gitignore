@@ -3,4 +3,4 @@ venv
 __pycache__
 data/settings.json
 media
-tailwind/tailwindcss
+tailwind/tailwindcss*
