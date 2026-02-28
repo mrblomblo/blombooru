@@ -68,7 +68,7 @@ Here's a brief overview of how the project is organized:
 The backend is a [FastAPI](https://fastapi.tiangolo.com/) application written in Python. Routes live in `backend/app/routes/`, models in `backend/app/models.py`, and business logic in `backend/app/services/`.
 
 > [!TIP]
-> If you're using Docker for development, rebuild the container after making backend changes:
+> If you're using Docker for development, rebuild the container after making changes:
 > ```bash
 > docker compose -f docker-compose.dev.yml up --build -d
 > ```
