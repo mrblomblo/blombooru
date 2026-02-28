@@ -144,8 +144,8 @@ Want to add a new color scheme? Here's how.
     }
     ```
 
-    > [!IMPORTANT]
-    > To keep tag colors consistent across themes, make artist tags red, character tags green, copyright tags purple, general tags blue, and meta tags orange.
+> [!IMPORTANT]
+> To keep tag colors consistent across themes, make artist tags red, character tags green, copyright tags purple, general tags blue, and meta tags orange.
 
 3. **Register the theme** in `backend/app/themes.py`. Add a new `self.register_theme(Theme(...))` call inside the `_register_default_themes` method. You'll need to fill in:
 
