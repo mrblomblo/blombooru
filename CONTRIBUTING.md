@@ -168,6 +168,47 @@ When submitting the PR, explain *why* you made the changes and include before/af
 
 If you're modifying the CSS variable structure (adding or removing a variable), update all other themes accordingly (for easier maintenance in the future).
 
+## Translations
+
+Translation PRs are very welcome! Blombooru's UI strings live in JSON locale files under `frontend/static/locales/`. The file for each locale is named after its [BCP 47 language tag](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry) (e.g. `en.json`, `ru.json`, `sv.json`).
+
+The person who authors a translation PR is automatically assumed to become that translation's maintainer. After a new locale is merged, a dedicated discussion thread will be opened in the [i18n category](https://github.com/mrblomblo/blombooru/discussions/categories/i18n) to notify you of future changes (new or updated keys, updates to the README, etc.).
+
+### Adding a New Translation
+
+1. **Create a new locale file** in `frontend/static/locales/`. Name it using the appropriate BCP 47 language tag in lowercase (e.g. `fr.json` for French, `de.json` for German, `zh-cn.json` for Simplified Chinese).
+
+2. **Use `en.json` as your source.** Copy the contents of `en.json` into your new file and translate the values. Do **not** translate the keys (the left-hand side of each pair).
+
+3. **Keep all keys.** Your locale file must contain every key present in `en.json`. Missing keys will fall back to English at runtime, but a complete translation is preferred.
+
+4. **Preserve placeholders.** Some values contain placeholders like `{count}`, `{name}`, or `{tag}`. These must stay in the translated string exactly as they appear in the English original.
+
+5. **Register your locale** in `backend/app/translations.py`. Follow the pattern of existing entries.
+
+6. **Test it!** Switch Blombooru's language to your new locale and verify that the UI looks correct. Pay attention to text that may be significantly longer or shorter than English and check that layouts don't break.
+
+In your PR, please mention if you used AI or machine translation to generate the translation. If so, please also mention your fluency level in the language.
+
+### Updating an Existing Translation
+
+If a new release added keys that are missing from a locale, or if an existing translation needs correction:
+
+1. **Add or correct the relevant keys** in the locale file, keeping them in sync with `en.json`.
+2. **Do not remove or rename existing keys** unless the corresponding key was also removed from `en.json`.
+3. In your PR description, briefly explain which keys were added or changed and why.
+
+> [!NOTE]
+> If you are the maintainer of a locale, you will be mentioned in the i18n discussion for that locale whenever changes require a translation update.
+
+### Adding New Locale Keys
+
+It is **mandatory** for any new strings that will be displayed in the frontend (not console or CLI errors/messages) to be added as keys in `en.json`.
+
+If you are a developer making changes that require adding new keys to the `en.json` locale, it is also **mandatory** that you add those same keys to *all* other locale files, but with empty values.
+
+For example, if you add `"test": "Test"` to `en.json`, you must add `"test": ""` in the same place to all other `.json` files in the `locales` directory. This ensures the keys exist everywhere and makes translators' jobs easier.
+
 ## Reporting Bugs & Requesting Features
 
 Please use the [issue tracker](https://github.com/mrblomblo/blombooru/issues) on GitHub. Blank issue creation is disabled, so please select the most appropriate template for your issue. There are templates for [bug reports](https://github.com/mrblomblo/blombooru/issues/new?template=bug_report.yml), [feature requests](https://github.com/mrblomblo/blombooru/issues/new?template=feature_request.yml), and a general "Other" template if your issue doesn't fit either of those. These templates help keep things organized!
