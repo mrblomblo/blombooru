@@ -633,98 +633,247 @@ async def get_media_albums(
     
     return {"albums": result}
 
-@router.post("/extract-archive")
-async def extract_archive(
+ARCHIVE_CHUNKS_DIR = settings.CACHE_DIR / "archive-chunks"
+ARCHIVE_CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Max chunk size: 99MB (CloudFlare compatible)
+MAX_CHUNK_SIZE = 99 * 1024 * 1024
+
+
+def cleanup_archive_chunks(max_age_seconds: int = 0):
+    """Remove leftover chunk directories.
+
+    Args:
+        max_age_seconds: Only remove directories older than this many seconds.
+                         0 means remove everything (used on startup).
+    """
+    import time
+
+    if not ARCHIVE_CHUNKS_DIR.exists():
+        return
+
+    now = time.time()
+    for child in ARCHIVE_CHUNKS_DIR.iterdir():
+        if child.is_dir():
+            if max_age_seconds > 0:
+                try:
+                    age = now - child.stat().st_mtime
+                    if age < max_age_seconds:
+                        continue
+                except OSError:
+                    pass
+            shutil.rmtree(child, ignore_errors=True)
+
+
+@router.post("/archive-chunk")
+async def upload_archive_chunk(
     file: UploadFile = File(...),
+    upload_id: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    filename: str = Form(...),
     current_user: User = Depends(require_admin_mode)
 ):
-    """Extract files from zip or tar.gz archive"""
-    import base64
-    import tarfile
-    import tempfile
-    import zipfile
-    from pathlib import Path
+    """Receive a single chunk of an archive upload."""
+    import re
 
-    # Security: limit file size (100MB max for archives)
-    MAX_ARCHIVE_SIZE = 100 * 1024 * 1024
-    MAX_EXTRACTED_SIZE = 500 * 1024 * 1024
-    
+    # Validate upload_id is a UUID to prevent path traversal
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    if chunk_index < 0 or chunk_index >= total_chunks:
+        raise HTTPException(status_code=400, detail="Invalid chunk_index")
+
     contents = await file.read()
-    if len(contents) > MAX_ARCHIVE_SIZE:
-        raise HTTPException(status_code=400, detail="Archive too large (max 100MB)")
-    
-    extracted_files = []
-    total_size = 0
-    
+    if len(contents) > MAX_CHUNK_SIZE:
+        raise HTTPException(status_code=400, detail=f"Chunk too large (max {MAX_CHUNK_SIZE // (1024 * 1024)}MB)")
+
+    chunk_dir = ARCHIVE_CHUNKS_DIR / upload_id
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+
+    # Store metadata on first chunk
+    meta_path = chunk_dir / "meta.json"
+    if chunk_index == 0:
+        import json as _json
+        with open(meta_path, 'w') as f:
+            _json.dump({"filename": filename, "total_chunks": total_chunks}, f)
+
+    # Write chunk
+    chunk_path = chunk_dir / f"chunk_{chunk_index}"
+    with open(chunk_path, 'wb') as f:
+        f.write(contents)
+
+    return {"received": chunk_index, "total": total_chunks}
+
+
+@router.post("/extract-archive")
+async def extract_archive(
+    upload_id: str = Form(...),
+    current_user: User = Depends(require_admin_mode)
+):
+    """Reassemble chunks and extract files from the archive.
+
+    Extracted media files are stored on disk and only metadata is returned.
+    Use GET /archive-file/{upload_id}/{file_id} to fetch individual files.
+    """
+    import mimetypes
+    import re
+    import tarfile
+    import zipfile
+
+    # Validate upload_id
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    chunk_dir = ARCHIVE_CHUNKS_DIR / upload_id
+    if not chunk_dir.exists():
+        raise HTTPException(status_code=400, detail="No chunks found for this upload_id")
+
+    meta_path = chunk_dir / "meta.json"
+    if not meta_path.exists():
+        raise HTTPException(status_code=400, detail="Missing upload metadata")
+
+    import json as _json
+    with open(meta_path, 'r') as f:
+        meta = _json.load(f)
+
+    filename = meta["filename"]
+    total_chunks = meta["total_chunks"]
+
+    # Verify all chunks are present
+    for i in range(total_chunks):
+        if not (chunk_dir / f"chunk_{i}").exists():
+            raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+
+    file_list = []
+
     try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            archive_path = temp_path / file.filename
-            
-            # Write archive to temp file
-            with open(archive_path, 'wb') as f:
-                f.write(contents)
-            
-            # Extract based on file type
-            if file.filename.endswith('.zip'):
-                with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-                    # Security: check for path traversal
-                    for member in zip_ref.namelist():
-                        if member.startswith('/') or '..' in member:
-                            raise HTTPException(status_code=400, detail="Invalid file path in archive")
-                    
-                    zip_ref.extractall(temp_path)
-                    
-            elif file.filename.endswith(('.tar.gz', '.tgz')):
-                with tarfile.open(archive_path, 'r:gz') as tar_ref:
-                    # Security: check for path traversal
-                    for member in tar_ref.getmembers():
-                        if member.name.startswith('/') or '..' in member.name:
-                            raise HTTPException(status_code=400, detail="Invalid file path in archive")
-                    
-                    tar_ref.extractall(temp_path)
-            else:
-                raise HTTPException(status_code=400, detail="Unsupported archive format")
-            
-            # Process extracted files
-            for extracted_file in temp_path.rglob('*'):
-                if extracted_file.is_symlink():
-                    continue
-                    
-                if extracted_file.is_file() and extracted_file != archive_path:
-                    # Security: check total extracted size
-                    file_size = extracted_file.stat().st_size
-                    total_size += file_size
-                    
-                    if total_size > MAX_EXTRACTED_SIZE:
-                        raise HTTPException(status_code=400, detail="Extracted files too large (max 500MB)")
-                    
-                    with open(extracted_file, 'rb') as f:
-                        file_content = f.read()
-                    
-                    import mimetypes
-                    mime_type, _ = mimetypes.guess_type(extracted_file.name)
-                    
-                    valid_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm']
-                    if mime_type in valid_types:
-                        extracted_files.append({
-                            'filename': extracted_file.name,
-                            'mime_type': mime_type,
-                            'content': base64.b64encode(file_content).decode('utf-8')
-                        })
-            
-            return {
-                'files': extracted_files,
-                'count': len(extracted_files)
-            }
-            
+        # Use the chunk_dir itself for extraction (persistent, not a tempdir)
+        extract_dir = chunk_dir / "extracted"
+        extract_dir.mkdir(exist_ok=True)
+
+        archive_path = chunk_dir / filename
+
+        # Reassemble chunks into the archive file
+        with open(archive_path, 'wb') as f:
+            for i in range(total_chunks):
+                chunk_path = chunk_dir / f"chunk_{i}"
+                with open(chunk_path, 'rb') as chunk_f:
+                    shutil.copyfileobj(chunk_f, f)
+
+        # Delete chunk files now that we have the assembled archive
+        for i in range(total_chunks):
+            (chunk_dir / f"chunk_{i}").unlink(missing_ok=True)
+
+        # Extract based on file type
+        if filename.endswith('.zip'):
+            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                for member in zip_ref.namelist():
+                    if member.startswith('/') or '..' in member:
+                        raise HTTPException(status_code=400, detail="Invalid file path in archive")
+                zip_ref.extractall(extract_dir)
+
+        elif filename.endswith(('.tar.gz', '.tgz')):
+            with tarfile.open(archive_path, 'r:gz') as tar_ref:
+                for member in tar_ref.getmembers():
+                    if member.name.startswith('/') or '..' in member.name:
+                        raise HTTPException(status_code=400, detail="Invalid file path in archive")
+                tar_ref.extractall(extract_dir)
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported archive format")
+
+        # Delete the reassembled archive to free disk space
+        archive_path.unlink(missing_ok=True)
+
+        # Collect metadata for valid extracted files
+        valid_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm']
+        file_index = 0
+        for extracted_file in extract_dir.rglob('*'):
+            if extracted_file.is_symlink():
+                continue
+
+            if extracted_file.is_file():
+                mime_type, _ = mimetypes.guess_type(extracted_file.name)
+                if mime_type in valid_types:
+                    # Rename to a predictable indexed name for serving
+                    ext = extracted_file.suffix
+                    indexed_name = f"{file_index}{ext}"
+                    target = extract_dir / indexed_name
+                    if extracted_file != target:
+                        extracted_file.rename(target)
+
+                    file_list.append({
+                        'file_id': file_index,
+                        'filename': extracted_file.name,
+                        'mime_type': mime_type,
+                    })
+                    file_index += 1
+
+        # Update metadata so cleanup knows this is an extracted session
+        with open(meta_path, 'w') as f:
+            _json.dump({"filename": filename, "total_chunks": total_chunks, "extracted": True, "file_count": file_index}, f)
+
+        return {
+            'upload_id': upload_id,
+            'files': file_list,
+            'count': len(file_list)
+        }
+
     except zipfile.BadZipFile:
+        shutil.rmtree(chunk_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail="Invalid or corrupted zip file")
     except tarfile.TarError:
+        shutil.rmtree(chunk_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail="Invalid or corrupted tar.gz file")
     except HTTPException:
+        shutil.rmtree(chunk_dir, ignore_errors=True)
         raise
     except Exception as e:
+        shutil.rmtree(chunk_dir, ignore_errors=True)
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error extracting archive: {str(e)}")
+
+
+@router.get("/archive-file/{upload_id}/{file_id}")
+async def get_archive_file(
+    upload_id: str,
+    file_id: int,
+    current_user: User = Depends(require_admin_mode)
+):
+    """Serve an individual extracted file from an archive session."""
+    import re
+
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    extract_dir = ARCHIVE_CHUNKS_DIR / upload_id / "extracted"
+    if not extract_dir.exists():
+        raise HTTPException(status_code=404, detail="No extracted files found")
+
+    # Find the file by index (could have various extensions)
+    matches = list(extract_dir.glob(f"{file_id}.*"))
+    if not matches:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = matches[0]
+    import mimetypes
+    mime_type, _ = mimetypes.guess_type(file_path.name)
+
+    return FileResponse(file_path, media_type=mime_type)
+
+
+@router.delete("/archive-cleanup/{upload_id}")
+async def cleanup_archive(
+    upload_id: str,
+    current_user: User = Depends(require_admin_mode)
+):
+    """Clean up extracted archive files after the frontend is done with them."""
+    import re
+
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    chunk_dir = ARCHIVE_CHUNKS_DIR / upload_id
+    shutil.rmtree(chunk_dir, ignore_errors=True)
+    return {"message": "Cleaned up"}
