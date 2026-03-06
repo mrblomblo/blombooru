@@ -501,8 +501,8 @@
             "unshare": "Убрать общий доступ"
         },
         "ai_metadata": {
-            "show_less": "",
-            "show_more": "",
+            "show_less": "Показывать меньше",
+            "show_more": "Показывать больше",
             "title": "Дата AI генерации"
         },
         "fullscreen_close_hint": "Нажмите ESC или кликните вне медиафайла для закрытия",
@@ -713,7 +713,7 @@
         "logout": "Выйти",
         "search_placeholder": "Поиск тегов... (например, ?girl? *_background cat_ears -dog)",
         "search_syntax_guide": "Руководство по синтаксису поиска",
-        "upload": ""
+        "upload": "Загрузить"
     },
     "notifications": {
         "admin": {
