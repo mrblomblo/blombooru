@@ -1,4 +1,4 @@
-<p align="center"><img width="830" alt="Blombooru Banner" src="https://github.com/user-attachments/assets/a13b7b6d-f7e5-4251-a14c-4bf8b069a366" /></p>
+<p align="center"><img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" /></p>
 
 <div align="center">
   
@@ -24,16 +24,16 @@ Blombooru är ett privat enanvändaralternativ till bild-boorus som Danbooru och
 <summary>Visa skärmdumpar</summary>
 
 **Startsida**
-<img width="1920" alt="Homepage" src="https://github.com/user-attachments/assets/eaa9b99e-ff64-439f-bb00-e5a37c53db3a" />
+<img width="1920" alt="Startsida" src=".github/images/Gallery.png" />
 
 **Mediavisare**
-<img width="1920" alt="Media-viewer page" src="https://github.com/user-attachments/assets/c3dcebf7-2cee-475b-b428-54986a27c42c" />
+<img width="1920" alt="Mediavisare" src=".github/images/Media.png" />
 
 **Sida för delad media**
-<img width="1920" alt="Shared media page" src="https://github.com/user-attachments/assets/6fa43d69-eb44-46a4-85b4-99e85322fbea" />
+<img width="1920" alt="Sida för delad media" src=".github/images/Shared.png" />
 
 **Adminpanel**
-<img width="1920" alt="Admin panel" src="https://github.com/user-attachments/assets/19db7c83-bbcb-48c6-a505-78f03ea6964e" />
+<img width="1920" alt="Adminpanel" src=".github/images/Admin_Panel.png" />
 
 </details>
 
