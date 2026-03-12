@@ -237,7 +237,7 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
             value=access_token,
             httponly=True,
             max_age=43200 * 60,
-            samesite="none" if is_secure else "lax",
+            samesite="lax",
             secure=is_secure
         )
         
@@ -333,7 +333,7 @@ async def update_admin_username(
             value=access_token,
             httponly=True,
             max_age=43200 * 60,
-            samesite="none" if is_secure else "lax",
+            samesite="lax",
             secure=is_secure
         )
         
@@ -367,7 +367,7 @@ async def toggle_admin_mode(
             value="true",
             httponly=False,
             max_age=43200 * 60,
-            samesite="none" if is_secure else "lax",
+            samesite="lax",
             secure=is_secure
         )
     else:
