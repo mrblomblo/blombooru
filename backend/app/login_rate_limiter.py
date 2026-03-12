@@ -3,6 +3,8 @@ from typing import Dict, Tuple
 
 from fastapi import HTTPException, Request
 
+from .utils.request_helpers import get_client_ip
+
 class LoginRateLimiter:
     """
     Rate limiter for login attempts to prevent brute force attacks.
@@ -19,14 +21,8 @@ class LoginRateLimiter:
         self.banned_ips: Dict[str, datetime] = {}
     
     def _get_client_ip(self, request: Request) -> str:
-        """Extract client IP from request, considering proxies"""
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-        if request.client:
-            return request.client.host
-        
-        return "unknown"
+        """Extract client IP from request, delegating to shared utility."""
+        return get_client_ip(request)
     
     def _cleanup_expired(self):
         """Remove expired bans and old failed attempts"""

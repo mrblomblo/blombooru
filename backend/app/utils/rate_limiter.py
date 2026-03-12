@@ -3,13 +3,15 @@ from typing import Dict, Tuple
 
 from fastapi import HTTPException, Request
 
+from .request_helpers import get_client_ip
+
 class SimpleRateLimiter:
     def __init__(self, requests_per_minute: int = 60):
         self.requests_per_minute = requests_per_minute
         self.requests: Dict[str, list] = {}
         
     def check(self, request: Request, raise_exception: bool = True) -> bool:
-        client_ip = request.client.host
+        client_ip = get_client_ip(request)
         now = time.time()
         
         # Initialize or clean up old requests
