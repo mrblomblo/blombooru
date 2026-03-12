@@ -173,7 +173,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if self.is_public_route(path):
             return await call_next(request)
         
-        if self.is_danbooru_route(path):
+        # Danbooru routes handle their own auth via the verify_danbooru_auth
+        # dependency, but only bypass the middleware when auth is not required.
+        # When REQUIRE_AUTH is true, enforce auth at the middleware level too.
+        if self.is_danbooru_route(path) and not settings.REQUIRE_AUTH:
             return await call_next(request)
 
         if not settings.REQUIRE_AUTH:
