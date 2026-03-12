@@ -20,7 +20,8 @@ from sqlalchemy.orm import Session, joinedload
 from ..auth import (create_access_token, generate_api_key,
                     get_current_admin_user, get_password_hash, hash_api_key,
                     require_admin_mode)
-from ..config import safe_error_detail, settings
+from ..config import settings
+from ..utils.request_helpers import safe_error_detail
 from ..database import get_db, init_db
 from ..models import ApiKey, Tag, TagAlias, User
 from ..schemas import (ApiKeyCreate, ApiKeyListResponse, ApiKeyResponse,

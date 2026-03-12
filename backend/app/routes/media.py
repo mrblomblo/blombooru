@@ -13,7 +13,8 @@ from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..auth import get_current_user, require_admin_mode
-from ..config import safe_error_detail, settings
+from ..config import settings
+from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..models import (Album, Media, Tag, User, blombooru_album_media,
                       blombooru_media_tags)

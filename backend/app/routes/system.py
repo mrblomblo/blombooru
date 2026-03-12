@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..auth import require_admin_mode
-from ..config import APP_VERSION, safe_error_detail, settings
+from ..config import APP_VERSION, settings
+from ..utils.request_helpers import safe_error_detail
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 

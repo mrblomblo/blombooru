@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
-from ..config import safe_error_detail, settings
+from ..config import settings
+from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..models import Album, Media, Tag, User, blombooru_media_tags
 from ..services.booru import BooruPost, get_client_for_url

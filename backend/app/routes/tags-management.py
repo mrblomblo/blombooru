@@ -11,7 +11,7 @@ from ..auth import require_admin_mode
 from ..database import get_db
 from ..models import Tag, TagAlias, TagCategoryEnum, User
 from ..schemas import TagResponse
-from ..config import safe_error_detail
+from ..utils.request_helpers import safe_error_detail
 from ..utils.cache import cache_response, invalidate_tag_cache
 
 router = APIRouter(prefix="/api/tags-management", tags=["tag-management"])
