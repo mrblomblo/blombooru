@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
-from ..config import settings
+from ..config import safe_error_detail, settings
 from ..database import get_db
 from ..models import Media, User
 from ..services.wd_tagger import WDTagger, get_wd_tagger
@@ -192,7 +192,7 @@ async def download_model(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to download model", e))
 
 @router.post("/predict/{media_id}", response_model=PredictTagsResponse)
 async def predict_tags(
@@ -245,7 +245,7 @@ async def predict_tags(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error predicting tags: {str(e)}"
+            detail=safe_error_detail("Error predicting tags", e)
         )
 
 @router.post("/predict-batch", response_model=BatchPredictResponse)
@@ -354,7 +354,7 @@ async def predict_tags_batch(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error predicting tags: {str(e)}"
+            detail=safe_error_detail("Error predicting tags", e)
         )
 
 @router.post("/predict-stream")
@@ -488,6 +488,6 @@ async def load_model(
             detail=f"AI Tagger dependencies not installed: {str(e)}"
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=safe_error_detail("Invalid model", e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to load model", e))

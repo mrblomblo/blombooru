@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..auth import require_admin_mode
-from ..config import APP_VERSION, settings
+from ..config import APP_VERSION, safe_error_detail, settings
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
@@ -207,11 +207,11 @@ async def check_update_status(current_user: dict = Depends(require_admin_mode)):
         raise
     except requests.RequestException as e:
         raise HTTPException(
-            status_code=502, detail=f"Failed to reach GitHub API: {str(e)}"
+            status_code=502, detail=safe_error_detail("Failed to reach GitHub API", e)
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to check for updates: {str(e)}"
+            status_code=500, detail=safe_error_detail("Failed to check for updates", e)
         )
 
 @router.post("/update/perform")
@@ -255,7 +255,7 @@ async def perform_update(
             else:
                 raise HTTPException(status_code=502, detail="Failed to fetch latest release from GitHub")
         except requests.RequestException as e:
-            raise HTTPException(status_code=502, detail=f"Failed to reach GitHub API: {e}")
+            raise HTTPException(status_code=502, detail=safe_error_detail("Failed to reach GitHub API", e))
 
         commands = [
             ["git", "fetch", "--tags"],
@@ -360,6 +360,6 @@ async def perform_update(
 
     except subprocess.CalledProcessError as e:
         error_msg = f"Command failed: {e.cmd}\nStdout: {e.stdout}\nStderr: {e.stderr}"
-        raise HTTPException(status_code=500, detail=f"Update failed: {e.stderr}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Update failed", e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Update failed", e))

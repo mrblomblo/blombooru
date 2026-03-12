@@ -241,3 +241,14 @@ class Settings:
         return f"postgresql://{self.SHARED_TAG_DB_USER}:{self.SHARED_TAG_DB_PASSWORD}@{self.SHARED_TAG_DB_HOST}:{self.SHARED_TAG_DB_PORT}/{self.SHARED_TAG_DB_NAME}"
 
 settings = Settings()
+
+def safe_error_detail(description: str, error: Exception) -> str:
+    """Return an error detail string for HTTP responses.
+    
+    In DEBUG mode, includes the full exception message for debugging.
+    In production, returns only the generic description to avoid leaking
+    internal details (paths, hostnames, stack traces, etc.).
+    """
+    if settings.DEBUG:
+        return f"{description}: {str(error)}"
+    return description

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session, joinedload
 from ..auth import (create_access_token, generate_api_key,
                     get_current_admin_user, get_password_hash, hash_api_key,
                     require_admin_mode)
-from ..config import settings
+from ..config import safe_error_detail, settings
 from ..database import get_db, init_db
 from ..models import ApiKey, Tag, TagAlias, User
 from ..schemas import (ApiKeyCreate, ApiKeyListResponse, ApiKeyResponse,
@@ -80,10 +80,10 @@ async def complete_onboarding(data: OnboardingData):
         elif "database" in error_msg and "does not exist" in error_msg:
             raise HTTPException(status_code=400, detail=f"Database '{data.database.name}' does not exist. Please create it first.")
         else:
-            raise HTTPException(status_code=400, detail=f"Database connection failed: {error_msg}")
+            raise HTTPException(status_code=400, detail=safe_error_detail("Database connection failed", e))
     except Exception as e:
         print(f"Unexpected database error: {e}")
-        raise HTTPException(status_code=400, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Database error", e))
     
     # Create database schema and admin user (but don't save settings yet)
     print("2. Creating database schema...")
@@ -109,7 +109,7 @@ async def complete_onboarding(data: OnboardingData):
                 password_hash = get_password_hash(data.admin_password)
                 print("Password hashed successfully")
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Failed to hash password: {str(e)}")
+                raise HTTPException(status_code=500, detail=safe_error_detail("Failed to hash password", e))
             
             admin = User(
                 username=data.admin_username,
@@ -128,11 +128,11 @@ async def complete_onboarding(data: OnboardingData):
             if "unique constraint" in error_msg.lower():
                 raise HTTPException(status_code=400, detail="Username already exists in database")
             else:
-                raise HTTPException(status_code=400, detail=f"Database constraint violation: {error_msg}")
+                raise HTTPException(status_code=400, detail=safe_error_detail("Database constraint violation", e))
         except Exception as e:
             db.rollback()
             print(f"Error creating admin user: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to create admin user: {str(e)}")
+            raise HTTPException(status_code=500, detail=safe_error_detail("Failed to create admin user", e))
         finally:
             db.close()
         
@@ -159,7 +159,7 @@ async def complete_onboarding(data: OnboardingData):
             print("Settings saved to file")
         except Exception as e:
             print(f"Failed to save settings: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
+            raise HTTPException(status_code=500, detail=safe_error_detail("Failed to save settings", e))
         
         # Update module-level database variables
         database.engine = temp_engine
@@ -191,7 +191,7 @@ async def complete_onboarding(data: OnboardingData):
             except Exception:
                 pass
         print(f"Error initializing database: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to initialize database: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to initialize database", e))
     
     return {"message_key": "notifications.admin.onboarding_completed"}
 
@@ -249,7 +249,7 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
         raise
     except Exception as e:
         print(f"Login error: {e}")
-        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Login failed", e))
 
 @router.post("/logout")
 async def logout(response: Response):
@@ -288,7 +288,7 @@ async def update_admin_password(
     except Exception as e:
         db.rollback()
         print(f"Error updating password: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update password: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to update password", e))
 
 @router.post("/update-admin-username")
 async def update_admin_username(
@@ -349,7 +349,7 @@ async def update_admin_username(
     except Exception as e:
         db.rollback()
         print(f"Error updating username: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update username: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to update username", e))
 
 @router.post("/toggle-admin-mode")
 async def toggle_admin_mode(
@@ -925,7 +925,7 @@ async def import_tags_csv(
     except Exception as e:
         db.rollback()
         print(f"Error during import: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Error importing CSV: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Error importing CSV", e))
 
 @router.get("/tag-stats")
 async def get_tag_stats(
@@ -975,7 +975,7 @@ async def clear_all_tags(
         return {"message_key": "notifications.admin.tags_cleared"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error clearing tags: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Error clearing tags", e))
     
 @router.delete("/tags/{tag_id}")
 async def delete_tag(
@@ -1021,7 +1021,7 @@ async def delete_tag(
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error deleting tag: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Error deleting tag", e))
     
 @router.get("/themes")
 async def get_themes():
@@ -1110,7 +1110,7 @@ async def bulk_create_tags(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Database error", e))
         
     return {
         "message_key": "notifications.admin.bulk_tag_creation_complete",
@@ -1336,7 +1336,7 @@ async def import_full(
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Import failed", e))
 
 
 @router.get("/api-keys", response_model=list[ApiKeyListResponse])
@@ -1382,7 +1382,7 @@ async def create_api_key(
         }
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create API key: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to create API key", e))
 
 @router.delete("/api-keys/{key_id}")
 async def revoke_api_key(
@@ -1405,7 +1405,7 @@ async def revoke_api_key(
         return {"message_key": "notifications.admin.api_key_revoked"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to revoke API key: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to revoke API key", e))
 
 @router.post("/test-shared-tag-db")
 async def test_shared_tag_db(data: dict, current_user: User = Depends(require_admin_mode)):

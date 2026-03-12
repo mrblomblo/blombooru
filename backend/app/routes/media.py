@@ -13,7 +13,7 @@ from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..auth import get_current_user, require_admin_mode
-from ..config import settings
+from ..config import safe_error_detail, settings
 from ..database import get_db
 from ..models import (Album, Media, Tag, User, blombooru_album_media,
                       blombooru_media_tags)
@@ -145,7 +145,7 @@ async def get_media_list(
         print(f"Error in get_media_list: {e}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to retrieve media list", e))
 
 @router.get("/batch")
 async def get_media_batch(
@@ -164,7 +164,7 @@ async def get_media_batch(
         return {"items": items}
     except Exception as e:
         print(f"Error in get_media_batch: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to retrieve media batch", e))
 
 @router.get("/{media_id}")
 async def get_media(media_id: int, db: Session = Depends(get_db)):
@@ -400,7 +400,7 @@ async def upload_media(
         if 'thumbnail_path' in locals() and thumbnail_path.exists():
             thumbnail_path.unlink(missing_ok=True)
             
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Upload failed", e))
 
 @router.patch("/{media_id}", response_model=MediaResponse)
 async def update_media(
@@ -832,7 +832,7 @@ async def extract_archive(
         shutil.rmtree(chunk_dir, ignore_errors=True)
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=400, detail=f"Error extracting archive: {str(e)}")
+        raise HTTPException(status_code=400, detail=safe_error_detail("Error extracting archive", e))
 
 
 @router.get("/archive-file/{upload_id}/{file_id}")

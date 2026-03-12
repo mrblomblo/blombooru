@@ -11,6 +11,7 @@ from ..auth import require_admin_mode
 from ..database import get_db
 from ..models import Tag, TagAlias, TagCategoryEnum, User
 from ..schemas import TagResponse
+from ..config import safe_error_detail
 from ..utils.cache import cache_response, invalidate_tag_cache
 
 router = APIRouter(prefix="/api/tags-management", tags=["tag-management"])
@@ -119,7 +120,7 @@ async def import_tags_csv(
         
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to import CSV: {str(e)}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to import CSV", e))
 
 @router.get("/stats")
 @cache_response(expire=3600, key_prefix="tags")
@@ -187,7 +188,7 @@ async def clear_all_tags(
         return {"success": True, "message": "All tags cleared"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to clear tags", e))
 
 @router.get("/search")
 @cache_response(expire=3600, key_prefix="tags")
@@ -264,5 +265,5 @@ async def delete_tag(
         return {"success": True, "message": f"Tag '{tag_name}' deleted"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to delete tag", e))
 
