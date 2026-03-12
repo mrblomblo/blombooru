@@ -358,7 +358,13 @@ async def toggle_admin_mode(
     response: Response,
     current_user: User = Depends(get_current_admin_user)
 ):
-    """Toggle admin mode"""
+    """Toggle admin mode UI toggle.
+    
+    The admin_mode cookie is a UX safeguard that prevents accidental destructive
+    actions. It is NOT a security gate - actual auth is enforced via JWT by
+    get_current_admin_user. The cookie is non-httponly so the frontend JS can
+    read it to show/hide admin UI elements.
+    """
     is_secure = request.url.scheme == "https"
     
     if enabled:

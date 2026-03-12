@@ -95,12 +95,24 @@ def get_current_admin_user(
     return current_user
 
 def is_admin_mode(admin_mode: Optional[str] = Cookie(default=None)):
+    """Check if the admin_mode UI toggle cookie is set.
+    
+    NOTE: This is NOT a security gate. It is a UI safety toggle that prevents
+    accidental destructive actions (like deleting media) when the user is not
+    actively in "admin mode". Actual authentication is enforced separately by
+    get_current_admin_user(), which validates the JWT token.
+    """
     return admin_mode == "true"
 
 def require_admin_mode(
     current_user: User = Depends(get_current_admin_user),
     admin_mode_active: bool = Depends(is_admin_mode)
 ):
+    """Require both a valid JWT session AND the admin_mode UI toggle.
+    
+    Security is enforced by get_current_admin_user (JWT validation).
+    The admin_mode check is a UX safeguard against accidental actions.
+    """
     if not admin_mode_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
