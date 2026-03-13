@@ -255,7 +255,8 @@ async def upload_media(
             
             try:
                 file_path = file_path.resolve()
-                file_path.relative_to(settings.ORIGINAL_DIR.resolve())
+                if not file_path.is_relative_to(settings.ORIGINAL_DIR.resolve()):
+                    raise ValueError("Access denied")
             except (ValueError, FileNotFoundError):
                 raise HTTPException(status_code=403, detail="Access denied")
             

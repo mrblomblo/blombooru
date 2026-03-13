@@ -490,8 +490,8 @@ async def get_untracked_file(
     # Check if file is within ORIGINAL_DIR
     try:
         file_path = file_path.resolve()
-        settings.ORIGINAL_DIR.resolve()
-        file_path.relative_to(settings.ORIGINAL_DIR.resolve())
+        if not file_path.is_relative_to(settings.ORIGINAL_DIR.resolve()):
+            raise ValueError()
     except (ValueError, FileNotFoundError):
         raise HTTPException(status_code=403, detail="Access denied")
     
