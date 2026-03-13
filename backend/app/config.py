@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
+from sqlalchemy.engine import URL
 
 load_dotenv()
 
@@ -114,8 +115,15 @@ class Settings:
         return self.file_settings.get("database", {}).get('name') or os.getenv("POSTGRES_DB") or self.settings.get("database", {}).get('name', 'blombooru')
 
     @property
-    def DATABASE_URL(self) -> str:
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    def DATABASE_URL(self) -> URL:
+        return URL.create(
+            drivername="postgresql",
+            username=self.DB_USER,
+            password=self.DB_PASSWORD,
+            host=self.DB_HOST,
+            port=self.DB_PORT,
+            database=self.DB_NAME
+        )
     
     @property
     def REDIS_HOST(self) -> str:
@@ -236,8 +244,15 @@ class Settings:
         return self.file_settings.get("shared_tags", {}).get("password") or os.getenv("SHARED_TAG_DB_PASSWORD") or self.settings.get("shared_tags", {}).get("password", "")
     
     @property
-    def SHARED_TAG_DATABASE_URL(self) -> str:
+    def SHARED_TAG_DATABASE_URL(self) -> URL:
         """Get shared tag database connection URL"""
-        return f"postgresql://{self.SHARED_TAG_DB_USER}:{self.SHARED_TAG_DB_PASSWORD}@{self.SHARED_TAG_DB_HOST}:{self.SHARED_TAG_DB_PORT}/{self.SHARED_TAG_DB_NAME}"
+        return URL.create(
+            drivername="postgresql",
+            username=self.SHARED_TAG_DB_USER,
+            password=self.SHARED_TAG_DB_PASSWORD,
+            host=self.SHARED_TAG_DB_HOST,
+            port=self.SHARED_TAG_DB_PORT,
+            database=self.SHARED_TAG_DB_NAME
+        )
 
 settings = Settings()
