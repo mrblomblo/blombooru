@@ -1,18 +1,20 @@
-<p align="center"><img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" /></p>
-
 <div align="center">
-  
-  ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-  ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-  ![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
-  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
-  ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-  ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
-  ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-  
-</div>
 
-<p align="center"><b>您的个人自托管媒体标注工具。</b></p>
+<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
+  
+![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+<a href="./README.md">English</a> • <a href="./README_RU.md">Русский</a> • **简体中文** • <a href="./README_SV.md">Svenska</a>
+
+<b>您的个人自托管媒体标注工具。</b>
+
+</div>
 
 Blombooru 是 Danbooru 和 Gelbooru 等图库站（Booru）的私密、单用户替代方案。它专为那些希望以强大、易用且现代化的方式组织和标注个人媒体收藏的用户而设计。Blombooru 专注于清爽的用户体验、稳健的管理功能和便捷的自定义，让您完全掌控自己的媒体库。
 

@@ -1,19 +1,20 @@
-<p align="center"><img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" /></p>
-
 <div align="center">
-  
-  ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-  ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-  ![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
-  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
-  ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-  ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
-  ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-  
-</div>
 
-<p align="center">Also available in <a href="https://github.com/mrblomblo/blombooru/blob/main/README_RU.md">Russian</a> (last updated Feb, 20, 2026) and <a href="https://github.com/mrblomblo/blombooru/blob/main/README_ZH_CN.md">Chinese(Simplified)</a> (last updated Feb, 23, 2026)</p>
-<p align="center"><b>Your Personal, Self-Hosted Media Tagging Tool.</b></p>
+<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
+  
+![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+**English** • <a href="./README_RU.md">Русский</a> • <a href="./README_ZH_CN.md">简体中文</a> • <a href="./README_SV.md">Svenska</a>
+
+<b>Your Personal, Self-Hosted Media Tagging Tool.</b>
+
+</div>
 
 Blombooru is a private, single-user alternative to image boorus like Danbooru and Gelbooru. It is designed for individuals who want a powerful, easy-to-use, and modern solution for organizing and tagging their personal media collections. With a focus on a clean user experience, robust administration, and easy customization, Blombooru puts you in complete control of your library.
 

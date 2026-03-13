@@ -1,18 +1,20 @@
-<p align="center"><img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" /></p>
-
 <div align="center">
-  
-  ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-  ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-  ![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
-  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
-  ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-  ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
-  ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-  
-</div>
 
-<p align="center"><b>Ваш персональный, Self-Hosted инструмент для разметки медиафайлов.</b></p>
+<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
+  
+![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
+![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+<a href="./README.md">English</a> • **Русский** • <a href="./README_ZH_CN.md">简体中文</a> • <a href="./README_SV.md">Svenska</a>
+
+<b>Ваш персональный, Self-Hosted инструмент для разметки медиафайлов.</b>
+
+</div>
 
 Blombooru - приватная, single-user альтернатива Booru-like доскам (R34, Danbooru или Gelbooru). Она разработана для тех, кому нужно мощное, легкое в использовании и современное решения для организации и маркировки личной коллекции медиа. Благодаря удобному интерфейсу, гибкому администрированию и простой кастомизации Blombooru даёт вам полный контроль над вашей коллекцией.
 
