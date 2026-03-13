@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from ..auth import require_admin_mode
 from ..config import APP_VERSION, settings
+from ..utils.logger import logger
 from ..utils.request_helpers import safe_error_detail
 
 router = APIRouter(prefix="/api/system", tags=["system"])

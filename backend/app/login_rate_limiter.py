@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 
 from fastapi import HTTPException, Request
 
+from .utils.logger import logger
 from .utils.request_helpers import get_client_ip
 
 class LoginRateLimiter:
@@ -82,7 +83,7 @@ class LoginRateLimiter:
                 
                 if count >= self.max_attempts:
                     self.banned_ips[ip] = now + self.ban_duration
-                    print(f"IP {ip} banned for {self.ban_duration.total_seconds() / 60} minutes after {count} failed attempts")
+                    logger.warning(f"IP {ip} banned for {self.ban_duration.total_seconds() / 60} minutes after {count} failed attempts")
             else:
                 self.failed_attempts[ip] = (1, now)
         else:

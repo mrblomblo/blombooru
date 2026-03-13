@@ -32,6 +32,7 @@ from ..utils.backup import (generate_tags_csv_stream, generate_tags_dump,
                             stream_zip_generator)
 from ..utils.cache import invalidate_media_cache
 from ..utils.file_scanner import find_untracked_media
+from ..utils.logger import logger
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -58,8 +59,8 @@ async def complete_onboarding(data: OnboardingData):
     if len(data.admin_password) > 128:
         raise HTTPException(status_code=400, detail="Admin password is too long (max 128 characters)")
     
-    print("=== Starting onboarding process ===")
-    print(f"1. Testing database connection to {data.database.host}:{data.database.port}/{data.database.name}")
+    logger.info("=== Starting onboarding process ===")
+    logger.debug(f"1. Testing database connection to {data.database.host}:{data.database.port}/{data.database.name}")
     
     try:
         test_url = f"postgresql://{data.database.user}:{data.database.password}@{data.database.host}:{data.database.port}/{data.database.name}"
@@ -67,11 +68,11 @@ async def complete_onboarding(data: OnboardingData):
         test_engine = sqlalchemy_create_engine(test_url, pool_pre_ping=True)
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            print("Database connection successful")
+            logger.info("Database connection successful")
         test_engine.dispose()
     except OperationalError as e:
         error_msg = str(e)
-        print(f"Database connection failed: {error_msg}")
+        logger.error(f"Database connection failed: {error_msg}")
         
         # Provide more helpful error messages
         if "password authentication failed" in error_msg:
@@ -83,11 +84,11 @@ async def complete_onboarding(data: OnboardingData):
         else:
             raise HTTPException(status_code=400, detail=safe_error_detail("Database connection failed", e))
     except Exception as e:
-        print(f"Unexpected database error: {e}")
+        logger.error(f"Unexpected database error: {e}")
         raise HTTPException(status_code=400, detail=safe_error_detail("Database error", e))
     
     # Create database schema and admin user (but don't save settings yet)
-    print("2. Creating database schema...")
+    logger.debug("2. Creating database schema...")
     new_session_local = None
     temp_engine = None
     
@@ -101,14 +102,14 @@ async def complete_onboarding(data: OnboardingData):
         new_session_local = sessionmaker(autocommit=False, autoflush=False, bind=temp_engine)
         
         database.Base.metadata.create_all(bind=temp_engine)
-        print("Database schema created")
+        logger.info("Database schema created")
         
-        print("3. Creating admin user...")
+        logger.debug("3. Creating admin user...")
         db = new_session_local()
         try:
             try:
                 password_hash = get_password_hash(data.admin_password)
-                print("Password hashed successfully")
+                logger.debug("Password hashed successfully")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=safe_error_detail("Failed to hash password", e))
             
@@ -119,12 +120,12 @@ async def complete_onboarding(data: OnboardingData):
             db.add(admin)
             
             db.commit()
-            print("Admin user created")
+            logger.info("Admin user created")
             
         except IntegrityError as e:
             db.rollback()
             error_msg = str(e)
-            print(f"Database integrity error: {error_msg}")
+            logger.error(f"Database integrity error: {error_msg}")
             
             if "unique constraint" in error_msg.lower():
                 raise HTTPException(status_code=400, detail="Username already exists in database")
@@ -132,12 +133,12 @@ async def complete_onboarding(data: OnboardingData):
                 raise HTTPException(status_code=400, detail=safe_error_detail("Database constraint violation", e))
         except Exception as e:
             db.rollback()
-            print(f"Error creating admin user: {e}")
+            logger.error(f"Error creating admin user: {e}")
             raise HTTPException(status_code=500, detail=safe_error_detail("Failed to create admin user", e))
         finally:
             db.close()
         
-        print("4. Saving settings...")
+        logger.debug("4. Saving settings...")
         try:
             settings.save_settings({
                 "app_name": data.app_name,
@@ -157,16 +158,16 @@ async def complete_onboarding(data: OnboardingData):
                 },
                 "first_run": False
             })
-            print("Settings saved to file")
+            logger.info("Settings saved to file")
         except Exception as e:
-            print(f"Failed to save settings: {e}")
+            logger.error(f"Failed to save settings: {e}")
             raise HTTPException(status_code=500, detail=safe_error_detail("Failed to save settings", e))
         
         # Update module-level database variables
         database.engine = temp_engine
         database.SessionLocal = new_session_local
         
-        print("=== Onboarding completed successfully ===")
+        logger.info("=== Onboarding completed successfully ===")
             
     except HTTPException:
         if new_session_local:
@@ -191,7 +192,7 @@ async def complete_onboarding(data: OnboardingData):
                 temp_engine.dispose()
             except Exception:
                 pass
-        print(f"Error initializing database: {e}")
+        logger.error(f"Error initializing database: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to initialize database", e))
     
     return {"message_key": "notifications.admin.onboarding_completed"}
@@ -204,13 +205,13 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
     
     login_rate_limiter.check_rate_limit(request)
     
-    print(f"Login attempt for user: {credentials.username}")
+    logger.info(f"Login attempt for user: {credentials.username}")
     
     try:
         user = authenticate_user(db, credentials.username, credentials.password)
         
         if not user:
-            print(f"Authentication failed for user: {credentials.username}")
+            logger.error(f"Authentication failed for user: {credentials.username}")
             
             login_rate_limiter.record_failed_attempt(request)
             
@@ -222,7 +223,7 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
             
             raise HTTPException(status_code=401, detail=detail)
         
-        print(f"Authentication successful for user: {credentials.username}")
+        logger.info(f"Authentication successful for user: {credentials.username}")
         
         login_rate_limiter.clear_failed_attempts(request)
         
@@ -242,14 +243,14 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
             secure=is_secure
         )
         
-        print(f"Login successful, token issued")
+        logger.debug(f"Login successful, token issued")
         
         return {"access_token": access_token, "token_type": "bearer"}
     
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Login error: {e}")
+        logger.error(f"Login error: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Login failed", e))
 
 @router.post("/logout")
@@ -282,13 +283,13 @@ async def update_admin_password(
         current_user.password_hash = password_hash
         db.commit()
         
-        print(f"Password updated for user: {current_user.username}")
+        logger.info(f"Password updated for user: {current_user.username}")
         
         return {"message_key": "notifications.admin.password_updated"}
         
     except Exception as e:
         db.rollback()
-        print(f"Error updating password: {e}")
+        logger.error(f"Error updating password: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to update password", e))
 
 @router.post("/update-admin-username")
@@ -319,7 +320,7 @@ async def update_admin_username(
         current_user.username = new_username
         db.commit()
         
-        print(f"Username updated from '{old_username}' to '{new_username}'")
+        logger.info(f"Username updated from '{old_username}' to '{new_username}'")
         
         # Issue new token with updated username and update cookie
         access_token = create_access_token(
@@ -345,11 +346,11 @@ async def update_admin_username(
         
     except IntegrityError as e:
         db.rollback()
-        print(f"Database integrity error: {e}")
+        logger.error(f"Database integrity error: {e}")
         raise HTTPException(status_code=400, detail="Username already exists")
     except Exception as e:
         db.rollback()
-        print(f"Error updating username: {e}")
+        logger.error(f"Error updating username: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to update username", e))
 
 @router.post("/toggle-admin-mode")
@@ -721,7 +722,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
     BATCH_SIZE = 1000
     
     # PASS 1: Import tags only
-    print("Pass 1: Importing tags...")
+    logger.info("Pass 1: Importing tags...")
     csv_reader = csv.reader(io.StringIO(csv_text))
     
     tag_data = []
@@ -776,7 +777,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
                         tags_to_create = []
                     
                     db.commit()
-                    print(f"Pass 1: Processed {rows_processed} tags...")
+                    logger.debug(f"Pass 1: Processed {rows_processed} tags...")
                     db.expire_all()
                 except Exception as e:
                     db.rollback()
@@ -797,15 +798,15 @@ def import_tags_csv_logic(csv_text: str, db: Session):
         db.rollback()
         errors.append({"key": "notifications.admin.error_final_batch_pass1", "error": str(e)})
     
-    print(f"Pass 1 complete: {tags_created} tags created, {tags_updated} updated, {skipped_long_tags} skipped")
+    logger.info(f"Pass 1 complete: {tags_created} tags created, {tags_updated} updated, {skipped_long_tags} skipped")
     
     existing_tags = None
     tags_to_create = None
     db.expire_all()
     
     # PASS 2: Import aliases
-    print("Pass 2: Importing aliases...")
-    print("Building tag mapping...")
+    logger.info("Pass 2: Importing aliases...")
+    logger.debug("Building tag mapping...")
     tag_map = {}
     offset = 0
     chunk_size = 10000
@@ -820,9 +821,9 @@ def import_tags_csv_logic(csv_text: str, db: Session):
         
         offset += chunk_size
         if offset % 50000 == 0:
-            print(f"Loaded {offset} tag mappings...")
+            logger.debug(f"Loaded {offset} tag mappings...")
     
-    print(f"Tag mapping complete: {len(tag_map)} tags")
+    logger.info(f"Tag mapping complete: {len(tag_map)} tags")
     
     existing_aliases = {alias.alias_name for alias in db.query(TagAlias.alias_name).all()}
     aliases_to_create = []
@@ -865,7 +866,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
                         aliases_to_create = []
                     
                     db.commit()
-                    print(f"Pass 2: Processed {rows_processed} tags, created {aliases_created} aliases...")
+                    logger.debug(f"Pass 2: Processed {rows_processed} tags, created {aliases_created} aliases...")
                     db.expire_all()
                 except IntegrityError as e:
                     db.rollback()
@@ -891,7 +892,7 @@ def import_tags_csv_logic(csv_text: str, db: Session):
         db.rollback()
         errors.append({"key": "notifications.admin.error_final_batch_pass2", "error": str(e)})
     
-    print(f"Pass 2 complete: {aliases_created} aliases created, {skipped_long_aliases} skipped")
+    logger.info(f"Pass 2 complete: {aliases_created} aliases created, {skipped_long_aliases} skipped")
     
     return {
         "message_key": "notifications.admin.tags_imported",
@@ -925,7 +926,7 @@ async def import_tags_csv(
     
     except Exception as e:
         db.rollback()
-        print(f"Error during import: {str(e)}")
+        logger.error(f"Error during import: {str(e)}")
         raise HTTPException(status_code=400, detail=safe_error_detail("Error importing CSV", e))
 
 @router.get("/tag-stats")
@@ -1204,7 +1205,7 @@ async def backup_full_db(
             else:
                 archive_path = f"media/{m.filename}"
         except Exception as e:
-            print(f"Warning: Could not construct archive path for {m.filename}: {e}")
+            logger.warning(f"Warning: Could not construct archive path for {m.filename}: {e}")
             archive_path = f"media/{m.filename}"
         
         media_list.append({
@@ -1237,82 +1238,74 @@ async def backup_full_db(
         tmp_json_path = None
         
         try:
-            print("Starting full backup generation...")
+            logger.info("Starting full backup generation...")
             
             # A. tags.csv
-            print("Generating tags.csv...")
+            logger.debug("Generating tags.csv...")
             try:
                 with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_csv:
                     csv_gen = generate_tags_csv_stream(stream_db)
                     for chunk in csv_gen:
                         tmp_csv.write(chunk)
                     tmp_csv_path = Path(tmp_csv.name)
-                print(f"tags.csv generated: {tmp_csv_path}")
+                logger.debug(f"tags.csv generated: {tmp_csv_path}")
             except Exception as e:
-                print(f"Error generating tags.csv: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"Error generating tags.csv: {e}", exc_info=True)
                 raise
                 
             # B. backup.json (Media metadata)
-            print("Generating backup.json...")
+            logger.debug("Generating backup.json...")
             try:
                 with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tmp_json:
                     tmp_json.write(json.dumps(backup_metadata, indent=2).encode('utf-8'))
                     tmp_json_path = Path(tmp_json.name)
-                print(f"backup.json generated: {tmp_json_path}")
+                logger.debug(f"backup.json generated: {tmp_json_path}")
             except Exception as e:
-                print(f"Error generating backup.json: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"Error generating backup.json: {e}", exc_info=True)
                 raise
                 
             try:
-                print("Yielding tags.csv to ZIP stream...")
+                logger.debug("Yielding tags.csv to ZIP stream...")
                 yield ("tags.csv", tmp_csv_path)
                 
-                print("Yielding backup.json to ZIP stream...")
+                logger.debug("Yielding backup.json to ZIP stream...")
                 yield ("backup.json", tmp_json_path)
                 
                 # C. Media files
-                print("Yielding media files to ZIP stream...")
+                logger.debug("Yielding media files to ZIP stream...")
                 media_gen = get_media_files_generator()
                 file_count = 0
                 for item in media_gen:
                     yield item
                     file_count += 1
                     if file_count % 100 == 0:
-                        print(f"Processed {file_count} media files...")
-                print(f"All {file_count} media files yielded to ZIP stream")
+                        logger.debug(f"Processed {file_count} media files...")
+                logger.info(f"All {file_count} media files yielded to ZIP stream")
                 
             except Exception as e:
-                print(f"Error during ZIP streaming: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"Error during ZIP streaming: {e}", exc_info=True)
                 raise
             finally:
                 # Cleanup temp files
                 if tmp_csv_path and tmp_csv_path.exists():
                     try:
                         os.unlink(tmp_csv_path)
-                        print("Cleaned up tags.csv temp file")
+                        logger.debug("Cleaned up tags.csv temp file")
                     except Exception as e:
-                        print(f"Error cleaning up tags.csv: {e}")
+                        logger.error(f"Error cleaning up tags.csv: {e}")
                         
                 if tmp_json_path and tmp_json_path.exists():
                     try:
                         os.unlink(tmp_json_path)
-                        print("Cleaned up backup.json temp file")
+                        logger.debug("Cleaned up backup.json temp file")
                     except Exception as e:
-                        print(f"Error cleaning up backup.json: {e}")
+                        logger.error(f"Error cleaning up backup.json: {e}")
         except Exception as e:
-            print(f"Fatal error in mixed_generator: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Fatal error in mixed_generator: {e}", exc_info=True)
             raise
         finally:
             stream_db.close()
-            print("Backup generation complete, database session closed")
+            logger.info("Backup generation complete, database session closed")
                 
     zip_stream = stream_zip_generator(mixed_generator())
     
@@ -1335,8 +1328,7 @@ async def import_full(
         result = import_full_backup(file.file, db)
         return result
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Import error occurred")
         raise HTTPException(status_code=400, detail=safe_error_detail("Import failed", e))
 
 

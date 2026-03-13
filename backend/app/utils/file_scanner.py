@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..models import Media
+from .logger import logger
 from .media_helpers import sanitize_filename
 from .media_processor import calculate_file_hash
 
@@ -56,10 +57,10 @@ def find_untracked_media(db: Session) -> dict:
             except Exception:
                 pass
     
-    print(f"Scanning directory: {original_dir}")
-    print(f"Tracked hashes: {len(tracked_hashes)}")
-    print(f"Tracked paths: {len(tracked_paths)}")
-    print(f"Tracked filenames: {len(tracked_filenames)}")
+    logger.info(f"Scanning directory: {original_dir}")
+    logger.debug(f"Tracked hashes: {len(tracked_hashes)}")
+    logger.debug(f"Tracked paths: {len(tracked_paths)}")
+    logger.debug(f"Tracked filenames: {len(tracked_filenames)}")
     
     for file_path in original_dir.rglob('*'):
         if file_path.is_symlink():
@@ -87,10 +88,10 @@ def find_untracked_media(db: Session) -> dict:
             })
             
         except Exception as e:
-            print(f"Error checking file {file_path.name}: {str(e)}")
+            logger.error(f"Error checking file {file_path.name}: {str(e)}")
             continue
     
-    print(f"Found {len(untracked_files)} untracked files")
+    logger.debug(f"Found {len(untracked_files)} untracked files")
     
     return {
         'new_files': len(untracked_files),

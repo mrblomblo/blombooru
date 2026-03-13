@@ -4,6 +4,7 @@ import cv2
 from PIL import Image
 
 from ..schemas import FileTypeEnum
+from .logger import logger
 
 THUMBNAIL_SIZE = (300, 300)
 
@@ -25,7 +26,7 @@ def generate_image_thumbnail(source_path: Path, thumbnail_path: Path) -> bool:
             img.save(thumbnail_path, 'JPEG', quality=85, optimize=True)
         return True
     except Exception as e:
-        print(f"Error generating image thumbnail: {e}")
+        logger.error(f"Error generating image thumbnail: {e}")
         return False
 
 def generate_video_thumbnail(source_path: Path, thumbnail_path: Path) -> bool:
@@ -45,7 +46,7 @@ def generate_video_thumbnail(source_path: Path, thumbnail_path: Path) -> bool:
         img.save(thumbnail_path, 'JPEG', quality=85, optimize=True)
         return True
     except Exception as e:
-        print(f"Error generating video thumbnail: {e}")
+        logger.error(f"Error generating video thumbnail: {e}")
         return False
 
 def generate_thumbnail(source_path: Path, thumbnail_path: Path, file_type: FileTypeEnum) -> bool:

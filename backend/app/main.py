@@ -17,6 +17,7 @@ from .models import Media
 from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
                      danbooru, media, search, sharing, system, tags)
 from .translations import language_registry, translation_helper
+from .utils.logger import logger
 
 def get_cache_buster():
     """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""
@@ -98,15 +99,15 @@ async def startup_event():
                         cleanup_archive_chunks(max_age_seconds=3600)
                         cleanup_media_chunks(max_age_seconds=3600)
                     except Exception as e:
-                        print(f"Upload chunks cleanup error: {e}")
+                        logger.error(f"Upload chunks cleanup error: {e}")
 
             asyncio.create_task(periodic_upload_chunks_cleanup())
                 
-            print("Blombooru started successfully")
+            logger.info("Blombooru started successfully")
         except Exception as e:
-            print(f"Error during startup: {e}")
+            logger.error(f"Error during startup: {e}")
     else:
-        print("First run detected - please complete onboarding")
+        logger.info("First run detected - please complete onboarding")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -115,7 +116,7 @@ async def shutdown_event():
         from .routes.ai_tagger import shutdown_tagger_resources
         shutdown_tagger_resources()
     except Exception as e:
-        print(f"Error during shutdown: {e}")
+        logger.error(f"Error during shutdown: {e}")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -197,7 +198,7 @@ async def shared_page(request: Request, share_uuid: str, db: Session = Depends(g
         if current_theme:
             context["current_theme"] = current_theme.to_dict()
     except Exception as e:
-        print(f"Error loading theme for shared page: {e}")
+        logger.error(f"Error loading theme for shared page: {e}")
             
     # Handle language override
     target_lang = settings.CURRENT_LANGUAGE

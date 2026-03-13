@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from .database import get_db
 from .models import User
+from .utils.logger import logger
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
@@ -42,7 +43,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         
         return pwdhash.hex() == stored_hash
     except Exception as e:
-        print(f"Password verification error: {e}")
+        logger.error(f"Password verification error: {e}")
         return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

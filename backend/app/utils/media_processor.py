@@ -7,6 +7,7 @@ import magic
 from PIL import Image
 
 from ..schemas import FileTypeEnum
+from .logger import logger
 
 def calculate_file_hash(file_path: Path) -> str:
     """Calculate MD5 hash of a file"""
@@ -63,7 +64,7 @@ def is_animated_webp(file_path: Path) -> bool:
             
             return b'ANIM' in chunk_data
     except Exception as e:
-        print(f"Error checking if WebP is animated: {e}")
+        logger.error(f"Error checking if WebP is animated: {e}")
         return False
 
 def get_image_dimensions(file_path: Path) -> Optional[Tuple[int, int]]:

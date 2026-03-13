@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from .utils.logger import logger
+
 engine = None
 SessionLocal = None
 Base = declarative_base()
@@ -63,14 +65,14 @@ def init_shared_engine():
         
         _shared_db_available = True
         _shared_db_error = None
-        print(f"Shared tag database connected: {settings.SHARED_TAG_DB_HOST}:{settings.SHARED_TAG_DB_PORT}/{settings.SHARED_TAG_DB_NAME}")
+        logger.info(f"Shared tag database connected: {settings.SHARED_TAG_DB_HOST}:{settings.SHARED_TAG_DB_PORT}/{settings.SHARED_TAG_DB_NAME}")
         return shared_engine
         
     except Exception as e:
         _shared_db_available = False
         _shared_db_error = str(e)
-        print(f"Warning: Could not connect to shared tag database: {e}")
-        print("Continuing with local tags only...")
+        logger.warning(f"Warning: Could not connect to shared tag database: {e}")
+        logger.warning("Continuing with local tags only...")
         return None
 
 def is_shared_db_available() -> bool:
@@ -163,9 +165,9 @@ def init_shared_db():
     try:
         from .shared_tag_models import SharedBase
         SharedBase.metadata.create_all(bind=shared_engine)
-        print("Shared tag database schema initialized")
+        logger.info("Shared tag database schema initialized")
     except Exception as e:
-        print(f"Warning: Could not initialize shared tag database schema: {e}")
+        logger.warning(f"Warning: Could not initialize shared tag database schema: {e}")
 
 def check_and_migrate_schema(engine):
     """Run schema migrations"""
@@ -195,7 +197,7 @@ def migrate_add_parent_id(engine, inspector):
     if 'parent_id' in columns:
         return
     
-    print("Adding parent_id column to blombooru_media...")
+    logger.info("Adding parent_id column to blombooru_media...")
     is_sqlite = engine.dialect.name == 'sqlite'
     
     with engine.connect() as conn:
@@ -223,7 +225,7 @@ def migrate_add_share_language(engine, inspector):
     if 'share_language' in columns:
         return
     
-    print("Adding share_language column to blombooru_media...")
+    logger.info("Adding share_language column to blombooru_media...")
     
     with engine.connect() as conn:
         conn.execute(text(

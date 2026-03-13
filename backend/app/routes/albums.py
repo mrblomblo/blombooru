@@ -19,6 +19,7 @@ from ..utils.album_utils import (get_album_popular_tags, get_album_rating,
                                  get_random_thumbnails,
                                  update_album_last_modified)
 from ..utils.cache import cache_response, invalidate_album_cache
+from ..utils.logger import logger
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..config import settings
 from ..models import Media, Tag, TagAlias, blombooru_media_tags
+from ..utils.logger import logger
 
 # Constants for batch processing
 DB_BATCH_SIZE = 10000
@@ -179,7 +180,7 @@ def import_full_backup(zip_source, db: Session):
                     backup_data = json.load(f)
                     media_list = backup_data.get('media', [])
             except Exception as e:
-                print(f"Error reading backup.json: {e}")
+                logger.error(f"Error reading backup.json: {e}")
                 
         if not media_list:
             # If only tags were imported, that's okay
@@ -241,10 +242,10 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
     from ..schemas import FileTypeEnum
     from ..utils.thumbnail_generator import generate_thumbnail
     
-    print(f"Starting logical media import for {len(media_list)} items...")
+    logger.info(f"Starting logical media import for {len(media_list)} items...")
     
     existing_hashes = {m.hash for m in db.query(Media.hash).all()}
-    print(f"Found {len(existing_hashes)} existing media hashes in DB.")
+    logger.info(f"Found {len(existing_hashes)} existing media hashes in DB.")
     
     all_tags = {t.name: t.id for t in db.query(Tag.name, Tag.id).all()}
     
@@ -257,7 +258,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         if file_hash in existing_hashes:
             skipped_count += 1
             if skipped_count % 1000 == 0:
-                print(f"Skipped {skipped_count} existing files...")
+                logger.info(f"Skipped {skipped_count} existing files...")
             continue # Skip existing
 
         original_filename = media_data.get('filename')
@@ -265,14 +266,14 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
 
         if not zip_entry_name or zip_entry_name not in zf.namelist():
             # Fallback: Try to find by filename in media folder
-            print(f"File not found at {zip_entry_name}, attempting fallback search for {original_filename}")
+            logger.info(f"File not found at {zip_entry_name}, attempting fallback search for {original_filename}")
             candidates = [n for n in zf.namelist() if n.startswith('media/') and Path(n).name == original_filename]
             
             if candidates:
                 zip_entry_name = candidates[0]
-                print(f"Fallback: Found {zip_entry_name}")
+                logger.warning(f"Fallback: Found {zip_entry_name}")
             else:
-                print(f"File not found in archive: {zip_entry_name} or plain {original_filename}")
+                logger.info(f"File not found in archive: {zip_entry_name} or plain {original_filename}")
                 continue
 
         target_path = settings.ORIGINAL_DIR / Path(zip_entry_name).name
@@ -302,7 +303,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         try:
             generate_thumbnail(target_path, thumb_path, file_type_enum)
         except Exception as e:
-            print(f"Failed to generate thumbnail for {target_path}: {e}")
+            logger.error(f"Failed to generate thumbnail for {target_path}: {e}")
 
         new_media = Media(
             filename=target_path.name,
@@ -339,13 +340,13 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
             
         imported_count += 1
         if imported_count % 100 == 0:
-            print(f"Imported {imported_count} media files...")
+            logger.error(f"Imported {imported_count} media files...")
 
     db.commit()
     
     # Post-process parent links
     if parent_links:
-        print(f"Linking {len(parent_links)} parent/child relationships...")
+        logger.error(f"Linking {len(parent_links)} parent/child relationships...")
         # Refresh hash map to include newly imported items
         all_media_map = {m.hash: m.id for m in db.query(Media.hash, Media.id).all()}
         
@@ -360,9 +361,9 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         if updates:
              db.bulk_update_mappings(Media, updates)
              db.commit()
-             print(f"Linked {len(updates)} parent relationships.")
+             logger.error(f"Linked {len(updates)} parent relationships.")
     
-    print(f"Media import complete. Imported: {imported_count}, Skipped: {skipped_count}")
+    logger.error(f"Media import complete. Imported: {imported_count}, Skipped: {skipped_count}")
 
 def import_albums_logical(db: Session, albums_list: List[dict]):
     from datetime import datetime
@@ -370,7 +371,7 @@ def import_albums_logical(db: Session, albums_list: List[dict]):
     from ..models import (Album, Media, blombooru_album_hierarchy,
                           blombooru_album_media)
     
-    print(f"Starting album import for {len(albums_list)} albums...")
+    logger.info(f"Starting album import for {len(albums_list)} albums...")
     
     # PASS 1: Create Albums and build ID mapping
     # json_id -> db_id
@@ -398,10 +399,10 @@ def import_albums_logical(db: Session, albums_list: List[dict]):
             id_map[json_id] = new_album.id
             
     db.commit()
-    print(f"Pass 1: consistent album IDs mapped.")
+    logger.info(f"Pass 1: consistent album IDs mapped.")
     
     # PASS 2: Link Media
-    print("Pass 2: Linking media...")
+    logger.info("Pass 2: Linking media...")
     
     # Cache all media hashes -> IDs
     # Might be heavy, but should be manageable
@@ -440,10 +441,10 @@ def import_albums_logical(db: Session, albums_list: List[dict]):
             db.execute(blombooru_album_media.insert(), chunk)
             db.commit()
             
-    print(f"Pass 2: Linked {len(album_media_inserts)} media items.")
+    logger.info(f"Pass 2: Linked {len(album_media_inserts)} media items.")
 
     # PASS 3: Hierarchy
-    print("Pass 3: Reconstructing hierarchy...")
+    logger.info("Pass 3: Reconstructing hierarchy...")
     
     hierarchy_inserts = []
     
@@ -482,4 +483,4 @@ def import_albums_logical(db: Session, albums_list: List[dict]):
             db.execute(blombooru_album_hierarchy.insert(), chunk)
             db.commit()
             
-    print("Pass 3: Hierarchy reconstructed.")
+    logger.info("Pass 3: Hierarchy reconstructed.")

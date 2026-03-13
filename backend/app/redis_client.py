@@ -4,6 +4,7 @@ from typing import Any, Optional
 import redis
 
 from .config import settings
+from .utils.logger import logger
 
 class RedisClient:
     def __init__(self):
@@ -36,9 +37,9 @@ class RedisClient:
             )
             # Test connection
             self._client.ping()
-            print(f"Connected to Redis at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
+            logger.info(f"Connected to Redis at {settings.REDIS_HOST}:{settings.REDIS_PORT}")
         except Exception as e:
-            print(f"Failed to connect to Redis: {e}")
+            logger.error(f"Failed to connect to Redis: {e}")
             self._client = None
             # Don't disable globally, might be a temporary connection issue
 
@@ -53,7 +54,7 @@ class RedisClient:
             if data:
                 return json.loads(data)
         except Exception as e:
-            print(f"Redis get error: {e}")
+            logger.error(f"Redis get error: {e}")
         return None
 
     def set(self, key: str, value: Any, expire: int = 3600):
@@ -65,7 +66,7 @@ class RedisClient:
         try:
             c.set(key, json.dumps(value), ex=expire)
         except Exception as e:
-            print(f"Redis set error: {e}")
+            logger.error(f"Redis set error: {e}")
 
     def delete(self, key: str):
         """Delete key from cache"""
@@ -76,7 +77,7 @@ class RedisClient:
         try:
             c.delete(key)
         except Exception as e:
-            print(f"Redis delete error: {e}")
+            logger.error(f"Redis delete error: {e}")
 
     def flush_all(self):
         """Clear all cache"""
@@ -86,9 +87,9 @@ class RedisClient:
         
         try:
             c.flushdb()
-            print("Redis cache flushed")
+            logger.info("Redis cache flushed")
         except Exception as e:
-            print(f"Redis flush error: {e}")
+            logger.error(f"Redis flush error: {e}")
 
     def is_available(self) -> bool:
         """Check if Redis is enabled and reachable"""

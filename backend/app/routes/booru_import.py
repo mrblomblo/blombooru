@@ -18,6 +18,7 @@ from ..services.booru import BooruPost, get_client_for_url
 from ..utils.album_utils import update_album_last_modified
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
+from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail
@@ -251,8 +252,7 @@ async def download_and_import(
         if 'thumbnail_path' in locals() and thumbnail_path.exists():
             thumbnail_path.unlink(missing_ok=True)
 
-        import traceback
-        traceback.print_exc()
+        logger.exception("Import error occurred", exc_info=True)
         raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.import_error:::{safe_error_detail('Import error', e)}")
 
 @router.get("/proxy-image")

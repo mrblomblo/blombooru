@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from ..utils.logger import logger
+
 @dataclass
 class SyncResult:
     """Result of a tag synchronization operation"""
@@ -217,7 +219,7 @@ class SharedTagService:
                 return True
                 
         except Exception as e:
-            print(f"Error syncing tag to shared DB: {e}")
+            logger.error(f"Error syncing tag to shared DB: {e}")
             self.shared_db.rollback()
             return False
     
@@ -247,7 +249,7 @@ class SharedTagService:
             return False  # Tag didn't exist in shared DB
                 
         except Exception as e:
-            print(f"Error deleting tag from shared DB: {e}")
+            logger.error(f"Error deleting tag from shared DB: {e}")
             self.shared_db.rollback()
             return False
     
@@ -264,7 +266,7 @@ class SharedTagService:
             self.shared_db.commit()
             return True
         except Exception as e:
-            print(f"Error clearing shared DB: {e}")
+            logger.error(f"Error clearing shared DB: {e}")
             self.shared_db.rollback()
             return False
     

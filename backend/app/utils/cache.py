@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 
 from ..redis_client import redis_cache
+from ..utils.logger import logger
 
 def cache_response(expire: int = 3600, key_prefix: str = "cache"):
     """
@@ -41,7 +42,7 @@ def cache_response(expire: int = 3600, key_prefix: str = "cache"):
                 if isinstance(serializable_result, (dict, list)):
                     redis_cache.set(key, serializable_result, expire=expire)
             except Exception as e:
-                print(f"Error encoding result for cache: {e}")
+                logger.error(f"Error encoding result for cache: {e}")
                 
             return result
         return wrapper
@@ -63,9 +64,9 @@ def invalidate_cache(*prefixes: str):
         
         if all_keys:
             c.delete(*all_keys)
-            print(f"Invalidated {len(all_keys)} cache keys for prefixes: {prefixes}")
+            logger.debug(f"Invalidated {len(all_keys)} cache keys for prefixes: {prefixes}")
     except Exception as e:
-        print(f"Error invalidating cache: {e}")
+        logger.error(f"Error invalidating cache: {e}")
 
 def invalidate_media_cache():
     """Invalidate all media-related caches"""
@@ -98,6 +99,6 @@ def invalidate_media_item_cache(media_id: int):
         
         if all_keys:
             c.delete(*all_keys)
-            print(f"Invalidated {len(all_keys)} cache keys for media ID {media_id}")
+            logger.debug(f"Invalidated {len(all_keys)} cache keys for media ID {media_id}")
     except Exception as e:
-        print(f"Error invalidating media item cache: {e}")
+        logger.error(f"Error invalidating media item cache: {e}")

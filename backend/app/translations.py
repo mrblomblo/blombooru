@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .utils.logger import logger
 
 @dataclass
 class Language:
@@ -17,7 +18,6 @@ class Language:
             "name": self.name,
             "native_name": self.native_name
         }
-
 
 class LanguageRegistry:
     """Central registry for managing languages"""
@@ -76,7 +76,6 @@ class LanguageRegistry:
         #     native_name="Deutsch"
         # ))
 
-
 class TranslationHelper:
     """Helper for getting translated strings with fallback to English"""
 
@@ -99,7 +98,7 @@ class TranslationHelper:
                 with open(locale_file, 'r', encoding='utf-8') as f:
                     self._translations[lang_id] = json.load(f)
             except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading translation file {locale_file}: {e}")
+                logger.error(f"Error loading translation file {locale_file}: {e}")
 
     def reload_translations(self) -> None:
         """Reload all translation files"""

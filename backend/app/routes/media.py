@@ -26,6 +26,7 @@ from ..utils.album_utils import (get_album_rating, get_media_count,
 from ..utils.cache import (cache_response, invalidate_album_cache,
                            invalidate_media_cache, invalidate_media_item_cache,
                            invalidate_tag_cache)
+from ..utils.logger import logger
 from ..utils.media_helpers import (create_stripped_media_cache,
                                    delete_media_cache, extract_image_metadata,
                                    get_unique_filename, sanitize_filename,
@@ -143,9 +144,7 @@ async def get_media_list(
             "pages": max(1, (total + limit - 1) // limit)
         }
     except Exception as e:
-        print(f"Error in get_media_list: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in get_media_list: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to retrieve media list", e))
 
 @router.get("/batch")
@@ -164,7 +163,7 @@ async def get_media_batch(
         
         return {"items": items}
     except Exception as e:
-        print(f"Error in get_media_batch: {e}")
+        logger.error(f"Error in get_media_batch: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to retrieve media batch", e))
 
 @router.get("/{media_id}")
@@ -279,17 +278,17 @@ async def upload_media(
             unique_filename = get_unique_filename(settings.ORIGINAL_DIR, file.filename)
             file_path = settings.ORIGINAL_DIR / unique_filename
             
-            print(f"Uploading file: {file.filename} -> {unique_filename}")
+            logger.info(f"Uploading file: {file.filename} -> {unique_filename}")
             
             with open(file_path, 'wb') as buffer:
                 buffer.write(contents)
             
-            print(f"File saved to: {file_path}")
+            logger.debug(f"File saved to: {file_path}")
         
         # Check for duplicates AFTER we have the hash
         existing = db.query(Media).filter(Media.hash == file_hash).first()
         if existing:
-            print(f"Duplicate file detected: {file_hash}")
+            logger.info(f"Duplicate file detected: {file_hash}")
             # Only delete uploaded file if it was a new upload (not scanned)
             if not scanned_path and file_path.exists():
                 file_path.unlink(missing_ok=True)
@@ -299,13 +298,13 @@ async def upload_media(
             )
         
         metadata = process_media_file(file_path)
-        print(f"Media processed: {metadata}")
+        logger.debug(f"Media processed: {metadata}")
 
         thumbnail_name = Path(unique_filename).stem
         thumbnail_filename = f"{thumbnail_name}.jpg"
         thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
 
-        print(f"Generating thumbnail: {thumbnail_filename}")
+        logger.debug(f"Generating thumbnail: {thumbnail_filename}")
 
         thumbnail_generated = generate_thumbnail(
             file_path,
@@ -314,9 +313,9 @@ async def upload_media(
         )
 
         if thumbnail_generated:
-            print(f"Thumbnail generated: {thumbnail_path}")
+            logger.debug(f"Thumbnail generated: {thumbnail_path}")
         else:
-            print(f"Warning: Thumbnail generation failed")
+            logger.warning(f"Warning: Thumbnail generation failed")
         
         relative_path = file_path.relative_to(settings.BASE_DIR)
         relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
@@ -348,7 +347,7 @@ async def upload_media(
                     pass
             media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
             tag_ids_to_update = [tag.id for tag in media.tags]
-            print(f"Tags added: {tag_list}")
+            logger.debug(f"Tags added: {tag_list}")
             
         # Handle Album IDs
         affected_album_ids = []
@@ -359,9 +358,9 @@ async def upload_media(
                     albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
                     media.albums = albums
                     affected_album_ids = [album.id for album in albums]
-                    print(f"Added to albums: {affected_album_ids}")
+                    logger.debug(f"Added to albums: {affected_album_ids}")
             except Exception as e:
-                print(f"Error parsing album_ids: {e}")
+                logger.error(f"Error parsing album_ids: {e}")
         
         db.add(media)
         db.commit()
@@ -379,7 +378,7 @@ async def upload_media(
             
         db.refresh(media)
         
-        print(f"Media uploaded successfully: ID={media.id}, Filename={unique_filename}")
+        logger.info(f"Media uploaded successfully: ID={media.id}, Filename={unique_filename}")
         
         invalidate_media_cache()
         invalidate_tag_cache()
@@ -389,9 +388,7 @@ async def upload_media(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error uploading media: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error uploading media: {e}", exc_info=True)
         
         # Clean up files on error (only if it was a new upload, not scanned)
         if not scanned_path:
@@ -564,7 +561,7 @@ async def unshare_media(
         file_path = settings.BASE_DIR / media.path
         delete_media_cache(file_path)
     except Exception as e:
-        print(f"Failed to cleanup cache for unshared media: {e}")
+        logger.error(f"Failed to cleanup cache for unshared media: {e}")
     
     return {"message": "Share removed"}
 
@@ -828,8 +825,7 @@ async def extract_archive(
         raise
     except Exception as e:
         shutil.rmtree(chunk_dir, ignore_errors=True)
-        import traceback
-        traceback.print_exc()
+        logger.exception("Import error occurred")
         raise HTTPException(status_code=400, detail=safe_error_detail("Error extracting archive", e))
 
 @router.get("/archive-file/{upload_id}/{file_id}")
@@ -1050,7 +1046,7 @@ async def finalize_chunked_upload(
                     media.albums = albums
                     affected_album_ids = [album.id for album in albums]
             except Exception as e:
-                print(f"Error parsing album_ids: {e}")
+                logger.error(f"Error parsing album_ids: {e}")
 
         db.add(media)
         db.commit()
@@ -1076,9 +1072,7 @@ async def finalize_chunked_upload(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error in chunked upload finalize: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in chunked upload finalize: {e}", exc_info=True)
 
         if 'file_path' in locals() and file_path.exists():
             file_path.unlink(missing_ok=True)

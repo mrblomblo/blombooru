@@ -9,6 +9,8 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from PIL import Image
 
+from .logger import logger
+
 def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from media files (EXIF, PNG chunks, XMP, etc.)"""
     metadata = {}
@@ -135,9 +137,7 @@ def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
         return metadata
         
     except Exception as e:
-        print(f"Error reading metadata from {file_path}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error reading metadata from {file_path}: {e}", exc_info=True)
         return {}
 
 def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
@@ -161,7 +161,7 @@ def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
             
             vid.release()
     except Exception as e:
-        print(f"Error reading video metadata with cv2 for {file_path}: {e}")
+        logger.error(f"Error reading video metadata with cv2 for {file_path}: {e}")
 
     try:
         stat = file_path.stat()
@@ -173,7 +173,7 @@ def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
             metadata['mime_type'] = mime_type
             
     except Exception as e:
-        print(f"Error getting video metadata for {file_path}: {e}")
+        logger.error(f"Error getting video metadata for {file_path}: {e}")
     
     return metadata
 
@@ -253,7 +253,7 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                             img.seek(0)
                         
                     except Exception as e:
-                        print(f"Error extracting frame durations: {e}")
+                        logger.error(f"Error extracting frame durations: {e}")
                         frame_durations = [100] * n_frames  # Fallback to 100ms per frame
                 
                 # Convert RGBA to RGB if necessary (for JPEG output)
@@ -337,9 +337,7 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
         return cache_path
             
     except Exception as e:
-        print(f"Error stripping metadata from {file_path}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error stripping metadata from {file_path}: {e}", exc_info=True)
         return None
 
 async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
@@ -377,10 +375,10 @@ def delete_media_cache(file_path: Path):
         
         if cache_path.exists():
             cache_path.unlink()
-            print(f"Deleted cache file: {cache_path}")
+            logger.debug(f"Deleted cache file: {cache_path}")
             
     except Exception as e:
-        print(f"Error deleting media cache for {file_path}: {e}")
+        logger.error(f"Error deleting media cache for {file_path}: {e}")
 
 def sanitize_filename(filename: str, fallback: str = "file") -> str:
     """Sanitize filename to be safe for filesystem and web."""

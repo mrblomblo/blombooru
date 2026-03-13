@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
+from .logger import logger
 from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
                       blombooru_album_media)
 

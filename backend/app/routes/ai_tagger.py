@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
 from ..config import settings
+from ..utils.logger import logger
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..models import Media, User

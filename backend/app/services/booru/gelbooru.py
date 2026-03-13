@@ -7,6 +7,7 @@ import requests
 
 from .base import BooruClient
 from .types import BooruPost, BooruTag
+from ...utils.logger import logger
 
 GELBOORU_RATING_MAP: Dict[str, str] = {
     "safe": "safe",
@@ -245,7 +246,7 @@ class GelbooruClient(BooruClient):
                 )
                 results.append(post)
             except Exception as e:
-                print(f"Error parsing booru post {data.get('id')}: {e}")
+                logger.error(f"Error parsing booru post {data.get('id')}: {e}")
                 continue
 
         return results
