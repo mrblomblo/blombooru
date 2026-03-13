@@ -640,7 +640,6 @@ ARCHIVE_CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
 # Max chunk size: 99MB (CloudFlare compatible)
 MAX_CHUNK_SIZE = 99 * 1024 * 1024
 
-
 def cleanup_archive_chunks(max_age_seconds: int = 0):
     """Remove leftover chunk directories.
 
@@ -664,7 +663,6 @@ def cleanup_archive_chunks(max_age_seconds: int = 0):
                 except OSError:
                     pass
             shutil.rmtree(child, ignore_errors=True)
-
 
 @router.post("/archive-chunk")
 async def upload_archive_chunk(
@@ -705,7 +703,6 @@ async def upload_archive_chunk(
         f.write(contents)
 
     return {"received": chunk_index, "total": total_chunks}
-
 
 @router.post("/extract-archive")
 async def extract_archive(
@@ -835,7 +832,6 @@ async def extract_archive(
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=safe_error_detail("Error extracting archive", e))
 
-
 @router.get("/archive-file/{upload_id}/{file_id}")
 async def get_archive_file(
     upload_id: str,
@@ -863,7 +859,6 @@ async def get_archive_file(
 
     return FileResponse(file_path, media_type=mime_type)
 
-
 @router.delete("/archive-cleanup/{upload_id}")
 async def cleanup_archive(
     upload_id: str,
@@ -878,3 +873,217 @@ async def cleanup_archive(
     chunk_dir = ARCHIVE_CHUNKS_DIR / upload_id
     shutil.rmtree(chunk_dir, ignore_errors=True)
     return {"message": "Cleaned up"}
+
+MEDIA_CHUNKS_DIR = settings.CACHE_DIR / "media-chunks"
+MEDIA_CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
+
+def cleanup_media_chunks(max_age_seconds: int = 0):
+    """Remove leftover media-chunk directories.
+
+    Args:
+        max_age_seconds: Only remove directories older than this many seconds.
+                         0 means remove everything (used on startup).
+    """
+    import time
+
+    if not MEDIA_CHUNKS_DIR.exists():
+        return
+
+    now = time.time()
+    for child in MEDIA_CHUNKS_DIR.iterdir():
+        if child.is_dir():
+            if max_age_seconds > 0:
+                try:
+                    age = now - child.stat().st_mtime
+                    if age < max_age_seconds:
+                        continue
+                except OSError:
+                    pass
+            shutil.rmtree(child, ignore_errors=True)
+
+@router.post("/upload-chunk")
+async def upload_media_chunk(
+    file: UploadFile = File(...),
+    upload_id: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    filename: str = Form(...),
+    current_user: User = Depends(require_admin_mode)
+):
+    """Receive a single chunk of a media upload."""
+    import re
+
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    if chunk_index < 0 or chunk_index >= total_chunks:
+        raise HTTPException(status_code=400, detail="Invalid chunk_index")
+
+    contents = await file.read()
+    if len(contents) > MAX_CHUNK_SIZE:
+        raise HTTPException(status_code=400, detail=f"Chunk too large (max {MAX_CHUNK_SIZE // (1024 * 1024)}MB)")
+
+    chunk_dir = MEDIA_CHUNKS_DIR / upload_id
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+
+    meta_path = chunk_dir / "meta.json"
+    if chunk_index == 0:
+        import json as _json
+        with open(meta_path, 'w') as f:
+            _json.dump({"filename": filename, "total_chunks": total_chunks}, f)
+
+    chunk_path = chunk_dir / f"chunk_{chunk_index}"
+    with open(chunk_path, 'wb') as f:
+        f.write(contents)
+
+    return {"received": chunk_index, "total": total_chunks}
+
+@router.post("/upload-finalize", response_model=MediaResponse)
+async def finalize_chunked_upload(
+    upload_id: str = Form(...),
+    rating: RatingEnum = Form(RatingEnum.safe),
+    tags: str = Form(""),
+    album_ids: Optional[str] = Form(None),
+    source: Optional[str] = Form(None),
+    category_hints: Optional[str] = Form(None),
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Reassemble chunks and process as a regular media upload."""
+    import re
+    import json as _json
+
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    chunk_dir = MEDIA_CHUNKS_DIR / upload_id
+    if not chunk_dir.exists():
+        raise HTTPException(status_code=400, detail="No chunks found for this upload_id")
+
+    meta_path = chunk_dir / "meta.json"
+    if not meta_path.exists():
+        raise HTTPException(status_code=400, detail="Missing upload metadata")
+
+    with open(meta_path) as f:
+        meta = _json.load(f)
+
+    filename = meta["filename"]
+    total_chunks = meta["total_chunks"]
+
+    for i in range(total_chunks):
+        if not (chunk_dir / f"chunk_{i}").exists():
+            raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+
+    # Reassemble into a single file in ORIGINAL_DIR
+    try:
+        unique_filename = get_unique_filename(settings.ORIGINAL_DIR, filename)
+        file_path = settings.ORIGINAL_DIR / unique_filename
+
+        with open(file_path, 'wb') as out_f:
+            for i in range(total_chunks):
+                chunk_path = chunk_dir / f"chunk_{i}"
+                with open(chunk_path, 'rb') as chunk_f:
+                    shutil.copyfileobj(chunk_f, out_f)
+
+        # Clean up chunks immediately
+        shutil.rmtree(chunk_dir, ignore_errors=True)
+
+        # From here, identical to the regular upload pipeline
+        file_hash = calculate_file_hash(file_path)
+
+        existing = db.query(Media).filter(Media.hash == file_hash).first()
+        if existing:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=409,
+                detail=f"Media already exists (duplicate of {existing.filename})"
+            )
+
+        metadata = process_media_file(file_path)
+
+        thumbnail_name = Path(unique_filename).stem
+        thumbnail_filename = f"{thumbnail_name}.jpg"
+        thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
+
+        thumbnail_generated = generate_thumbnail(
+            file_path,
+            thumbnail_path,
+            metadata['file_type']
+        )
+
+        relative_path = file_path.relative_to(settings.BASE_DIR)
+        relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
+
+        media = Media(
+            filename=unique_filename,
+            path=str(relative_path),
+            thumbnail_path=str(relative_thumb) if relative_thumb else None,
+            hash=file_hash,
+            file_type=metadata['file_type'],
+            mime_type=metadata['mime_type'],
+            file_size=metadata['file_size'],
+            width=metadata['width'],
+            height=metadata['height'],
+            duration=metadata['duration'],
+            rating=rating,
+            source=source if source else None,
+        )
+
+        tag_ids_to_update = []
+        if tags:
+            tag_list = [t.strip() for t in tags.split() if t.strip()]
+            parsed_hints = None
+            if category_hints:
+                try:
+                    parsed_hints = _json.loads(category_hints)
+                except (_json.JSONDecodeError, TypeError):
+                    pass
+            media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
+            tag_ids_to_update = [tag.id for tag in media.tags]
+
+        affected_album_ids = []
+        if album_ids:
+            try:
+                a_ids = [int(id_str.strip()) for id_str in album_ids.split(",") if id_str.strip().isdigit()]
+                if a_ids:
+                    albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
+                    media.albums = albums
+                    affected_album_ids = [album.id for album in albums]
+            except Exception as e:
+                print(f"Error parsing album_ids: {e}")
+
+        db.add(media)
+        db.commit()
+        db.refresh(media)
+
+        if tag_ids_to_update:
+            update_tag_counts(db, tag_ids_to_update)
+            db.commit()
+
+        if affected_album_ids:
+            for a_id in affected_album_ids:
+                update_album_last_modified(a_id, db)
+            db.commit()
+            invalidate_album_cache()
+
+        db.refresh(media)
+
+        invalidate_media_cache()
+        invalidate_tag_cache()
+
+        return MediaResponse.model_validate(media)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in chunked upload finalize: {e}")
+        import traceback
+        traceback.print_exc()
+
+        if 'file_path' in locals() and file_path.exists():
+            file_path.unlink(missing_ok=True)
+        if 'thumbnail_path' in locals() and thumbnail_path.exists():
+            thumbnail_path.unlink(missing_ok=True)
+
+        shutil.rmtree(chunk_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=safe_error_detail("Chunked upload failed", e))
