@@ -80,22 +80,24 @@ async def startup_event():
             init_engine()
             init_db()
 
-            # Clean up any leftover archive chunks from abandoned uploads
-            from .routes.media import cleanup_archive_chunks
+            # Clean up any leftover chunks from abandoned uploads
+            from .routes.media import cleanup_archive_chunks, cleanup_media_chunks
             cleanup_archive_chunks()
+            cleanup_media_chunks()
 
             # Start periodic cleanup task for abandoned archive extractions
             import asyncio
 
-            async def periodic_archive_cleanup():
+            async def periodic_upload_chunks_cleanup():
                 while True:
                     await asyncio.sleep(900)  # Every 15 minutes
                     try:
                         cleanup_archive_chunks(max_age_seconds=3600)
+                        cleanup_media_chunks(max_age_seconds=3600)
                     except Exception as e:
-                        print(f"Archive cleanup error: {e}")
+                        print(f"Upload chunks cleanup error: {e}")
 
-            asyncio.create_task(periodic_archive_cleanup())
+            asyncio.create_task(periodic_upload_chunks_cleanup())
                 
             print("Blombooru started successfully")
         except Exception as e:
