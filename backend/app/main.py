@@ -42,7 +42,10 @@ class DynamicCacheBuster:
 
 CACHE_BUSTER = DynamicCacheBuster(get_cache_buster())
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 app = FastAPI(title="Blombooru", version=APP_VERSION)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(AuthMiddleware)
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
