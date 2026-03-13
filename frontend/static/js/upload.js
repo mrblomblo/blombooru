@@ -928,9 +928,15 @@ class Uploader {
     }
 
     async uploadFile(fileData) {
+        const CHUNK_SIZE = 99 * 1024 * 1024; // 99MB (should always be the same as backend MAX_CHUNK_SIZE)
         const allTags = [...this.baseTags, ...fileData.additionalTags];
         const uniqueTags = [...new Set(allTags)];
         const allAlbumIds = new Set([...this.baseAlbumIds, ...fileData.individualAlbumIds]);
+
+        // Use chunked upload for large files, single POST for small ones
+        if (!fileData.scannedPath && fileData.file && fileData.file.size > CHUNK_SIZE) {
+            return await this._uploadFileChunked(fileData, uniqueTags, allAlbumIds, CHUNK_SIZE);
+        }
 
         const formData = new FormData();
         if (fileData.scannedPath) {
@@ -957,6 +963,67 @@ class Uploader {
         const response = await fetch('/api/media/', {
             method: 'POST',
             body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Upload failed (${response.status}): ${error.detail || response.statusText}`);
+        }
+
+        return await response.json();
+    }
+
+    async _uploadFileChunked(fileData, uniqueTags, allAlbumIds, chunkSize) {
+        const file = fileData.file;
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const uploadId = crypto.randomUUID();
+
+        // Upload chunks sequentially
+        for (let i = 0; i < totalChunks; i++) {
+            const start = i * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunk = file.slice(start, end);
+
+            const chunkForm = new FormData();
+            chunkForm.append('file', chunk, file.name);
+            chunkForm.append('upload_id', uploadId);
+            chunkForm.append('chunk_index', i.toString());
+            chunkForm.append('total_chunks', totalChunks.toString());
+            chunkForm.append('filename', file.name);
+
+            const chunkResponse = await fetch('/api/media/upload-chunk', {
+                method: 'POST',
+                body: chunkForm
+            });
+
+            if (!chunkResponse.ok) {
+                const errorData = await chunkResponse.json().catch(() => null);
+                const detail = errorData?.detail || chunkResponse.statusText;
+                throw new Error(`Failed to upload chunk ${i + 1}/${totalChunks}: ${detail}`);
+            }
+        }
+
+        // Reassemble and process
+        const finalizeForm = new FormData();
+        finalizeForm.append('upload_id', uploadId);
+        finalizeForm.append('rating', fileData.rating);
+        finalizeForm.append('tags', uniqueTags.join(' '));
+
+        if (allAlbumIds.size > 0) {
+            finalizeForm.append('album_ids', Array.from(allAlbumIds).join(','));
+        }
+
+        if (fileData.source) {
+            finalizeForm.append('source', fileData.source);
+        }
+
+        if (fileData.autoCreateTags && fileData.categoryHints) {
+            finalizeForm.append('category_hints', JSON.stringify(fileData.categoryHints));
+        }
+
+        const response = await fetch('/api/media/upload-finalize', {
+            method: 'POST',
+            body: finalizeForm
         });
 
         if (!response.ok) {
