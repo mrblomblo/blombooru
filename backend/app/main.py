@@ -44,10 +44,26 @@ class DynamicCacheBuster:
 CACHE_BUSTER = DynamicCacheBuster(get_cache_buster())
 
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Blombooru", version=APP_VERSION)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(AuthMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
 static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
 
@@ -79,6 +95,8 @@ app.include_router(booru_config.router)
 @app.on_event("startup")
 async def startup_event():
     """Run on startup"""
+    if settings.DEBUG:
+        logger.warning("DEBUG MODE ENABLED - DO NOT USE IN PRODUCTION")
     if not settings.IS_FIRST_RUN:
         try:
             init_engine()
