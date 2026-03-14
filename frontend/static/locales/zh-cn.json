@@ -99,7 +99,6 @@
         "media_management": {
             "archive_hint": "压缩包将被解压，其中的所有支持的媒体文件都将被处理。",
             "drop_media": "将媒体文件拖放到此处或点击浏览",
-            "max_file_size": "单个文件最大限制：500MB。",
             "scan_untracked": "扫描未追踪的媒体",
             "supported_images": "支持的图片格式：JPG/JPEG, PNG, GIF, WEBP。",
             "supported_videos": "支持的视频格式：MP4, WEBM。",

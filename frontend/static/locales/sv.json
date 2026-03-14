@@ -99,7 +99,6 @@
         "media_management": {
             "archive_hint": "Arkiv extraheras och alla mediefiler som stöds inuti bearbetas.",
             "drop_media": "Släpp mediefiler här eller klicka för att bläddra",
-            "max_file_size": "Max filstorlek: 500MB.",
             "scan_untracked": "Skanna efter ospårade media",
             "supported_images": "Bildformat som stöds: JPG/JPEG, PNG, GIF, WEBP.",
             "supported_videos": "Videoformat som stöds: MP4, WEBM.",

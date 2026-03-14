@@ -99,7 +99,6 @@
         "media_management": {
             "archive_hint": "Archives will be extracted and all supported media files inside will be processed.",
             "drop_media": "Drop media files here or click to browse",
-            "max_file_size": "Max individual file size: 500MB.",
             "scan_untracked": "Scan for Untracked Media",
             "supported_images": "Supported image formats: JPG/JPEG, PNG, GIF, WEBP.",
             "supported_videos": "Supported video formats: MP4, WEBM.",
