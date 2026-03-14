@@ -931,7 +931,7 @@ class Uploader {
         const CHUNK_SIZE = 99 * 1024 * 1024; // 99MB (should always be the same as backend MAX_CHUNK_SIZE)
         const allTags = [...this.baseTags, ...fileData.additionalTags];
         const uniqueTags = [...new Set(allTags)];
-        const allAlbumIds = new Set([...this.baseAlbumIds, ...fileData.individualAlbumIds]);
+        const allAlbumIds = new Set([...this.baseAlbumIds, ...(fileData.individualAlbumIds || [])]);
 
         // Use chunked upload for large files, single POST for small ones
         if (!fileData.scannedPath && fileData.file && fileData.file.size > CHUNK_SIZE) {
@@ -1096,6 +1096,7 @@ class Uploader {
                 rating: this.baseRating,
                 source: this.baseSource,
                 additionalTags: [],
+                individualAlbumIds: new Set(),
                 preview: null,
                 scannedPath: originalPath
             };
