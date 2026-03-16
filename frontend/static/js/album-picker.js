@@ -84,7 +84,7 @@ class AlbumPicker {
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
-                <div id="album-picker-list" class="flex-1 overflow-y-auto mb-4 border" style="min-height: 300px;">
+                <div id="album-picker-list" class="flex-1 overflow-y-auto mb-4 bg border" style="min-height: 300px;">
                     <!-- Albums will be rendered here -->
                 </div>
 
@@ -93,8 +93,8 @@ class AlbumPicker {
                 </div>
 
                 <div class="flex gap-2 justify-end">
-                    <button id="album-picker-cancel" class="px-4 py-2 border hover:surface text-xs">${window.i18n.t('album_picker.cancel')}</button>
-                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs">${window.i18n.t('album_picker.confirm')}</button>
+                    <button id="album-picker-cancel" class="px-4 py-2 border surface-light hover:surface-light text-xs transition-colors">${window.i18n.t('album_picker.cancel')}</button>
+                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs transition-colors">${window.i18n.t('album_picker.confirm')}</button>
                 </div>
             </div>
         `;
