@@ -30,6 +30,7 @@ class AlbumPicker {
             this.albums = data.items || [];
 
             // Build hierarchy information for each album
+            const albumMap = new Map();
             for (const album of this.albums) {
                 try {
                     const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
@@ -41,16 +42,39 @@ class AlbumPicker {
                     album.parents = [];
                     album.depth = 0;
                 }
+                album.children = [];
+                album.parentId = album.parents.length > 0 ? album.parents[album.parents.length - 1].id : null;
+                album.isCollapsed = false;
+                albumMap.set(album.id, album);
             }
 
-            // Sort by name, maintaining hierarchy
-            this.albums.sort((a, b) => {
-                // If same parent level, sort alphabetically
-                if (a.depth === b.depth) {
-                    return a.name.localeCompare(b.name);
+            // Organize into tree
+            const roots = [];
+            for (const album of this.albums) {
+                if (album.parentId && albumMap.has(album.parentId)) {
+                    albumMap.get(album.parentId).children.push(album);
+                } else {
+                    roots.push(album);
                 }
-                return a.depth - b.depth;
-            });
+            }
+
+            // Flatten recursively into sorted list with tree properties
+            this.albums = [];
+            const flatten = (albumsList, prefixLines = []) => {
+                albumsList.sort((a, b) => a.name.localeCompare(b.name));
+                for (let i = 0; i < albumsList.length; i++) {
+                    const album = albumsList[i];
+                    const isLast = i === albumsList.length - 1;
+
+                    album.prefixLines = [...prefixLines];
+                    album.isLastChild = isLast;
+                    this.albums.push(album);
+
+                    const nextPrefix = [...prefixLines, isLast ? ' ' : '│'];
+                    flatten(album.children, nextPrefix);
+                }
+            };
+            flatten(roots);
 
         } catch (error) {
             console.error('Error loading albums:', error);
@@ -122,14 +146,22 @@ class AlbumPicker {
 
     render(filteredAlbums = null) {
         const listEl = this.modal.querySelector('#album-picker-list');
-        const albumsToRender = filteredAlbums || this.albums;
+        const isFiltered = !!filteredAlbums;
 
-        if (albumsToRender.length === 0) {
+        let visibleAlbums = filteredAlbums || this.albums;
+        if (!isFiltered) {
+            const collapsedIds = new Set(this.albums.filter(a => a.isCollapsed).map(a => a.id));
+            visibleAlbums = this.albums.filter(album => {
+                return !album.parents.some(p => collapsedIds.has(p.id));
+            });
+        }
+
+        if (visibleAlbums.length === 0) {
             listEl.innerHTML = `<p class="text-secondary text-xs p-4 text-center">${window.i18n.t('album_picker.no_albums')}</p>`;
             return;
         }
 
-        listEl.innerHTML = albumsToRender.map(album => this.renderAlbumItem(album)).join('');
+        listEl.innerHTML = visibleAlbums.map(album => this.renderAlbumItem(album, isFiltered)).join('');
 
         // Add event listeners to checkboxes
         listEl.querySelectorAll('.album-checkbox').forEach(checkbox => {
@@ -154,28 +186,64 @@ class AlbumPicker {
             });
         });
 
+        // Add event listeners to collapse toggles
+        listEl.querySelectorAll('.album-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const albumId = parseInt(btn.dataset.albumId);
+                const album = this.albums.find(a => a.id === albumId);
+                if (album) {
+                    album.isCollapsed = !album.isCollapsed;
+                    this.render(filteredAlbums);
+                }
+            });
+        });
+
         this.updateSelectedCount();
     }
 
-    renderAlbumItem(album) {
+    renderAlbumItem(album, isFiltered) {
         const isSelected = this.selectedAlbumIds.has(album.id);
-        const indent = album.depth * 20;
         const parentPath = album.parents.map(p => p.name).join(' > ');
 
+        let prefixHtml = '';
+        let toggleHtml = '';
+        if (!isFiltered) {
+            let text = '';
+            if (album.depth > 0) {
+                for (const line of (album.prefixLines || []).slice(1)) {
+                    text += line === '│' ? '│&nbsp;&nbsp;&nbsp;' : '&nbsp;&nbsp;&nbsp;&nbsp;';
+                }
+                text += album.isLastChild ? '└── ' : '├── ';
+            }
+
+            const hasChildren = album.children && album.children.length > 0;
+            if (hasChildren) {
+                const icon = album.isCollapsed ? '▶' : '▼';
+                toggleHtml = `<button class="album-toggle-btn text-secondary hover:text-primary px-2 py-3 text-xs" data-album-id="${album.id}">${icon}</button>`;
+            }
+
+            if (text) {
+                prefixHtml = `<span class="text-secondary font-mono text-xs whitespace-pre select-none">${text}</span>`;
+            }
+        }
+
         return `
-            <div class="album-picker-item p-2 hover:surface border-b flex items-center gap-2" style="padding-left: ${indent + 8}px;">
+            <div class="album-picker-item p-2 hover:surface border-b flex items-center gap-2" style="padding-left: 8px;">
+                ${prefixHtml}
                 <input type="checkbox" 
-                       class="w-4 h-4 accent-primary album-checkbox" 
+                       class="w-4 h-4 accent-primary album-checkbox flex-shrink-0" 
                        data-album-id="${album.id}"
                        ${isSelected ? 'checked' : ''}>
                 <div class="flex-1 min-w-0">
                     <div class="text-xs font-medium truncate">${album.name}</div>
-                    ${parentPath ? `<div class="text-xs text-secondary truncate">${window.i18n.t('album_picker.path', { path: parentPath })}</div>` : ''}
+                    ${parentPath && isFiltered ? `<div class="text-xs text-secondary truncate">${window.i18n.t('album_picker.path', { path: parentPath })}</div>` : ''}
                     <div class="text-xs text-secondary">
                         ${window.i18n.t('album_picker.items_count', { count: album.media_count || 0 })}
                         ${album.depth === 0 ? `<span class="tag meta tag-text text-xs px-1 ml-1">${window.i18n.t('album_picker.root')}</span>` : ''}
                     </div>
                 </div>
+                ${toggleHtml}
             </div>
         `;
     }
