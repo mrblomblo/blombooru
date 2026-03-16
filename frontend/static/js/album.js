@@ -44,13 +44,16 @@ class AlbumViewer extends BaseGallery {
             const data = await response.json();
 
             const breadcrumbEl = document.getElementById('album-breadcrumb');
+            const rootText = window.i18n.t('album_picker.root');
+            const rootLink = `<a href="/albums" class="hover:text-primary">${rootText}</a>`;
+
             if (data.parents && data.parents.length > 0) {
                 const crumbs = data.parents.map(p =>
                     `<a href="/album/${p.id}" class="hover:text-primary">${p.name}</a>`
                 ).join(' > ');
-                breadcrumbEl.innerHTML = `${crumbs} > ${this.album.name}`;
+                breadcrumbEl.innerHTML = `${rootLink} > ${crumbs} > ${this.album.name}`;
             } else {
-                breadcrumbEl.textContent = window.i18n.t('albums.root_album');
+                breadcrumbEl.innerHTML = `${rootLink} > ${this.album.name}`;
             }
         } catch (error) {
             console.error('Error loading breadcrumb:', error);
