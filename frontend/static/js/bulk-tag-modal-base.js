@@ -106,10 +106,10 @@ class BulkTagModalBase {
                             </div>
                         ` : ''}
                         <div class="flex gap-2 ${footerLeft ? '' : 'sm:ml-auto'}">
-                            <button class="${prefix}-save flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 bg-primary hover:bg-primary tag-text text-sm font-medium transition-colors" style="display: none;">
+                            <button class="${prefix}-save flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 btn-primary text-sm font-medium" style="display: none;">
                                 ${window.i18n.t('modal.buttons.save_all')}
                             </button>
-                            <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 surface-light hover:surface-light text text-sm font-medium transition-colors">
+                            <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 btn text-sm font-medium">
                                 ${window.i18n.t('common.cancel')}
                             </button>
                         </div>

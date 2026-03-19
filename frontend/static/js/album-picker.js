@@ -116,8 +116,8 @@ class AlbumPicker {
                 </div>
 
                 <div class="flex gap-2 justify-end">
-                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs transition-colors">${window.i18n.t('common.confirm')}</button>
-                    <button id="album-picker-cancel" class="px-4 py-2 border bg hover:border-primary hover:text-primary text text-xs transition-colors">${window.i18n.t('common.cancel')}</button>
+                    <button id="album-picker-confirm" class="btn-primary">${window.i18n.t('common.confirm')}</button>
+                    <button id="album-picker-cancel" class="btn-dark">${window.i18n.t('common.cancel')}</button>
                 </div>
             </div>
         `;

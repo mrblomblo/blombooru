@@ -1215,7 +1215,7 @@ class MediaViewer extends MediaViewerBase {
                             ID ${this.currentMedia.parent_id}
                         </a>
                     </div>
-                    <button id="relation-remove-parent-btn" class="px-3 py-1 bg-danger tag-text text-xs hover:opacity-90 transition-opacity">
+                    <button id="relation-remove-parent-btn" class="btn-danger px-3 py-1">
                         ${window.i18n.t('media.relations.remove_parent_button')}
                     </button>
                 </div>

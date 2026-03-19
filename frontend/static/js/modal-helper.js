@@ -79,20 +79,15 @@ class ModalHelper {
 
     getConfirmButtonClass(type) {
         const classes = {
-            info: 'bg-info hover:bg-info',
-            warning: 'bg-warning hover:bg-warning',
-            danger: 'bg-danger hover:bg-danger'
+            info: 'bg-info hover:bg-info tag-text',
+            warning: 'bg-warning hover:bg-warning tag-text',
+            danger: 'btn-danger'
         };
         return classes[type] || classes.info;
     }
 
-    getCancelButtonClass(type) {
-        const classes = {
-            info: 'surface-light hover:surface-light',
-            warning: 'surface-light hover:surface-light',
-            danger: 'surface-light hover:surface-light'
-        };
-        return classes[type] || classes.info;
+    getCancelButtonClass() {
+        return 'btn';
     }
 
     createModal() {
@@ -115,10 +110,10 @@ class ModalHelper {
                 <h2 class="text-xl font-bold mb-4 ${this.getTitleClass(this.options.type)}">${this.options.title}</h2>
                 <p class="text-base mb-6 text">${this.options.message}</p>
                 <div class="flex gap-4 mt-2 md:mt-4 justify-center">
-                    <button id="${this.options.confirmId}" class="px-6 py-3 transition-colors ${this.getConfirmButtonClass(this.options.type)} tag-text font-bold text-sm">
+                    <button id="${this.options.confirmId}" class="px-6 py-3 ${this.getConfirmButtonClass(this.options.type)} font-bold text-sm">
                         ${this.options.confirmText}
                     </button>
-                    ${this.options.cancelText ? `<button id="${this.options.cancelId}" class="px-6 py-3 transition-colors ${this.getCancelButtonClass(this.options.type)} text font-bold text-sm">
+                    ${this.options.cancelText ? `<button id="${this.options.cancelId}" class="px-6 py-3 ${this.getCancelButtonClass()} font-bold text-sm">
                         ${this.options.cancelText}
                     </button>` : ''}
                 </div>

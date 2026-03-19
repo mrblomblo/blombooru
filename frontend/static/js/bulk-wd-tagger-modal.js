@@ -75,7 +75,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                     <div>${window.i18n.t('bulk_modal.wd_tagger.model')}: <strong class="download-model-name">${this.settings.modelName}</strong></div>
                     <div>${window.i18n.t('bulk_modal.wd_tagger.size')}: <strong class="download-model-size">~850 MB</strong></div>
                 </div>
-                <button class="${prefix}-download-confirm-btn w-full sm:w-auto px-4 py-3 sm:py-2 bg-primary tag-text text-sm font-medium transition-colors hover:bg-primary">
+                <button class="${prefix}-download-confirm-btn btn-primary w-full sm:w-auto px-4 py-3 sm:py-2 text-sm font-medium">
                     ${window.i18n.t('bulk_modal.buttons.download_continue')}
                 </button>
             </div>
@@ -99,7 +99,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     getFooterLeftHTML() {
         const prefix = this.options.classPrefix;
         return `
-            <button class="${prefix}-toggle-settings w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
+            <button class="${prefix}-toggle-settings btn w-full sm:w-auto px-4 py-3 sm:py-2 text-sm font-medium">
                 ${window.i18n.t('common.settings')}
             </button>
         `;

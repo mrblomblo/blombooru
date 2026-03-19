@@ -195,27 +195,25 @@
                 <ul class="flex flex-col py-2 gap-1">
                     <li id="nav-albums-item-mobile">
                         <a href="/albums"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
+                            class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
                             {{ t('common.albums') }}
                         </a>
                     </li>
                     {% if is_admin(request) %}
                     <li>
-                        <a href="/admin?tab=content#media-management"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors text">
+                        <a href="/admin?tab=content#media-management" class="btn-dark w-full justify-start px-4 py-2">
                             {{ t('nav.upload') }}
                         </a>
                     </li>
                     {% endif %}
                     <li>
                         <a href="#" id="admin-mode-toggle-mobile"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
+                            class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                             {{ t('common.admin_panel') }}
                         </a>
                     </li>
                     <li>
-                        <a href="#" id="logout-btn-mobile"
-                            class="block px-4 py-2 border bg hover:border-primary transition-colors">
+                        <a href="#" id="logout-btn-mobile" class="btn-dark w-full justify-start px-4 py-2">
                             {{ t('nav.logout') }} </a>
                     </li>
                 </ul>

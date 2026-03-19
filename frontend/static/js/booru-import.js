@@ -208,15 +208,15 @@ class BooruImporter {
                 <!-- Actions -->
                 <div class="flex flex-col sm:flex-row gap-2 mt-4">
                     <button id="booru-cancel-btn"
-                            class="px-4 py-2 border text-xs font-medium transition-colors hover:text-danger hover:border-danger">
+                            class="btn-dark px-4 py-2 font-medium">
                         ${window.i18n.t('common.cancel')}
                     </button>
                     <button id="booru-import-btn"
-                            class="flex-1 px-4 py-2 bg-primary primary-text text-xs font-medium transition-colors hover:bg-primary">
+                            class="btn-primary flex-1 px-4 py-2 font-medium">
                         ${window.i18n.t('admin.media_management.booru_import.import_now')}
                     </button>
                     <button id="booru-queue-btn"
-                            class="flex-1 px-4 py-2 surface-light text text-xs font-medium transition-colors hover:surface border">
+                            class="btn flex-1 px-4 py-2 font-medium border">
                         ${window.i18n.t('admin.media_management.booru_import.add_to_queue')}
                     </button>
                 </div>

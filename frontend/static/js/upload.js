@@ -371,7 +371,7 @@ class Uploader {
                         ${window.i18n.t('upload.preview.final_tags')}<span id="final-tags-preview" class="text"></span>
                     </div>
                     
-                    <button id="remove-media-btn" class="px-3 py-2 bg-danger transition-colors hover:bg-danger tag-text text-xs">${window.i18n.t('upload.preview.remove_media')}</button>
+                    <button id="remove-media-btn" class="btn-danger px-3 py-2">${window.i18n.t('upload.preview.remove_media')}</button>
                 </div>
             </div>
         `;
@@ -465,8 +465,8 @@ class Uploader {
         submitDiv.style.display = 'none';
         submitDiv.className = 'flex gap-2';
         submitDiv.innerHTML = `
-            <button id="cancel-all-btn" class="flex-1 px-4 py-2 surface-light transition-colors hover:surface-light text text-xs">${window.i18n.t('upload.submit.cancel_all')}</button>
-            <button id="submit-all-btn" class="flex-1 px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-xs font-bold">${window.i18n.t('upload.submit.submit_all')}</button>
+            <button id="cancel-all-btn" class="btn flex-1">${window.i18n.t('upload.submit.cancel_all')}</button>
+            <button id="submit-all-btn" class="btn-primary flex-1 font-bold">${window.i18n.t('upload.submit.submit_all')}</button>
         `;
 
         document.getElementById('preview-grid').parentNode.insertBefore(submitDiv, document.getElementById('preview-grid').nextSibling);

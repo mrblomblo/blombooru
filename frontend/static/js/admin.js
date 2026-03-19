@@ -1625,7 +1625,7 @@ class AdminPanel {
                             ${parentChain ? `<div class="text-xs text-secondary">Path: ${this.escapeHtml(parentChain)}</div>` : '<div class="text-xs text-secondary">' + window.i18n.t('albums.root_album') + '</div>'}
                         </div>
                         <div class="flex gap-2">
-                            <button class="manage-album-btn text-xs px-3 py-1 bg-primary primary-text hover:bg-primary"
+                            <button class="manage-album-btn btn-primary px-3 py-1"
                                 data-album-id="${album.id}"
                                 data-album-name="${this.escapeHtml(album.name)}"
                                 data-parent-id="${immediateParentId || ''}">${window.i18n.t('common.manage')}</button>
@@ -1672,13 +1672,13 @@ class AdminPanel {
                 <h2 class="text-xl font-bold mb-2 text-primary">${window.i18n.t('admin.albums_management.manage_album')}</h2>
                 <p class="text-base mb-6 text font-medium">${this.escapeHtml(albumName)}</p>
                 <div class="flex flex-col gap-3">
-                    <button id="album-manage-rename" class="px-6 py-3 transition-colors bg border hover:border-primary hover:text-primary text font-bold text-sm flex items-center justify-center gap-2">
+                    <button id="album-manage-rename" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                         </svg>
                         ${window.i18n.t('admin.albums_management.rename_album')}
                     </button>
-                    <button id="album-manage-parent" class="px-6 py-3 transition-colors bg border hover:border-primary hover:text-primary text font-bold text-sm flex items-center justify-center gap-2">
+                    <button id="album-manage-parent" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
                         </svg>
@@ -1690,7 +1690,7 @@ class AdminPanel {
                         </svg>
                         ${window.i18n.t('common.delete_album')}
                     </button>
-                    <button id="album-manage-cancel" class="px-6 py-3 transition-colors bg border hover:border-primary hover:text-primary text font-bold text-sm flex items-center justify-center gap-2">
+                    <button id="album-manage-cancel" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2">
                         ${window.i18n.t('common.close')}
                     </button>
                 </div>
@@ -1757,10 +1757,10 @@ class AdminPanel {
                         class="w-full bg px-3 py-2 border text-sm focus:outline-none focus:border-primary">
                 </div>
                 <div class="flex gap-4 justify-center">
-                    <button id="album-rename-confirm" class="px-6 py-3 transition-colors bg-primary primary-text font-bold text-sm">
+                    <button id="album-rename-confirm" class="btn-primary px-6 py-3 font-bold text-sm">
                         Save
                     </button>
-                    <button id="album-rename-cancel" class="px-6 py-3 transition-colors surface-light text font-bold text-sm">
+                    <button id="album-rename-cancel" class="btn px-6 py-3 font-bold text-sm">
                         Cancel
                     </button>
                 </div>
@@ -1943,10 +1943,10 @@ class AdminPanel {
                     </div>
                 </div>
                 <div class="flex gap-4 justify-center">
-                    <button id="album-parent-confirm" class="px-6 py-3 transition-colors bg-primary primary-text font-bold text-sm">
+                    <button id="album-parent-confirm" class="btn-primary px-6 py-3 font-bold text-sm">
                         Save
                     </button>
-                    <button id="album-parent-cancel" class="px-6 py-3 transition-colors surface-light text font-bold text-sm">
+                    <button id="album-parent-cancel" class="btn px-6 py-3 font-bold text-sm">
                         Cancel
                     </button>
                 </div>
@@ -2138,7 +2138,7 @@ class AdminPanel {
                     </div>
                 </div>
                 <div class="flex-shrink-0">
-                    <button class="px-3 py-1 bg-danger tag-text text-[10px] uppercase font-bold tracking-wider hover:bg-danger transition-colors" 
+                    <button class="btn-danger px-3 py-1 text-[10px] uppercase font-bold tracking-wider" 
                         onclick="window.adminPanel.revokeApiKey(${key.id})">
                         Revoke
                     </button>
@@ -2280,7 +2280,7 @@ class AdminPanel {
                 if (configMessage) configMessage.textContent = msg;
                 if (configLinks) {
                     configLinks.innerHTML = Object.entries(status.asset_urls || {}).map(([name, url]) =>
-                        `<a href="${this.escapeHtml(url)}" target="_blank" class="px-3 py-1 surface border text-[10px] hover:border-primary transition-colors">${this.escapeHtml(name)}</a>`
+                        `<a href="${this.escapeHtml(url)}" target="_blank" class="btn-dark px-3 py-1 text-[10px]">${this.escapeHtml(name)}</a>`
                     ).join('');
                 }
             } else if (configNotice) {

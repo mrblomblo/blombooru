@@ -58,8 +58,7 @@
             </div>
             <!-- Load More Button -->
             <div id="relation-load-more" class="text-center py-4" style="display: none;">
-                <button id="relation-load-more-btn"
-                    class="px-6 py-2 surface-light text text-sm hover:surface transition-colors">
+                <button id="relation-load-more-btn" class="btn px-6 py-2 text-sm">
                     {{ t('common.load_more') }}
                 </button>
             </div>
@@ -78,28 +77,20 @@
                     </button>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button id="relation-set-parent-btn"
-                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                        style="display: none;">
+                    <button id="relation-set-parent-btn" class="btn-primary px-4 py-2 text-sm" style="display: none;">
                         {{ t('media.relations.set_parent') }}
                     </button>
-                    <button id="relation-add-child-btn"
-                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                        style="display: none;">
+                    <button id="relation-add-child-btn" class="btn-primary px-4 py-2 text-sm" style="display: none;">
                         {{ t('media.relations.add_child') }}
                     </button>
-                    <button id="relation-add-children-btn"
-                        class="px-4 py-2 bg-primary primary-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                        style="display: none;">
+                    <button id="relation-add-children-btn" class="btn-primary px-4 py-2 text-sm" style="display: none;">
                         {{ t('media.relations.add_children') }}
                     </button>
-                    <button id="relation-remove-children-btn"
-                        class="px-4 py-2 bg-danger tag-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    <button id="relation-remove-children-btn" class="btn-danger px-4 py-2 text-sm"
                         style="display: none;">
                         {{ t('media.relations.remove_selected') }}
                     </button>
-                    <button id="relation-modal-close"
-                        class="px-4 py-2 border bg hover:border-primary hover:text-primary text text-sm transition-colors">
+                    <button id="relation-modal-close" class="btn-dark px-4 py-2 text-sm">
                         {{ t('common.cancel') }}
                     </button>
                 </div>
@@ -177,8 +168,7 @@
                     <label class="block text-xs font-bold mb-2">{{ t('media.info.source_url') }}</label>
                     <input type="url" id="source-input" placeholder="https://example.com/source"
                         class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary mb-2">
-                    <button id="save-source-btn"
-                        class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                    <button id="save-source-btn" class="btn-primary w-full px-3 py-1">
                         {{ t('media.info.save_source') }}
                     </button>
                 </div>
@@ -209,19 +199,16 @@
                                     style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                             </div>
                             <div class="flex gap-2 mb-2">
-                                <button type="button" id="append-ai-tags-btn"
-                                    class="flex-1 px-3 py-1 surface-light transition-colors hover:surface-light text text-xs"
+                                <button type="button" id="append-ai-tags-btn" class="btn flex-1 px-3 py-1"
                                     style="display: none;">
                                     <span class="btn-text">{{ t('media.tags.append_ai_tags') }}</span>
                                 </button>
-                                <button type="button" id="predict-wd-tags-btn"
-                                    class="flex-1 px-3 py-1 surface-light transition-colors hover:surface-light text text-xs"
+                                <button type="button" id="predict-wd-tags-btn" class="btn flex-1 px-3 py-1"
                                     style="display: none;">
                                     <span class="btn-text">{{ t('media.tags.predict_tags') }}</span>
                                 </button>
                             </div>
-                            <button type="submit"
-                                class="w-full px-3 py-1 bg-primary primary-text transition-colors hover:bg-primary text-xs">
+                            <button type="submit" class="btn-primary w-full px-3 py-1">
                                 {{ t('media.tags.save_tags') }}
                             </button>
                         </form>
@@ -250,7 +237,7 @@
                 <div class="flex flex-col gap-3">
                     <!-- Primary Action -->
                     <a id="download-btn" href="#" download
-                        class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-sm font-medium">
+                        class="btn-primary flex items-center justify-center gap-2 w-full text-sm font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -289,7 +276,7 @@
                             </div>
 
                             <button id="share-btn"
-                                class="flex items-center justify-center gap-1 w-full px-3 py-1.5 surface-light border transition-colors hover:surface-light text-xs">
+                                class="btn flex items-center justify-center gap-1 w-full px-3 py-1.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round">
@@ -305,19 +292,16 @@
 
                         <!-- Management Actions Row -->
                         <div class="grid grid-cols-2 gap-2">
-                            <button id="add-to-albums-btn"
-                                class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">
+                            <button id="add-to-albums-btn" class="btn w-full px-3 py-1.5">
                                 {{ t('common.albums') }}
                             </button>
-                            <button id="manage-relations-btn"
-                                class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">
+                            <button id="manage-relations-btn" class="btn w-full px-3 py-1.5">
                                 {{ t('media.actions.relations') }}
                             </button>
                         </div>
 
                         <!-- Danger Chain -->
-                        <button id="delete-btn"
-                            class="w-full px-3 py-1.5 text-danger border border-danger transition-colors hover:bg-danger hover:tag-text text-xs mt-1">
+                        <button id="delete-btn" class="btn-danger w-full px-3 py-1.5">
                             {{ t('media.actions.delete_media') }}
                         </button>
                     </div>
@@ -366,8 +350,7 @@
                 <input type="text" id="share-link-input" readonly
                     class="w-full bg px-2 py-1 border focus:outline-none hover:border-primary transition-colors focus:border-primary text-xs text mb-2">
                 <div class="space-y-1">
-                    <button id="copy-share-link-btn"
-                        class="w-full px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+                    <button id="copy-share-link-btn" class="btn w-full px-3 py-1">
                         {{ t('media.share.copy_link') }}
                     </button>
                 </div>

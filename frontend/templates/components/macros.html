@@ -151,34 +151,34 @@ location='desktop') %}
     <p class="mb-2">{{ t('common.items_selected', count='<span id="selected-count">0</span>') | safe }}</p>
     <div class="flex gap-2 flex-wrap">
         {% if 'select_all' in buttons %}
-        <button id="select-all-btn" class="px-3 py-1 bg-primary transition-colors hover:bg-primary tag-text text-xs">
+        <button id="select-all-btn" class="btn-primary px-3 py-1">
             {{ t('gallery.select_all') }}
         </button>
         {% endif %}
         {% if 'deselect_all' in buttons %}
         <button id="deselect-all-btn"
-            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+            class="btn px-3 py-1">
             {{ t('gallery.deselect_all') }}
         </button>
         {% endif %}
         {% if 'album' in buttons %}
-        <button id="bulk-album-btn" class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs">
+        <button id="bulk-album-btn" class="btn px-3 py-1">
             {{ t('common.add_to_albums') }}
         </button>
         {% endif %}
         {% if 'manage_tags' in buttons %}
         <button id="bulk-manage-tags-btn"
-            class="px-3 py-1 surface-light transition-colors hover:surface-light text text-xs flex items-center gap-1.5">
+            class="btn px-3 py-1 flex items-center gap-1.5">
             {{ t('common.manage_tags') }}
         </button>
         {% endif %}
         {% if 'remove' in buttons %}
-        <button id="bulk-remove-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
+        <button id="bulk-remove-btn" class="btn-danger px-3 py-1">
             {{ t('gallery.remove_from_album') }}
         </button>
         {% endif %}
         {% if 'delete' in buttons %}
-        <button id="bulk-delete-btn" class="px-3 py-1 bg-danger transition-colors hover:bg-danger tag-text text-xs">
+        <button id="bulk-delete-btn" class="btn-danger px-3 py-1">
             {{ t('gallery.delete_selected') }}
         </button>
         {% endif %}
@@ -195,11 +195,11 @@ location='desktop') %}
             class="w-full bg px-3 py-2 border text-xs mb-3 focus:outline-none focus:border-primary hover:border-primary transition-colors">
         <div class="flex gap-2">
             <button id="page-jump-go"
-                class="flex-1 px-3 py-2 bg-primary primary-text hover:bg-primary text-xs transition-colors">
+                class="btn-primary flex-1 px-3 py-2">
                 {{ t('common.go') }}
             </button>
             <button id="page-jump-cancel"
-                class="flex-1 px-3 py-2 border surface-light hover:surface-light text-xs transition-colors">
+                class="btn flex-1 px-3 py-2">
                 {{ t('common.cancel') }}
             </button>
         </div>
