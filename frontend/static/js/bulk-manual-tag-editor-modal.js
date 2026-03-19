@@ -2,7 +2,7 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
     constructor(options = {}) {
         super({
             id: 'bulk-manual-tag-editor-modal',
-            title: window.i18n.t('bulk_modal.manual.title'),
+            title: window.i18n.t('common.manual_tag_editor'),
             classPrefix: 'bulk-manual',
             emptyMessage: window.i18n.t('bulk_modal.manual.empty_message'),
             closeOnOutsideClick: false,

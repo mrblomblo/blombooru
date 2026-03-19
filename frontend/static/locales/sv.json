@@ -30,7 +30,6 @@
         },
         "actions": {
             "checking": "Kontrollerar...",
-            "loading": "Laddar...",
             "scanning": "Skannar...",
             "testing": "Testar..."
         },
@@ -43,14 +42,12 @@
             "none_root": "Inget (Rotalbum)",
             "parent_album": "Överordnat album (Valfritt)",
             "root_albums": "Rotalbum",
-            "search_albums_placeholder": "Sök album...",
             "search_manage": "Sök & hantera album",
             "title": "Albumhantering",
             "total_albums": "Totalt antal album",
             "manage_album": "Hantera album",
             "rename_album": "Byt namn på album",
-            "change_parent_album": "Ändra överordnat album",
-            "delete_album": "Radera album"
+            "change_parent_album": "Ändra överordnat album"
         },
         "api_access": {
             "active_keys": "Aktiva API-nycklar",
@@ -150,8 +147,6 @@
             "import_completed": "Import slutförd!",
             "scan_loading": "Laddar {count} fil(er)...",
             "scan_progress": "Laddar {current}/{total}...",
-            "scan_result_error": "{message}",
-            "scan_result_success": "{message}",
             "skipped_too_long": "Hoppades över (för lång):",
             "update_error": "Fel vid kontroll av uppdateringar: {error}",
             "update_output": "Uppdateringsutdata",
@@ -184,15 +179,12 @@
             "sidebar_filter": "Beteende för Sidopanelens Filterknappar",
             "sidebar_filter_mode": "Filterläge",
             "sidebar_mode_rating": "Betygsfilter (Standard)",
-            "sidebar_mode_custom": "Anpassade knappar",
             "sidebar_mode_off": "Dold",
-            "custom_buttons": "Anpassade knappar",
             "custom_buttons_hint": "Definiera snabbfilterknappar med anpassade titlar och taggar.",
             "add_button": "Lägg till knapp",
             "button_title": "Knapptitel",
             "button_tags": "Taggar (visa endast media med dessa taggar)",
             "theme": "Tema",
-            "title": "Inställningar",
             "upload_date": "Uppladdningsdatum",
             "booru_config": {
                 "action": "Handling",
@@ -206,7 +198,6 @@
                 "has_key": "Har Nyckel",
                 "key": "Nyckel",
                 "no_configs": "Inga konfigurationer hittades",
-                "none": "Ingen",
                 "save_success": "Konfiguration sparad",
                 "title": "Booru Konfiguration",
                 "username": "Användare",
@@ -255,7 +246,6 @@
             "drop_csv": "Släpp CSV-fil här eller klicka för att bläddra",
             "import_csv": "Importera taggar från CSV",
             "search_delete_tags": "Sök & radera taggar",
-            "search_tags_placeholder": "Sök taggar...",
             "tag_aliases": "Taggalias",
             "tags_exist_hint": "Taggar som redan finns (eller finns som alias) kommer att ignoreras.",
             "tags_to_add": "Taggar att lägga till",
@@ -263,7 +253,6 @@
             "title": "Tagghantering",
             "total_tags": "Totalt antal taggar"
         },
-        "title": "Adminpanel",
         "update": {
             "backup_warning": "Uppdatering kan orsaka dataförlust om det inte görs försiktigt. Gör alltid en säkerhetskopia före uppdatering.",
             "check_updates": "Sök efter uppdateringar",
@@ -278,7 +267,6 @@
             "no_release_notes": "Inga versionsanteckningar tillgängliga.",
             "tab_commits": "Commits ({count})",
             "tab_whats_changed": "Vad har ändrats",
-            "title": "Systemuppdatering",
             "up_to_date": "Du är på den senaste versionen.",
             "update_available": "En nyare version {version} är tillgänglig.",
             "update_instructions": "För att uppdatera, kör följande på värdmaskinen:",
@@ -290,14 +278,10 @@
         }
     },
     "album_picker": {
-        "cancel": "Avbryt",
-        "confirm": "Bekräfta",
-        "items_count": "{count} objekt",
         "load_error": "Kunde inte ladda album",
         "no_albums": "Inga album hittades",
         "path": "Sökväg: {path}",
         "root": "Rot",
-        "search_placeholder": "Sök album...",
         "selected_count": "{count} album valda",
         "title": "Välj album"
     },
@@ -309,7 +293,6 @@
         "failed_load_album_contents": "Kunde inte ladda albuminnehåll",
         "failed_load_contents": "Kunde inte ladda innehåll",
         "failed_load_list": "Kunde inte ladda album",
-        "items_count": "{count} objekt",
         "last_modified": "Senast ändrad:",
         "media": "Media",
         "media_count": "Mediaantal:",
@@ -328,13 +311,10 @@
         "sub_albums_count": "Underalbum:",
         "sub_albums_with_empty": "Underalbum <span class=\"text-secondary font-normal text-xs\">(+{count} tomma album)</span>",
         "subalbums": "Underalbum",
-        "title": "Album",
         "view_album_for_tags": "Visa ett album för att se taggar."
     },
     "bulk_modal": {
-        "manage_title": "Hantera taggar",
         "menu": {
-            "manual_editor": "Manuell tagghanterare",
             "manual_desc": "Redigera taggar manuellt för varje vald fil.",
             "ai_tags": "Lägg till AI-taggar",
             "ai_desc": "Lägg till taggar från befintlig AI-genereringsdata.",
@@ -342,7 +322,6 @@
             "wd_desc": "Förutsäg taggar med dedikerade modeller."
         },
         "manual": {
-            "title": "Manuell tagghanterare",
             "empty_message": "Inga filer valda."
         },
         "ai_tags": {
@@ -353,8 +332,7 @@
         "buttons": {
             "clear_tags": "Rensa taggar",
             "download_continue": "Ladda ner & fortsätt",
-            "refresh_tags": "Uppdatera taggar",
-            "settings": "Inställningar"
+            "refresh_tags": "Uppdatera taggar"
         },
         "defaults": {
             "empty_message": "Inga taggar hittades för de valda objekten.",
@@ -365,7 +343,6 @@
             "download_wait": "Detta kan ta några minuter beroende på din anslutning.",
             "error_occurred": "Ett fel uppstod.",
             "model_cached": "Modellfiler cacheas lokalt för framtida användning.",
-            "no_tags": "Inga taggar",
             "operation_cancelled": "Åtgärd avbruten.",
             "review_tags": "Granska och redigera taggar för varje objekt. Ogiltiga taggar markeras i rött.",
             "tag_overflow": "+{count}"
@@ -383,7 +360,6 @@
             "items_fetched": "objekt hämtade",
             "items_processed": "objekt bearbetade",
             "predicting_tags": "Förutsäger taggar med AI...",
-            "processing": "Bearbetar...",
             "tags_checked": "taggar kontrollerade",
             "validating_tags": "Validerar taggar..."
         },
@@ -443,7 +419,36 @@
         "tag_category_artist": "Konstnär",
         "tag_category_character": "Karaktär",
         "tag_category_copyright": "Upphovsrätt",
-        "tag_category_meta": "Meta"
+        "tag_category_meta": "Meta",
+        "actions": "Åtgärder",
+        "add_to_albums": "Lägg till i album",
+        "admin_panel": "Adminpanel",
+        "albums": "Album",
+        "all_tags_cleared": "Alla taggar rensade",
+        "create_admin_account": "Skapa administratörskonto",
+        "custom_buttons": "Anpassade knappar",
+        "delete_album": "Radera album",
+        "download": "Ladda ner",
+        "explicit_content_warning": "Varning för explicit innehåll",
+        "got_it": "Uppfattat",
+        "information": "Information",
+        "manage_tags": "Hantera taggar",
+        "manual_tag_editor": "Manuell tagghanterare",
+        "media_not_found": "Media hittades inte",
+        "no_tags": "Inga taggar",
+        "processing": "Bearbetar...",
+        "search_syntax_guide": "Söksyntaxguide",
+        "search_albums_placeholder": "Sök album...",
+        "search_tags_placeholder": "Sök taggar...",
+        "settings": "Inställningar",
+        "share": "Dela",
+        "system_update": "Systemuppdatering",
+        "tags": "Taggar",
+        "unshare": "Sluta dela",
+        "yes_delete": "Ja, radera",
+        "yes_remove": "Ja, ta bort",
+        "items_count": "{count} objekt",
+        "passthrough_message": "{message}"
     },
     "errors": {
         "forbidden": "Förbjudet",
@@ -458,7 +463,6 @@
     },
     "gallery": {
         "add_items_to_albums_title": "Lägg till {count} objekt till album",
-        "add_to_albums": "Lägg till i album",
         "bulk_ai_tags": "Masslägg till AI-taggar",
         "bulk_predict_tags": "Mass-AI-förutsäg taggar",
         "check_console": "Kontrollera webbläsarkonsolen för mer detaljer",
@@ -467,8 +471,6 @@
         "error_label": "Fel:",
         "go_to_admin": "Gå till adminpanel",
         "jump_to_page": "Gå till sida",
-        "manage_tags": "Hantera taggar",
-        "no_items_found": "Inga objekt hittades",
         "no_media_found": "Ingen media hittades",
         "no_results_found": "Inga resultat hittades",
         "no_tags_found": "Inga taggar hittades",
@@ -485,19 +487,12 @@
         "invalid_credentials": "Ogiltigt användarnamn eller lösenord",
         "login_button": "Logga in",
         "login_failed": "Inloggning misslyckades",
-        "password": "Lösenord",
-        "title": "Logga in på {app_name}",
-        "username": "Användarnamn"
+        "title": "Logga in på {app_name}"
     },
     "media": {
         "actions": {
-            "albums": "Album",
             "delete_media": "Radera media",
-            "download": "Ladda ner",
-            "relations": "Relationer",
-            "share": "Dela",
-            "title": "Åtgärder",
-            "unshare": "Sluta dela"
+            "relations": "Relationer"
         },
         "ai_metadata": {
             "show_less": "Visa Mindre",
@@ -508,7 +503,6 @@
         "info": {
             "save_source": "Spara källa",
             "source_url": "Käll-URL",
-            "title": "Information",
             "filename": "Filnamn",
             "type": "Typ",
             "size": "Storlek",
@@ -521,7 +515,6 @@
         "progress": {
             "downloading": "Laddar ner...",
             "predicting": "Förutsäger...",
-            "processing": "Bearbetar...",
             "validating": "Validerar..."
         },
         "related": {
@@ -534,7 +527,6 @@
             "belongs_to_parent": "Detta objekt tillhör en förälder",
             "child_badge": "BARN",
             "clear_selection": "Rensa urval",
-            "load_more": "Ladda fler",
             "parent_badge": "FÖRÄLDER",
             "remove_children": "Ta bort {count} barn",
             "remove_selected": "Ta bort valda",
@@ -556,7 +548,6 @@
             "info_has_parent": "Detta objekt har en förälder. Du kan ändra eller ta bort föräldern, men kan inte lägga till barn.",
             "children_label": "Barn:",
             "children_items": "{count} objekt",
-            "children_items_plural": "{count} objekt",
             "info_has_children": "Detta objekt har barn. Du kan lägga till eller ta bort barn, men kan inte sätta en förälder.",
             "info_no_relations": "Inga relationer. Välj ett objekt för att sätta som förälder, eller välj flera objekt för att lägga till som barn.",
             "fallback_alt": "Media {id}",
@@ -570,28 +561,20 @@
             "include_ai_metadata": "Inkludera AI-metadata",
             "language": "Språk för delad sida",
             "link_copied": "Delningslänk kopierad till urklipp",
-            "title": "Delningsåtgärder",
-            "share_button": "Dela",
-            "unshare_button": "Sluta dela"
+            "title": "Delningsåtgärder"
         },
         "tags": {
             "append_ai_tags": "Lägg till AI-taggar",
             "edit_tags": "Redigera taggar",
             "predict_tags": "Förutsäg taggar (AI)",
             "save_tags": "Spara taggar",
-            "search_tags_placeholder": "Sök taggar...",
-            "tags_saved": "Taggar sparade",
-            "title": "Taggar"
-        },
-        "albums": {
-            "add_to_albums_title": "Lägg till i album"
+            "tags_saved": "Taggar sparade"
         },
         "ai_tags": {
             "appended_count": "Lade till {count} tagg(ar) från AI-prompt"
         },
         "errors": {
             "failed_to_load_video": "Kunde inte ladda video",
-            "media_not_found": "Media hittades inte",
             "failed_load_thumbnail": "Kunde inte ladda miniatyrbild för media: {id}",
             "creating_share_link": "Fel vid skapande av delningslänk",
             "removing_share": "Fel vid borttagning av delning",
@@ -611,8 +594,7 @@
         "age_verification": {
             "cancel": "Nej, jag är inte 18",
             "confirm": "Ja, jag är 18+",
-            "message": "Denna media innehåller explicit innehåll.<br>Genom att klicka \"Ja, jag är 18+\" bekräftar du att du är över 18 år och samtycker till att visa vuxeninnehåll.",
-            "title": "Varning för explicit innehåll"
+            "message": "Denna media innehåller explicit innehåll.<br>Genom att klicka \"Ja, jag är 18+\" bekräftar du att du är över 18 år och samtycker till att visa vuxeninnehåll."
         },
         "api_key_name": {
             "confirm": "Generera nyckel",
@@ -620,25 +602,19 @@
             "title": "Namnge din API-nyckel"
         },
         "bulk_delete": {
-            "confirm": "Ja, radera",
             "message": "Är du säker på att du vill radera {count} objekt? Denna åtgärd kan inte ångras.",
             "title": "Radera {count} objekt",
             "title_single": "Radera objekt"
         },
         "bulk_remove_from_album": {
-            "confirm": "Ja, ta bort",
             "message": "Är du säker på att du vill ta bort {count} objekt från detta album?",
             "title": "Ta bort från album"
         },
         "buttons": {
-            "cancel": "Avbryt",
-            "no": "Nej",
             "save_all": "Spara alla",
-            "saving": "Sparar...",
-            "yes": "Ja"
+            "saving": "Sparar..."
         },
         "changelog": {
-            "confirm": "Uppfattat",
             "title": "Ändringslogg"
         },
         "clear_tags": {
@@ -651,23 +627,14 @@
             "message": "Detta tar bort alla taggar från databasen för detta mediaobjekt. Är du helt säker?",
             "title": "Bekräfta rensning av taggar"
         },
-        "default_titles": {
-            "danger": "Varning för explicit innehåll",
-            "info": "Info",
-            "warning": "Varning"
-        },
         "delete_album": {
-            "confirm": "Ja, radera",
-            "message": "Är du säker på att du vill radera \"{albumName}\"? Detta raderar endast albumet. Media och underalbum raderas inte.",
-            "title": "Radera album"
+            "message": "Är du säker på att du vill radera \"{albumName}\"? Detta raderar endast albumet. Media och underalbum raderas inte."
         },
         "delete_media": {
-            "confirm": "Ja, radera",
             "message": "Är du säker på att du vill radera denna media? Denna åtgärd kan inte ångras.",
             "title": "Radera media"
         },
         "delete_tag": {
-            "confirm": "Ja, radera",
             "message": "Är du säker på att du vill radera denna tagg och dess alias? Denna åtgärd kan inte ångras.",
             "title": "Radera tagg"
         },
@@ -677,12 +644,10 @@
             "title": "Ladda ner AI-modell"
         },
         "remove_children": {
-            "confirm": "Ja, ta bort",
             "message": "Är du säker på att du vill ta bort {count} objekt som barn?",
             "title": "Ta bort barn"
         },
         "remove_parent": {
-            "confirm": "Ja, ta bort",
             "message": "Är du säker på att du vill ta bort föräldrarelationen?",
             "title": "Ta bort förälder"
         },
@@ -691,14 +656,9 @@
             "message": "Är du säker på att du vill återkalla denna API-nyckel? Denna åtgärd kan inte ångras och alla applikationer som använder den förlorar åtkomst omedelbart.",
             "title": "Återkalla API-nyckel"
         },
-        "search_syntax": {
-            "confirm": "Uppfattat",
-            "title": "Söksyntaxguide"
-        },
         "system_update": {
             "confirm": "Uppdatera nu",
-            "message": "Är du säker på att du vill uppdatera till senaste <strong>{target}</strong>-versionen?<br>Du måste manuellt starta om servern för att tillämpa uppdateringen helt.<br><br><b>Se till att du har läst och förstått ändringsloggen och meddelandena innan du fortsätter.</b>",
-            "title": "Systemuppdatering"
+            "message": "Är du säker på att du vill uppdatera till senaste <strong>{target}</strong>-versionen?<br>Du måste manuellt starta om servern för att tillämpa uppdateringen helt.<br><br><b>Se till att du har läst och förstått ändringsloggen och meddelandena innan du fortsätter.</b>"
         },
         "unshare_media": {
             "confirm": "Ja, sluta dela",
@@ -707,11 +667,8 @@
         }
     },
     "nav": {
-        "admin_panel": "Adminpanel",
-        "albums": "Album",
         "logout": "Logga ut",
         "search_placeholder": "Sök taggar... (t.ex. ?girl? *_background cat_ears -dog)",
-        "search_syntax_guide": "Söksyntaxguide",
         "upload": "Ladda upp"
     },
     "notifications": {
@@ -719,7 +676,6 @@
             "album_created": "Album skapat!",
             "album_deleted": "Album raderat!",
             "album_renamed": "Album omdöpt!",
-            "all_tags_cleared": "Alla taggar rensade",
             "api_key_copied": "API-nyckel kopierad till urklipp!",
             "api_key_generated": "API-nyckel genererad!",
             "api_key_revoked": "API-nyckel återkallad",
@@ -768,7 +724,6 @@
             "tag_deleted": "Tagg '{tag_name}' raderad",
             "tags_added_successfully": "Taggar tillagda!",
             "tags_already_exist": "Alla taggar finns redan eller är alias.",
-            "tags_cleared": "Alla taggar rensade",
             "tags_created": "Taggar skapade:",
             "tags_errors": "Fel:",
             "tags_ignored": "Ignorerade (finns redan eller är alias):",
@@ -827,10 +782,8 @@
         "upload_success": "Uppladdning lyckades"
     },
     "onboarding": {
-        "admin_account": "Skapa administratörskonto",
         "app_name": "Applikationsnamn",
         "complete_setup": "Slutför installation",
-        "create_admin": "Skapa administratörskonto",
         "database_config": "Databaskonfiguration",
         "database_name": "Databasnamn",
         "database_settings": "Databasinställningar",
@@ -838,9 +791,7 @@
         "db_index": "Databasindex",
         "db_port_hint": "Standard PostgreSQL-port är 5432",
         "enable_redis": "Aktivera Redis",
-        "host": "Värd",
         "password_hint": "Minst 6 tecken",
-        "port": "Port",
         "redis_config": "Redis-konfiguration (Valfritt)",
         "redis_host_hint": "Sätt detta till 'redis' om du kör i Docker.",
         "redis_port_hint": "Standard Redis-port är 6379",
@@ -861,8 +812,6 @@
         "example_landscape": "Högkvalitativa landskapsvideor",
         "example_tagcount": "Inlägg med många taggar men ingen artistinfo",
         "examples": "Exempelsökningar",
-        "got_it": "Uppfattat",
-        "guide_title": "Söksyntaxguide",
         "meta_date": "Uppladdningsdatum eller relativ ålder",
         "meta_dimensions": "Bilddimensioner (pixlar)",
         "meta_filesize": "Filstorlek (kb, mb, gb)",
@@ -887,19 +836,14 @@
         "sorting_oldest": "Äldst först"
     },
     "shared": {
-        "actions": "Åtgärder",
         "ai_generation_data": "AI-genereringsdata",
         "content_not_found": "Innehåll hittades inte",
         "content_shared_with_you": "Detta innehåll har delats med dig.",
-        "download": "Ladda ner",
         "error_invalid_link": "Denna delningslänk är ogiltig eller har tagits bort.",
         "error_unshared_or_deleted": "Median du försökte visa har antingen slutat delas, raderats eller aldrig existerat.",
         "failed_load_video": "Kunde inte ladda video",
-        "information": "Information",
-        "media_load_error": "Media hittades inte",
         "media_not_found": "Denna delade media finns inte eller har tagits bort.",
         "shared_media": "Delad media",
-        "tags": "Taggar",
         "view_original": "Visa original"
     },
     "upload": {
@@ -919,8 +863,6 @@
             "individual_albums": "Individuella album",
             "individual_rating": "Individuellt betyg",
             "individual_source": "Individuell käll-URL (valfritt)",
-            "no_tags": "Inga taggar",
-            "none": "Ingen",
             "remove_media": "Ta bort denna media",
             "title": "Uppladdad media (klicka för att redigera individuellt betyg, källa och taggar)"
         },

@@ -716,7 +716,7 @@ class Uploader {
         // Add tags indicator
         const tagsIndicator = document.createElement('div');
         tagsIndicator.className = 'absolute bottom-0 left-0 right-0 surface bg-opacity-75 px-1 text-xs truncate tags-indicator';
-        tagsIndicator.textContent = this.getFullTags(fileData).join(' ') || window.i18n.t('upload.preview.no_tags');
+        tagsIndicator.textContent = this.getFullTags(fileData).join(' ') || window.i18n.t('common.no_tags');
         thumbnailDiv.appendChild(tagsIndicator);
 
         thumbnailDiv.addEventListener('click', (e) => {
@@ -782,7 +782,7 @@ class Uploader {
         if (this.selectedFileIndex !== null) {
             const fileData = this.uploadedFiles[this.selectedFileIndex];
             const finalTags = this.getFullTags(fileData);
-            document.getElementById('final-tags-preview').textContent = finalTags.join(' ') || window.i18n.t('upload.preview.none');
+            document.getElementById('final-tags-preview').textContent = finalTags.join(' ') || window.i18n.t('common.none');
         }
     }
 
@@ -836,7 +836,7 @@ class Uploader {
 
             if (tagsIndicator) {
                 const fullTags = this.getFullTags(fileData);
-                tagsIndicator.textContent = fullTags.join(' ') || window.i18n.t('upload.preview.no_tags');
+                tagsIndicator.textContent = fullTags.join(' ') || window.i18n.t('common.no_tags');
             }
         }
     }

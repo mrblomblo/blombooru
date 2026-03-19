@@ -18,7 +18,7 @@ class SharedViewer extends MediaViewerBase {
         this.ageVerificationModal = new ModalHelper({
             id: 'age-verification-modal',
             type: 'danger',
-            title: window.i18n.t('modal.age_verification.title'),
+            title: window.i18n.t('common.explicit_content_warning'),
             message: window.i18n.t('modal.age_verification.message'),
             confirmText: window.i18n.t('modal.age_verification.confirm'),
             cancelText: window.i18n.t('modal.age_verification.cancel'),
@@ -118,12 +118,12 @@ class SharedViewer extends MediaViewerBase {
 
                 <div class="lg:col-span-1 flex flex-col gap-4">
                     <div class="surface p-3 border">
-                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('shared.information')}</h3>
+                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('common.information')}</h3>
                         <div id="media-info-content" class="text-xs"></div>
                     </div>
 
                     <div class="surface p-3 border">
-                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('shared.tags')}</h3>
+                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('common.tags')}</h3>
                         <div id="tags-container"></div>
                     </div>
 
@@ -140,7 +140,7 @@ class SharedViewer extends MediaViewerBase {
                     ` : ''}
 
                     <div class="surface p-3 border">
-                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('shared.actions')}</h3>
+                        <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('common.actions')}</h3>
                         <div class="space-y-2">
                             <a id="download-btn" href="/api/shared/${this.shareUuid}/file" download="${media.filename}" 
                                class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary primary-text transition-colors hover:bg-primary text-sm font-medium ${this.isProcessing ? 'pointer-events-none opacity-50' : ''}">
@@ -150,7 +150,7 @@ class SharedViewer extends MediaViewerBase {
                                     <polyline points="7 10 12 15 17 10"></polyline>
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
-                                ${this.isProcessing ? window.i18n.t('media.progress.processing') : window.i18n.t('shared.download')}
+                                ${this.isProcessing ? window.i18n.t('common.processing') : window.i18n.t('common.download')}
                             </a>
                         </div>
                     </div>
@@ -186,7 +186,7 @@ class SharedViewer extends MediaViewerBase {
                 <div class="gallery-item" style="aspect-ratio: ${media.width}/${media.height}; max-height: 80vh; margin: 0 auto; width: 100%;">
                     <a href="#" style="width: 100%; height: 100%; cursor: default;">
                         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
-                             alt="${window.i18n.t('media.progress.processing')}"
+                             alt="${window.i18n.t('common.processing')}"
                              style="width: 100%; height: 100%; object-fit: cover; border-width: 0;">
                     </a>
                 </div>
@@ -199,7 +199,7 @@ class SharedViewer extends MediaViewerBase {
                     <source src="/api/shared/${this.shareUuid}/file" type="${media.mime_type}">
                 </video>
                 <div id="video-error" style="display: none;" class="flex flex-col items-center justify-center py-8 text-secondary">
-                    <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('shared.media_load_error')}" class="w-32 h-32 mb-4 opacity-50">
+                    <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('common.media_not_found')}" class="w-32 h-32 mb-4 opacity-50">
                     <p class="text-sm">${window.i18n.t('shared.failed_load_video')}</p>
                 </div>
             `;
@@ -260,7 +260,7 @@ class SharedViewer extends MediaViewerBase {
             if (img) {
                 img.onerror = () => {
                     img.src = '/static/images/no-thumbnail.png';
-                    img.alt = window.i18n.t('shared.media_load_error');
+                    img.alt = window.i18n.t('common.media_not_found');
                     img.style.cursor = 'default';
                     img.dataset.failed = 'true';
                 };

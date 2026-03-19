@@ -117,13 +117,13 @@
                         <li id="nav-albums-item">
                             <a href="/albums"
                                 class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
-                                {{ t('nav.albums') }}
+                                {{ t('common.albums') }}
                             </a>
                         </li>
                         <li>
                             <a href="#" id="admin-mode-toggle"
                                 class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                                {{ t('nav.admin_panel') }}
+                                {{ t('common.admin_panel') }}
                             </a>
                         </li>
                         {% if is_admin(request) %}
@@ -196,7 +196,7 @@
                     <li id="nav-albums-item-mobile">
                         <a href="/albums"
                             class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
-                            {{ t('nav.albums') }}
+                            {{ t('common.albums') }}
                         </a>
                     </li>
                     {% if is_admin(request) %}
@@ -210,7 +210,7 @@
                     <li>
                         <a href="#" id="admin-mode-toggle-mobile"
                             class="block px-4 py-2 border bg hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                            {{ t('nav.admin_panel') }}
+                            {{ t('common.admin_panel') }}
                         </a>
                     </li>
                     <li>

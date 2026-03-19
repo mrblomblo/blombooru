@@ -100,7 +100,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <button class="${prefix}-toggle-settings w-full sm:w-auto px-4 py-3 sm:py-2 surface-light text text-sm font-medium transition-colors hover:surface">
-                ${window.i18n.t('bulk_modal.buttons.settings')}
+                ${window.i18n.t('common.settings')}
             </button>
         `;
     }

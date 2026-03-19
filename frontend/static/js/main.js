@@ -49,7 +49,7 @@ class I18n {
 
     /**
      * Get a translation string by dot-notation key
-     * @param {string} key - Dot-notation key (e.g., 'nav.albums')
+     * @param {string} key - Dot-notation key (e.g., 'common.albums')
      * @param {Object} params - Interpolation parameters (e.g., {count: 5})
      * @returns {string} Translated string or the key itself if not found
      */
@@ -445,10 +445,10 @@ class Blombooru {
             this.searchGuideModal = new ModalHelper({
                 id: 'search-syntax-modal',
                 type: 'info',
-                title: window.i18n.t('modal.search_syntax.title'),
+                title: window.i18n.t('common.search_syntax_guide'),
                 message: this.getSearchSyntaxContent(),
                 showIcon: false,
-                confirmText: window.i18n.t('modal.search_syntax.confirm'),
+                confirmText: window.i18n.t('common.got_it'),
                 cancelText: '',
                 confirmId: 'search-guide-confirm'
             });

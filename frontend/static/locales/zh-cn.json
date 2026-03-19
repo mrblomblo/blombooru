@@ -30,7 +30,6 @@
         },
         "actions": {
             "checking": "正在检查...",
-            "loading": "正在加载...",
             "scanning": "正在扫描...",
             "testing": "正在测试..."
         },
@@ -43,14 +42,12 @@
             "none_root": "无（根相册）",
             "parent_album": "父级相册（可选）",
             "root_albums": "根相册",
-            "search_albums_placeholder": "搜索相册...",
             "search_manage": "搜索并管理相册",
             "title": "相册管理",
             "total_albums": "相册总数",
             "manage_album": "管理相册",
             "rename_album": "重命名相册",
-            "change_parent_album": "更改父级相册",
-            "delete_album": "删除相册"
+            "change_parent_album": "更改父级相册"
         },
         "api_access": {
             "active_keys": "有效的API密钥",
@@ -150,8 +147,6 @@
             "import_completed": "导入成功完成！",
             "scan_loading": "正在加载 {count} 个文件...",
             "scan_progress": "正在加载 {current}/{total}...",
-            "scan_result_error": "{message}",
-            "scan_result_success": "{message}",
             "skipped_too_long": "已跳过（路径太长）：",
             "update_error": "检查更新时出错：{error}",
             "update_output": "更新输出",
@@ -184,15 +179,12 @@
             "sidebar_filter": "侧边栏按钮行为",
             "sidebar_filter_mode": "过滤模式",
             "sidebar_mode_rating": "分级过滤（默认）",
-            "sidebar_mode_custom": "自定义按钮",
             "sidebar_mode_off": "隐藏",
-            "custom_buttons": "自定义按钮",
             "custom_buttons_hint": "定义带有自定义标题和标签查询的快速过滤按钮。",
             "add_button": "添加按钮",
             "button_title": "按钮标题",
             "button_tags": "标签（仅显示带有这些标签的媒体）",
             "theme": "主题",
-            "title": "设置",
             "upload_date": "上传日期",
             "booru_config": {
                 "action": "操作",
@@ -206,7 +198,6 @@
                 "has_key": "已有密钥",
                 "key": "密钥",
                 "no_configs": "未找到配置",
-                "none": "无",
                 "save_success": "配置已保存",
                 "title": "Booru 配置",
                 "username": "用户",
@@ -255,7 +246,6 @@
             "drop_csv": "将 CSV 文件拖放到此处或点击浏览",
             "import_csv": "从 CSV 导入标签",
             "search_delete_tags": "搜索与删除标签",
-            "search_tags_placeholder": "搜索标签...",
             "tag_aliases": "标签别名",
             "tags_exist_hint": "已存在（或作为别名存在）的标签将被忽略。",
             "tags_to_add": "待添加标签",
@@ -263,7 +253,6 @@
             "title": "标签管理",
             "total_tags": "标签总数"
         },
-        "title": "管理面板",
         "update": {
             "backup_warning": "如果不小心，更新可能会导致数据丢失。更新前请务必进行备份。",
             "check_updates": "检查更新",
@@ -278,7 +267,6 @@
             "no_release_notes": "没有可用的版本说明。",
             "tab_commits": "提交记录数 ({count})",
             "tab_whats_changed": "更新内容",
-            "title": "系统更新",
             "up_to_date": "您运行的是最新版本。",
             "update_available": "有新版本 {version} 可用。",
             "update_instructions": "要更新，请在宿主机上运行以下命令：",
@@ -290,14 +278,10 @@
         }
     },
     "album_picker": {
-        "cancel": "取消",
-        "confirm": "确认",
-        "items_count": "{count} 个项目",
         "load_error": "加载相册失败",
         "no_albums": "未找到相册",
         "path": "路径: {path}",
         "root": "根目录",
-        "search_placeholder": "搜索相册...",
         "selected_count": "已选择 {count} 个相册",
         "title": "选择相册"
     },
@@ -309,7 +293,6 @@
         "failed_load_album_contents": "加载相册内容失败",
         "failed_load_contents": "加载内容失败",
         "failed_load_list": "加载相册列表失败",
-        "items_count": "{count} 个项目",
         "last_modified": "最后修改:",
         "media": "媒体",
         "media_count": "媒体数量:",
@@ -328,13 +311,10 @@
         "sub_albums_count": "子相册数量:",
         "sub_albums_with_empty": "子相册 <span class=\"text-secondary font-normal text-xs\">(+{count} 个空相册)</span>",
         "subalbums": "子相册",
-        "title": "相册",
         "view_album_for_tags": "查看相册以查看标签。"
     },
     "bulk_modal": {
-        "manage_title": "管理标签",
         "menu": {
-            "manual_editor": "手动标签编辑器",
             "manual_desc": "为每个选定的项目手动编辑标签。",
             "ai_tags": "追加 AI 标签",
             "ai_desc": "从现有的 AI 生成元数据中追加标签。",
@@ -342,7 +322,6 @@
             "wd_desc": "使用专门的打标模型预测标签。"
         },
         "manual": {
-            "title": "手动标签编辑器",
             "empty_message": "未选择任何项目。"
         },
         "ai_tags": {
@@ -353,8 +332,7 @@
         "buttons": {
             "clear_tags": "清空标签",
             "download_continue": "下载并继续",
-            "refresh_tags": "刷新标签",
-            "settings": "设置"
+            "refresh_tags": "刷新标签"
         },
         "defaults": {
             "empty_message": "未找到选定项目的标签。",
@@ -365,7 +343,6 @@
             "download_wait": "根据您的网络连接状况，这可能需要几分钟。",
             "error_occurred": "发生错误。",
             "model_cached": "模型文件已缓存在本地，以供将来使用。",
-            "no_tags": "无标签",
             "operation_cancelled": "操作已取消。",
             "review_tags": "为每个项目查看并编辑标签。无效标签将以红色高亮显示。",
             "tag_overflow": "+{count}"
@@ -383,7 +360,6 @@
             "items_fetched": "项目已获取",
             "items_processed": "项目已处理",
             "predicting_tags": "正在使用 AI 预测标签...",
-            "processing": "正在处理...",
             "tags_checked": "标签已检查",
             "validating_tags": "正在验证标签..."
         },
@@ -443,7 +419,36 @@
         "tag_category_copyright": "版权",
         "tag_category_meta": "元标签",
         "test_connection": "测试连接",
-        "username": "用户名"
+        "username": "用户名",
+        "actions": "操作",
+        "add_to_albums": "添加到相册",
+        "admin_panel": "管理面板",
+        "albums": "相册",
+        "all_tags_cleared": "所有标签已成功清除",
+        "create_admin_account": "创建管理员账号",
+        "custom_buttons": "自定义按钮",
+        "delete_album": "删除相册",
+        "download": "下载",
+        "explicit_content_warning": "成人内容警告",
+        "got_it": "知道了",
+        "information": "信息",
+        "manage_tags": "管理标签",
+        "manual_tag_editor": "手动标签编辑器",
+        "media_not_found": "未找到媒体",
+        "no_tags": "无标签",
+        "processing": "正在处理...",
+        "search_syntax_guide": "搜索语法指南",
+        "search_albums_placeholder": "搜索相册...",
+        "search_tags_placeholder": "搜索标签...",
+        "settings": "设置",
+        "share": "分享",
+        "system_update": "系统更新",
+        "tags": "标签",
+        "unshare": "取消分享",
+        "yes_delete": "是的，删除",
+        "yes_remove": "是的，移除",
+        "items_count": "{count} 个项目",
+        "passthrough_message": "{message}"
     },
     "errors": {
         "forbidden": "禁止访问",
@@ -458,7 +463,6 @@
     },
     "gallery": {
         "add_items_to_albums_title": "将 {count} 个项目添加到相册",
-        "add_to_albums": "添加到相册",
         "bulk_ai_tags": "批量追加 AI 标签",
         "bulk_predict_tags": "批量 AI 预测标签",
         "check_console": "请检查浏览器控制台以获取更多详细信息",
@@ -467,8 +471,6 @@
         "error_label": "错误:",
         "go_to_admin": "前往管理面板",
         "jump_to_page": "跳转到页",
-        "manage_tags": "管理标签",
-        "no_items_found": "未找到项目",
         "no_media_found": "未找到媒体",
         "no_results_found": "未找到结果",
         "no_tags_found": "未找到标签",
@@ -485,19 +487,12 @@
         "invalid_credentials": "用户名或密码无效",
         "login_button": "登录",
         "login_failed": "登录失败",
-        "password": "密码",
-        "title": "登录到 {app_name}",
-        "username": "用户名"
+        "title": "登录到 {app_name}"
     },
     "media": {
         "actions": {
-            "albums": "相册",
             "delete_media": "删除媒体",
-            "download": "下载",
-            "relations": "关联关系",
-            "share": "分享",
-            "title": "操作",
-            "unshare": "取消分享"
+            "relations": "关联关系"
         },
         "ai_metadata": {
             "title": "AI 生成数据",
@@ -508,7 +503,6 @@
         "info": {
             "save_source": "保存来源",
             "source_url": "来源 URL",
-            "title": "信息",
             "filename": "文件名",
             "type": "类型",
             "size": "大小",
@@ -521,7 +515,6 @@
         "progress": {
             "downloading": "正在下载...",
             "predicting": "正在预测...",
-            "processing": "正在处理...",
             "validating": "正在验证..."
         },
         "related": {
@@ -534,7 +527,6 @@
             "belongs_to_parent": "此项目属于一个父项",
             "child_badge": "子项",
             "clear_selection": "清除选择",
-            "load_more": "加载更多",
             "parent_badge": "父项",
             "remove_children": "移除 {count} 个子项",
             "remove_selected": "移除选中项",
@@ -556,7 +548,6 @@
             "info_has_parent": "此项目已有父项。您可以更改或移除父项，但不能再添加子项。",
             "children_label": "子项:",
             "children_items": "{count} 个项目",
-            "children_items_plural": "{count} 个项目",
             "info_has_children": "此项目已有子项。您可以添加或移除子项，但不能再设置父项。",
             "info_no_relations": "无关联关系。选择一个项目设为父项，或选择多个项目添加为子项。",
             "fallback_alt": "媒体 {id}",
@@ -570,28 +561,20 @@
             "include_ai_metadata": "包含 AI 元数据",
             "language": "分享语言",
             "link_copied": "分享链接已复制到剪贴板",
-            "title": "分享操作",
-            "share_button": "分享",
-            "unshare_button": "取消分享"
+            "title": "分享操作"
         },
         "tags": {
             "append_ai_tags": "追加 AI 标签",
             "edit_tags": "编辑标签",
             "predict_tags": "预测标签 (AI)",
             "save_tags": "保存标签",
-            "search_tags_placeholder": "搜索标签...",
-            "tags_saved": "标签保存成功",
-            "title": "标签"
-        },
-        "albums": {
-            "add_to_albums_title": "添加到相册"
+            "tags_saved": "标签保存成功"
         },
         "ai_tags": {
             "appended_count": "已从 AI 提示词追加 {count} 个标签"
         },
         "errors": {
             "failed_to_load_video": "加载视频失败",
-            "media_not_found": "未找到媒体",
             "failed_load_thumbnail": "加载媒体预览图失败：{id}",
             "creating_share_link": "创建分享链接出错",
             "removing_share": "取消分享出错",
@@ -611,8 +594,7 @@
         "age_verification": {
             "cancel": "不，我未满 18 岁",
             "confirm": "是，我已年满 18 岁",
-            "message": "此媒体包含显露内容。<br>点击“是，我已年满 18 岁”，即表示您确认自己已超过 18 岁，并同意查看成人内容。",
-            "title": "成人内容警告"
+            "message": "此媒体包含显露内容。<br>点击“是，我已年满 18 岁”，即表示您确认自己已超过 18 岁，并同意查看成人内容。"
         },
         "api_key_name": {
             "confirm": "生成密钥",
@@ -620,25 +602,19 @@
             "title": "为您的 API 密钥命名"
         },
         "bulk_delete": {
-            "confirm": "是的，删除",
             "message": "您确定要删除这 {count} 个项目吗？此操作无法撤销。",
             "title": "删除 {count} 个项目",
             "title_single": "删除项目"
         },
         "bulk_remove_from_album": {
-            "confirm": "是的，移除",
             "message": "您确定要从该相册中移除这 {count} 个项目吗？",
             "title": "从相册移除"
         },
         "buttons": {
-            "cancel": "取消",
-            "no": "否",
             "save_all": "全部保存",
-            "saving": "正在保存...",
-            "yes": "是"
+            "saving": "正在保存..."
         },
         "changelog": {
-            "confirm": "知道了",
             "title": "更新日志"
         },
         "clear_tags": {
@@ -651,23 +627,14 @@
             "message": "这将从数据库中移除此媒体项目的所有标签。您绝对确定吗？",
             "title": "确认清除标签"
         },
-        "default_titles": {
-            "danger": "成人内容警告",
-            "info": "信息",
-            "warning": "警告"
-        },
         "delete_album": {
-            "confirm": "是的，删除",
-            "message": "您确定要删除“{albumName}”吗？这只会删除相册本身。其中的媒体和子相册不会被删除。",
-            "title": "删除相册"
+            "message": "您确定要删除“{albumName}”吗？这只会删除相册本身。其中的媒体和子相册不会被删除。"
         },
         "delete_media": {
-            "confirm": "是的，删除",
             "message": "您确定要删除此媒体吗？此操作无法撤销。",
             "title": "删除媒体"
         },
         "delete_tag": {
-            "confirm": "是的，删除",
             "message": "您确定要删除此标签及其别名吗？此操作无法撤销。",
             "title": "删除标签"
         },
@@ -677,12 +644,10 @@
             "title": "下载 AI 模型"
         },
         "remove_children": {
-            "confirm": "是的，移除",
             "message": "您确定要移除这 {count} 个项目的子项关系吗？",
             "title": "移除子项"
         },
         "remove_parent": {
-            "confirm": "是的，移除",
             "message": "您确定要移除父项关联吗？",
             "title": "移除父项"
         },
@@ -691,14 +656,9 @@
             "message": "您确定要撤销此 API 密钥吗？此操作无法撤销，任何正在使用它的应用程序都将立即失去访问权限。",
             "title": "撤销 API 密钥"
         },
-        "search_syntax": {
-            "confirm": "知道了",
-            "title": "搜索语法指南"
-        },
         "system_update": {
             "confirm": "立即更新",
-            "message": "您确定要更新到最新的 <strong>{target}</strong> 版本吗？<br>您需要手动重启服务器以完全应用更新。<br><br><b>在继续之前，请确保您已阅读并理解更新日志及注意事项。</b>",
-            "title": "系统更新"
+            "message": "您确定要更新到最新的 <strong>{target}</strong> 版本吗？<br>您需要手动重启服务器以完全应用更新。<br><br><b>在继续之前，请确保您已阅读并理解更新日志及注意事项。</b>"
         },
         "unshare_media": {
             "confirm": "是的，取消分享",
@@ -707,11 +667,8 @@
         }
     },
     "nav": {
-        "admin_panel": "管理面板",
-        "albums": "相册",
         "logout": "注销",
         "search_placeholder": "搜索标签... (例如: ?girl? *_background cat_ears -dog)",
-        "search_syntax_guide": "搜索语法指南",
         "upload": "上传"
     },
     "notifications": {
@@ -719,7 +676,6 @@
             "album_created": "相册创建成功！",
             "album_deleted": "相册删除成功！",
             "album_renamed": "相册重命名成功！",
-            "all_tags_cleared": "所有标签已成功清除",
             "api_key_copied": "API 密钥已复制到剪贴板！",
             "api_key_generated": "API 密钥生成成功！",
             "api_key_revoked": "API 密钥撤销成功",
@@ -768,7 +724,6 @@
             "tag_deleted": "标签 '{tag_name}' 已成功删除",
             "tags_added_successfully": "标签添加成功！",
             "tags_already_exist": "所有标签已存在或已作为别名存在。",
-            "tags_cleared": "所有标签已成功清除",
             "tags_created": "已创建标签：",
             "tags_errors": "错误：",
             "tags_ignored": "已忽略（已存在或为别名）：",
@@ -827,10 +782,8 @@
         "upload_success": "上传成功"
     },
     "onboarding": {
-        "admin_account": "创建管理员账号",
         "app_name": "应用程序名称",
         "complete_setup": "完成设置",
-        "create_admin": "创建管理员账号",
         "database_config": "数据库配置",
         "database_name": "数据库名称",
         "database_settings": "数据库设置",
@@ -838,9 +791,7 @@
         "db_index": "数据库索引",
         "db_port_hint": "默认 PostgreSQL 端口为 5432",
         "enable_redis": "启用 Redis",
-        "host": "主机",
         "password_hint": "最少 6 个字符",
-        "port": "端口",
         "redis_config": "Redis 配置（可选）",
         "redis_host_hint": "如果在 Docker 中运行，请将其设置为 'redis'",
         "redis_port_hint": "默认 Redis 端口为 6379",
@@ -861,8 +812,6 @@
         "example_landscape": "高质量风景视频",
         "example_tagcount": "带有许多标签但没有画师信息的作品",
         "examples": "搜索示例",
-        "got_it": "知道了",
-        "guide_title": "搜索语法指南",
         "meta_date": "上传日期或相对时长",
         "meta_dimensions": "图片尺寸 (像素)",
         "meta_filesize": "文件大小 (KB, MB, GB)",
@@ -887,19 +836,14 @@
         "sorting_oldest": "最早优先"
     },
     "shared": {
-        "actions": "操作",
         "ai_generation_data": "AI 生成数据",
         "content_not_found": "未找到内容",
         "content_shared_with_you": "此内容已与您分享。",
-        "download": "下载",
         "error_invalid_link": "此共享链接无效或已被移除。",
         "error_unshared_or_deleted": "您尝试查看的媒体已被取消分享、删除或从未存在。",
         "failed_load_video": "加载视频失败",
-        "information": "信息",
-        "media_load_error": "未找到媒体",
         "media_not_found": "此共享媒体不存在或已被移除。",
         "shared_media": "共享媒体",
-        "tags": "标签",
         "view_original": "查看原图"
     },
     "upload": {
@@ -919,8 +863,6 @@
             "individual_albums": "单独相册",
             "individual_rating": "单独分级",
             "individual_source": "单独来源 URL (可选)",
-            "no_tags": "无标签",
-            "none": "无",
             "remove_media": "移除此媒体",
             "title": "已上传媒体 (点击以编辑单个媒体的分级、来源和标签)"
         },

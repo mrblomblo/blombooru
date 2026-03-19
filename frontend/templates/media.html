@@ -30,7 +30,7 @@
             <form id="relation-search-form">
                 <div class="relative">
                     <input type="text" id="relation-search-input"
-                        placeholder="{{ t('media.tags.search_tags_placeholder') }}"
+                        placeholder="{{ t('common.search_tags_placeholder') }}"
                         class="w-full bg px-3 py-2 border text text-sm hover:border-primary transition-colors focus:outline-none focus:border-primary">
                 </div>
             </form>
@@ -169,7 +169,7 @@
         <div class="lg:col-span-1 flex flex-col gap-4">
             <!-- Information -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.info.title') }}</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('common.information') }}</h3>
                 <div id="media-info-content" class="text-xs"></div>
 
                 <!-- Edit Source (Admin Mode Only) -->
@@ -186,7 +186,7 @@
 
             <!-- Tags -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.tags.title') }}</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('common.tags') }}</h3>
                 <div id="tags-container" class="mb-2"></div>
 
                 <!-- Edit Tags (Admin Mode Only) -->
@@ -245,7 +245,7 @@
 
             <!-- Actions -->
             <div class="surface p-3 border">
-                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('media.actions.title') }}</h3>
+                <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('common.actions') }}</h3>
 
                 <div class="flex flex-col gap-3">
                     <!-- Primary Action -->
@@ -257,7 +257,7 @@
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        {{ t('media.actions.download') }}
+                        {{ t('common.download') }}
                     </a>
 
                     <!-- Admin Actions -->
@@ -299,7 +299,7 @@
                                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                                 </svg>
-                                <span id="share-btn-text">{{ t('media.actions.share') }}</span>
+                                <span id="share-btn-text">{{ t('common.share') }}</span>
                             </button>
                         </div>
 
@@ -307,7 +307,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button id="add-to-albums-btn"
                                 class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">
-                                {{ t('media.actions.albums') }}
+                                {{ t('common.albums') }}
                             </button>
                             <button id="manage-relations-btn"
                                 class="w-full px-3 py-1.5 surface-light transition-colors hover:surface-light text text-xs">

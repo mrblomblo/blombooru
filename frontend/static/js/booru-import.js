@@ -144,7 +144,7 @@ class BooruImporter {
                 ? `<img src="/api/booru-import/proxy-image?url=${encodeURIComponent(post.preview_url)}" alt="Preview" 
                                     class="w-32 h-32 object-contain surface border" 
                                     onerror="this.style.display='none'">`
-                : '<div class="w-32 h-32 surface border flex items-center justify-center text-xs text-secondary">' + window.i18n.t('upload.preview.none') + '</div>'
+                : '<div class="w-32 h-32 surface border flex items-center justify-center text-xs text-secondary">' + window.i18n.t('common.none') + '</div>'
             }
                     </div>
 
@@ -188,7 +188,7 @@ class BooruImporter {
 
                         <!-- Tags by category -->
                         <div class="mb-3">
-                            <div class="text-xs font-bold mb-1">${window.i18n.t('media.tags.title')}</div>
+                            <div class="text-xs font-bold mb-1">${window.i18n.t('common.tags')}</div>
                             <div class="max-h-40 overflow-y-auto p-2 surface border flex flex-wrap gap-2">
                                 ${tagCategoryHtml}
                             </div>

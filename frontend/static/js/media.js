@@ -210,7 +210,7 @@ class MediaViewer extends MediaViewerBase {
             video.onerror = () => {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-8 text-secondary">
-                        <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('media.errors.media_not_found')}" class="w-32 h-32 mb-4 opacity-50">
+                        <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('common.media_not_found')}" class="w-32 h-32 mb-4 opacity-50">
                         <p class="text-sm">${window.i18n.t('media.errors.failed_to_load_video')}</p>
                     </div>
                 `;
@@ -239,7 +239,7 @@ class MediaViewer extends MediaViewerBase {
 
             img.onerror = () => {
                 img.src = '/static/images/no-thumbnail.png';
-                img.alt = window.i18n.t('media.errors.media_not_found');
+                img.alt = window.i18n.t('common.media_not_found');
                 img.style.cursor = 'default';
                 img.onclick = null;
             };
@@ -525,7 +525,7 @@ class MediaViewer extends MediaViewerBase {
                         size: status.download_size_mb || 850
                     }),
                     confirmText: window.i18n.t('modal.download_model.confirm'),
-                    cancelText: window.i18n.t('modal.buttons.cancel'),
+                    cancelText: window.i18n.t('common.cancel'),
                     showIcon: true,
                     onConfirm: async () => {
                         await this.downloadModelAndPredict(btn);
@@ -670,7 +670,7 @@ class MediaViewer extends MediaViewerBase {
             const currentAlbumIds = (data.albums || []).map(a => a.id);
 
             const result = await AlbumPicker.pick({
-                title: window.i18n.t('media.albums.add_to_albums_title'),
+                title: window.i18n.t('common.add_to_albums'),
                 multiSelect: true,
                 preSelected: currentAlbumIds
             });
@@ -793,7 +793,7 @@ class MediaViewer extends MediaViewerBase {
             title: window.i18n.t('modal.unshare_media.title'),
             message: window.i18n.t('modal.unshare_media.message'),
             confirmText: window.i18n.t('modal.unshare_media.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            cancelText: window.i18n.t('common.cancel'),
             confirmId: 'unshare-confirm-yes',
             cancelId: 'unshare-confirm-no',
             onConfirm: async () => {
@@ -808,7 +808,7 @@ class MediaViewer extends MediaViewerBase {
                         btn.style.removeProperty('display');
                         btn.classList.remove('unshare-mode', 'border-danger', 'text-danger', 'hover:bg-danger', 'hover:tag-text');
                         btn.classList.add('surface-light', 'hover:surface-light');
-                        btnText.innerHTML = window.i18n.t('media.share.share_button');
+                        btnText.innerHTML = window.i18n.t('common.share');
                     }
 
                     app.showNotification(window.i18n.t('notifications.media.media_unshared'), 'success');
@@ -826,8 +826,8 @@ class MediaViewer extends MediaViewerBase {
             type: 'danger',
             title: window.i18n.t('modal.delete_media.title'),
             message: window.i18n.t('modal.delete_media.message'),
-            confirmText: window.i18n.t('modal.delete_media.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_delete'),
+            cancelText: window.i18n.t('common.cancel'),
             confirmId: 'delete-confirm-yes',
             cancelId: 'delete-confirm-no',
             onConfirm: async () => {
@@ -861,7 +861,7 @@ class MediaViewer extends MediaViewerBase {
 
     async appendAITags() {
         const btn = this.el('append-ai-tags-btn');
-        this.setButtonState(btn, window.i18n.t('media.progress.processing'), true);
+        this.setButtonState(btn, window.i18n.t('common.processing'), true);
 
         try {
             const res = await fetch(`/api/media/${this.mediaId}/metadata`);
@@ -1231,7 +1231,7 @@ class MediaViewer extends MediaViewerBase {
         } else if (hasChildren) {
             html = `
                 <div class="flex items-center justify-between flex-wrap gap-2">
-                    <span><span class="font-medium">${window.i18n.t('media.relations.children_label')}</span> ${childCount === 1 ? window.i18n.t('media.relations.children_items', { count: childCount }) : window.i18n.t('media.relations.children_items_plural', { count: childCount })}</span>
+                    <span><span class="font-medium">${window.i18n.t('media.relations.children_label')}</span> ${childCount === 1 ? window.i18n.t('media.relations.children_items', { count: childCount }) : window.i18n.t('common.items_count', { count: childCount })}</span>
                 </div>
                 <p class="text-xs text-secondary mt-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1647,8 +1647,8 @@ class MediaViewer extends MediaViewerBase {
             type: 'warning',
             title: window.i18n.t('modal.remove_children.title'),
             message: window.i18n.t('modal.remove_children.message', { count: selectedChildIds.length }),
-            confirmText: window.i18n.t('modal.remove_children.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_remove'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: async () => {
                 try {
                     for (const childId of selectedChildIds) {
@@ -1675,8 +1675,8 @@ class MediaViewer extends MediaViewerBase {
             type: 'warning',
             title: window.i18n.t('modal.remove_parent.title'),
             message: window.i18n.t('modal.remove_parent.message'),
-            confirmText: window.i18n.t('modal.remove_parent.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_remove'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: async () => {
                 try {
                     await app.apiCall(`/api/media/${this.mediaId}`, {
@@ -1710,7 +1710,7 @@ class MediaViewer extends MediaViewerBase {
             btn.style.removeProperty('display');
             btn.classList.add('unshare-mode', 'border-danger', 'text-danger', 'hover:bg-danger', 'hover:tag-text');
             btn.classList.remove('surface-light', 'hover:surface-light');
-            btnText.innerHTML = window.i18n.t('media.share.unshare_button');
+            btnText.innerHTML = window.i18n.t('common.unshare');
         }
 
         const aiMetadataToggle = this.el('share-ai-metadata-toggle');

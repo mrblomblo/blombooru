@@ -760,8 +760,8 @@ class BaseGallery {
             type: 'danger',
             title: itemCount > 1 ? window.i18n.t('modal.bulk_delete.title', { count: itemCount }) : window.i18n.t('modal.bulk_delete.title_single'),
             message: window.i18n.t('modal.bulk_delete.message', { count: itemCount }),
-            confirmText: window.i18n.t('modal.bulk_delete.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_delete'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: async () => {
                 for (const id of this.selectedItems) {
                     try {
@@ -1321,7 +1321,7 @@ class BaseGallery {
         this.elements.grid.appendChild(errorDiv);
     }
 
-    showEmptyState(message = window.i18n.t('gallery.no_items_found')) {
+    showEmptyState(message = window.i18n.t('common.no_items_found')) {
         if (!this.elements.grid) return;
 
         this.elements.grid.innerHTML = `

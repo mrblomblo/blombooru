@@ -26,14 +26,14 @@
             <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('onboarding.database_config') }}</h3>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">{{ t('onboarding.host') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.host') }}</label>
                 <input type="text" id="db-host" name="db_host" value="{{ settings.DB_HOST }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 <span class="text-xs text-secondary">{{ t('onboarding.db_host_hint') }}</span>
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">{{ t('onboarding.port') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.port') }}</label>
                 <input type="number" id="db-port" name="db_port" value="5432" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 <span class="text-xs text-secondary">{{ t('onboarding.db_port_hint') }}</span>
@@ -46,13 +46,13 @@
             </div>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">{{ t('login.username') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.username') }}</label>
                 <input type="text" id="db-user" name="db_user" value="{{ settings.DB_USER }}" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.password') }}</label>
                 <input type="password" id="db-password" name="db_password" value="{{ settings.DB_PASSWORD }}"
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
@@ -69,14 +69,14 @@
 
             <div id="redis-settings" {% if not settings.REDIS_ENABLED %}style="display: none;" {% endif %}>
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">{{ t('onboarding.host') }}</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('common.host') }}</label>
                     <input type="text" id="redis-host" name="redis_host" value="{{ settings.REDIS_HOST }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                     <span class="text-xs text-secondary">{{ t('onboarding.redis_host_hint') }}</span>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">{{ t('onboarding.port') }}</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('common.port') }}</label>
                     <input type="number" id="redis-port" name="redis_port" value="6379"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                     <span class="text-xs text-secondary">{{ t('onboarding.redis_port_hint') }}</span>
@@ -89,23 +89,23 @@
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
+                    <label class="block text-xs font-bold mb-2">{{ t('common.password') }}</label>
                     <input type="password" id="redis-password" name="redis_password"
                         value="{{ settings.REDIS_PASSWORD or '' }}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
             </div>
 
-            <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('onboarding.admin_account') }}</h3>
+            <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('common.create_admin_account') }}</h3>
 
             <div class="mb-4">
-                <label class="block text-xs font-bold mb-2">{{ t('login.username') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.username') }}</label>
                 <input type="text" id="admin-username" name="admin_username" required
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-bold mb-2">{{ t('login.password') }}</label>
+                <label class="block text-xs font-bold mb-2">{{ t('common.password') }}</label>
                 <input type="password" id="admin-password" name="admin_password" required minlength="6" maxlength="50"
                     class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 <small class="text-secondary text-xs">{{ t('onboarding.password_hint') }}</small>

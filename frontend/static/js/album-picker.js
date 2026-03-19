@@ -103,7 +103,7 @@ class AlbumPicker {
                 </div>
 
                 <div class="mb-3">
-                    <input type="text" id="album-picker-search" placeholder="${window.i18n.t('album_picker.search_placeholder')}"
+                    <input type="text" id="album-picker-search" placeholder="${window.i18n.t('common.search_albums_placeholder')}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary">
                 </div>
 
@@ -237,7 +237,7 @@ class AlbumPicker {
                     <div class="text-xs font-medium truncate">${album.name}</div>
                     ${parentPath && isFiltered ? `<div class="text-xs text-secondary truncate">${window.i18n.t('album_picker.path', { path: parentPath })}</div>` : ''}
                     <div class="text-xs text-secondary">
-                        ${window.i18n.t('album_picker.items_count', { count: album.media_count || 0 })}
+                        ${window.i18n.t('common.items_count', { count: album.media_count || 0 })}
                         ${album.depth === 0 ? `<span class="tag meta tag-text text-xs px-1 ml-1">${window.i18n.t('album_picker.root')}</span>` : ''}
                     </div>
                 </div>

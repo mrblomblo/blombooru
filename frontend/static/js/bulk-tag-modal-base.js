@@ -110,7 +110,7 @@ class BulkTagModalBase {
                                 ${window.i18n.t('modal.buttons.save_all')}
                             </button>
                             <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 surface-light hover:surface-light text text-sm font-medium transition-colors">
-                                ${window.i18n.t('modal.buttons.cancel')}
+                                ${window.i18n.t('common.cancel')}
                             </button>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ class BulkTagModalBase {
     // ==================== HTML Helpers ====================
 
     getLoadingHTML(statusText) {
-        if (!statusText) statusText = window.i18n.t('bulk_modal.progress.processing');
+        if (!statusText) statusText = window.i18n.t('common.processing');
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-loading flex flex-col items-center justify-center h-full py-12" style="display: none;">
@@ -533,7 +533,7 @@ class BulkTagModalBase {
         const prefix = this.options.classPrefix;
         const currentTagsDisplay = item.currentTags.length > 0
             ? item.currentTags.slice(0, 3).join(', ') + (item.currentTags.length > 3 ? ` (${window.i18n.t('bulk_modal.messages.tag_overflow', { count: item.currentTags.length - 3 })})` : '')
-            : window.i18n.t('bulk_modal.messages.no_tags');
+            : window.i18n.t('common.no_tags');
 
         const tagsToShow = item.newTags || [];
 

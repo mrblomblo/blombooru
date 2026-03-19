@@ -105,7 +105,7 @@ class AlbumsOverview extends BaseGallery {
                 <div class="p-2 border-t">
                     <div class="text-xs font-bold truncate mb-1">${album.name}</div>
                     <div class="flex justify-between items-center text-xs text-secondary">
-                        <span>${window.i18n.t('albums.items_count', { count: album.media_count || 0 })}</span>
+                        <span>${window.i18n.t('common.items_count', { count: album.media_count || 0 })}</span>
                         <span>${album.rating[0].toUpperCase()}</span>
                     </div>
                 </div>

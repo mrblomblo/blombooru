@@ -35,7 +35,7 @@ class BulkManageTagsModal {
         modal.innerHTML = `
             <div class="surface p-2 sm:p-6 border shadow-2xl w-full max-w-sm mx-4 relative">
                 <div class="flex items-center mb-4 flex-shrink-0">
-                    <h2 class="text-base sm:text-lg font-bold truncate">${window.i18n.t('bulk_modal.manage_title')}</h2>
+                    <h2 class="text-base sm:text-lg font-bold truncate">${window.i18n.t('common.manage_tags')}</h2>
                 </div>
                 
                 <div class="flex flex-col gap-3">
@@ -45,7 +45,7 @@ class BulkManageTagsModal {
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                         <div class="flex-1">
-                            <div class="font-bold text-sm">${window.i18n.t('bulk_modal.menu.manual_editor')}</div>
+                            <div class="font-bold text-sm">${window.i18n.t('common.manual_tag_editor')}</div>
                             <div class="text-xs opacity-70">${window.i18n.t('bulk_modal.menu.manual_desc')}</div>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50">

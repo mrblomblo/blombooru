@@ -1339,8 +1339,8 @@ class AdminPanel {
             type: 'danger',
             title: window.i18n.t('modal.delete_tag.title'),
             message: window.i18n.t('modal.delete_tag.message'),
-            confirmText: window.i18n.t('modal.delete_tag.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_delete'),
+            cancelText: window.i18n.t('common.cancel'),
             confirmId: 'delete-tag-confirm-yes',
             cancelId: 'delete-tag-confirm-no',
             onConfirm: async () => {
@@ -1365,7 +1365,7 @@ class AdminPanel {
             title: window.i18n.t('modal.clear_tags.title'),
             message: window.i18n.t('modal.clear_tags.message'),
             confirmText: window.i18n.t('modal.clear_tags.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            cancelText: window.i18n.t('common.cancel'),
             confirmId: 'clear-tags-first-confirm-yes',
             cancelId: 'clear-tags-first-confirm-no',
             onConfirm: () => {
@@ -1376,13 +1376,13 @@ class AdminPanel {
                     title: window.i18n.t('modal.clear_tags_confirm.title'),
                     message: window.i18n.t('modal.clear_tags_confirm.message'),
                     confirmText: window.i18n.t('modal.clear_tags_confirm.confirm'),
-                    cancelText: window.i18n.t('modal.buttons.cancel'),
+                    cancelText: window.i18n.t('common.cancel'),
                     confirmId: 'clear-tags-second-confirm-yes',
                     cancelId: 'clear-tags-second-confirm-no',
                     onConfirm: async () => {
                         try {
                             await app.apiCall('/api/admin/clear-tags', { method: 'DELETE' });
-                            app.showNotification(window.i18n.t('notifications.admin.all_tags_cleared'), 'success');
+                            app.showNotification(window.i18n.t('common.all_tags_cleared'), 'success');
                             await this.loadTagStats();
                             document.getElementById('tag-search-results').innerHTML = '';
                         } catch (error) {
@@ -1688,7 +1688,7 @@ class AdminPanel {
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                         </svg>
-                        ${window.i18n.t('admin.albums_management.delete_album')}
+                        ${window.i18n.t('common.delete_album')}
                     </button>
                     <button id="album-manage-cancel" class="px-6 py-3 transition-colors bg border hover:border-primary hover:text-primary text font-bold text-sm flex items-center justify-center gap-2">
                         ${window.i18n.t('common.close')}
@@ -2022,10 +2022,10 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'delete-album-modal',
             type: 'danger',
-            title: window.i18n.t('modal.delete_album.title'),
+            title: window.i18n.t('common.delete_album'),
             message: window.i18n.t('modal.delete_album.message', { albumName: this.escapeHtml(albumName) }),
-            confirmText: window.i18n.t('modal.delete_album.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            confirmText: window.i18n.t('common.yes_delete'),
+            cancelText: window.i18n.t('common.cancel'),
             confirmId: 'delete-album-confirm-yes',
             cancelId: 'delete-album-confirm-no',
             onConfirm: async () => {
@@ -2066,7 +2066,7 @@ class AdminPanel {
                 </div>
             `,
             confirmText: window.i18n.t('modal.api_key_name.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: () => {
                 const nameInput = document.getElementById(inputId);
                 const name = nameInput ? nameInput.value.trim() : '';
@@ -2177,7 +2177,7 @@ class AdminPanel {
             title: window.i18n.t('modal.revoke_api_key.title'),
             message: window.i18n.t('modal.revoke_api_key.message'),
             confirmText: window.i18n.t('modal.revoke_api_key.confirm'),
-            cancelText: window.i18n.t('modal.buttons.cancel'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: async () => {
                 try {
                     await app.apiCall(`/api/admin/api-keys/${keyId}`, {
@@ -2437,7 +2437,7 @@ class AdminPanel {
             type: 'info',
             title: window.i18n ? window.i18n.t('modal.changelog.title') : 'Changelog',
             message: tabsHtml,
-            confirmText: window.i18n ? window.i18n.t('modal.changelog.confirm') : 'Got it',
+            confirmText: window.i18n ? window.i18n.t('common.got_it') : 'Got it',
             cancelText: '',
             onConfirm: () => {
                 modal.destroy();
@@ -2478,10 +2478,10 @@ class AdminPanel {
         const modal = new ModalHelper({
             id: 'update-confirm-modal',
             type: 'warning',
-            title: window.i18n ? window.i18n.t('modal.system_update.title') : 'System Update',
+            title: window.i18n ? window.i18n.t('common.system_update') : 'System Update',
             message: window.i18n ? window.i18n.t('modal.system_update.message', { target: 'latest' }) : 'Are you sure you want to update?',
             confirmText: window.i18n ? window.i18n.t('modal.system_update.confirm') : 'Update Now',
-            cancelText: window.i18n ? window.i18n.t('modal.buttons.cancel') : 'Cancel',
+            cancelText: window.i18n ? window.i18n.t('common.cancel') : 'Cancel',
             onConfirm: () => {
                 this._execute_update();
                 modal.destroy();
