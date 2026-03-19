@@ -2385,9 +2385,8 @@ class AdminPanel {
                 if (!changes) continue;
                 changesHtml += `
                 <div class="bg p-2 border-b last:border-0 text-left">
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="mb-2">
                         <a href="${this.escapeHtml(rel.url)}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 hover:bg-primary transition-colors">${this.escapeHtml(rel.tag)}</a>
-                        <a href="${this.escapeHtml(rel.url)}" target="_blank" class="text-xs text-primary hover:text-primary ml-auto">GitHub</a>
                     </div>
                     ${parseMarkdownList(changes)}
                 </div>`;
