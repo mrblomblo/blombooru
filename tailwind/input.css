@@ -32,6 +32,81 @@
     }
 }
 
+@layer components {
+
+    .btn,
+    .btn-dark,
+    .btn-primary,
+    .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        line-height: 1;
+        cursor: pointer;
+        transition-property: color, background-color, border-color;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+        border: 1px solid var(--border);
+    }
+
+    .btn,
+    .btn-dark,
+    .btn-primary,
+    .btn-danger {
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    /* Base button: surface-light variant */
+    .btn {
+        background-color: var(--surface-light);
+        color: var(--text);
+    }
+
+    .btn:hover:not(:disabled) {
+        background-color: var(--surface-light-hover);
+    }
+
+    /* Dark button: background variant */
+    .btn-dark {
+        background-color: var(--background);
+        color: var(--text);
+    }
+
+    .btn-dark:hover:not(:disabled) {
+        border-color: var(--primary-color);
+    }
+
+    /* Primary button */
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: var(--primary-text);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+
+    /* Danger button */
+    .btn-danger {
+        background-color: var(--danger);
+        color: var(--tag-text);
+        border-color: var(--danger);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background-color: var(--danger-hover);
+        border-color: var(--danger-hover);
+    }
+}
+
 @layer utilities {
     .surface {
         background-color: var(--surface);
