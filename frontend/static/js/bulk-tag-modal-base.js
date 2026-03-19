@@ -88,14 +88,8 @@ class BulkTagModalBase {
         modal.innerHTML = `
             <div class="surface w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-4xl sm:mx-4 flex flex-col border-t sm:border shadow-2xl safe-area-bottom">
                 <!-- Header -->
-                <div class="flex justify-between items-center p-4 border-b border-color flex-shrink-0">
-                    <h2 class="text-base sm:text-lg font-bold truncate pr-4">${this.options.title}</h2>
-                    <button class="${prefix}-close flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-full surface-light hover:bg-danger hover:tag-text transition-colors" aria-label="Close">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-4 sm:h-4">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
+                <div class="flex items-center p-4 border-b border-color flex-shrink-0">
+                    <h2 class="text-base sm:text-lg font-bold truncate">${this.options.title}</h2>
                 </div>
                 
                 <!-- Body -->
@@ -112,11 +106,11 @@ class BulkTagModalBase {
                             </div>
                         ` : ''}
                         <div class="flex gap-2 ${footerLeft ? '' : 'sm:ml-auto'}">
-                            <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 surface-light hover:surface-light text text-sm font-medium transition-colors">
-                                ${window.i18n.t('modal.buttons.cancel')}
-                            </button>
                             <button class="${prefix}-save flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 bg-primary hover:bg-primary tag-text text-sm font-medium transition-colors" style="display: none;">
                                 ${window.i18n.t('modal.buttons.save_all')}
+                            </button>
+                            <button class="${prefix}-cancel flex-1 sm:flex-none min-h-[48px] sm:min-h-0 px-5 py-3 sm:py-2 surface-light hover:surface-light text text-sm font-medium transition-colors">
+                                ${window.i18n.t('modal.buttons.cancel')}
                             </button>
                         </div>
                     </div>
@@ -187,9 +181,6 @@ class BulkTagModalBase {
         if (!this.modalElement) return;
 
         const prefix = this.options.classPrefix;
-
-        const closeBtn = this.modalElement.querySelector(`.${prefix}-close`);
-        if (closeBtn) closeBtn.addEventListener('click', () => this.cancel());
 
         const cancelBtn = this.modalElement.querySelector(`.${prefix}-cancel`);
         if (cancelBtn) cancelBtn.addEventListener('click', () => this.cancel());

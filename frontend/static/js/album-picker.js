@@ -98,9 +98,8 @@ class AlbumPicker {
 
         this.modal.innerHTML = `
             <div class="modal-content surface border p-4" style="max-width: 600px; width: 90%; max-height: 80vh; display: flex; flex-direction: column;">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <div class="flex items-center mb-4 pb-3 border-b">
                     <h3 class="text-base font-bold">${this.options.title}</h3>
-                    <button id="album-picker-close" class="text-secondary hover:text text-xl leading-none">&times;</button>
                 </div>
 
                 <div class="mb-3">
@@ -117,8 +116,8 @@ class AlbumPicker {
                 </div>
 
                 <div class="flex gap-2 justify-end">
-                    <button id="album-picker-cancel" class="px-4 py-2 border surface-light hover:surface-light text-xs transition-colors">${window.i18n.t('album_picker.cancel')}</button>
-                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs transition-colors">${window.i18n.t('album_picker.confirm')}</button>
+                    <button id="album-picker-confirm" class="px-4 py-2 bg-primary primary-text hover:bg-primary text-xs transition-colors">${window.i18n.t('common.confirm')}</button>
+                    <button id="album-picker-cancel" class="px-4 py-2 border bg hover:border-primary hover:text-primary text text-xs transition-colors">${window.i18n.t('common.cancel')}</button>
                 </div>
             </div>
         `;
@@ -126,7 +125,6 @@ class AlbumPicker {
         document.body.appendChild(this.modal);
 
         // Event listeners
-        this.modal.querySelector('#album-picker-close').addEventListener('click', () => this.hide());
         this.modal.querySelector('#album-picker-cancel').addEventListener('click', () => this.hide());
         this.modal.querySelector('#album-picker-confirm').addEventListener('click', () => this.confirm());
 

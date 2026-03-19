@@ -16,15 +16,8 @@
     <div class="absolute inset-0 bg-black/70" id="relation-modal-backdrop"></div>
     <div class="relative surface border shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4">
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 border-b">
+        <div class="flex items-center p-4 border-b">
             <h2 class="text-lg font-bold">{{ t('media.relations.title') }}</h2>
-            <button id="relation-modal-close" class="text-secondary hover:text p-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
         </div>
 
         <!-- Current Status -->
@@ -104,6 +97,10 @@
                         class="px-4 py-2 bg-danger tag-text text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                         style="display: none;">
                         {{ t('media.relations.remove_selected') }}
+                    </button>
+                    <button id="relation-modal-close"
+                        class="px-4 py-2 border bg hover:border-primary hover:text-primary text text-sm transition-colors">
+                        {{ t('common.cancel') }}
                     </button>
                 </div>
             </div>
