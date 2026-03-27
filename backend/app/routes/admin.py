@@ -242,6 +242,16 @@ async def login(credentials: UserLogin, request: Request, response: Response, db
             samesite="lax",
             secure=is_secure
         )
+
+        # Enable admin mode by default on login so admin features work immediately.
+        response.set_cookie(
+            key="admin_mode",
+            value="true",
+            httponly=False,
+            max_age=43200 * 60,
+            samesite="lax",
+            secure=is_secure
+        )
         
         logger.debug(f"Login successful, token issued")
         
