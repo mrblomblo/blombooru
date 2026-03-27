@@ -121,7 +121,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="admin-mode-toggle"
+                            <a href="/admin"
                                 class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                                 {{ t('common.admin_panel') }}
                             </a>
@@ -207,7 +207,7 @@
                     </li>
                     {% endif %}
                     <li>
-                        <a href="#" id="admin-mode-toggle-mobile"
+                        <a href="/admin"
                             class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                             {{ t('common.admin_panel') }}
                         </a>
@@ -301,8 +301,6 @@
             const mainScroll = document.getElementById('main-scroll');
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const mobileMenu = document.getElementById('mobile-menu');
-            const adminToggle = document.getElementById('admin-mode-toggle');
-            const adminToggleMobile = document.getElementById('admin-mode-toggle-mobile');
             const logoutBtn = document.getElementById('logout-btn');
             const logoutBtnMobile = document.getElementById('logout-btn-mobile');
 
@@ -352,13 +350,6 @@
                         setTimeout(adjustPadding, 10);
                     }
                 });
-
-                if (adminToggleMobile && adminToggle) {
-                    adminToggleMobile.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        adminToggle.click();
-                    });
-                }
 
                 if (logoutBtnMobile && logoutBtn) {
                     logoutBtnMobile.addEventListener('click', (e) => {
