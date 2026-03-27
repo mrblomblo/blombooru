@@ -211,22 +211,6 @@ class Blombooru {
         });
     }
 
-    handleAdminToggle() {
-        // If not authenticated, go to admin panel
-        if (!this.isAuthenticated) {
-            window.location.href = '/admin';
-            return;
-        }
-
-        // If on admin panel page, don't toggle - it's auto-enabled
-        if (window.location.pathname === '/admin') {
-            return;
-        }
-
-        // Toggle admin mode
-        this.toggleAdminMode();
-    }
-
     async toggleAdminMode() {
         const newMode = !this.isAdminMode;
 
