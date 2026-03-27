@@ -198,7 +198,6 @@ class AdminPanel {
                 document.getElementById('settings-section').style.display = 'block';
 
                 app.updateAuthStatus(true);
-                await this.enableAdminMode();
 
                 return true;
             } else {
@@ -209,21 +208,6 @@ class AdminPanel {
             console.error('Error checking auth:', error);
             window.location.href = '/login?return=/admin';
             return false;
-        }
-    }
-
-    async enableAdminMode() {
-        try {
-            const response = await fetch('/api/admin/toggle-admin-mode?enabled=true', {
-                method: 'POST'
-            });
-
-            if (response.ok) {
-                app.isAdminMode = true;
-                app.updateUI();
-            }
-        } catch (error) {
-            console.error('Error enabling admin mode:', error);
         }
     }
 
