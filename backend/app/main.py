@@ -1,6 +1,8 @@
+import asyncio
 import json
 import subprocess
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -46,7 +48,50 @@ CACHE_BUSTER = DynamicCacheBuster(get_cache_buster())
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Blombooru", version=APP_VERSION)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler (startup and shutdown)"""
+    # Startup
+    if settings.DEBUG:
+        logger.warning("DEBUG MODE ENABLED - DO NOT USE IN PRODUCTION")
+    if not settings.IS_FIRST_RUN:
+        try:
+            init_engine()
+            init_db()
+
+            # Clean up any leftover chunks from abandoned uploads
+            from .routes.media import cleanup_archive_chunks, cleanup_media_chunks
+            cleanup_archive_chunks()
+            cleanup_media_chunks()
+
+            # Start periodic cleanup task for abandoned uploads
+            async def periodic_upload_chunks_cleanup():
+                while True:
+                    await asyncio.sleep(900)  # Every 15 minutes
+                    try:
+                        cleanup_archive_chunks(max_age_seconds=3600)
+                        cleanup_media_chunks(max_age_seconds=3600)
+                    except Exception as e:
+                        logger.error(f"Upload chunks cleanup error: {e}")
+
+            asyncio.create_task(periodic_upload_chunks_cleanup())
+
+            logger.info("Blombooru started successfully")
+        except Exception as e:
+            logger.error(f"Error during startup: {e}")
+    else:
+        logger.info("First run detected - please complete onboarding")
+
+    yield
+
+    # Shutdown
+    try:
+        from .routes.ai_tagger import shutdown_tagger_resources
+        shutdown_tagger_resources()
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+
+app = FastAPI(title="Blombooru", version=APP_VERSION, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(
@@ -90,50 +135,6 @@ app.include_router(danbooru.router)
 app.include_router(system.router)
 app.include_router(booru_import.router)
 app.include_router(booru_config.router)
-
-@app.on_event("startup")
-async def startup_event():
-    """Run on startup"""
-    if settings.DEBUG:
-        logger.warning("DEBUG MODE ENABLED - DO NOT USE IN PRODUCTION")
-    if not settings.IS_FIRST_RUN:
-        try:
-            init_engine()
-            init_db()
-
-            # Clean up any leftover chunks from abandoned uploads
-            from .routes.media import cleanup_archive_chunks, cleanup_media_chunks
-            cleanup_archive_chunks()
-            cleanup_media_chunks()
-
-            # Start periodic cleanup task for abandoned archive extractions
-            import asyncio
-
-            async def periodic_upload_chunks_cleanup():
-                while True:
-                    await asyncio.sleep(900)  # Every 15 minutes
-                    try:
-                        cleanup_archive_chunks(max_age_seconds=3600)
-                        cleanup_media_chunks(max_age_seconds=3600)
-                    except Exception as e:
-                        logger.error(f"Upload chunks cleanup error: {e}")
-
-            asyncio.create_task(periodic_upload_chunks_cleanup())
-                
-            logger.info("Blombooru started successfully")
-        except Exception as e:
-            logger.error(f"Error during startup: {e}")
-    else:
-        logger.info("First run detected - please complete onboarding")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on shutdown"""
-    try:
-        from .routes.ai_tagger import shutdown_tagger_resources
-        shutdown_tagger_resources()
-    except Exception as e:
-        logger.error(f"Error during shutdown: {e}")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
