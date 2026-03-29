@@ -1,25 +1,9 @@
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-class RatingEnum(str, Enum):
-    safe = "safe"
-    questionable = "questionable"
-    explicit = "explicit"
-
-class TagCategoryEnum(str, Enum):
-    general = "general"
-    artist = "artist"
-    character = "character"
-    copyright = "copyright"
-    meta = "meta"
-
-class FileTypeEnum(str, Enum):
-    image = "image"
-    video = "video"
-    gif = "gif"
+from .enums import FileTypeEnum, RatingEnum, TagCategoryEnum
 
 class TagBase(BaseModel):
     name: str
