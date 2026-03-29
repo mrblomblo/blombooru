@@ -162,6 +162,7 @@ def import_full_backup(zip_source, db: Session):
 
     with zipfile.ZipFile(zip_source, 'r') as zf:
         media_list = []
+        backup_data = {}
         
         # 1. Handle tags.csv using existing CSV import logic
         if 'tags.csv' in zf.namelist():
