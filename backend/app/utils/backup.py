@@ -340,13 +340,13 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
             
         imported_count += 1
         if imported_count % 100 == 0:
-            logger.error(f"Imported {imported_count} media files...")
+            logger.info(f"Imported {imported_count} media files...")
 
     db.commit()
     
     # Post-process parent links
     if parent_links:
-        logger.error(f"Linking {len(parent_links)} parent/child relationships...")
+        logger.info(f"Linking {len(parent_links)} parent/child relationships...")
         # Refresh hash map to include newly imported items
         all_media_map = {m.hash: m.id for m in db.query(Media.hash, Media.id).all()}
         
@@ -361,9 +361,9 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         if updates:
              db.bulk_update_mappings(Media, updates)
              db.commit()
-             logger.error(f"Linked {len(updates)} parent relationships.")
+             logger.info(f"Linked {len(updates)} parent relationships.")
     
-    logger.error(f"Media import complete. Imported: {imported_count}, Skipped: {skipped_count}")
+    logger.info(f"Media import complete. Imported: {imported_count}, Skipped: {skipped_count}")
 
 def import_albums_logical(db: Session, albums_list: List[dict]):
     from datetime import datetime
@@ -399,7 +399,7 @@ def import_albums_logical(db: Session, albums_list: List[dict]):
             id_map[json_id] = new_album.id
             
     db.commit()
-    logger.info(f"Pass 1: consistent album IDs mapped.")
+    logger.info(f"Pass 1: Consistent album IDs mapped.")
     
     # PASS 2: Link Media
     logger.info("Pass 2: Linking media...")
