@@ -1,6 +1,6 @@
 venv
 .env
 __pycache__
-data/settings.json
-media
+data/
+media/
 tailwind/tailwindcss*

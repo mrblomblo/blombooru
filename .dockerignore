@@ -5,7 +5,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.log
-data
-media
-tailwind/tailwindcss
+data/
+media/
+tailwind/tailwindcss*
 node_modules
