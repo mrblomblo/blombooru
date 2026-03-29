@@ -126,7 +126,6 @@ def parse_age(value: str) -> Dict[str, Any]:
         # Approximate matching for units
         for k in units:
             if unit_str.startswith(k):
-                target_unit = units[k]
                 if unit_str == k: # exact match
                     break
         
