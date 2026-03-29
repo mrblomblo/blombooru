@@ -1233,8 +1233,10 @@ async def backup_full_db(
             "parent_hash": m.parent.hash if m.parent else None
         })
         
+    from ..config import APP_VERSION, SCHEMA_VERSION
     backup_metadata = {
-        "version": 1,
+        "version": APP_VERSION,
+        "schema_version": SCHEMA_VERSION,
         "type": "full_backup",
         "media": media_list,
         "albums": album_list
