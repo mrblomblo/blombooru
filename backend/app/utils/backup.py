@@ -308,8 +308,8 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
 
         new_media = Media(
             filename=target_path.name,
-            path=str(target_path),
-            thumbnail_path=str(thumb_path) if thumb_path.exists() else None,
+            path=str(target_path.relative_to(settings.BASE_DIR)),
+            thumbnail_path=str(thumb_path.relative_to(settings.BASE_DIR)) if thumb_path.exists() else None,
             hash=file_hash,
             file_type=media_data.get('file_type'),
             mime_type=media_data.get('mime_type'),
