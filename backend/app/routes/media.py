@@ -241,8 +241,18 @@ async def get_media_list(
         
         # Pagination
         offset = (page - 1) * limit
-        total = query.count()
-        media_list = query.offset(offset).limit(limit).all()
+        
+        from sqlalchemy import func
+        query = query.add_columns(func.count(Media.id).over().label('total_count'))
+        
+        results = query.offset(offset).limit(limit).all()
+        
+        if results:
+            total = results[0].total_count
+            media_list = [r[0] for r in results]
+        else:
+            total = 0
+            media_list = []
         
         items = [MediaResponse.model_validate(m) for m in media_list]
         
