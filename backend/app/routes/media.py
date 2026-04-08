@@ -87,6 +87,115 @@ def get_or_create_tags(db: Session, tag_names: List[str], category_hints: Option
     
     return tags
 
+def process_and_save_media(
+    db: Session,
+    file_path: Path,
+    unique_filename: str,
+    rating,
+    tags: str,
+    album_ids: Optional[str],
+    source: Optional[str],
+    category_hints: Optional[str],
+) -> "MediaResponse":
+    """Hash-check, thumbnail generation, DB insert, tag/album linking, and cache
+    invalidation for a media file that is already on disk at *file_path*.
+
+    Raises HTTPException 409 on duplicate hash.  Does NOT delete file_path on
+    error. Callers are responsible for cleanup of files they created.
+    """
+    file_hash = calculate_file_hash(file_path)
+
+    existing = db.query(Media).filter(Media.hash == file_hash).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Media already exists (duplicate of {existing.filename})",
+        )
+
+    metadata = process_media_file(file_path)
+    logger.debug(f"Media processed: {metadata}")
+
+    thumbnail_filename = Path(unique_filename).stem + ".jpg"
+    thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
+
+    logger.debug(f"Generating thumbnail: {thumbnail_filename}")
+    thumbnail_generated = generate_thumbnail(file_path, thumbnail_path, metadata["file_type"])
+
+    if thumbnail_generated:
+        logger.debug(f"Thumbnail generated: {thumbnail_path}")
+    else:
+        logger.warning("Thumbnail generation failed")
+
+    relative_path = file_path.relative_to(settings.BASE_DIR)
+    relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
+
+    media = Media(
+        filename=unique_filename,
+        path=str(relative_path),
+        thumbnail_path=str(relative_thumb) if relative_thumb else None,
+        hash=file_hash,
+        file_type=metadata["file_type"],
+        mime_type=metadata["mime_type"],
+        file_size=metadata["file_size"],
+        width=metadata["width"],
+        height=metadata["height"],
+        duration=metadata["duration"],
+        rating=rating,
+        source=source if source else None,
+    )
+
+    tag_ids_to_update = []
+    if tags:
+        tag_list = [t.strip() for t in tags.split() if t.strip()]
+        parsed_hints = None
+        if category_hints:
+            try:
+                parsed_hints = json.loads(category_hints)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
+        tag_ids_to_update = [tag.id for tag in media.tags]
+        logger.debug(f"Tags added: {tag_list}")
+
+    affected_album_ids = []
+    if album_ids:
+        try:
+            a_ids = [
+                int(id_str.strip())
+                for id_str in album_ids.split(",")
+                if id_str.strip().isdigit()
+            ]
+            if a_ids:
+                albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
+                media.albums = albums
+                affected_album_ids = [album.id for album in albums]
+                logger.debug(f"Added to albums: {affected_album_ids}")
+        except Exception as e:
+            logger.error(f"Error parsing album_ids: {e}")
+
+    db.add(media)
+    db.commit()
+    db.refresh(media)
+
+    if tag_ids_to_update:
+        update_tag_counts(db, tag_ids_to_update)
+        db.commit()
+
+    if affected_album_ids:
+        for a_id in affected_album_ids:
+            update_album_last_modified(a_id, db)
+        db.commit()
+        invalidate_album_cache()
+
+    db.refresh(media)
+
+    logger.info(f"Media saved: ID={media.id}, filename={unique_filename}")
+
+    invalidate_media_cache()
+    invalidate_tag_cache()
+
+    return MediaResponse.model_validate(media)
+
 @router.get("/")
 @router.get("")
 @cache_response(expire=3600, key_prefix="media_list")
@@ -286,119 +395,34 @@ async def upload_media(
             
             logger.debug(f"File saved to: {file_path}")
         
-        # Check for duplicates AFTER we have the hash
-        existing = db.query(Media).filter(Media.hash == file_hash).first()
-        if existing:
-            logger.info(f"Duplicate file detected: {file_hash}")
-            # Only delete uploaded file if it was a new upload (not scanned)
-            if not scanned_path and file_path.exists():
-                file_path.unlink(missing_ok=True)
-            raise HTTPException(
-                status_code=409, 
-                detail=f"Media already exists (duplicate of {existing.filename})"
+        try:
+            return process_and_save_media(
+                db=db,
+                file_path=file_path,
+                unique_filename=unique_filename,
+                rating=rating,
+                tags=tags,
+                album_ids=album_ids,
+                source=source,
+                category_hints=category_hints,
             )
-        
-        metadata = process_media_file(file_path)
-        logger.debug(f"Media processed: {metadata}")
+        except HTTPException as e:
+            if e.status_code == 409:
+                # Duplicate: clean up only if it was a fresh upload (not a scan)
+                if not scanned_path and file_path.exists():
+                    file_path.unlink(missing_ok=True)
+            raise
 
-        thumbnail_name = Path(unique_filename).stem
-        thumbnail_filename = f"{thumbnail_name}.jpg"
-        thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
-
-        logger.debug(f"Generating thumbnail: {thumbnail_filename}")
-
-        thumbnail_generated = generate_thumbnail(
-            file_path,
-            thumbnail_path,
-            metadata['file_type']
-        )
-
-        if thumbnail_generated:
-            logger.debug(f"Thumbnail generated: {thumbnail_path}")
-        else:
-            logger.warning(f"Warning: Thumbnail generation failed")
-        
-        relative_path = file_path.relative_to(settings.BASE_DIR)
-        relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
-        
-        media = Media(
-            filename=unique_filename,
-            path=str(relative_path),
-            thumbnail_path=str(relative_thumb) if relative_thumb else None,
-            hash=file_hash,
-            file_type=metadata['file_type'],
-            mime_type=metadata['mime_type'],
-            file_size=metadata['file_size'],
-            width=metadata['width'],
-            height=metadata['height'],
-            duration=metadata['duration'],
-            rating=rating,
-            source=source if source else None,
-        )
-        
-        tag_ids_to_update = []
-        if tags:
-            tag_list = [t.strip() for t in tags.split() if t.strip()]
-            parsed_hints = None
-            if category_hints:
-                try:
-                    import json
-                    parsed_hints = json.loads(category_hints)
-                except (json.JSONDecodeError, TypeError):
-                    pass
-            media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
-            tag_ids_to_update = [tag.id for tag in media.tags]
-            logger.debug(f"Tags added: {tag_list}")
-            
-        # Handle Album IDs
-        affected_album_ids = []
-        if album_ids:
-            try:
-                a_ids = [int(id_str.strip()) for id_str in album_ids.split(",") if id_str.strip().isdigit()]
-                if a_ids:
-                    albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
-                    media.albums = albums
-                    affected_album_ids = [album.id for album in albums]
-                    logger.debug(f"Added to albums: {affected_album_ids}")
-            except Exception as e:
-                logger.error(f"Error parsing album_ids: {e}")
-        
-        db.add(media)
-        db.commit()
-        db.refresh(media)
-        
-        if tag_ids_to_update:
-            update_tag_counts(db, tag_ids_to_update)
-            db.commit()
-            
-        if affected_album_ids:
-            for a_id in affected_album_ids:
-                update_album_last_modified(a_id, db)
-            db.commit()
-            invalidate_album_cache()
-            
-        db.refresh(media)
-        
-        logger.info(f"Media uploaded successfully: ID={media.id}, Filename={unique_filename}")
-        
-        invalidate_media_cache()
-        invalidate_tag_cache()
-        
-        return MediaResponse.model_validate(media)
-        
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error uploading media: {e}", exc_info=True)
-        
+
         # Clean up files on error (only if it was a new upload, not scanned)
         if not scanned_path:
             if 'file_path' in locals() and file_path.exists():
                 file_path.unlink(missing_ok=True)
-        
-        if 'thumbnail_path' in locals() and thumbnail_path.exists():
-            thumbnail_path.unlink(missing_ok=True)
-            
+
         raise HTTPException(status_code=500, detail=safe_error_detail("Upload failed", e))
 
 @router.patch("/{media_id}", response_model=MediaResponse)
@@ -985,90 +1009,22 @@ async def finalize_chunked_upload(
         # Clean up chunks immediately
         shutil.rmtree(chunk_dir, ignore_errors=True)
 
-        # From here, identical to the regular upload pipeline
-        file_hash = calculate_file_hash(file_path)
-
-        existing = db.query(Media).filter(Media.hash == file_hash).first()
-        if existing:
-            file_path.unlink(missing_ok=True)
-            raise HTTPException(
-                status_code=409,
-                detail=f"Media already exists (duplicate of {existing.filename})"
+        # Delegate to shared helper
+        try:
+            return process_and_save_media(
+                db=db,
+                file_path=file_path,
+                unique_filename=unique_filename,
+                rating=rating,
+                tags=tags,
+                album_ids=album_ids,
+                source=source,
+                category_hints=category_hints,
             )
-
-        metadata = process_media_file(file_path)
-
-        thumbnail_name = Path(unique_filename).stem
-        thumbnail_filename = f"{thumbnail_name}.jpg"
-        thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
-
-        thumbnail_generated = generate_thumbnail(
-            file_path,
-            thumbnail_path,
-            metadata['file_type']
-        )
-
-        relative_path = file_path.relative_to(settings.BASE_DIR)
-        relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
-
-        media = Media(
-            filename=unique_filename,
-            path=str(relative_path),
-            thumbnail_path=str(relative_thumb) if relative_thumb else None,
-            hash=file_hash,
-            file_type=metadata['file_type'],
-            mime_type=metadata['mime_type'],
-            file_size=metadata['file_size'],
-            width=metadata['width'],
-            height=metadata['height'],
-            duration=metadata['duration'],
-            rating=rating,
-            source=source if source else None,
-        )
-
-        tag_ids_to_update = []
-        if tags:
-            tag_list = [t.strip() for t in tags.split() if t.strip()]
-            parsed_hints = None
-            if category_hints:
-                try:
-                    parsed_hints = _json.loads(category_hints)
-                except (_json.JSONDecodeError, TypeError):
-                    pass
-            media.tags = get_or_create_tags(db, tag_list, category_hints=parsed_hints)
-            tag_ids_to_update = [tag.id for tag in media.tags]
-
-        affected_album_ids = []
-        if album_ids:
-            try:
-                a_ids = [int(id_str.strip()) for id_str in album_ids.split(",") if id_str.strip().isdigit()]
-                if a_ids:
-                    albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
-                    media.albums = albums
-                    affected_album_ids = [album.id for album in albums]
-            except Exception as e:
-                logger.error(f"Error parsing album_ids: {e}")
-
-        db.add(media)
-        db.commit()
-        db.refresh(media)
-
-        if tag_ids_to_update:
-            update_tag_counts(db, tag_ids_to_update)
-            db.commit()
-
-        if affected_album_ids:
-            for a_id in affected_album_ids:
-                update_album_last_modified(a_id, db)
-            db.commit()
-            invalidate_album_cache()
-
-        db.refresh(media)
-
-        invalidate_media_cache()
-        invalidate_tag_cache()
-
-        return MediaResponse.model_validate(media)
+        except HTTPException as e:
+            if e.status_code == 409:
+                file_path.unlink(missing_ok=True)
+            raise
 
     except HTTPException:
         raise
@@ -1077,8 +1033,6 @@ async def finalize_chunked_upload(
 
         if 'file_path' in locals() and file_path.exists():
             file_path.unlink(missing_ok=True)
-        if 'thumbnail_path' in locals() and thumbnail_path.exists():
-            thumbnail_path.unlink(missing_ok=True)
 
         shutil.rmtree(chunk_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=safe_error_detail("Chunked upload failed", e))
