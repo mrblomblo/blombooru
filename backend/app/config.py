@@ -29,6 +29,17 @@ class Settings:
         self.file_settings = self._load_file_settings()
         self.settings = self._get_default_settings()
         self.settings.update(self.file_settings)
+
+        # Persist the generated secret_key immediately so that a manual edit
+        # removing the key from settings.json does not silently rotate it on
+        # the next restart and invalidate all existing JWT tokens.
+        if "secret_key" not in self.file_settings:
+            self.file_settings["secret_key"] = self.settings["secret_key"]
+            try:
+                with open(self.SETTINGS_FILE, 'w') as _f:
+                    json.dump(self.settings, _f, indent=2)
+            except Exception:
+                pass 
         
     @property
     def DEBUG(self) -> bool:
@@ -90,6 +101,7 @@ class Settings:
         return self.settings.get("default_order", "desc")
     
     def save_settings(self, settings: dict):
+        settings.pop("secret_key", None)
         self.settings.update(settings)
         self.file_settings.update(settings)
         with open(self.SETTINGS_FILE, 'w') as f:
@@ -170,7 +182,8 @@ class Settings:
     
     @property
     def SECRET_KEY(self) -> str:
-        return self.settings["secret_key"]
+        # env var > settings file > generated default
+        return os.getenv("BLOMBOORU_SECRET_KEY") or self.settings["secret_key"]
     
     @property
     def APP_NAME(self) -> str:
