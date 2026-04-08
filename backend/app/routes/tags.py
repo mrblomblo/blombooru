@@ -72,20 +72,6 @@ async def autocomplete_tags(
                 except StopIteration:
                     pass
     
-    # Fall back to local-only autocomplete
-    alias = db.query(TagAlias).filter(TagAlias.alias_name.ilike(q)).first()
-    
-    if alias:
-        target_tag = db.query(Tag).filter(Tag.id == alias.target_tag_id).first()
-        if target_tag:
-            return [{
-                "name": target_tag.name,
-                "category": target_tag.category,
-                "count": target_tag.post_count,
-                "is_alias": True,
-                "alias_name": q.lower()
-            }]
-    
     priority = case(
         (Tag.name.ilike(f"{q}%"), 1),
         else_=2
@@ -95,7 +81,32 @@ async def autocomplete_tags(
         Tag.name.ilike(f"%{q}%")
     ).order_by(priority, desc(Tag.post_count)).limit(50).all()
     
-    return [{"name": tag.name, "category": tag.category, "count": tag.post_count} for tag in tags]
+    seen_tags = {tag.name for tag in tags}
+    results = [
+        {"name": tag.name, "category": tag.category, "count": tag.post_count}
+        for tag in tags
+    ]
+    
+    if len(results) < 50:
+        aliases = (
+            db.query(TagAlias)
+            .filter(TagAlias.alias_name.ilike(f"{q}%"))
+            .limit(50 - len(results))
+            .all()
+        )
+        for alias in aliases:
+            target = db.query(Tag).filter(Tag.id == alias.target_tag_id).first()
+            if target and target.name not in seen_tags:
+                results.append({
+                    "name": target.name,
+                    "category": target.category,
+                    "count": target.post_count,
+                    "is_alias": True,
+                    "alias_name": alias.alias_name.lower()
+                })
+                seen_tags.add(target.name)
+    
+    return results
 
 @router.get("/{tag_name}", response_model=TagResponse)
 @cache_response(expire=3600, key_prefix="tag_detail")
