@@ -181,11 +181,17 @@ class Settings:
     
     @property
     def CURRENT_THEME(self) -> str:
-        return self.settings.get("theme", "default_dark")
+        val = self.file_settings.get("theme")
+        if val is not None:
+            return val
+        return os.getenv("BLOMBOORU_THEME", self.settings.get("theme", "default_dark"))
     
     @property
     def CURRENT_LANGUAGE(self) -> str:
-        return self.settings.get("language", "en")
+        val = self.file_settings.get("language")
+        if val is not None:
+            return val
+        return os.getenv("BLOMBOORU_LANGUAGE", self.settings.get("language", "en"))
     
     @property
     def IS_FIRST_RUN(self) -> bool:
@@ -193,20 +199,35 @@ class Settings:
         
     @property
     def EXTERNAL_SHARE_URL(self) -> Optional[str]:
-        return self.settings.get("external_share_url")
+        val = self.file_settings.get("external_share_url")
+        if val is not None:
+            return val
+        return os.getenv("BLOMBOORU_EXTERNAL_SHARE_URL") or self.settings.get("external_share_url")
     
     @property
     def REQUIRE_AUTH(self) -> bool:
+        val = self.file_settings.get("require_auth")
+        if val is not None:
+            return bool(val)
+        env_val = os.getenv("BLOMBOORU_REQUIRE_AUTH")
+        if env_val is not None:
+            return env_val.lower() in ("true", "1", "yes")
         return self.settings.get("require_auth", False)
     
     @property
     def SIDEBAR_FILTER_MODE(self) -> str:
         """Get sidebar filter mode: 'rating', 'custom', or 'off'"""
-        return self.settings.get("sidebar_filter_mode", "rating")
+        val = self.file_settings.get("sidebar_filter_mode")
+        if val is not None:
+            return val
+        return os.getenv("BLOMBOORU_SIDEBAR_FILTER_MODE", self.settings.get("sidebar_filter_mode", "rating"))
     
     @property
     def SIDEBAR_CUSTOM_BUTTONS(self) -> List[dict]:
         """Get custom sidebar buttons: list of {title, tags}"""
+        val = self.file_settings.get("sidebar_custom_buttons")
+        if val is not None:
+            return val
         return self.settings.get("sidebar_custom_buttons", [])
     
     @property
