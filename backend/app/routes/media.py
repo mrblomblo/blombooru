@@ -20,8 +20,8 @@ from ..models import (Album, Media, Tag, User, blombooru_album_media,
                       blombooru_media_tags)
 from ..schemas import (AlbumListResponse, MediaCreate, MediaResponse,
                        MediaUpdate, RatingEnum, ShareSettingsUpdate)
-from ..utils.album_utils import (get_album_rating, get_media_count,
-                                 get_random_thumbnails,
+from ..utils.album_utils import (get_album_rating, get_bulk_album_metrics,
+                                 get_media_count, get_random_thumbnails,
                                  update_album_last_modified)
 from ..utils.cache import (cache_response, invalidate_album_cache,
                            invalidate_media_cache, invalidate_media_item_cache,
@@ -639,19 +639,48 @@ async def get_media_albums(
         blombooru_album_media.c.media_id == media_id
     ).all()
     
+    if not albums:
+        return {"albums": []}
+    
+    album_ids = [a.id for a in albums]
+    
+    metrics = get_bulk_album_metrics(album_ids, db)
+    
+    rn_col = func.row_number().over(
+        partition_by=blombooru_album_media.c.album_id,
+        order_by=func.random()
+    ).label("rn")
+
+    subq = db.query(
+        blombooru_album_media.c.album_id,
+        Media.id.label("media_id"),
+        rn_col
+    ).join(
+        Media, Media.id == blombooru_album_media.c.media_id
+    ).filter(
+        blombooru_album_media.c.album_id.in_(album_ids),
+        Media.thumbnail_path.isnot(None)
+    ).subquery()
+
+    thumbnail_rows = db.query(
+        subq.c.album_id,
+        subq.c.media_id
+    ).filter(subq.c.rn <= 4).all()
+
+    thumbnails_map: dict = {aid: [] for aid in album_ids}
+    for aid, mid in thumbnail_rows:
+        thumbnails_map[aid].append(f"/api/media/{mid}/thumbnail")
+    
     result = []
     for album in albums:
-        thumbnails = get_random_thumbnails(album.id, db, count=4)
-        album_rating = get_album_rating(album.id, db)
-        media_count = get_media_count(album.id, db)
-        
+        m = metrics.get(album.id, {"rating": "safe", "count": 0})
         result.append(AlbumListResponse(
             id=album.id,
             name=album.name,
             last_modified=album.last_modified,
-            thumbnail_paths=thumbnails,
-            rating=album_rating,
-            media_count=media_count
+            thumbnail_paths=thumbnails_map.get(album.id, []),
+            rating=m["rating"],
+            media_count=m["count"]
         ))
     
     return {"albums": result}
