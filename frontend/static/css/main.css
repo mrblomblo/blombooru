@@ -117,16 +117,43 @@ span.checked:hover {
     font-size: 0.8em;
 }
 
-.tag-category {
-    display: inline-block;
+.tag-suggestion .tag-category {
+    margin-bottom: 0.15rem;
+    margin-right: 0;
+    padding: 0;
+}
+
+.tag-suggestion .tag-category .tag-text {
     padding: 0.1rem 0.3rem;
-    margin-right: 0.5rem;
-    font-size: 0.7em;
     text-transform: uppercase;
+}
+
+.tag-suggestion .tag-category .general {
+    background-color: var(--tag-general);
+}
+
+.tag-suggestion .tag-category .artist {
+    background-color: var(--tag-artist);
+}
+
+.tag-suggestion .tag-category .character {
+    background-color: var(--tag-character);
+}
+
+.tag-suggestion .tag-category .copyright {
+    background-color: var(--tag-copyright);
+}
+
+.tag-suggestion .tag-category .meta {
+    background-color: var(--tag-meta);
 }
 
 /* Tag styling */
 .tag-category {
+    display: inline-block;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.7em;
+    text-transform: uppercase;
     margin-bottom: 1rem;
     margin-right: 0;
     width: 100%;

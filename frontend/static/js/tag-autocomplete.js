@@ -160,11 +160,10 @@ class TagAutocomplete {
             return;
         }
 
-        // Check if this is an alias result
-        if (suggestions.length === 1 && suggestions[0].is_alias) {
-            const tag = suggestions[0];
-            this.suggestionsEl.innerHTML = `
-                <div class="tag-suggestion tag-alias-info" data-index="0" data-name="${this.escapeHtml(tag.name)}">
+        this.suggestionsEl.innerHTML = suggestions.map((tag, index) => {
+            if (tag.is_alias) {
+                return `
+                <div class="tag-suggestion tag-alias-info" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
                         <span class="text-secondary italic">${this.escapeHtml(tag.alias_name)}</span>
                         <span class="text-secondary">&#8594;</span>
@@ -173,18 +172,17 @@ class TagAutocomplete {
                     <span class="tag-count">${this.escapeHtml(String(tag.count))}</span>
                 </div>
             `;
-        } else {
-            // Normal suggestions
-            this.suggestionsEl.innerHTML = suggestions.map((tag, index) => `
-                <div class="tag-suggestion" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
-                    <span>
-                        <span class="tag-category ${this.escapeHtml(tag.category)}">${this.escapeHtml(tag.category)}</span>
-                        <span class="tag-name">${this.escapeHtml(tag.name)}</span>
-                    </span>
-                    <span class="tag-count">${this.escapeHtml(String(tag.count))}</span>
-                </div>
-            `).join('');
-        }
+            }
+            return `
+            <div class="tag-suggestion" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
+                <span>
+                    <span class="tag-category"><span class="tag-text ${this.escapeHtml(tag.category)}">${this.escapeHtml(tag.category)}</span></span>
+                    <span class="tag-name">${this.escapeHtml(tag.name)}</span>
+                </span>
+                <span class="tag-count">${this.escapeHtml(String(tag.count))}</span>
+            </div>
+        `;
+        }).join('');
 
         this.suggestionsEl.classList.remove('hidden');
 
