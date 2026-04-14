@@ -30,6 +30,7 @@ class MediaUpdate(BaseModel):
     rating: Optional[RatingEnum] = None
     tags: Optional[List[str]] = None
     source: Optional[str] = None
+    description: Optional[str] = None
     parent_id: Optional[int] = None
 
 class MediaResponse(MediaBase):
@@ -49,6 +50,7 @@ class MediaResponse(MediaBase):
     share_uuid: Optional[str]
     share_language: Optional[str] = None
     source: Optional[str] = None
+    description: Optional[str] = None
     parent_id: Optional[int] = None
     has_children: bool = False
     tags: List[TagResponse] = []
