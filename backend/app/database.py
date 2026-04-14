@@ -182,6 +182,7 @@ def check_and_migrate_schema(engine):
     migrations = [
         migrate_add_parent_id,
         migrate_add_share_language,
+        migrate_add_description,
     ]
     
     for migration in migrations:
@@ -230,5 +231,22 @@ def migrate_add_share_language(engine, inspector):
     with engine.connect() as conn:
         conn.execute(text(
             "ALTER TABLE blombooru_media ADD COLUMN share_language VARCHAR(10)"
+        ))
+        conn.commit()
+
+def migrate_add_description(engine, inspector):
+    """Add description column to media table"""
+    from sqlalchemy import text
+    
+    columns = [c['name'] for c in inspector.get_columns('blombooru_media')]
+    
+    if 'description' in columns:
+        return
+    
+    logger.info("Adding description column to blombooru_media...")
+    
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE blombooru_media ADD COLUMN description TEXT"
         ))
         conn.commit()
