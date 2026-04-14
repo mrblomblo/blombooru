@@ -510,7 +510,10 @@
             "rating": "Betyg",
             "uploaded": "Uppladdad",
             "duration": "Varaktighet",
-            "source": "Källa"
+            "source": "Källa",
+            "description": "Beskrivning",
+            "description_placeholder": "Lägg till en personlig anteckning eller bildtext...",
+            "save_description": "Spara beskrivning"
         },
         "progress": {
             "downloading": "Laddar ner...",
@@ -774,6 +777,8 @@
             "parent_set": "Förälder satt",
             "removed_from_album": "Borttagen från album",
             "source_updated": "Källa uppdaterad",
+            "description_updated": "Beskrivning uppdaterad",
+            "error_updating_description": "Fel vid uppdatering av beskrivning",
             "rating_updated": "Betyg uppdaterat",
             "tags_added": "Lade till {count} förutsagda tagg(ar)"
         },

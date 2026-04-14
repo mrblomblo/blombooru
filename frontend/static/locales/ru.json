@@ -510,7 +510,10 @@
             "rating": "Рейтинг",
             "uploaded": "Загружено",
             "duration": "Длительность",
-            "source": "Источник"
+            "source": "Источник",
+            "description": "",
+            "description_placeholder": "",
+            "save_description": ""
         },
         "progress": {
             "downloading": "Загрузка...",
@@ -774,6 +777,8 @@
             "parent_set": "Родитель успешно установлен",
             "removed_from_album": "Удалено из альбома",
             "source_updated": "Источник успешно обновлен",
+            "description_updated": "",
+            "error_updating_description": "",
             "rating_updated": "Рейтинг успешно обновлен",
             "tags_added": "Добавлено {count} предсказанных тегов"
         },

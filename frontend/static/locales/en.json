@@ -510,7 +510,10 @@
             "rating": "Rating",
             "uploaded": "Uploaded",
             "duration": "Duration",
-            "source": "Source"
+            "source": "Source",
+            "description": "Description",
+            "description_placeholder": "Add a personal note or caption...",
+            "save_description": "Save Description"
         },
         "progress": {
             "downloading": "Downloading...",
@@ -774,6 +777,8 @@
             "parent_set": "Parent set successfully",
             "removed_from_album": "Removed from album",
             "source_updated": "Source updated successfully",
+            "description_updated": "Description updated successfully",
+            "error_updating_description": "Error updating description",
             "rating_updated": "Rating updated successfully",
             "tags_added": "Added {count} predicted tag(s)"
         },

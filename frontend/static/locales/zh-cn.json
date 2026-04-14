@@ -510,7 +510,10 @@
             "rating": "分级",
             "uploaded": "上传时间",
             "duration": "时长",
-            "source": "来源"
+            "source": "来源",
+            "description": "",
+            "description_placeholder": "",
+            "save_description": ""
         },
         "progress": {
             "downloading": "正在下载...",
@@ -774,6 +777,8 @@
             "parent_set": "父项设置成功",
             "removed_from_album": "已从相册移除",
             "source_updated": "来源更新成功",
+            "description_updated": "",
+            "error_updating_description": "",
             "rating_updated": "分级更新成功",
             "tags_added": "已添加 {count} 个预测标签"
         },
