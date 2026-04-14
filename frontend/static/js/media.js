@@ -74,6 +74,16 @@ class MediaViewer extends MediaViewerBase {
 
             this.renderHierarchy(this.currentMedia.hierarchy);
             await this.loadRelatedMedia();
+
+            // Show description for all users when it is set and not in admin mode
+            if (this.currentMedia.description && !app.isAdminMode) {
+                const displaySection = this.el('description-display-section');
+                const displayText = this.el('description-display-text');
+                if (displaySection && displayText) {
+                    displayText.textContent = this.currentMedia.description;
+                    displaySection.style.display = 'block';
+                }
+            }
         } catch (e) {
             console.error('loadMedia error', e);
         }
@@ -82,6 +92,7 @@ class MediaViewer extends MediaViewerBase {
     setupAdminMode() {
         this.el('edit-tags-section').style.display = 'block';
         this.el('edit-source-section').style.display = 'block';
+        this.el('edit-description-section').style.display = 'block';
         this.el('admin-actions').style.display = 'flex';
         this.setupTagInput();
         this.setupEditTagsToggle();
@@ -90,6 +101,12 @@ class MediaViewer extends MediaViewerBase {
         const sourceInput = this.el('source-input');
         if (sourceInput) {
             sourceInput.value = this.currentMedia.source || '';
+        }
+
+        // Set description input value
+        const descriptionInput = this.el('description-input');
+        if (descriptionInput) {
+            descriptionInput.value = this.currentMedia.description || '';
         }
 
         // Initialize tag autocomplete
@@ -452,6 +469,10 @@ class MediaViewer extends MediaViewerBase {
             await this.saveSource();
         });
 
+        this.el('save-description-btn')?.addEventListener('click', async () => {
+            await this.saveDescription();
+        });
+
         const ratingSelectElement = this.el('rating-select');
         if (ratingSelectElement) {
             ratingSelectElement.addEventListener('change', async (e) => {
@@ -754,6 +775,22 @@ class MediaViewer extends MediaViewerBase {
             location.reload();
         } catch (e) {
             app.showNotification(e.message, 'error', window.i18n.t('notifications.media.error_updating_source'));
+        }
+    }
+
+    async saveDescription() {
+        const descriptionInput = this.el('description-input');
+        const descriptionValue = descriptionInput ? descriptionInput.value.trim() : '';
+
+        try {
+            await app.apiCall(`/api/media/${this.mediaId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ description: descriptionValue || null })
+            });
+            app.showNotification(window.i18n.t('notifications.media.description_updated'), 'success');
+            location.reload();
+        } catch (e) {
+            app.showNotification(e.message, 'error', window.i18n.t('notifications.media.error_updating_description'));
         }
     }
 

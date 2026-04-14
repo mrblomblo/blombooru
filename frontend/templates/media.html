@@ -172,6 +172,23 @@
                         {{ t('media.info.save_source') }}
                     </button>
                 </div>
+
+                <!-- View Description (Non-admin Mode Only) -->
+                <div id="description-display-section" style="display: none;" class="pt-3 border-t">
+                    <p class="block text-xs font-bold mb-2">{{ t('media.info.description') }}</p>
+                    <p id="description-display-text"
+                        class="w-full bg px-2 py-1 border text-xs whitespace-pre-wrap break-words"></p>
+                </div>
+                <!-- Edit Description (Admin Mode Only) -->
+                <div id="edit-description-section" style="display: none;" class="pt-2 mt-3 border-t">
+                    <label class="block text-xs font-bold mb-2">{{ t('media.info.description') }}</label>
+                    <textarea id="description-input" rows="4"
+                        placeholder="{{ t('media.info.description_placeholder') }}"
+                        class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary mb-2 resize-y"></textarea>
+                    <button id="save-description-btn" class="btn-primary w-full px-3 py-1">
+                        {{ t('media.info.save_description') }}
+                    </button>
+                </div>
             </div>
 
             <!-- Tags -->
