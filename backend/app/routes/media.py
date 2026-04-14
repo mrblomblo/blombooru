@@ -453,6 +453,9 @@ async def update_media(
     if 'source' in updates.model_fields_set:
         media.source = updates.source if updates.source else None
     
+    if 'description' in updates.model_fields_set:
+        media.description = updates.description if updates.description else None
+    
     affected_tag_ids = []
     if updates.tags is not None:
         old_tag_ids = [tag.id for tag in media.tags]
