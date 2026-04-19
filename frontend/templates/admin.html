@@ -304,8 +304,7 @@
                                                     placeholder="{{ t('common.password_placeholder') }}">
                                             </div>
                                         </div>
-                                        <button type="button" id="test-redis-btn"
-                                            class="btn-primary w-full">
+                                        <button type="button" id="test-redis-btn" class="btn-primary w-full">
                                             {{ t('common.test_connection') }}
                                         </button>
                                         <div id="redis-test-result" class="mt-2 text-xs" style="display: none;"></div>
@@ -377,12 +376,10 @@
                                             </div>
                                         </div>
                                         <div class="flex gap-2 mb-2">
-                                            <button type="button" id="test-shared-tags-btn"
-                                                class="btn-primary flex-1">
+                                            <button type="button" id="test-shared-tags-btn" class="btn-primary flex-1">
                                                 {{ t('common.test_connection') }}
                                             </button>
-                                            <button type="button" id="sync-shared-tags-btn"
-                                                class="btn-dark flex-1"
+                                            <button type="button" id="sync-shared-tags-btn" class="btn-dark flex-1"
                                                 style="display: none;">
                                                 {{ t('admin.shared_tags.sync_now') }}
                                             </button>
@@ -402,8 +399,7 @@
                         </div>
 
                         <div class="border-t mt-4 pt-4">
-                            <button type="submit"
-                                class="btn-primary">
+                            <button type="submit" class="btn-primary">
                                 {{ t('admin.settings.save_settings') }}
                             </button>
                         </div>
@@ -445,8 +441,7 @@
                                     </p>
                                 </div>
                                 <div class="mt-4">
-                                    <button type="submit"
-                                        class="btn-primary">
+                                    <button type="submit" class="btn-primary">
                                         {{ t('common.save') }}
                                     </button>
                                 </div>
@@ -494,8 +489,7 @@
                     </p>
 
                     <div class="mb-6">
-                        <button id="generate-api-key-btn"
-                            class="btn-primary">
+                        <button id="generate-api-key-btn" class="btn-primary">
                             {{ t('admin.api_access.generate_key') }}
                         </button>
 
@@ -513,8 +507,7 @@
                                 <input type="text" id="new-api-key-value"
                                     class="w-full surface px-3 py-2 border text-xs font-mono hover:border-primary transition-colors focus:outline-none focus:border-primary"
                                     readonly>
-                                <button id="copy-api-key-btn"
-                                    class="btn-primary whitespace-nowrap">
+                                <button id="copy-api-key-btn" class="btn-primary whitespace-nowrap">
                                     {{ t('admin.api_access.copy_key') }}
                                 </button>
                             </div>
@@ -542,16 +535,13 @@
                     <div class="mb-4">
                         <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.export_data') }}</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <a href="/api/admin/backup/tags"
-                                class="btn-dark w-full">
+                            <a href="/api/admin/backup/tags" class="btn-dark w-full">
                                 {{ t('admin.backup.export_tags') }}
                             </a>
-                            <a href="/api/admin/backup/media"
-                                class="btn-dark w-full">
+                            <a href="/api/admin/backup/media" class="btn-dark w-full">
                                 {{ t('admin.backup.export_media') }}
                             </a>
-                            <a href="/api/admin/backup/full"
-                                class="btn-primary w-full">
+                            <a href="/api/admin/backup/full" class="btn-primary w-full">
                                 {{ t('admin.backup.full_backup') }}
                             </a>
                         </div>
@@ -593,8 +583,7 @@
                         <p class="text-xs text-secondary mb-3">
                             {{ t('admin.update.contact_github') }}
                         </p>
-                        <button id="btn-check-updates"
-                            class="btn-primary">
+                        <button id="btn-check-updates" class="btn-primary">
                             {{ t('admin.update.check_updates') }}
                         </button>
                     </div>
@@ -630,16 +619,13 @@
                         </div>
 
                         <div class="flex gap-3 mb-4">
-                            <button id="btn-update-now" style="display: none;"
-                                class="btn-primary">
+                            <button id="btn-update-now" style="display: none;" class="btn-primary">
                                 {{ t('admin.update.update_now') }}
                             </button>
-                            <a id="btn-view-release" href="#" target="_blank" style="display: none;"
-                                class="btn-dark">
+                            <a id="btn-view-release" href="#" target="_blank" style="display: none;" class="btn-dark">
                                 {{ t('admin.update.view_release') }}
                             </a>
-                            <button id="btn-view-changelog" style="display: none;"
-                                class="btn-dark">
+                            <button id="btn-view-changelog" style="display: none;" class="btn-dark">
                                 {{ t('admin.update.view_changelog') }}
                             </button>
                         </div>
@@ -689,8 +675,7 @@
                             {{ t('admin.media_management.supported_videos') }}<br>
                             {{ t('admin.media_management.archive_hint') }}
                         </p>
-                        <button id="scan-media-btn"
-                            class="btn-primary w-full mb-4">
+                        <button id="scan-media-btn" class="btn-primary w-full mb-4">
                             {{ t('admin.media_management.scan_untracked') }}
                         </button>
                         <div id="upload-area" class="upload-area">
@@ -711,8 +696,7 @@
                             <input type="text" id="booru-url-input"
                                 class="flex-1 bg px-3 py-2 border text-xs focus:outline-none focus:border-primary"
                                 placeholder="{{ t('admin.media_management.booru_import.url_placeholder') }}">
-                            <button id="booru-fetch-btn"
-                                class="btn-primary whitespace-nowrap">
+                            <button id="booru-fetch-btn" class="btn-primary whitespace-nowrap">
                                 {{ t('admin.media_management.booru_import.fetch') }}
                             </button>
                         </div>
@@ -794,8 +778,7 @@
                                     class="w-full bg px-3 py-2 border text-xs mb-3 focus:outline-none hover:border-primary transition-colors focus:border-primary"
                                     style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;"></div>
                             </div>
-                            <button type="submit"
-                                class="btn-primary w-full">
+                            <button type="submit" class="btn-primary w-full">
                                 {{ t('admin.tags_management.add_tags') }}
                             </button>
                         </form>
@@ -817,8 +800,7 @@
                                     placeholder="{{ t('common.search_tags_placeholder') }}"
                                     class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                             </div>
-                            <button id="tag-search-btn"
-                                class="btn-primary">
+                            <button id="tag-search-btn" class="btn-primary">
                                 {{ t('common.search') }}
                             </button>
                         </div>
@@ -828,8 +810,7 @@
 
                 <div class="border-t pt-4">
                     <h3 class="text-sm font-bold mb-3 text-danger">{{ t('admin.tags_management.danger_zone') }}</h3>
-                    <button id="clear-tags-btn"
-                        class="btn-danger">
+                    <button id="clear-tags-btn" class="btn-danger">
                         {{ t('admin.tags_management.delete_all_tags') }}
                     </button>
                 </div>
@@ -887,8 +868,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit"
-                                class="btn-primary w-full">
+                            <button type="submit" class="btn-primary w-full">
                                 {{ t('admin.albums_management.create_album') }}
                             </button>
                         </form>
@@ -904,8 +884,7 @@
                                     placeholder="{{ t('common.search_albums_placeholder') }}"
                                     class="flex-1 w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                             </div>
-                            <button id="album-search-btn"
-                                class="btn-primary">
+                            <button id="album-search-btn" class="btn-primary">
                                 {{ t('common.search') }}
                             </button>
                         </div>
@@ -933,8 +912,7 @@
                             </p>
                         </div>
 
-                        <button type="submit"
-                            class="btn-primary">
+                        <button type="submit" class="btn-primary">
                             {{ t('admin.account.change_password') }}
                         </button>
                     </form>
@@ -953,8 +931,7 @@
                             class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                     </div>
 
-                    <button type="submit"
-                        class="btn-primary">
+                    <button type="submit" class="btn-primary">
                         {{ t('admin.account.change_username') }}
                     </button>
                 </form>
