@@ -322,7 +322,10 @@
             "wd_desc": "Предсказать теги с использованием специализированных моделей"
         },
         "manual": {
-            "empty_message": "Элементы не выбраны"
+            "empty_message": "Элементы не выбраны",
+            "quick_apply_placeholder": "",
+            "add_tags": "",
+            "remove_tags": ""
         },
         "ai_tags": {
             "default_media_name": "Медиафайл {id}",

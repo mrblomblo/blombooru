@@ -322,7 +322,10 @@
             "wd_desc": "Förutsäg taggar med dedikerade modeller."
         },
         "manual": {
-            "empty_message": "Inga filer valda."
+            "empty_message": "Inga filer valda.",
+            "quick_apply_placeholder": "Taggar att lägga till/ta bort från alla objekt...",
+            "add_tags": "Lägg till",
+            "remove_tags": "Ta bort"
         },
         "ai_tags": {
             "default_media_name": "Media {id}",

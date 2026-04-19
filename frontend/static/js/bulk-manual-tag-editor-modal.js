@@ -12,6 +12,100 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
         this.init();
     }
 
+    getContentHTML() {
+        const prefix = this.options.classPrefix;
+        return `
+            <div class="${prefix}-content h-full flex flex-col" style="display: none;">
+                <p class="text-secondary mb-3 text-xs sm:text-sm flex-shrink-0">${window.i18n.t('bulk_modal.messages.review_tags')}</p>
+                <div class="flex gap-2 mb-3 flex-shrink-0 items-start">
+                    <div class="relative flex-1 min-w-0">
+                        <div id="${prefix}-quick-input"
+                            contenteditable="true"
+                            data-placeholder="${window.i18n.t('bulk_modal.manual.quick_apply_placeholder')}"
+                            class="bulk-manual-quick-input w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary min-h-[34px]"
+                            style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;"></div>
+                    </div>
+                    <button id="${prefix}-quick-add" class="btn-primary px-3 py-2 text-xs flex-shrink-0">${window.i18n.t('bulk_modal.manual.add_tags')}</button>
+                    <button id="${prefix}-quick-remove" class="btn-danger px-3 py-2 text-xs flex-shrink-0">${window.i18n.t('bulk_modal.manual.remove_tags')}</button>
+                </div>
+                <div class="${prefix}-items space-y-3 overflow-y-auto flex-1 -mx-4 px-4 pb-2" style="overscroll-behavior: contain;"></div>
+            </div>
+        `;
+    }
+
+    setupAdditionalEventListeners() {
+        const prefix = this.options.classPrefix;
+
+        const quickInput = this.modalElement.querySelector(`#${prefix}-quick-input`);
+        const addBtn = this.modalElement.querySelector(`#${prefix}-quick-add`);
+        const removeBtn = this.modalElement.querySelector(`#${prefix}-quick-remove`);
+
+        if (!quickInput || !addBtn || !removeBtn) return;
+
+        if (typeof TagAutocomplete !== 'undefined') {
+            new TagAutocomplete(quickInput, {
+                multipleValues: true,
+                containerClasses: 'surface border border-color shadow-lg z-50',
+                onSelect: () => this.triggerValidation(quickInput)
+            });
+        }
+
+        if (this.tagInputHelper) {
+            this.tagInputHelper.setupTagInput(quickInput, `${prefix}-quick`, {
+                onValidate: () => { },
+                validationCache: this.tagInputHelper.tagValidationCache,
+                checkFunction: (tag) => this.tagInputHelper.checkTagExists(tag)
+            });
+            this.triggerValidation(quickInput);
+        }
+
+        addBtn.addEventListener('click', () => this._applyQuickTags('add'));
+        removeBtn.addEventListener('click', () => this._applyQuickTags('remove'));
+    }
+
+    async _applyQuickTags(action) {
+        const prefix = this.options.classPrefix;
+        const quickInput = this.modalElement.querySelector(`#${prefix}-quick-input`);
+        if (!quickInput) return;
+
+        let resolvedTags;
+        if (this.tagInputHelper) {
+            resolvedTags = this.tagInputHelper.getValidTagsFromInput(quickInput);
+        } else {
+            const raw = quickInput.innerText.trim();
+            resolvedTags = [...new Set(raw.split(/\s+/).filter(t => t.length > 0))];
+        }
+
+        if (resolvedTags.length === 0) return;
+
+        // Apply to every item input
+        const inputs = this.modalElement.querySelectorAll(`.${prefix}-input`);
+        inputs.forEach(input => {
+            let currentTags;
+            if (this.tagInputHelper) {
+                currentTags = this.tagInputHelper.getValidTagsFromInput(input);
+            } else {
+                currentTags = input.innerText.trim().split(/\s+/).filter(t => t.length > 0);
+            }
+
+            const currentSet = new Set(currentTags.map(t => t.toLowerCase()));
+
+            let nextTags;
+            if (action === 'add') {
+                const toAdd = resolvedTags.filter(t => !currentSet.has(t.toLowerCase()));
+                nextTags = [...currentTags, ...toAdd];
+            } else {
+                const toRemoveSet = new Set(resolvedTags.map(t => t.toLowerCase()));
+                nextTags = currentTags.filter(t => !toRemoveSet.has(t.toLowerCase()));
+            }
+
+            input.textContent = nextTags.join(' ');
+            this.triggerValidation(input);
+        });
+
+        quickInput.value = '';
+    }
+
     getBodyHTML() {
         return `
             ${this.getLoadingHTML(window.i18n.t('bulk_modal.progress.fetching_metadata'))}

@@ -322,7 +322,10 @@
             "wd_desc": "使用专门的打标模型预测标签。"
         },
         "manual": {
-            "empty_message": "未选择任何项目。"
+            "empty_message": "未选择任何项目。",
+            "quick_apply_placeholder": "",
+            "add_tags": "",
+            "remove_tags": ""
         },
         "ai_tags": {
             "default_media_name": "媒体 {id}",

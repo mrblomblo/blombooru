@@ -322,7 +322,10 @@
             "wd_desc": "Predict tags using dedicated tagger models."
         },
         "manual": {
-            "empty_message": "No items selected."
+            "empty_message": "No items selected.",
+            "quick_apply_placeholder": "Tags to add/remove from all items...",
+            "add_tags": "Add",
+            "remove_tags": "Remove"
         },
         "ai_tags": {
             "default_media_name": "Media {id}",
