@@ -103,7 +103,18 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
             this.triggerValidation(input);
         });
 
-        quickInput.value = '';
+        quickInput.textContent = '';
+        this.triggerValidation(quickInput);
+    }
+
+    reset() {
+        super.reset();
+        const prefix = this.options.classPrefix;
+        const quickInput = this.modalElement.querySelector(`#${prefix}-quick-input`);
+        if (quickInput) {
+            quickInput.textContent = '';
+            this.triggerValidation(quickInput);
+        }
     }
 
     getBodyHTML() {
