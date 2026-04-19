@@ -253,6 +253,15 @@
             "title": "Управление тегами",
             "total_tags": "Всего тегов"
         },
+        "tags_implications": {
+            "title": "",
+            "target_tags": "",
+            "implies_tags": "",
+            "target_tags_placeholder": "",
+            "implies_tags_placeholder": "",
+            "configured_implications": "",
+            "description": ""
+        },
         "update": {
             "backup_warning": "Обновление может привести к потере данных, если выполнено неаккуратно. Всегда создавайте резервную копию перед обновлением",
             "check_updates": "Проверить наличие обновлений",

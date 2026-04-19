@@ -253,6 +253,15 @@
             "title": "标签管理",
             "total_tags": "标签总数"
         },
+        "tags_implications": {
+            "title": "",
+            "target_tags": "",
+            "implies_tags": "",
+            "target_tags_placeholder": "",
+            "implies_tags_placeholder": "",
+            "configured_implications": "",
+            "description": ""
+        },
         "update": {
             "backup_warning": "如果不小心，更新可能会导致数据丢失。更新前请务必进行备份。",
             "check_updates": "检查更新",

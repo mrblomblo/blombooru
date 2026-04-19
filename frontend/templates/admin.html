@@ -816,6 +816,67 @@
                 </div>
             </div>
 
+            <!-- Tag Implications Section -->
+            <div class="surface p-2 sm:p-6 border mb-4">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.tags_implications.title') }}</h2>
+                <p class="text-xs text-secondary mb-3">{{ t('admin.tags_implications.description') }}</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Implication Form -->
+                    <div>
+                        <form id="tag-implication-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold mb-2">
+                                    {{ t('admin.tags_implications.target_tags') }}
+                                </label>
+                                <input type="text" id="tag-implication-target" name="target_tags"
+                                    placeholder="{{ t('admin.tags_implications.target_tags_placeholder') }}"
+                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-2">
+                                    {{ t('admin.tags_implications.implies_tags') }}
+                                </label>
+                                <input type="text" id="tag-implication-implies" name="implies_tags"
+                                    placeholder="{{ t('admin.tags_implications.implies_tags_placeholder') }}"
+                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn-primary">
+                                    {{ t('common.save') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Implication List -->
+                    <div>
+                        <h3 class="text-sm font-bold mb-1">
+                            {{ t('admin.tags_implications.configured_implications') }}
+                        </h3>
+                        <div class="overflow-x-auto max-h-60 overflow-y-auto border">
+                            <table id="tag-implication-table" class="bg w-full text-left border-collapse">
+                                <thead class="border-b">
+                                    <tr class="text-secondary text-xs">
+                                        <th class="sticky top-0 z-10 bg py-2 px-3 font-medium">
+                                            {{ t('admin.tags_implications.target_tags') }}
+                                        </th>
+                                        <th class="sticky top-0 z-10 bg py-2 px-3 font-medium">
+                                            {{ t('admin.tags_implications.implies_tags') }}
+                                        </th>
+                                        <th class="sticky top-0 z-10 bg py-2 px-3 font-medium text-right">
+                                            {{ t('admin.settings.booru_config.action') }}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Albums Management Section -->
             <div class="surface p-2 sm:p-6 border">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.albums_management.title') }}</h2>

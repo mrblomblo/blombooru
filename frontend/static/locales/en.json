@@ -253,6 +253,15 @@
             "title": "Tags Management",
             "total_tags": "Total Tags"
         },
+        "tags_implications": {
+            "title": "Tag Implications",
+            "target_tags": "Target Tags",
+            "implies_tags": "Implied Tags",
+            "target_tags_placeholder": "e.g. tag1 tag2",
+            "implies_tags_placeholder": "e.g. implied_tag1 implied_tag2",
+            "configured_implications": "Configured Implications",
+            "description": "Tag implications allow you to define relationships between tags. When a target tag is applied to a media item, the implied tags will be automatically applied as well. If there is more than one target tag, then the implied tags will only be added if all target tags are present in the media item."
+        },
         "update": {
             "backup_warning": "Updating can cause data loss if not done carefully. Always make a backup before updating.",
             "check_updates": "Check for Updates",

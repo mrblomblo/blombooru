@@ -253,6 +253,15 @@
             "title": "Tagghantering",
             "total_tags": "Totalt antal taggar"
         },
+        "tags_implications": {
+            "title": "Taggimplikationer",
+            "target_tags": "Mål-taggar",
+            "implies_tags": "Implicerade taggar",
+            "target_tags_placeholder": "t.ex. tagg1 tagg2",
+            "implies_tags_placeholder": "t.ex. implicerad_tagg1 implicerad_tagg2",
+            "configured_implications": "Konfigurerade implikationer",
+            "description": "Med taggimplikationer kan du definiera relationer mellan taggar. När en måltagg tillämpas på ett medieobjekt läggs även de implicerade taggarna till automatiskt. Om det finns fler än en måltagg läggs de implicerade taggarna endast till om alla måltaggar finns i medieobjektet."
+        },
         "update": {
             "backup_warning": "Uppdatering kan orsaka dataförlust om det inte görs försiktigt. Gör alltid en säkerhetskopia före uppdatering.",
             "check_updates": "Sök efter uppdateringar",
