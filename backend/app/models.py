@@ -85,6 +85,30 @@ class TagAlias(Base):
     
     target_tag = relationship('Tag', foreign_keys=[target_tag_id], back_populates='aliases')
 
+# Tag implication junction tables
+blombooru_implication_targets = Table(
+    'blombooru_implication_targets',
+    Base.metadata,
+    Column('implication_id', Integer, ForeignKey('blombooru_tag_implications.id', ondelete='CASCADE'), primary_key=True),
+    Column('tag_id', Integer, ForeignKey('blombooru_tags.id', ondelete='CASCADE'), primary_key=True)
+)
+
+blombooru_implication_implied = Table(
+    'blombooru_implication_implied',
+    Base.metadata,
+    Column('implication_id', Integer, ForeignKey('blombooru_tag_implications.id', ondelete='CASCADE'), primary_key=True),
+    Column('tag_id', Integer, ForeignKey('blombooru_tags.id', ondelete='CASCADE'), primary_key=True)
+)
+
+class TagImplication(Base):
+    __tablename__ = 'blombooru_tag_implications'
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    target_tags = relationship('Tag', secondary=blombooru_implication_targets)
+    implied_tags = relationship('Tag', secondary=blombooru_implication_implied)
+
 # Album-Media association table
 blombooru_album_media = Table(
     'blombooru_album_media',
