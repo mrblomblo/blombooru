@@ -17,7 +17,8 @@ from .config import APP_VERSION, settings
 from .database import get_db, init_db, init_engine
 from .models import Media
 from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
-                     danbooru, media, search, sharing, system, tags)
+                     danbooru, media, search, sharing, system, tag_implications,
+                     tags)
 from .translations import language_registry, translation_helper
 from .utils.logger import logger
 
@@ -135,6 +136,7 @@ app.include_router(danbooru.router)
 app.include_router(system.router)
 app.include_router(booru_import.router)
 app.include_router(booru_config.router)
+app.include_router(tag_implications.router)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
