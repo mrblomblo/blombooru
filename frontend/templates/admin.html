@@ -828,21 +828,32 @@
                                 <label class="block text-xs font-bold mb-2">
                                     {{ t('admin.tags_implications.target_tags') }}
                                 </label>
-                                <input type="text" id="tag-implication-target" name="target_tags"
-                                    placeholder="{{ t('admin.tags_implications.target_tags_placeholder') }}"
-                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                                <div style="position: relative;">
+                                    <div contenteditable="true" id="tag-implication-target"
+                                        data-placeholder="{{ t('admin.tags_implications.target_tags_placeholder') }}"
+                                        class="tag-input w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold mb-2">
                                     {{ t('admin.tags_implications.implies_tags') }}
                                 </label>
-                                <input type="text" id="tag-implication-implies" name="implies_tags"
-                                    placeholder="{{ t('admin.tags_implications.implies_tags_placeholder') }}"
-                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                                <div style="position: relative;">
+                                    <div contenteditable="true" id="tag-implication-implies"
+                                        data-placeholder="{{ t('admin.tags_implications.implies_tags_placeholder') }}"
+                                        class="tag-input w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mt-4">
+                            <div class="mt-4 flex gap-2">
                                 <button type="submit" class="btn-primary">
                                     {{ t('common.save') }}
+                                </button>
+                                <button type="button" id="tag-implication-cancel" class="btn" style="display: none;">
+                                    {{ t('common.cancel') }}
                                 </button>
                             </div>
                         </form>
@@ -1136,6 +1147,7 @@
 <script src="/static/js/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
 <script src="/static/js/tag-input-helper.js?v={{ cache_buster }}"></script>
 <script src="/static/js/booru-config.js?v={{ cache_buster }}"></script>
+<script src="/static/js/tag-implications.js?v={{ cache_buster }}"></script>
 <script src="/static/js/custom-select.js?v={{ cache_buster }}"></script>
 <script src="/static/js/vendor/chart.min.js?v={{ cache_buster }}"></script>
 <script src="/static/js/admin-stats.js?v={{ cache_buster }}"></script>
