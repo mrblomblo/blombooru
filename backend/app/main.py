@@ -124,7 +124,28 @@ templates.env.globals['get_translations_json'] = lambda: json.dumps(
 )
 templates.env.globals['current_language'] = lambda: settings.CURRENT_LANGUAGE
 templates.env.globals['available_languages'] = lambda: [lang.to_dict() for lang in language_registry.get_all_languages()]
-templates.env.globals['is_admin'] = lambda request: request.cookies.get("admin_mode") == "true"
+
+def _is_authenticated_admin(request) -> bool:
+    """Verify that the request has a valid admin_token JWT. Used by templates to show/hide
+    admin-only UI elements. Does NOT rely on the client-controlled admin_mode cookie alone."""
+    from .auth import get_current_user
+    from .database import SessionLocal
+    admin_token = request.cookies.get("admin_token")
+    if not admin_token:
+        return False
+    if SessionLocal is None:
+        return False
+    db = SessionLocal()
+    try:
+        user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
+        return user is not None
+    except Exception:
+        return False
+    finally:
+        db.close()
+
+templates.env.globals['is_admin'] = _is_authenticated_admin
+
 app.include_router(admin.router)
 app.include_router(media.router)
 app.include_router(tags.router)
