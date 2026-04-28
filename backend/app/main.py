@@ -180,7 +180,29 @@ async def index(request: Request):
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request):
-    """Admin panel"""
+    """Admin panel - ALWAYS requires authentication regardless of REQUIRE_AUTH setting."""
+    from .auth import get_current_user
+    from .database import SessionLocal
+    from urllib.parse import quote
+
+    admin_token = request.cookies.get("admin_token")
+    authenticated = False
+    if admin_token and SessionLocal is not None:
+        db = SessionLocal()
+        try:
+            user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
+            if user is not None:
+                authenticated = True
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+    if not authenticated:
+        return_url = quote("/admin")
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/login?return={return_url}", status_code=302)
+
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "app_name": settings.APP_NAME
