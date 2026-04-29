@@ -106,6 +106,16 @@
             "total_videos": "Totalt antal videor",
             "upload_hint": "Du kan ladda upp bilder, videor eller komprimerade arkiv (ZIP, TAR.GZ).",
             "upload_media": "Ladda upp media",
+            "thumbnails": {
+                "title": "Miniatyrbildshantering",
+                "hint": "Använd dessa åtgärder för att reparera trasiga eller saknade miniatyrbilder. Att återskapa alla miniatyrbilder kan ta en stund för stora bibliotek.",
+                "generate_missing": "Skapa saknade miniatyrbilder",
+                "regenerate_all": "Återskapa alla miniatyrbilder",
+                "generating": "Skapar...",
+                "done_missing": "Klart! Föräldralösa filer raderade: {orphans_deleted}. Skapade: {generated}. Överhoppade (redan ok): {skipped}. Misslyckade: {failed}.",
+                "done_all": "Klart! Gamla miniatyrbilder raderade: {deleted}. Skapade: {generated}. Misslyckade: {failed}.",
+                "confirm_regenerate_all": "Det här kommer att radera ALLA befintliga miniatyrbilder och återskapa dem från grunden. Detta kan ta en stund för stora bibliotek. Fortsätt?"
+            },
             "booru_import": {
                 "title": "Importera Från Extern Booru",
                 "hint": "Skriv en inläggs-URL för att importera media med taggar, betyg och källa. Stöder webbplatser i Danbooru-stil.",
@@ -670,6 +680,11 @@
             "confirm": "Återkalla nyckel",
             "message": "Är du säker på att du vill återkalla denna API-nyckel? Denna åtgärd kan inte ångras och alla applikationer som använder den förlorar åtkomst omedelbart.",
             "title": "Återkalla API-nyckel"
+        },
+        "regenerate_thumbnails": {
+            "confirm": "Ja, återskapa",
+            "message": "Detta kommer att radera ALLA befintliga miniatyrbilder och återskapa dem från grunden. Det kan ta en stund för stora bildbibliotek.",
+            "title": "Återskapa alla miniatyrbilder"
         },
         "system_update": {
             "confirm": "Uppdatera nu",

@@ -106,6 +106,16 @@
             "total_videos": "Всего видео",
             "upload_hint": "Вы можете загружать изображения, видео или сжатые архивы (ZIP, TAR.GZ)",
             "upload_media": "Загрузка медиафайлов",
+            "thumbnails": {
+                "title": "",
+                "hint": "",
+                "generate_missing": "",
+                "regenerate_all": "",
+                "generating": "",
+                "done_missing": "",
+                "done_all": "",
+                "confirm_regenerate_all": ""
+            },
             "booru_import": {
                 "title": "Импорт из внешних Booru",
                 "hint": "Введите URL поста для импорта медиафайлов с тегами, рейтингом и источником. Поддерживаются Danbooru-like сайты.",
@@ -670,6 +680,11 @@
             "confirm": "Отозвать ключ",
             "message": "Вы уверены, что хотите отозвать этот API ключ? Это действие нельзя отменить и любые приложения, использующие его, потеряют доступ немедленно",
             "title": "Отозвать API ключ"
+        },
+        "regenerate_thumbnails": {
+            "confirm": "",
+            "message": "",
+            "title": ""
         },
         "system_update": {
             "confirm": "Начать обновление",

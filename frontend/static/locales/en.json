@@ -106,6 +106,16 @@
             "total_videos": "Total Videos",
             "upload_hint": "You can upload images, videos, or compressed archives (ZIP, TAR.GZ).",
             "upload_media": "Upload Media",
+            "thumbnails": {
+                "title": "Thumbnail Management",
+                "hint": "Use these actions to repair broken or missing thumbnails. Re-generating all thumbnails may take a while for large libraries.",
+                "generate_missing": "Generate Missing Thumbnails",
+                "regenerate_all": "Re-generate All Thumbnails",
+                "generating": "Generating...",
+                "done_missing": "Done! Orphaned files deleted: {orphans_deleted}. Generated: {generated}. Skipped (already ok): {skipped}. Failed: {failed}.",
+                "done_all": "Done! Old thumbnails deleted: {deleted}. Generated: {generated}. Failed: {failed}.",
+                "confirm_regenerate_all": "This will delete ALL existing thumbnails and regenerate them from scratch. This may take a while for large libraries. Continue?"
+            },
             "booru_import": {
                 "title": "Import From External Booru",
                 "hint": "Enter a post URL to import media with tags, rating, and source. Supports Danbooru-style sites.",
@@ -670,6 +680,11 @@
             "confirm": "Revoke Key",
             "message": "Are you sure you want to revoke this API Key? This action cannot be undone and any applications using it will lose access immediately.",
             "title": "Revoke API Key"
+        },
+        "regenerate_thumbnails": {
+            "confirm": "Yes, Re-generate",
+            "message": "This will delete ALL existing thumbnails and regenerate them from scratch. This may take a while for large libraries.",
+            "title": "Re-generate All Thumbnails"
         },
         "system_update": {
             "confirm": "Update Now",

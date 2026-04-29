@@ -106,6 +106,16 @@
             "total_videos": "视频总数",
             "upload_hint": "您可以上传图片、视频或压缩包（ZIP, TAR.GZ）。",
             "upload_media": "上传媒体",
+            "thumbnails": {
+                "title": "",
+                "hint": "",
+                "generate_missing": "",
+                "regenerate_all": "",
+                "generating": "",
+                "done_missing": "",
+                "done_all": "",
+                "confirm_regenerate_all": ""
+            },
             "booru_import": {
                 "title": "从外部 Booru 导入",
                 "hint": "输入作品 URL 以导入带有标签、分级和来源的媒体。支持 Danbooru 风格的网站。",
@@ -670,6 +680,11 @@
             "confirm": "撤销密钥",
             "message": "您确定要撤销此 API 密钥吗？此操作无法撤销，任何正在使用它的应用程序都将立即失去访问权限。",
             "title": "撤销 API 密钥"
+        },
+        "regenerate_thumbnails": {
+            "confirm": "",
+            "message": "",
+            "title": ""
         },
         "system_update": {
             "confirm": "立即更新",
