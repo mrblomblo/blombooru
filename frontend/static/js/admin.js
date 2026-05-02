@@ -1412,12 +1412,12 @@ class AdminPanel {
             const data = await response.json();
 
             if (data.tags.length === 0) {
-                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">' + window.i18n.t('gallery.no_tags_found') + '</p>';
+                resultsDiv.innerHTML = '<p class="bg border text-xs text-secondary p-3">' + window.i18n.t('gallery.no_tags_found') + '</p>';
                 return;
             }
 
-            resultsDiv.innerHTML = data.tags.map(tag => `
-                <div class="bg p-3 border-b flex justify-between items-center">
+            resultsDiv.innerHTML = data.tags.map((tag, i, arr) => `
+                <div class="bg p-3 ${arr.length === 1 ? 'border' : (i === arr.length - 1 ? '' : 'border-b')} flex justify-between items-center">
                     <div>
                         <button class="delete-tag-btn text-xs bg-danger hover:bg-danger tag-text px-2 py-1 mr-2" data-tag-id="${tag.id}">&#x2715;</button>
                         <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text">${tag.name}</a>
@@ -1708,13 +1708,14 @@ class AdminPanel {
             );
 
             if (filtered.length === 0) {
-                resultsDiv.innerHTML = '<p class="text-xs text-secondary p-3">' + window.i18n.t('album_picker.no_albums') + '</p>';
+                resultsDiv.innerHTML = '<p class="bg border text-xs text-secondary p-3">' + window.i18n.t('album_picker.no_albums') + '</p>';
                 return;
             }
 
             // Build results HTML
             let html = '';
-            for (const album of filtered) {
+            for (let i = 0; i < filtered.length; i++) {
+                const album = filtered[i];
                 // Get parent info
                 const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
                 const parentsData = await parentsResponse.json();
@@ -1723,8 +1724,10 @@ class AdminPanel {
                     ? parentsData.parents[parentsData.parents.length - 1].id
                     : null;
 
+                const borderClass = filtered.length === 1 ? 'border' : (i === filtered.length - 1 ? '' : 'border-b');
+
                 html += `
-                    <div class="bg p-3 border-b flex justify-between items-center">
+                    <div class="bg p-3 ${borderClass} flex justify-between items-center">
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-1">
                                 <a href="/album/${album.id}" class="text-sm font-bold hover:text-primary">${this.escapeHtml(album.name)}</a>

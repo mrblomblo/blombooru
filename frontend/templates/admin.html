@@ -600,7 +600,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <div>
                         <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.import_backup') }}</h3>
                         <div class="bg p-4 border block">
                             <p class="text-xs text-secondary mb-3">
@@ -864,10 +864,10 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
+                <div>
                     <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.search_delete_tags') }}</h3>
                     <div class="flex flex-col gap-3">
-                        <div class="flex gap-2 mb-3">
+                        <div class="flex gap-2">
                             <div class="relative w-full">
                                 <input type="text" id="tag-search-input"
                                     placeholder="{{ t('common.search_tags_placeholder') }}"
@@ -877,11 +877,11 @@
                                 {{ t('common.search') }}
                             </button>
                         </div>
-                        <div id="tag-search-results" class="max-h-64 overflow-y-auto"></div>
+                        <div id="tag-search-results" class="max-h-64 overflow-y-auto empty:hidden"></div>
                     </div>
                 </div>
 
-                <div class="border-t pt-4">
+                <div class="border-t mt-4 pt-4">
                     <h3 class="text-sm font-bold mb-3 text-danger">{{ t('admin.tags_management.danger_zone') }}</h3>
                     <button id="clear-tags-btn" class="btn-danger">
                         {{ t('admin.tags_management.delete_all_tags') }}
@@ -1033,7 +1033,7 @@
                                 {{ t('common.search') }}
                             </button>
                         </div>
-                        <div id="album-search-results" class="max-h-96 overflow-y-auto mt-3"></div>
+                        <div id="album-search-results" class="max-h-96 overflow-y-auto empty:hidden"></div>
                     </div>
                 </div>
             </div>
