@@ -20,7 +20,7 @@ Blombooru är ett privat enanvändaralternativ till boorus som Danbooru och Gelb
 
 > [!NOTE]
 > Lokalisering till svenska: @mrblomblo  
-> Senast uppdaterad 15 april 2026
+> Senast uppdaterad 2 maj 2026
 
 <details>
 <summary>Visa skärmdumpar</summary>
@@ -106,6 +106,10 @@ Blombooru är ett privat enanvändaralternativ till boorus som Danbooru och Gelb
 
 - **Automatisk taggning:** Påskynda taggningen med WDv3 Auto Tagger-integrationen, som analyserar bilder och föreslår korrekta taggar med ett enda klick.
 
+- **Taggimplikationer:** Definiera relationer mellan taggar. När en måltagg (eller en uppsättning taggar) appliceras på ett mediaobjekt, läggs de implicerade taggarna automatiskt till.
+
+- **Automatiska taggar per mediatyp:** Lägg automatiskt till förkonfigurerade taggar för varje objekt i uppladdningskön baserat på dess mediatyp (bild, GIF eller video).
+
 ### Säkerhet & Delning
 
 - **Säkert läge:** När detta är aktiverat måste användare logga in för att interagera med Blombooru. Offentliga rutter såsom delningslänkar och statiska filer förblir offentliga. Perfekt för privata samlingar som du inte vill att någon annan i hushållet ska se!
@@ -125,6 +129,8 @@ Blombooru är ett privat enanvändaralternativ till boorus som Danbooru och Gelb
 ### Flexibilitet & Integration
 
 - **Flexibla mediauppladdningar:** Lägg till media via dra-och-släpp, genom att importera ett komprimerat arkiv, eller genom att placera filer i lagringsmappen och trycka på "Skanna efter ospårad media".
+
+- **Miniatyrbildshantering:** Reparera enkelt trasiga eller saknade miniatyrbilder i adminpanelen. Du kan generera saknade miniatyrer eller helt återskapa alla miniatyrer för stora bibliotek.
 
 - **Användarvänlig introduktion (Onboarding):** En enkel installationsprocess för första gången för att konfigurera ditt adminkonto, databasanslutning och varumärkesnamn.
 

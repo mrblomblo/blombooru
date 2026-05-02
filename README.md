@@ -102,6 +102,10 @@ Blombooru is a private, single-user alternative to boorus like Danbooru and Gelb
 
 - **Automatic Tagging:** Fast-track tagging with the WDv3 Auto Tagger integration, which analyzes images and suggests accurate tags with a single click.
 
+- **Tag Implications:** Define relationships between tags. When a target tag (or set of tags) is applied to a media item, the implied tags are automatically added as well.
+
+- **Automatic Tags by Media Type:** Automatically add pre-configured tags to each upload queue item based on its media type (Image, GIF, or Video).
+
 ### Security & Sharing
 
 - **Secure Mode:** When enabled, users must log in to interact with Blombooru. Public routes such as share links and static files remain public. Perfect for private collections that you don't want anyone else in the house to see!
@@ -121,6 +125,8 @@ Blombooru is a private, single-user alternative to boorus like Danbooru and Gelb
 ### Flexibility & Integration
 
 - **Flexible Media Uploads:** Add media via drag-and-drop, by importing a compressed archive, or by placing files in the storage directory and pressing "Scan for Untracked Media."
+
+- **Thumbnail Management:** Easily repair broken or missing thumbnails from the Admin Panel. You can generate missing thumbnails or completely re-generate all thumbnails for large libraries.
 
 - **User-Friendly Onboarding:** A simple first-time setup process to configure your admin account, database connection, and branding.
 
