@@ -2,6 +2,8 @@
 
 > [!WARNING]
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling.
+>
+> Docs last updated: `April 27, 2026`
 
 All endpoints are served under the same origin as the blombooru web UI. JSON is returned by default; requests that accept a request body expect `Content-Type: application/json` unless noted otherwise.
 
