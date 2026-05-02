@@ -196,6 +196,11 @@
             "button_tags": "Tags (only show media with these tags)",
             "theme": "Theme",
             "upload_date": "Upload Date",
+            "media_type_tags": "Automatic Tags by Media Type",
+            "media_type_tags_hint": "Tags added automatically to each upload queue item based on its media type.",
+            "media_type_tags_images": "Image Tags",
+            "media_type_tags_gifs": "GIF Tags",
+            "media_type_tags_videos": "Video Tags",
             "booru_config": {
                 "action": "Action",
                 "api_key": "API Key / Password",

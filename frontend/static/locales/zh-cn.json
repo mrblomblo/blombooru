@@ -196,6 +196,11 @@
             "button_tags": "标签（仅显示带有这些标签的媒体）",
             "theme": "主题",
             "upload_date": "上传日期",
+            "media_type_tags": "",
+            "media_type_tags_hint": "",
+            "media_type_tags_images": "",
+            "media_type_tags_gifs": "",
+            "media_type_tags_videos": "",
             "booru_config": {
                 "action": "操作",
                 "api_key": "API 密钥 / 密码",

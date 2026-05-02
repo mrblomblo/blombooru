@@ -196,6 +196,11 @@
             "button_tags": "Теги (показывать только медиафайлы с этими тегами)",
             "theme": "Тема",
             "upload_date": "Дата загрузки",
+            "media_type_tags": "",
+            "media_type_tags_hint": "",
+            "media_type_tags_images": "",
+            "media_type_tags_gifs": "",
+            "media_type_tags_videos": "",
             "booru_config": {
                 "action": "Действие",
                 "api_key": "API-ключ / пароль",

@@ -196,6 +196,11 @@
             "button_tags": "Taggar (visa endast media med dessa taggar)",
             "theme": "Tema",
             "upload_date": "Uppladdningsdatum",
+            "media_type_tags": "Automatiska Taggar efter Medietyp",
+            "media_type_tags_hint": "Taggar som automatiskt läggs till i varje uppladdningskö-objekt baserat på dess mediatyp.",
+            "media_type_tags_images": "Bildtaggar",
+            "media_type_tags_gifs": "GIF-taggar",
+            "media_type_tags_videos": "Videotaggar",
             "booru_config": {
                 "action": "Handling",
                 "api_key": "API Nyckel / Lösenord",
