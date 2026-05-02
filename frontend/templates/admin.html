@@ -252,7 +252,7 @@
                             </div>
                         </div>
 
-                        <div class="space-y-4">
+                        <div class="space-y-4 mb-4">
                             <!-- Caching -->
                             <div>
                                 <label class="block text-xs font-bold mb-2">{{ t('admin.caching.title') }}</label>
@@ -391,6 +391,59 @@
                                             <div class="flex items-center justify-between">
                                                 <span id="shared-tags-connection-status"></span>
                                                 <span id="shared-tags-counts"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Automatic Tags by Media Type -->
+                            <div>
+                                <label class="block text-xs font-bold mb-2">
+                                    {{ t('admin.settings.media_type_tags') }}
+                                </label>
+                                <div class="bg p-4 border">
+                                    <p class="text-xs text-secondary opacity-70 mb-4">
+                                        {{ t('admin.settings.media_type_tags_hint') }}
+                                    </p>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.settings.media_type_tags_images') }}
+                                            </label>
+                                            <div style="position: relative;">
+                                                <div id="media-type-tags-image" contenteditable="true"
+                                                    data-placeholder="photo scenery"
+                                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                                    style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.settings.media_type_tags_gifs') }}
+                                            </label>
+                                            <div style="position: relative;">
+                                                <div id="media-type-tags-gif" contenteditable="true"
+                                                    data-placeholder="animated"
+                                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                                    style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                                {{ t('admin.settings.media_type_tags_videos') }}
+                                            </label>
+                                            <div style="position: relative;">
+                                                <div id="media-type-tags-video" contenteditable="true"
+                                                    data-placeholder="video animated"
+                                                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                                    style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
