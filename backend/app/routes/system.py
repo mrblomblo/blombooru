@@ -239,7 +239,7 @@ async def perform_update(
         raise HTTPException(
             status_code=400,
             detail="Cannot update from within a locally-built Docker container. "
-            "Run 'docker compose down && docker compose -f docker-compose.dev.yml up --build' on the host machine to update.",
+            "Run 'docker compose down && git pull && docker compose -f docker-compose.dev.yml up -d --build' on the host machine to update.",
         )
 
     # Direct Python (local) deployment
