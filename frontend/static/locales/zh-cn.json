@@ -62,7 +62,10 @@
             "no_keys": "尚未生成 API 密钥。",
             "shown_once": "仅显示一次",
             "store_securely": "请安全地存储此密钥。刷新或离开此页面后，它将不再显示。",
-            "title": "API 访问"
+            "title": "API 访问",
+            "revoke_key": "",
+            "created_at": "",
+            "last_used": ""
         },
         "backup": {
             "drop_backup": "将完整备份 ZIP 文件拖放到此处或点击浏览",

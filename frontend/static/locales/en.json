@@ -62,7 +62,10 @@
             "no_keys": "No API keys generated yet.",
             "shown_once": "SHOWN ONCE",
             "store_securely": "Store this key securely. It will not be shown again after you refresh or leave this page.",
-            "title": "API Access"
+            "title": "API Access",
+            "revoke_key": "REVOKE",
+            "created_at": "Created:",
+            "last_used": "Last used:"
         },
         "backup": {
             "drop_backup": "Drop Full Backup ZIP here or click to browse",

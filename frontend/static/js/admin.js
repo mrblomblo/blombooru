@@ -2244,14 +2244,14 @@ class AdminPanel {
                     <div class="font-bold text-xs truncate mb-1 text">${this.escapeHtml(key.name || 'Unnamed Key')}</div>
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-secondary opacity-80">
                         <span class="font-mono bg surface px-1 border border-primary border-opacity-20">${this.escapeHtml(key.key_prefix)}...</span>
-                        <span>Created: <strong>${new Date(key.created_at).toLocaleDateString()}</strong></span>
-                        <span>Last used: <strong>${key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</strong></span>
+                        <span> ${window.i18n.t('admin.api_access.created_at')} <strong>${new Date(key.created_at).toLocaleDateString()}</strong></span>
+                        <span> ${window.i18n.t('admin.api_access.last_used')} <strong>${key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</strong></span>
                     </div>
                 </div>
                 <div class="flex-shrink-0">
                     <button class="btn-danger px-3 py-1 text-[10px] uppercase font-bold tracking-wider" 
                         onclick="window.adminPanel.revokeApiKey(${key.id})">
-                        Revoke
+                        ${window.i18n.t('admin.api_access.revoke_key')}
                     </button>
                 </div>
             </div>
