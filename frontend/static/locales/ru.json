@@ -52,7 +52,7 @@
         "api_access": {
             "active_keys": "Активные API ключи",
             "copy_key": "Копировать ключ",
-            "description": "API ключи позволяют внешним приложениям иметь доступ к Booru API где требуется авторизация",
+            "description": "API ключи позволяют внешним приложениям иметь доступ к требующим авторизации методам Booru API",
             "generate_key": "Создать новый API ключ",
             "key_copied": "API ключ скопирован в буфер обмена",
             "key_generated": "API ключ успешно создан",
@@ -62,7 +62,10 @@
             "no_keys": "API ключи отсутствуют",
             "shown_once": "ОТОБРАЖАЕТСЯ ТОЛЬКО ОДИН РАЗ",
             "store_securely": "Сохраните этот ключ в безопасном месте. Он больше не будет отображаться",
-            "title": "Доступ к API"
+            "title": "Доступ к API",
+            "revoke_key": "Отозвать ключ",
+            "created_at": "Ключ создан:",
+            "last_used": "Последнее использование:"
         },
         "backup": {
             "drop_backup": "Перетащите ZIP с полным бекапом сюда или нажмите для выбора",
@@ -84,7 +87,7 @@
         "shared_tags": {
             "title": "Общая БД тегов",
             "enable": "Включить общую БД тегов",
-            "description": "Позволяет нескольким экземплярам Blombooru использовать общую базу тегов. Локальные теги имеют приоритет в случае конфликтов.",
+            "description": "Позволяет нескольким экземплярам Blombooru использовать общую базу тегов. Локальные теги имеют приоритет в случае коллизий.",
             "sync_now": "Синхронизировать сейчас",
             "syncing": "Синхронизация...",
             "sync_complete": "Синхронизация завершена!",
@@ -107,14 +110,14 @@
             "upload_hint": "Вы можете загружать изображения, видео или сжатые архивы (ZIP, TAR.GZ)",
             "upload_media": "Загрузка медиафайлов",
             "thumbnails": {
-                "title": "",
-                "hint": "",
-                "generate_missing": "",
-                "regenerate_all": "",
-                "generating": "",
-                "done_missing": "",
-                "done_all": "",
-                "confirm_regenerate_all": ""
+                "title": "Управление превью",
+                "hint": "Эти функции позволяют исправить поломанные или отсуствующие превью постов. Повторная генерация превью может занять некоторое время для больших баз.",
+                "generate_missing": "Сгенерировать отсутстющие превью",
+                "regenerate_all": "Пересоздать все превью",
+                "generating": "Генерация...",
+                "done_missing": "Готово! Удалено лишних: {orphans_deleted}. Создано новых: {generated}. Пропущено (всё в порядке): {skipped}. Не удалось: {failed}.",
+                "done_all": "Готово! Удалено старых: {deleted}. Создано новых: {generated}. Не удалось: {failed}.",
+                "confirm_regenerate_all": "Это действие удалит ВСЕ существующие превью и пересоздаст их заново. Это может занять некоторое время для больших баз. Продолжить?"
             },
             "booru_import": {
                 "title": "Импорт из внешних Booru",
@@ -196,11 +199,11 @@
             "button_tags": "Теги (показывать только медиафайлы с этими тегами)",
             "theme": "Тема",
             "upload_date": "Дата загрузки",
-            "media_type_tags": "",
-            "media_type_tags_hint": "",
-            "media_type_tags_images": "",
-            "media_type_tags_gifs": "",
-            "media_type_tags_videos": "",
+            "media_type_tags": "Автоматические теги по типу файла",
+            "media_type_tags_hint": "Теги добавляются автоматически к каждому файлу из очереди загрузки, основываясь на типе файла",
+            "media_type_tags_images": "Теги изображений",
+            "media_type_tags_gifs": "Теги GIF",
+            "media_type_tags_videos": "Теги видео",
             "booru_config": {
                 "action": "Действие",
                 "api_key": "API-ключ / пароль",
@@ -212,7 +215,7 @@
                 "domain_hint": "Только сам домен (без https://)",
                 "has_key": "Есть",
                 "key": "Ключ",
-                "no_configs": "Нет настроенных сайтов",
+                "no_configs": "Нет настроенных конфигураций",
                 "save_success": "Настройки успешно сохранены",
                 "title": "Настройки Booru",
                 "username": "Имя пользователя",
@@ -264,18 +267,18 @@
             "tag_aliases": "Псевдонимов тегов",
             "tags_exist_hint": "Теги, которые уже существуют (или существуют как псевдонимы), будут проигнорированы",
             "tags_to_add": "Теги к добавлению",
-            "tags_without_prefix": "Теги без префикса будут добавлены в категорию \"Общие\"",
+            "tags_without_prefix": "Теги без префикса будут добавлены в категорию \"Общие (general)\"",
             "title": "Управление тегами",
             "total_tags": "Всего тегов"
         },
         "tags_implications": {
-            "title": "",
-            "target_tags": "",
-            "implies_tags": "",
-            "target_tags_placeholder": "",
-            "implies_tags_placeholder": "",
-            "configured_implications": "",
-            "description": ""
+            "title": "Связки тегов",
+            "target_tags": "Целевые теги",
+            "implies_tags": "Связанные теги",
+            "target_tags_placeholder": "пр. tag1 tag2",
+            "implies_tags_placeholder": "пр. implied_tag1 implied_tag2",
+            "configured_implications": "Настроенные связки",
+            "description": "Связки тегов позволяют определять взаимосвязи между тегами. Когда целевой тег применяется к медиафайлу, связанные с ним теги также применяются автоматически. Если целевых тегов несколько, связанные теги добавятся только в том случае, если все целевые теги присутствуют в медиафайле."
         },
         "update": {
             "backup_warning": "Обновление может привести к потере данных, если выполнено неаккуратно. Всегда создавайте резервную копию перед обновлением",
@@ -347,9 +350,9 @@
         },
         "manual": {
             "empty_message": "Элементы не выбраны",
-            "quick_apply_placeholder": "",
-            "add_tags": "",
-            "remove_tags": ""
+            "quick_apply_placeholder": "Теги к добавлению/удалению из всех элементов...",
+            "add_tags": "Добавить",
+            "remove_tags": "Удалить"
         },
         "ai_tags": {
             "default_media_name": "Медиафайл {id}",
@@ -538,9 +541,9 @@
             "uploaded": "Загружено",
             "duration": "Длительность",
             "source": "Источник",
-            "description": "",
-            "description_placeholder": "",
-            "save_description": ""
+            "description": "Описание",
+            "description_placeholder": "Добавить персональную заметку или описание...",
+            "save_description": "Сохранить описание"
         },
         "progress": {
             "downloading": "Загрузка...",
@@ -670,7 +673,7 @@
         },
         "download_model": {
             "confirm": "Скачать и предсказать",
-            "message": "Модель ИИ для тегов должна быть сначала загружена.<br><br><strong>Модель:</strong> {modelName}<br><strong>Размер:</strong> ~{size} MB<br><br>Это нужно сделать только один раз",
+            "message": "Сначала необходимо загрузить ИИ модель для предсказания тегов.<br><br><strong>Модель:</strong> {modelName}<br><strong>Размер:</strong> ~{size} MB<br><br>Это нужно сделать только один раз",
             "title": "Скачать модель"
         },
         "remove_children": {
@@ -683,13 +686,13 @@
         },
         "revoke_api_key": {
             "confirm": "Отозвать ключ",
-            "message": "Вы уверены, что хотите отозвать этот API ключ? Это действие нельзя отменить и любые приложения, использующие его, потеряют доступ немедленно",
+            "message": "Вы уверены, что хотите отозвать этот API ключ? Любые приложения, использующие его, потеряют доступ немедленно. Это действие нельзя отменить.",
             "title": "Отозвать API ключ"
         },
         "regenerate_thumbnails": {
-            "confirm": "",
-            "message": "",
-            "title": ""
+            "confirm": "Да, пересоздать",
+            "message": "Это действие удалит ВСЕ существующие превью и пересоздаст их заново. Это может занять некоторое время для больших баз. Продолжить?",
+            "title": "Пересоздать все превью"
         },
         "system_update": {
             "confirm": "Начать обновление",
@@ -703,7 +706,7 @@
     },
     "nav": {
         "logout": "Выйти",
-        "search_placeholder": "Поиск тегов... (например, ?girl? *_background cat_ears -dog)",
+        "search_placeholder": "Поиск по тегам... (например, ?girl? *_background cat_ears -dog)",
         "upload": "Загрузить"
     },
     "notifications": {
@@ -778,7 +781,7 @@
         "connection_error": "Ошибка подключения",
         "copied_to_clipboard": "Скопировано в буфер обмена",
         "delete_confirm": "Вы уверены, что хотите удалить это?",
-        "delete_success": "Удалено успешно",
+        "delete_success": "Уcпешно удалено",
         "error_occurred": "Произошла ошибка",
         "gallery": {
             "added_to_albums": "Добавлено {itemCount} элемент(ов) в {albumCount} альбом(ов)",
@@ -809,8 +812,8 @@
             "parent_set": "Родитель успешно установлен",
             "removed_from_album": "Удалено из альбома",
             "source_updated": "Источник успешно обновлен",
-            "description_updated": "",
-            "error_updating_description": "",
+            "description_updated": "Описание успешно обновлено",
+            "error_updating_description": "Ошибка при обновлении описания",
             "rating_updated": "Рейтинг успешно обновлен",
             "tags_added": "Добавлено {count} предсказанных тегов"
         },
