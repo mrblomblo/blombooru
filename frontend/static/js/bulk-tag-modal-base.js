@@ -566,7 +566,7 @@ class BulkTagModalBase {
                         <!-- Input and buttons -->
                         <div class="flex gap-2 items-start">
                             <div class="relative flex-1 min-w-0">
-                                <div class="${prefix}-input w-full bg px-3 py-2.5 sm:py-2 border text-sm focus:outline-none focus:border-primary min-h-[44px] sm:min-h-[36px]" 
+                                <div class="${prefix}-input w-full bg px-3 py-2.5 sm:py-2 border text-sm focus:outline-none focus:border-primary hover:border-primary transition-colors min-h-[44px] sm:min-h-[36px]" 
                                      contenteditable="true"
                                      data-index="${index}"
                                      style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${tagsToShow.join(' ')}</div>
