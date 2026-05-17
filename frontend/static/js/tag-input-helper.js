@@ -144,7 +144,8 @@ class TagInputHelper {
         const {
             validationCache = this.tagValidationCache,
             checkFunction = (tag) => this.checkTagExists(tag),
-            invertLogic = false // If true, invalid means exists (for admin new tags)
+            invertLogic = false, // If true, invalid means exists (for admin new tags)
+            allowWildcards = false // If true, tokens containing * are never marked invalid
         } = options;
 
         if (!inputElement) return;
@@ -185,8 +186,16 @@ class TagInputHelper {
             if (part.trim()) {
                 const normalized = part.trim().toLowerCase();
                 const isValid = validationCache.get(normalized);
-                // If invertLogic is true, mark as invalid if exists
-                const shouldMarkInvalid = invertLogic ? isValid : !isValid;
+                const isWildcardPattern = allowWildcards && (normalized.includes('*') || normalized.includes('?'));
+
+                let shouldMarkInvalid;
+                if (invertLogic) {
+                    // When invertLogic is true (e.g. creating new tags), existing tags are invalid (red).
+                    shouldMarkInvalid = isValid;
+                } else {
+                    // Normal mode: valid if it exists in the DB or if it's a valid wildcard pattern.
+                    shouldMarkInvalid = !(isValid || isWildcardPattern);
+                }
 
                 tags.push({ text: part, isInvalid: shouldMarkInvalid });
             } else {
@@ -216,6 +225,12 @@ class TagInputHelper {
             inputElement.innerHTML = html || '';
             this.setCursorPosition(inputElement, cursorPos);
         }
+    }
+
+    wildcardToRegex(pattern) {
+        const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+        const regexStr = '^' + escaped.replace(/\*/g, '.*').replace(/\?/g, '.?') + '$';
+        return new RegExp(regexStr, 'i');
     }
 
     // Fetch and cache all implications from the API (called once per instance)
@@ -261,6 +276,16 @@ class TagInputHelper {
                 );
                 if (!allTargetsPresent) continue;
 
+                const patterns = imp.target_tag_patterns || [];
+                const allPatternsMatch = patterns.every(pattern => {
+                    const re = this.wildcardToRegex(pattern);
+                    for (const tag of currentTags) {
+                        if (re.test(tag)) return true;
+                    }
+                    return false;
+                });
+                if (!allPatternsMatch) continue;
+
                 for (const implied of imp.implied_tags) {
                     const name = implied.name.toLowerCase();
                     if (!currentTags.has(name)) {
@@ -303,7 +328,8 @@ class TagInputHelper {
             validationCache = this.tagValidationCache,
             checkFunction = (tag) => this.checkTagExists(tag),
             invertLogic = false,
-            expandImplications = true
+            expandImplications = true,
+            allowWildcards = false // If true, tokens containing * are never marked invalid
         } = options;
 
         if (!inputElement) return;
@@ -327,7 +353,8 @@ class TagInputHelper {
                 await this.validateAndStyleTags(inputElement, {
                     validationCache,
                     checkFunction,
-                    invertLogic
+                    invertLogic,
+                    allowWildcards
                 });
                 if (onValidate) onValidate();
             }, validateDelay);
@@ -343,7 +370,8 @@ class TagInputHelper {
                 await this.validateAndStyleTags(inputElement, {
                     validationCache,
                     checkFunction,
-                    invertLogic
+                    invertLogic,
+                    allowWildcards
                 });
                 if (expandImplications) {
                     const added = await this.expandImplications(inputElement);
@@ -351,7 +379,8 @@ class TagInputHelper {
                         await this.validateAndStyleTags(inputElement, {
                             validationCache,
                             checkFunction,
-                            invertLogic
+                            invertLogic,
+                            allowWildcards
                         });
                     }
                 }
