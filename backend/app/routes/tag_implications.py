@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -20,6 +20,7 @@ class TagRef(BaseModel):
 class TagImplicationResponse(BaseModel):
     id: int
     target_tags: List[TagRef]
+    target_tag_patterns: List[str]
     implied_tags: List[TagRef]
 
     class Config:
@@ -27,6 +28,7 @@ class TagImplicationResponse(BaseModel):
 
 class TagImplicationCreate(BaseModel):
     target_tags: List[str]
+    target_tag_patterns: Optional[List[str]] = []
     implied_tags: List[str]
 
 def _resolve_tag_names(db: Session, tag_names: List[str]) -> List[Tag]:
@@ -42,6 +44,19 @@ def _resolve_tag_names(db: Session, tag_names: List[str]) -> List[Tag]:
         tags.append(tag)
     return tags
 
+def _clean_patterns(patterns: Optional[List[str]]) -> List[str]:
+    """Normalize pattern list: strip whitespace, deduplicate, drop empties."""
+    if not patterns:
+        return []
+    seen = set()
+    result = []
+    for p in patterns:
+        p = p.strip().lower()
+        if p and p not in seen:
+            seen.add(p)
+            result.append(p)
+    return result
+
 @router.get("/", response_model=List[TagImplicationResponse])
 async def list_implications(
     current_user: User = Depends(require_admin_mode),
@@ -53,7 +68,9 @@ async def list_implications(
     # Filter out implications where cascading tag deletion left them empty
     results = []
     for imp in implications:
-        if len(imp.target_tags) == 0 or len(imp.implied_tags) == 0:
+        patterns = imp.target_tag_patterns or []
+        has_targets = len(imp.target_tags) > 0 or len(patterns) > 0
+        if not has_targets or len(imp.implied_tags) == 0:
             # Clean up orphaned implications
             db.delete(imp)
             continue
@@ -61,6 +78,11 @@ async def list_implications(
 
     if len(results) != len(implications):
         db.commit()
+
+    # Ensure target_tag_patterns is always a list in the response
+    for imp in results:
+        if imp.target_tag_patterns is None:
+            imp.target_tag_patterns = []
 
     return results
 
@@ -71,22 +93,30 @@ async def create_implication(
     db: Session = Depends(get_db)
 ):
     """Create a new tag implication."""
-    if not data.target_tags or not data.implied_tags:
-        raise HTTPException(status_code=400, detail="Both target_tags and implied_tags are required")
+    patterns = _clean_patterns(data.target_tag_patterns)
+
+    if not data.target_tags and not patterns:
+        raise HTTPException(status_code=400, detail="At least one target tag or target pattern is required")
+    if not data.implied_tags:
+        raise HTTPException(status_code=400, detail="At least one implied tag is required")
 
     target_tags = _resolve_tag_names(db, data.target_tags)
     implied_tags = _resolve_tag_names(db, data.implied_tags)
 
-    if not target_tags or not implied_tags:
-        raise HTTPException(status_code=400, detail="Both target_tags and implied_tags are required")
+    if not implied_tags:
+        raise HTTPException(status_code=400, detail="At least one implied tag is required")
 
     implication = TagImplication()
     implication.target_tags = target_tags
+    implication.target_tag_patterns = patterns if patterns else None
     implication.implied_tags = implied_tags
 
     db.add(implication)
     db.commit()
     db.refresh(implication)
+
+    if implication.target_tag_patterns is None:
+        implication.target_tag_patterns = []
 
     return implication
 
@@ -102,20 +132,28 @@ async def update_implication(
     if not implication:
         raise HTTPException(status_code=404, detail="Implication not found")
 
-    if not data.target_tags or not data.implied_tags:
-        raise HTTPException(status_code=400, detail="Both target_tags and implied_tags are required")
+    patterns = _clean_patterns(data.target_tag_patterns)
+
+    if not data.target_tags and not patterns:
+        raise HTTPException(status_code=400, detail="At least one target tag or target pattern is required")
+    if not data.implied_tags:
+        raise HTTPException(status_code=400, detail="At least one implied tag is required")
 
     target_tags = _resolve_tag_names(db, data.target_tags)
     implied_tags = _resolve_tag_names(db, data.implied_tags)
 
-    if not target_tags or not implied_tags:
-        raise HTTPException(status_code=400, detail="Both target_tags and implied_tags are required")
+    if not implied_tags:
+        raise HTTPException(status_code=400, detail="At least one implied tag is required")
 
     implication.target_tags = target_tags
+    implication.target_tag_patterns = patterns if patterns else None
     implication.implied_tags = implied_tags
 
     db.commit()
     db.refresh(implication)
+
+    if implication.target_tag_patterns is None:
+        implication.target_tag_patterns = []
 
     return implication
 
