@@ -183,11 +183,11 @@ def check_and_migrate_schema(engine):
         migrate_add_parent_id,
         migrate_add_share_language,
         migrate_add_description,
+        migrate_add_implication_patterns,
     ]
     
     for migration in migrations:
         migration(engine, inspector)
-
 
 def migrate_add_parent_id(engine, inspector):
     """Add parent_id column and index to media table"""
@@ -249,4 +249,30 @@ def migrate_add_description(engine, inspector):
         conn.execute(text(
             "ALTER TABLE blombooru_media ADD COLUMN description TEXT"
         ))
+        conn.commit()
+
+def migrate_add_implication_patterns(engine, inspector):
+    """Add target_tag_patterns JSON column to blombooru_tag_implications table"""
+    from sqlalchemy import text
+
+    tables = inspector.get_table_names()
+    if 'blombooru_tag_implications' not in tables:
+        return
+
+    columns = [c['name'] for c in inspector.get_columns('blombooru_tag_implications')]
+    if 'target_tag_patterns' in columns:
+        return
+
+    logger.info("Adding target_tag_patterns column to blombooru_tag_implications...")
+
+    is_sqlite = engine.dialect.name == 'sqlite'
+    with engine.connect() as conn:
+        if is_sqlite:
+            conn.execute(text(
+                "ALTER TABLE blombooru_tag_implications ADD COLUMN target_tag_patterns TEXT"
+            ))
+        else:
+            conn.execute(text(
+                "ALTER TABLE blombooru_tag_implications ADD COLUMN target_tag_patterns JSONB"
+            ))
         conn.commit()
