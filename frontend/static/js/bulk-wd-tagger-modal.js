@@ -28,7 +28,6 @@ class BulkWDTaggerModal extends BulkTagModalBase {
 
     getBodyHTML() {
         return `
-            ${this.getSettingsHTML()}
             ${this.getDownloadConfirmHTML()}
             ${this.getDownloadingHTML()}
             ${this.getLoadingHTML(window.i18n.t('bulk_modal.progress.initializing_tagger'))}
@@ -36,26 +35,6 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             ${this.getEmptyHTML()}
             ${this.getErrorHTML()}
             ${this.getCancelledHTML()}
-        `;
-    }
-
-    getSettingsHTML() {
-        const prefix = this.options.classPrefix;
-        return `
-            <div class="${prefix}-settings mb-4 p-3 surface-light border text-sm" style="display: none;">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs text-secondary mb-1">${window.i18n.t('bulk_modal.wd_tagger.general_threshold')}</label>
-                        <input type="number" class="wd-general-threshold w-full px-2 py-1 border surface text-sm" 
-                               min="0" max="1" step="0.05" value="${this.settings.generalThreshold}">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-secondary mb-1">${window.i18n.t('bulk_modal.wd_tagger.character_threshold')}</label>
-                        <input type="number" class="wd-character-threshold w-full px-2 py-1 border surface text-sm"  
-                               min="0" max="1" step="0.05" value="${this.settings.characterThreshold}">
-                    </div>
-                </div>
-            </div>
         `;
     }
 
@@ -96,28 +75,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         `;
     }
 
-    getFooterLeftHTML() {
-        const prefix = this.options.classPrefix;
-        return `
-            <button class="${prefix}-toggle-settings btn w-full sm:w-auto px-4 py-3 sm:py-2 text-sm font-medium">
-                ${window.i18n.t('common.settings')}
-            </button>
-        `;
-    }
-
     setupAdditionalEventListeners() {
         const prefix = this.options.classPrefix;
-
-        // Settings toggle
-        const toggleSettings = this.modalElement.querySelector(`.${prefix}-toggle-settings`);
-        if (toggleSettings) {
-            toggleSettings.addEventListener('click', () => {
-                const settings = this.modalElement.querySelector(`.${prefix}-settings`);
-                if (settings) {
-                    settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
-                }
-            });
-        }
 
         // Download buttons
         const downloadCancelBtn = this.modalElement.querySelector(`.${prefix}-download-cancel`);
@@ -129,32 +88,29 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         if (downloadConfirmBtn) {
             downloadConfirmBtn.addEventListener('click', () => this.downloadModelAndContinue());
         }
-
-        // Settings inputs
-        const generalThreshold = this.modalElement.querySelector('.wd-general-threshold');
-        if (generalThreshold) {
-            generalThreshold.addEventListener('change', (e) => {
-                this.settings.generalThreshold = parseFloat(e.target.value);
-            });
-        }
-
-        const characterThreshold = this.modalElement.querySelector('.wd-character-threshold');
-        if (characterThreshold) {
-            characterThreshold.addEventListener('change', (e) => {
-                this.settings.characterThreshold = parseFloat(e.target.value);
-            });
-        }
     }
 
     reset() {
         super.reset();
-        const prefix = this.options.classPrefix;
-        const settings = this.modalElement.querySelector(`.${prefix}-settings`);
-        if (settings) settings.style.display = 'none';
     }
 
     async onShow() {
+        await this.loadAdminSettings();
         await this.checkModelAndStart();
+    }
+
+    async loadAdminSettings() {
+        try {
+            const res = await fetch('/api/ai-tagger/settings');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.general_threshold != null) this.settings.generalThreshold = data.general_threshold;
+                if (data.character_threshold != null) this.settings.characterThreshold = data.character_threshold;
+                if (data.model_name) this.settings.modelName = data.model_name;
+            }
+        } catch (e) {
+            // Non-fatal, keep current defaults
+        }
     }
 
     async checkModelAndStart() {
