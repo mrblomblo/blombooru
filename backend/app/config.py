@@ -89,7 +89,8 @@ class Settings:
             "wd_tagger": {
                 "general_threshold": 0.35,
                 "character_threshold": 0.85,
-                "model_name": "wd-eva02-large-tagger-v3"
+                "model_name": "wd-eva02-large-tagger-v3",
+                "blacklisted_tags": []
             },
             "secret_key": os.urandom(32).hex()
         }
@@ -255,7 +256,8 @@ class Settings:
         defaults = {
             "general_threshold": 0.35,
             "character_threshold": 0.85,
-            "model_name": "wd-eva02-large-tagger-v3"
+            "model_name": "wd-eva02-large-tagger-v3",
+            "blacklisted_tags": []
         }
         saved = self.file_settings.get("wd_tagger") or self.settings.get("wd_tagger", {})
         return {**defaults, **saved}
