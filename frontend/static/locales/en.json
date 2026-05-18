@@ -288,7 +288,8 @@
             "model": "Model",
             "save_settings": "Save Settings",
             "settings_saved": "AI Tagger settings saved",
-            "threshold_hint": "Confidence score (0.0 to 1.0). Tags with a confidence score below the threshold are excluded from predictions."
+            "threshold_hint": "Confidence score (0.0 to 1.0). Tags with a confidence score below the threshold are excluded from predictions.",
+            "blacklisted_tags": "Blacklisted Tags"
         },
         "update": {
             "backup_warning": "Updating can cause data loss if not done carefully. Always make a backup before updating.",

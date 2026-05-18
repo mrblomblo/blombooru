@@ -288,7 +288,8 @@
             "model": "",
             "save_settings": "",
             "settings_saved": "",
-            "threshold_hint": ""
+            "threshold_hint": "",
+            "blacklisted_tags": ""
         },
         "update": {
             "backup_warning": "Обновление может привести к потере данных, если выполнено неаккуратно. Всегда создавайте резервную копию перед обновлением",

@@ -288,7 +288,8 @@
             "model": "",
             "save_settings": "",
             "settings_saved": "",
-            "threshold_hint": ""
+            "threshold_hint": "",
+            "blacklisted_tags": ""
         },
         "update": {
             "backup_warning": "如果不小心，更新可能会导致数据丢失。更新前请务必进行备份。",
