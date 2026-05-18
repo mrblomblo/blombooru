@@ -86,6 +86,11 @@ class Settings:
             "sidebar_filter_mode": "rating",
             "sidebar_custom_buttons": [],
             "media_type_tags": {"image": [], "gif": [], "video": []},
+            "wd_tagger": {
+                "general_threshold": 0.35,
+                "character_threshold": 0.85,
+                "model_name": "wd-eva02-large-tagger-v3"
+            },
             "secret_key": os.urandom(32).hex()
         }
     
@@ -243,6 +248,17 @@ class Settings:
         if val is not None:
             return val
         return self.settings.get("sidebar_custom_buttons", [])
+
+    @property
+    def WD_TAGGER_SETTINGS(self) -> dict:
+        """Get WD tagger settings (thresholds and model name)."""
+        defaults = {
+            "general_threshold": 0.35,
+            "character_threshold": 0.85,
+            "model_name": "wd-eva02-large-tagger-v3"
+        }
+        saved = self.file_settings.get("wd_tagger") or self.settings.get("wd_tagger", {})
+        return {**defaults, **saved}
 
     @property
     def MEDIA_TYPE_TAGS(self) -> dict:
