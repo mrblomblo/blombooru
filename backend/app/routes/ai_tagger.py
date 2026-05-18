@@ -104,6 +104,47 @@ async def get_tagger_status():
             "available_models": list(WDTagger.AVAILABLE_MODELS.keys())
         }
 
+class WDTaggerSettingsRequest(BaseModel):
+    general_threshold: Optional[float] = None
+    character_threshold: Optional[float] = None
+    model_name: Optional[str] = None
+
+@router.get("/settings")
+async def get_tagger_settings(current_user: User = Depends(require_admin_mode)):
+    """Get the persisted WD Tagger settings (thresholds + model)."""
+    return {
+        **settings.WD_TAGGER_SETTINGS,
+        "available_models": list(WDTagger.AVAILABLE_MODELS.keys()),
+    }
+
+@router.put("/settings")
+async def save_tagger_settings(
+    request: WDTaggerSettingsRequest,
+    current_user: User = Depends(require_admin_mode)
+):
+    """Save WD Tagger settings to the persistent settings file."""
+    current = settings.WD_TAGGER_SETTINGS.copy()
+
+    if request.general_threshold is not None:
+        val = max(0.0, min(1.0, request.general_threshold))
+        current["general_threshold"] = round(val, 4)
+
+    if request.character_threshold is not None:
+        val = max(0.0, min(1.0, request.character_threshold))
+        current["character_threshold"] = round(val, 4)
+
+    if request.model_name is not None:
+        if request.model_name not in WDTagger.AVAILABLE_MODELS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown model: {request.model_name}. "
+                       f"Valid models: {list(WDTagger.AVAILABLE_MODELS.keys())}"
+            )
+        current["model_name"] = request.model_name
+
+    settings.save_settings({"wd_tagger": current})
+    return {"success": True, **current}
+
 @router.get("/model-status/{model_name}", response_model=ModelStatusResponse)
 async def get_model_status(
     model_name: str,
