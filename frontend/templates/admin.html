@@ -964,7 +964,7 @@
             </div>
 
             <!-- Albums Management Section -->
-            <div class="surface p-2 sm:p-6 border">
+            <div class="surface p-2 sm:p-6 border mb-4">
                 <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.albums_management.title') }}</h2>
 
                 <div id="album-stats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -1038,6 +1038,45 @@
                         <div id="album-search-results" class="max-h-96 overflow-y-auto empty:hidden"></div>
                     </div>
                 </div>
+            </div>
+
+            <!-- AI Tag Predictor Section -->
+            <div class="surface p-2 sm:p-6 border">
+                <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.ai_tagger.title') }}</h2>
+                <p class="text-xs text-secondary mb-4">{{ t('admin.ai_tagger.description') | safe }}</p>
+                <form id="ai-tagger-settings-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-2">{{ t('admin.ai_tagger.model') }}</label>
+                            <div id="wd-model-select" class="custom-select" data-value="">
+                                <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary" type="button">
+                                    <span class="custom-select-value text"></span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg" id="wd-model-dropdown">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold mb-2" for="wd-general-threshold">{{ t('admin.ai_tagger.general_threshold') }}</label>
+                            <input type="number" id="wd-general-threshold" class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary" min="0" max="1" step="0.05">
+                            <p class="text-xs text-secondary mt-1">{{ t('admin.ai_tagger.threshold_hint') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-2" for="wd-character-threshold">{{ t('admin.ai_tagger.character_threshold') }}</label>
+                            <input type="number" id="wd-character-threshold" class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary" min="0" max="1" step="0.05">
+                            <p class="text-xs text-secondary mt-1">{{ t('admin.ai_tagger.threshold_hint') }}</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full md:w-auto px-6" id="save-ai-tagger-btn">
+                        {{ t('admin.ai_tagger.save_settings') }}
+                    </button>
+                </form>
             </div>
         </div>
 

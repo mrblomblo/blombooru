@@ -16,6 +16,7 @@ class AdminPanel {
         this.setupTagAutocomplete();
         this.setupEventListeners();
         this.loadSettings();
+        this.loadAITaggerSettings();
         this.setupTagManagement();
         this.setupAlbumManagement();
         this.loadTagStats();
@@ -229,6 +230,15 @@ class AdminPanel {
             settingsForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.saveSettings();
+            });
+        }
+
+        // AI Tagger settings form
+        const aiTaggerForm = document.getElementById('ai-tagger-settings-form');
+        if (aiTaggerForm) {
+            aiTaggerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveAITaggerSettings();
             });
         }
 
@@ -974,6 +984,78 @@ class AdminPanel {
             location.reload();
         } catch (error) {
             app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_saving_settings'));
+        }
+    }
+
+    async loadAITaggerSettings() {
+        try {
+            const res = await fetch('/api/ai-tagger/settings');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const generalEl = document.getElementById('wd-general-threshold');
+            if (generalEl && data.general_threshold != null) generalEl.value = data.general_threshold;
+            
+            const charEl = document.getElementById('wd-character-threshold');
+            if (charEl && data.character_threshold != null) charEl.value = data.character_threshold;
+            
+            // Populate model dropdown
+            const dropdown = document.getElementById('wd-model-dropdown');
+            if (dropdown && data.available_models) {
+                dropdown.innerHTML = '';
+                data.available_models.forEach(model => {
+                    const opt = document.createElement('div');
+                    opt.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs';
+                    opt.dataset.value = model;
+                    opt.textContent = model;
+                    dropdown.appendChild(opt);
+                });
+            }
+            
+            // Init custom select for model
+            const modelSelectEl = document.getElementById('wd-model-select');
+            if (modelSelectEl) {
+                this.wdModelSelect = new CustomSelect(modelSelectEl);
+                if (data.model_name) this.wdModelSelect.setValue(data.model_name);
+            }
+        } catch (e) {
+            console.error('Error loading AI Tagger settings:', e);
+        }
+    }
+
+    async saveAITaggerSettings() {
+        const btn = document.getElementById('save-ai-tagger-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = window.i18n.t('admin.actions.testing');
+
+        const generalEl = document.getElementById('wd-general-threshold');
+        const charEl = document.getElementById('wd-character-threshold');
+        const modelName = this.wdModelSelect ? this.wdModelSelect.getValue() : null;
+
+        const body = {};
+        if (generalEl && generalEl.value) body.general_threshold = parseFloat(generalEl.value);
+        if (charEl && charEl.value) body.character_threshold = parseFloat(charEl.value);
+        if (modelName) body.model_name = modelName;
+
+        try {
+            const res = await fetch('/api/ai-tagger/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Failed to save settings');
+            }
+
+            app.showNotification(window.i18n.t('admin.ai_tagger.settings_saved'), 'success');
+        } catch (e) {
+            app.showNotification(e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
         }
     }
 
