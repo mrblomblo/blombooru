@@ -1,0 +1,46 @@
+<!-- Admin Account Management Section -->
+<div class="surface p-2 sm:p-6 border">
+    <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.account.title') }}</h2>
+
+    <div class="mb-6">
+        <form id="change-admin-password-form">
+            <div class="mb-4">
+                <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_password') }}</label>
+                <input type="password" id="new-admin-password" required minlength="6" maxlength="50"
+                    placeholder="password123"
+                    class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
+                    {{ t('admin.account.password_hint') }}
+                </p>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                {{ t('admin.account.change_password') }}
+            </button>
+        </form>
+
+        <div id="change-password-status" style="display: none;" class="mt-3">
+            <div class="text-xs">
+                <div id="change-password-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <form id="change-admin-username-form">
+        <div class="mb-4">
+            <label class="block text-xs font-bold mb-2">{{ t('admin.account.new_username') }}</label>
+            <input type="text" id="new-admin-username" required placeholder="admin"
+                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+        </div>
+
+        <button type="submit" class="btn-primary">
+            {{ t('admin.account.change_username') }}
+        </button>
+    </form>
+
+    <div id="change-username-status" style="display: none;" class="mt-3">
+        <div class="text-xs">
+            <div id="change-username-result"></div>
+        </div>
+    </div>
+</div>

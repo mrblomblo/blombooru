@@ -1,0 +1,120 @@
+<div id="stats-content">
+    <!-- Stats Overview Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.stats.total_storage') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-total-storage">0 B</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.media_management.total_media') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-total-media">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.stats.parent_media') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-parent-media">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.stats.child_media') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-child-media">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.albums_management.total_albums') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-total-albums">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.tags_management.total_tags') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-total-tags">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.tags_management.tag_aliases') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-tag-aliases">0</div>
+        </div>
+        <div class="surface p-3 sm:p-4 border">
+            <div class="text-xs text-secondary mb-1">{{ t('admin.stats.tags_with_aliases') }}</div>
+            <div class="text-xl sm:text-2xl font-bold" id="stat-tags-with-aliases">0</div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="space-y-4">
+        <!-- Upload Trends -->
+        <div class="surface p-4 sm:p-6 border">
+            <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.upload_trends') }}</h3>
+            <div class="h-56 sm:h-64">
+                <canvas id="chart-upload-trends"></canvas>
+            </div>
+        </div>
+
+        <!-- Tag Category and Album Size Distribution -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.tag_category_distribution') }}</h3>
+                <div class="h-48 sm:h-64">
+                    <canvas id="chart-tag-category"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.album_size_distribution') }}</h3>
+                <div class="h-48 sm:h-64">
+                    <canvas id="chart-album-size"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Type and Rating Distribution -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.media_type_distribution') }}</h3>
+                <div class="h-48 sm:h-64">
+                    <canvas id="chart-media-type"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.rating_distribution') }}</h3>
+                <div class="h-48 sm:h-64">
+                    <canvas id="chart-media-rating"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Tags and Top Tags by Category -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_tags') }}</h3>
+                <div class="h-56 sm:h-80">
+                    <canvas id="chart-top-tags"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_general_tags') }}</h3>
+                <div class="h-56 sm:h-64">
+                    <canvas id="chart-top-general"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_artist_tags') }}</h3>
+                <div class="h-56 sm:h-64">
+                    <canvas id="chart-top-artist"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_character_tags') }}</h3>
+                <div class="h-56 sm:h-64">
+                    <canvas id="chart-top-character"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_copyright_tags') }}</h3>
+                <div class="h-56 sm:h-64">
+                    <canvas id="chart-top-copyright"></canvas>
+                </div>
+            </div>
+            <div class="surface p-4 sm:p-6 border">
+                <h3 class="text-sm font-bold mb-4">{{ t('admin.stats.top_meta_tags') }}</h3>
+                <div class="h-56 sm:h-64">
+                    <canvas id="chart-top-meta"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,641 @@
+<!-- Settings Section -->
+<div id="settings-section">
+    <div class="surface p-2 sm:p-6 border mb-4">
+        <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('common.settings') }}</h2>
+
+        <form id="settings-form">
+            <div class="space-y-4 mb-4">
+                <!-- Row 1: App Name + Items Per Page -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.app_name') }}
+                        </label>
+                        <input type="text" id="app-name" name="app_name"
+                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.items_per_page') }}
+                        </label>
+                        <input type="number" id="items-per-page" name="items_per_page" min="20" max="200"
+                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                    </div>
+                </div>
+
+                <!-- Row 2: Theme + Language -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.theme') }}
+                        </label>
+                        <div id="theme-select" class="custom-select" data-value="">
+                            <button
+                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                type="button">
+                                <span class="custom-select-value text">
+                                    {{ t('admin.settings.loading_themes') }}
+                                </span>
+                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                    width="12" height="12" viewBox="0 0 12 12">
+                                    <path fill="currentColor" d="M6 9L1 4h10z" />
+                                </svg>
+                            </button>
+                            <div
+                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.language') }}
+                        </label>
+                        <div id="language-select" class="custom-select" data-value="{{ current_language() }}">
+                            <button
+                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                type="button">
+                                <span class="custom-select-value text">
+                                    {{ t('common.loading') }}
+                                </span>
+                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                    width="12" height="12" viewBox="0 0 12 12">
+                                    <path fill="currentColor" d="M6 9L1 4h10z" />
+                                </svg>
+                            </button>
+                            <div
+                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Default Sort + Order -->
+                <div>
+                    <label class="block text-xs font-bold mb-2">
+                        {{ t('admin.settings.default_sort') }}
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div id="default-sort" class="custom-select w-full" data-value="uploaded_at">
+                            <button
+                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                type="button">
+                                <span class="custom-select-value text">
+                                    {{ t('admin.settings.upload_date') }}
+                                </span>
+                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                    width="12" height="12" viewBox="0 0 12 12">
+                                    <path fill="currentColor" d="M6 9L1 4h10z" />
+                                </svg>
+                            </button>
+                            <div
+                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="uploaded_at">{{ t('admin.settings.upload_date') }}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="filename">{{ t('admin.settings.file_name') }}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="file_size">{{ t('admin.settings.file_size') }}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="file_type">{{ t('admin.settings.file_type') }}</div>
+                            </div>
+                        </div>
+                        <div id="default-order" class="custom-select w-full" data-value="desc">
+                            <button
+                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                type="button">
+                                <span class="custom-select-value text">
+                                    {{ t('admin.settings.descending') }}
+                                </span>
+                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                    width="12" height="12" viewBox="0 0 12 12">
+                                    <path fill="currentColor" d="M6 9L1 4h10z" />
+                                </svg>
+                            </button>
+                            <div
+                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="desc">{{ t('admin.settings.descending') }}</div>
+                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                    data-value="asc">{{ t('admin.settings.ascending') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: External Share URL -->
+                <div>
+                    <label class="block text-xs font-bold mb-2">
+                        {{ t('admin.settings.external_share_url') }}
+                    </label>
+                    <input type="url" id="external-share-url" name="external_share_url"
+                        placeholder="https://example.com"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                    <p class="text-xs text-secondary opacity-70 mt-1 ml-1">
+                        {{ t('admin.settings.external_share_url_hint') }}
+                    </p>
+                </div>
+
+                <!-- Row 5: Security + Sidebar Filter -->
+                <div class="space-y-4">
+                    <!-- Security -->
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.security') }}
+                        </label>
+                        <div class="bg p-4 border h-full">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="require-auth" name="require_auth"
+                                    class="w-4 h-4 accent-primary">
+                                <span class="text-xs font-bold">
+                                    {{ t('admin.settings.require_auth') }}
+                                </span>
+                            </label>
+                            <p class="text-xs text-secondary opacity-70 ml-6">
+                                {{ t('admin.settings.require_auth_hint') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Filter -->
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.sidebar_filter') }}
+                        </label>
+                        <div class="bg p-4 border h-full flex flex-col gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                    {{ t('admin.settings.sidebar_filter_mode') }}
+                                </label>
+                                <div id="sidebar-filter-mode" class="custom-select" data-value="rating">
+                                    <button
+                                        class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        type="button">
+                                        <span class="custom-select-value text">
+                                            {{ t('admin.settings.sidebar_mode_rating') }}
+                                        </span>
+                                        <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                            width="12" height="12" viewBox="0 0 12 12">
+                                            <path fill="currentColor" d="M6 9L1 4h10z" />
+                                        </svg>
+                                    </button>
+                                    <div
+                                        class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                            data-value="rating">
+                                            {{ t('admin.settings.sidebar_mode_rating') }}
+                                        </div>
+                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                            data-value="custom">
+                                            {{ t('common.custom_buttons') }}
+                                        </div>
+                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                            data-value="off">
+                                            {{ t('admin.settings.sidebar_mode_off') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="custom-buttons-container" style="display: none;">
+                                <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                    {{ t('common.custom_buttons') }}
+                                </label>
+                                <p class="text-xs text-secondary opacity-70 mb-2">
+                                    {{ t('admin.settings.custom_buttons_hint') }}
+                                </p>
+                                <div id="custom-buttons-list" class="space-y-2 mb-2"></div>
+                                <button type="button" id="add-custom-button-btn" class="btn-primary w-full px-3 py-2">
+                                    + {{ t('admin.settings.add_button') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-4">
+                <!-- Caching -->
+                <div>
+                    <label class="block text-xs font-bold mb-2">{{ t('admin.caching.title') }}</label>
+                    <div class="bg p-4 border h-full">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="redis-enabled" name="redis_enabled"
+                                class="w-4 h-4 accent-primary">
+                            <span class="text-xs font-bold">{{ t('admin.caching.enable_redis') }}</span>
+                        </label>
+
+                        <div id="redis-settings-container" class="mt-4" style="display: none;">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.host') }}
+                                    </label>
+                                    <input type="text" id="redis-host"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="redis">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.port') }}
+                                    </label>
+                                    <input type="number" id="redis-port"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="6379">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('admin.caching.db_index') }}
+                                    </label>
+                                    <input type="number" id="redis-db"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.password') }}
+                                    </label>
+                                    <input type="password" id="redis-password"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="{{ t('common.password_placeholder') }}">
+                                </div>
+                            </div>
+                            <button type="button" id="test-redis-btn" class="btn-primary w-full">
+                                {{ t('common.test_connection') }}
+                            </button>
+                            <div id="redis-test-result" class="mt-2 text-xs" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Tags -->
+                <div>
+                    <label class="block text-xs font-bold mb-2">{{ t('admin.shared_tags.title') }}</label>
+                    <div class="bg p-4 border h-full">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="shared-tags-enabled" name="shared_tags_enabled"
+                                class="w-4 h-4 accent-primary">
+                            <span class="text-xs font-bold">{{ t('admin.shared_tags.enable') }}</span>
+                        </label>
+                        <p class="text-xs text-secondary opacity-70 ml-6">
+                            {{ t('admin.shared_tags.description') }}
+                        </p>
+
+                        <div id="shared-tags-settings-container" class="mt-4" style="display: none;">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.host') }}
+                                    </label>
+                                    <input type="text" id="shared-tags-host"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="shared-tag-db">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.port') }}
+                                    </label>
+                                    <input type="number" id="shared-tags-port"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="5432">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.database') }}
+                                    </label>
+                                    <input type="text" id="shared-tags-name"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="shared_tags">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.username') }}
+                                    </label>
+                                    <input type="text" id="shared-tags-user"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="postgres">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                        {{ t('common.password') }}
+                                    </label>
+                                    <input type="password" id="shared-tags-password"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        placeholder="{{ t('common.password_placeholder') }}">
+                                </div>
+                            </div>
+                            <div class="flex gap-2 mb-2">
+                                <button type="button" id="test-shared-tags-btn" class="btn-primary flex-1">
+                                    {{ t('common.test_connection') }}
+                                </button>
+                                <button type="button" id="sync-shared-tags-btn" class="btn-dark flex-1"
+                                    style="display: none;">
+                                    {{ t('admin.shared_tags.sync_now') }}
+                                </button>
+                            </div>
+                            <div id="shared-tags-test-result" class="mt-2 text-xs" style="display: none;">
+                            </div>
+                            <div id="shared-tags-status" class="mt-3 p-3 surface border text-xs" style="display: none;">
+                                <div class="flex items-center justify-between">
+                                    <span id="shared-tags-connection-status"></span>
+                                    <span id="shared-tags-counts"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automatic Tags by Media Type -->
+                <div>
+                    <label class="block text-xs font-bold mb-2">
+                        {{ t('admin.settings.media_type_tags') }}
+                    </label>
+                    <div class="bg p-4 border">
+                        <p class="text-xs text-secondary opacity-70 mb-4">
+                            {{ t('admin.settings.media_type_tags_hint') }}
+                        </p>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                    {{ t('admin.settings.media_type_tags_images') }}
+                                </label>
+                                <div style="position: relative;">
+                                    <div id="media-type-tags-image" contenteditable="true"
+                                        data-placeholder="photo scenery"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                        style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                    {{ t('admin.settings.media_type_tags_gifs') }}
+                                </label>
+                                <div style="position: relative;">
+                                    <div id="media-type-tags-gif" contenteditable="true" data-placeholder="animated"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                        style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">
+                                    {{ t('admin.settings.media_type_tags_videos') }}
+                                </label>
+                                <div style="position: relative;">
+                                    <div id="media-type-tags-video" contenteditable="true"
+                                        data-placeholder="video animated"
+                                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary tag-input"
+                                        style="min-height: 1.5rem; white-space: pre-wrap; overflow-wrap: break-word;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t mt-4 pt-4">
+                <button type="submit" class="btn-primary">
+                    {{ t('admin.settings.save_settings') }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Booru Configuration Section -->
+    <div id="booru-config-section" class="surface p-2 sm:p-6 border mb-4">
+        <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.settings.booru_config.title') }}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Config Form -->
+            <div>
+                <form id="booru-config-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.booru_config.domain') }}
+                        </label>
+                        <input type="text" name="domain" placeholder="safebooru.org"
+                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                        <p class="text-[10px] text-secondary mt-1">
+                            {{ t('admin.settings.booru_config.domain_hint') }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.booru_config.username') }}
+                        </label>
+                        <input type="text" name="username" placeholder="123456"
+                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.booru_config.api_key') }}
+                        </label>
+                        <input type="text" name="api_key" placeholder="1234567890abcdef1234567890abcdef"
+                            class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors">
+                        <p class="text-[10px] text-secondary mt-1">
+                            {{ t('admin.settings.booru_config.api_key_hint') }}
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn-primary">
+                            {{ t('common.save') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Config List -->
+            <div>
+                <h3 class="text-sm font-bold mb-1">
+                    {{ t('admin.settings.booru_config.configured_sites') }}
+                </h3>
+                <div class="overflow-x-auto max-h-60 overflow-y-auto border">
+                    <table id="booru-config-table" class="bg w-full text-left border-collapse">
+                        <thead class="border-b">
+                            <tr class="text-secondary text-xs">
+                                <th class="sticky top-0 z-10 py-2 px-3 font-medium">
+                                    {{ t('admin.settings.booru_config.domain') }}
+                                </th>
+                                <th class="sticky top-0 z-10 py-2 px-3 font-medium">
+                                    {{ t('admin.settings.booru_config.username') }}
+                                </th>
+                                <th class="sticky top-0 z-10 py-2 px-3 font-medium">
+                                    {{ t('admin.settings.booru_config.key') }}
+                                </th>
+                                <th class="sticky top-0 z-10 py-2 px-3 font-medium text-right">
+                                    {{ t('admin.settings.booru_config.action') }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Access Section -->
+    <div class="surface p-2 sm:p-6 border mb-4">
+        <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.api_access.title') }}</h2>
+
+        <p class="text-xs text-secondary mb-4">
+            {{ t('admin.api_access.description') }}
+        </p>
+
+        <div class="mb-6">
+            <button id="generate-api-key-btn" class="btn-primary">
+                {{ t('admin.api_access.generate_key') }}
+            </button>
+
+            <div id="new-api-key-display" style="display: none;" class="mt-4 p-4 border border-primary bg bg-opacity-5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-white">
+                        {{ t('admin.api_access.new_api_key') }}
+                    </span>
+                    <span class="text-[10px] bg-danger tag-text px-1.5 py-0.5 font-bold">
+                        {{ t('admin.api_access.shown_once') }}
+                    </span>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="new-api-key-value"
+                        class="w-full surface px-3 py-2 border text-xs font-mono hover:border-primary transition-colors focus:outline-none focus:border-primary"
+                        readonly>
+                    <button id="copy-api-key-btn" class="btn-primary whitespace-nowrap">
+                        {{ t('admin.api_access.copy_key') }}
+                    </button>
+                </div>
+                <p class="text-[10px] mt-2 opacity-70 italic font-bold">
+                    {{ t('admin.api_access.store_securely') }}
+                </p>
+            </div>
+        </div>
+
+        <div id="api-keys-container">
+            <h3 class="text-sm font-bold mb-3">{{ t('admin.api_access.active_keys') }}</h3>
+            <div id="api-keys-list" class="border">
+                <!-- Keys will be populated here as rows -->
+                <div class="bg p-4 text-center text-xs text-secondary">
+                    {{ t('admin.api_access.loading_keys') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup & Restore Section -->
+    <div class="surface p-2 sm:p-6 border mb-4">
+        <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.backup.title') }}</h2>
+
+        <div class="mb-4">
+            <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.export_data') }}</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <a href="/api/admin/backup/tags" class="btn-dark w-full">
+                    {{ t('admin.backup.export_tags') }}
+                </a>
+                <a href="/api/admin/backup/media" class="btn-dark w-full">
+                    {{ t('admin.backup.export_media') }}
+                </a>
+                <a href="/api/admin/backup/full" class="btn-primary w-full">
+                    {{ t('admin.backup.full_backup') }}
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-sm font-bold mb-3">{{ t('admin.backup.import_backup') }}</h3>
+            <div class="bg p-4 border block">
+                <p class="text-xs text-secondary mb-3">
+                    {{ t('admin.backup.import_hint') }}<br>
+                    {{ t('admin.backup.import_warning') }}<br>
+                    <strong>{{ t('common.warning') }}:</strong> {{ t('admin.backup.import_time_warning') }}
+                </p>
+
+                <div id="full-import-area" class="upload-area">
+                    <p class="text-xs">{{ t('admin.backup.drop_backup') }}</p>
+                    <input type="file" id="full-import-input" accept=".zip" class="hidden">
+                </div>
+
+                <div id="full-import-status" style="display: none;" class="mt-3">
+                    <div class="text-xs">
+                        <div id="full-import-progress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Update Section -->
+    <div class="surface p-2 sm:p-6 border">
+        <h2 class="text-base font-bold mb-4 pb-3 border-b">
+            {{ t('common.system_update') }}
+        </h2>
+        <p class="text-xs text-secondary mb-3">
+            <strong>{{ t('common.warning') }}:</strong> {{ t('admin.update.backup_warning') }}
+        </p>
+
+        <div id="update-initial-state">
+            <p class="text-xs text-secondary mb-3">
+                {{ t('admin.update.contact_github') }}
+            </p>
+            <button id="btn-check-updates" class="btn-primary">
+                {{ t('admin.update.check_updates') }}
+            </button>
+        </div>
+
+        <div id="update-loading" class="bg p-2 border text-xs text-secondary hidden">
+            {{ t('admin.update.checking') }}
+        </div>
+
+        <div id="update-status" style="display: none;">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <div class="text-xs text-secondary mb-1">{{ t('admin.update.current_version') }}</div>
+                    <div class="text-sm font-bold font-mono" id="current-version-display">...</div>
+                </div>
+                <div>
+                    <div class="text-xs text-secondary mb-1">{{ t('admin.update.latest_version') }}</div>
+                    <div class="text-sm font-bold font-mono" id="latest-version-display">...</div>
+                </div>
+            </div>
+
+            <div id="update-notices" class="mb-4 hidden"></div>
+
+            <div id="update-instructions" class="mb-4 hidden">
+                <div class="text-xs text-secondary mb-1">{{ t('admin.update.update_instructions') }}</div>
+                <pre class="bg bg-opacity-20 p-2 border font-mono text-[10px] whitespace-pre-wrap select-all"
+                    id="update-command-text"></pre>
+            </div>
+
+            <div id="config-files-notice" class="mb-4 hidden">
+                <div class="text-xs tag-text p-2 border border-warning bg-warning bg-opacity-10"
+                    id="config-files-message"></div>
+                <div id="config-files-links" class="mt-2 flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-update-now" style="display: none;" class="btn-primary">
+                    {{ t('admin.update.update_now') }}
+                </button>
+                <a id="btn-view-release" href="#" target="_blank" style="display: none;" class="btn-dark">
+                    {{ t('admin.update.view_release') }}
+                </a>
+                <button id="btn-view-changelog" style="display: none;" class="btn-dark">
+                    {{ t('admin.update.view_changelog') }}
+                </button>
+            </div>
+        </div>
+
+        <div id="update-result" class="mt-4 hidden">
+            <h3 class="text-xs font-bold mb-2" id="update-result-title">
+                {{ t('admin.update.update_output') }}
+            </h3>
+            <pre class="bg-black bg-opacity-20 p-2 border max-h-60 overflow-y-auto font-mono text-[10px] whitespace-pre-wrap"
+                id="update-result-log"></pre>
+        </div>
+    </div>
+</div>
