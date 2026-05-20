@@ -204,6 +204,29 @@
             "media_type_tags_images": "",
             "media_type_tags_gifs": "",
             "media_type_tags_videos": "",
+            "custom_background": {
+                "title": "",
+                "enable": "",
+                "description": "",
+                "select_media": "",
+                "change_media": "",
+                "remove_media": "",
+                "no_media_selected": "",
+                "media_id": "",
+                "fit_mode": "",
+                "fit_cover": "",
+                "fit_contain": "",
+                "fit_tile": "",
+                "fit_auto": "",
+                "blur": "",
+                "brightness": "",
+                "saturation": "",
+                "contrast": "",
+                "zoom": "",
+                "opacity": "",
+                "position_x": "",
+                "position_y": ""
+            },
             "booru_config": {
                 "action": "操作",
                 "api_key": "API 密钥 / 密码",
@@ -934,5 +957,10 @@
             "cancel_all": "取消并全部清空",
             "submit_all": "提交所有媒体"
         }
+    },
+    "media_picker": {
+        "title": "",
+        "select": "",
+        "media_id_placeholder": ""
     }
 }

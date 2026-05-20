@@ -204,6 +204,29 @@
             "media_type_tags_images": "Теги изображений",
             "media_type_tags_gifs": "Теги GIF",
             "media_type_tags_videos": "Теги видео",
+            "custom_background": {
+                "title": "",
+                "enable": "",
+                "description": "",
+                "select_media": "",
+                "change_media": "",
+                "remove_media": "",
+                "no_media_selected": "",
+                "media_id": "",
+                "fit_mode": "",
+                "fit_cover": "",
+                "fit_contain": "",
+                "fit_tile": "",
+                "fit_auto": "",
+                "blur": "",
+                "brightness": "",
+                "saturation": "",
+                "contrast": "",
+                "zoom": "",
+                "opacity": "",
+                "position_x": "",
+                "position_y": ""
+            },
             "booru_config": {
                 "action": "Действие",
                 "api_key": "API-ключ / пароль",
@@ -934,5 +957,10 @@
             "cancel_all": "Отменить и очистить всё",
             "submit_all": "Принять все медиафайлы"
         }
+    },
+    "media_picker": {
+        "title": "",
+        "select": "",
+        "media_id_placeholder": ""
     }
 }

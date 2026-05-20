@@ -204,6 +204,29 @@
             "media_type_tags_images": "Image Tags",
             "media_type_tags_gifs": "GIF Tags",
             "media_type_tags_videos": "Video Tags",
+            "custom_background": {
+                "title": "Custom Background",
+                "enable": "Enable Custom Background",
+                "description": "Select media to use as a custom background, or leave disabled to use default background",
+                "select_media": "Select Media",
+                "change_media": "Change Media",
+                "remove_media": "Remove",
+                "no_media_selected": "No media selected",
+                "media_id": "Media ID",
+                "fit_mode": "Fit Mode",
+                "fit_cover": "Cover",
+                "fit_contain": "Contain",
+                "fit_tile": "Tile",
+                "fit_auto": "Auto",
+                "blur": "Backdrop Blur",
+                "brightness": "Brightness",
+                "saturation": "Saturation",
+                "contrast": "Contrast",
+                "zoom": "Zoom",
+                "opacity": "Opacity",
+                "position_x": "Position X",
+                "position_y": "Position Y"
+            },
             "booru_config": {
                 "action": "Action",
                 "api_key": "API Key / Password",
@@ -934,5 +957,10 @@
             "cancel_all": "Cancel & Clear All",
             "submit_all": "Submit All Media"
         }
+    },
+    "media_picker": {
+        "title": "Select Media",
+        "select": "Select",
+        "media_id_placeholder": "Media ID"
     }
 }

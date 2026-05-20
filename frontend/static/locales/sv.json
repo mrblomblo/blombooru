@@ -204,6 +204,29 @@
             "media_type_tags_images": "Bildtaggar",
             "media_type_tags_gifs": "GIF-taggar",
             "media_type_tags_videos": "Videotaggar",
+            "custom_background": {
+                "title": "Anpassad Bakgrund",
+                "enable": "Aktivera Anpassad Bakgrund",
+                "description": "Välj media att använda som bakgrund, eller inaktivera för att använda standardbakgrunden",
+                "select_media": "Välj Media",
+                "change_media": "Byt Media",
+                "remove_media": "Ta Bort",
+                "no_media_selected": "Ingen media vald",
+                "media_id": "Media ID",
+                "fit_mode": "Passformsläge",
+                "fit_cover": "Täck",
+                "fit_contain": "Innehåll",
+                "fit_tile": "Kakel",
+                "fit_auto": "Auto",
+                "blur": "Bakgrundsoskärpa",
+                "brightness": "Ljusstyrka",
+                "saturation": "Mättnad",
+                "contrast": "Kontrast",
+                "zoom": "Zoom",
+                "opacity": "Opacitet",
+                "position_x": "Position X",
+                "position_y": "Position Y"
+            },
             "booru_config": {
                 "action": "Handling",
                 "api_key": "API Nyckel / Lösenord",
@@ -934,5 +957,10 @@
             "cancel_all": "Avbryt & rensa alla",
             "submit_all": "Skicka all media"
         }
+    },
+    "media_picker": {
+        "title": "Välj media",
+        "select": "Välj",
+        "media_id_placeholder": "Media ID"
     }
 }
