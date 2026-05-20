@@ -9,7 +9,7 @@ from sqlalchemy.engine import URL
 load_dotenv()
 
 APP_VERSION = "1.40.0"
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 class Settings:
     def __init__(self):
@@ -91,6 +91,19 @@ class Settings:
                 "character_threshold": 0.85,
                 "model_name": "wd-eva02-large-tagger-v3",
                 "blacklisted_tags": []
+            },
+            "custom_background": {
+                "enabled": False,
+                "media_id": None,
+                "blur": 10,
+                "brightness": 100,
+                "saturation": 65,
+                "contrast": 100,
+                "zoom": 100,
+                "size": "cover",
+                "position_x": 50,
+                "position_y": 50,
+                "opacity": 25
             },
             "secret_key": os.urandom(32).hex()
         }
@@ -269,6 +282,25 @@ class Settings:
         if val is not None:
             return val
         return self.settings.get("media_type_tags", {"image": [], "gif": [], "video": []})
+
+    @property
+    def CUSTOM_BACKGROUND(self) -> dict:
+        """Get custom background settings."""
+        defaults = {
+            "enabled": False,
+            "media_id": None,
+            "blur": 10,
+            "brightness": 100,
+            "saturation": 65,
+            "contrast": 100,
+            "zoom": 100,
+            "size": "cover",
+            "position_x": 50,
+            "position_y": 50,
+            "opacity": 25
+        }
+        saved = self.file_settings.get("custom_background") or self.settings.get("custom_background", {})
+        return {**defaults, **saved}
     
     @property
     def SHARED_TAGS_ENABLED(self) -> bool:

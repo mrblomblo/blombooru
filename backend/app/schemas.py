@@ -124,6 +124,19 @@ class OnboardingData(BaseModel):
     database: DatabaseSettings
     redis: RedisSettings
 
+class CustomBackgroundSettings(BaseModel):
+    enabled: bool = False
+    media_id: Optional[int] = None
+    blur: Optional[int] = 10
+    brightness: Optional[int] = 100
+    saturation: Optional[int] = 65
+    contrast: Optional[int] = 100
+    zoom: Optional[int] = 100
+    size: Optional[str] = "cover"
+    position_x: Optional[int] = 50
+    position_y: Optional[int] = 50
+    opacity: Optional[int] = 25
+
 class SettingsUpdate(BaseModel):
     app_name: Optional[str] = None
     items_per_page: Optional[int] = None
@@ -138,6 +151,7 @@ class SettingsUpdate(BaseModel):
     sidebar_filter_mode: Optional[str] = None
     sidebar_custom_buttons: Optional[List[dict]] = None
     media_type_tags: Optional[dict] = None
+    custom_background: Optional[CustomBackgroundSettings] = None
 
 class ShareSettingsUpdate(BaseModel):
     share_ai_metadata: Optional[bool] = None
