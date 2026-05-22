@@ -619,20 +619,32 @@ class AdminContent {
 
             resultsDiv.innerHTML = data.tags.map((tag, i, arr) => `
                 <div class="bg p-3 ${arr.length === 1 ? 'border' : (i === arr.length - 1 ? '' : 'border-b')} flex justify-between items-center">
-                    <div>
-                        <button class="delete-tag-btn text-xs bg-danger hover:bg-danger tag-text px-2 py-1 mr-2" data-tag-id="${tag.id}">&#x2715;</button>
+                    <div class="flex items-center gap-2">
+                        <button class="manage-tag-btn flex items-center justify-center w-7 h-7 bg-primary hover:bg-primary border-primary hover:border-primary transition-colors"
+                            data-tag-id="${tag.id}"
+                            data-tag-name="${this.app.escapeHtml(tag.name)}"
+                            data-tag-category="${tag.category}"
+                            title="${window.i18n.t('admin.tags_management.manage_tag')}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--primary-text)">
+                                <rect x="3" y="5" width="18" height="2"/>
+                                <rect x="3" y="11" width="18" height="2"/>
+                                <rect x="3" y="17" width="18" height="2"/>
+                            </svg>
+                        </button>
                         <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text">${tag.name}</a>
-                        <span class="text-xs text-secondary ml-2">(${tag.post_count} posts)</span>
+                        <span class="text-xs text-secondary">(${tag.post_count})</span>
                     </div>
                     <span class="text-xs text-secondary uppercase">${tag.category}</span>
                 </div>
                 `).join('');
 
-            // Add event listeners to delete buttons
-            resultsDiv.querySelectorAll('.delete-tag-btn').forEach(btn => {
+            resultsDiv.querySelectorAll('.manage-tag-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const tagId = btn.dataset.tagId;
-                    this.deleteTag(tagId);
+                    this.showTagManageModal(
+                        btn.dataset.tagId,
+                        btn.dataset.tagName,
+                        btn.dataset.tagCategory
+                    );
                 });
             });
 
@@ -642,7 +654,7 @@ class AdminContent {
         }
     }
 
-    async deleteTag(tagId) {
+    async deleteTag(tagId, tagName, tagCategory) {
         const modal = new ModalHelper({
             id: 'delete-tag-modal',
             type: 'danger',
@@ -661,10 +673,247 @@ class AdminContent {
                 } catch (e) {
                     app.showNotification(e.message, 'error', window.i18n.t('notifications.admin.error_deleting_tag'));
                 }
+            },
+            onCancel: () => {
+                if (tagName && tagCategory) {
+                    this.showTagManageModal(tagId, tagName, tagCategory);
+                }
             }
         });
 
         modal.show();
+    }
+
+    showTagManageModal(tagId, tagName, tagCategory) {
+        const existingModal = document.getElementById('tag-manage-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'tag-manage-modal';
+        modal.className = 'age-verification-overlay';
+        modal.style.display = 'flex';
+
+        modal.innerHTML = `
+            <div class="surface border-2 border-primary p-8 max-w-md w-full text-center">
+                <h2 class="text-xl font-bold mb-2 text-primary">${window.i18n.t('admin.tags_management.manage_tag')}</h2>
+                <p class="text-base mb-6 text font-medium">${this.app.escapeHtml(tagName)}</p>
+                <div class="flex flex-col gap-3">
+                    <button id="tag-manage-edit" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                        ${window.i18n.t('admin.tags_management.edit_tag')}
+                    </button>
+                    <button id="tag-manage-delete" class="px-6 py-3 transition-colors bg border border-danger text-danger hover:bg-danger hover:tag-text font-bold text-sm flex items-center justify-center gap-2">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                        ${window.i18n.t('modal.delete_tag.title')}
+                    </button>
+                    <button id="tag-manage-cancel" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2">
+                        ${window.i18n.t('common.cancel')}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('tag-manage-edit').addEventListener('click', () => {
+            modal.remove();
+            this.showTagEditModal(tagId, tagName, tagCategory);
+        });
+
+        document.getElementById('tag-manage-delete').addEventListener('click', () => {
+            modal.remove();
+            this.deleteTag(tagId, tagName, tagCategory);
+        });
+
+        document.getElementById('tag-manage-cancel').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    showTagEditModal(tagId, tagName, tagCategory) {
+        const existingModal = document.getElementById('tag-edit-modal');
+        if (existingModal) existingModal.remove();
+
+        const categories = [
+            { value: 'general', label: window.i18n.t('common.tag_category_general') },
+            { value: 'artist', label: window.i18n.t('common.tag_category_artist') },
+            { value: 'character', label: window.i18n.t('common.tag_category_character') },
+            { value: 'copyright', label: window.i18n.t('common.tag_category_copyright') },
+            { value: 'meta', label: window.i18n.t('common.tag_category_meta') },
+        ];
+
+        const categoryOptions = categories.map(c =>
+            `<div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs" data-value="${c.value}">${c.label}</div>`
+        ).join('');
+
+        const currentCatLabel = (categories.find(c => c.value === tagCategory) || categories[0]).label;
+
+        const modal = document.createElement('div');
+        modal.id = 'tag-edit-modal';
+        modal.className = 'age-verification-overlay';
+        modal.style.display = 'flex';
+
+        modal.innerHTML = `
+            <div class="surface border-2 border-primary p-8 max-w-md w-full">
+                <h2 class="text-xl font-bold mb-6 text-primary text-center">${window.i18n.t('admin.tags_management.edit_tag')}</h2>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">${window.i18n.t('admin.tags_management.tag_name')}</label>
+                    <input type="text" id="tag-edit-name" value="${this.app.escapeHtml(tagName)}"
+                        class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                        autocomplete="off" spellcheck="false">
+                    <p id="tag-edit-name-error" class="text-xs text-danger mt-1" style="display:none;"></p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold mb-2">${window.i18n.t('admin.tags_management.tag_category')}</label>
+                    <div id="tag-edit-category-select" class="custom-select w-full" data-value="${tagCategory}">
+                        <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary" type="button">
+                            <span class="custom-select-value text">${currentCatLabel}</span>
+                            <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary" width="12" height="12" viewBox="0 0 12 12">
+                                <path fill="currentColor" d="M6 9L1 4h10z" />
+                            </svg>
+                        </button>
+                        <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                            ${categoryOptions}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button id="tag-edit-save" class="btn-primary px-6 py-3 font-bold text-sm flex-1">
+                        ${window.i18n.t('common.save')}
+                    </button>
+                    <button id="tag-edit-cancel" class="btn px-6 py-3 font-bold text-sm flex-1">
+                        ${window.i18n.t('common.cancel')}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const categorySelectEl = document.getElementById('tag-edit-category-select');
+        const categorySelect = new CustomSelect(categorySelectEl);
+        categorySelect.setValue(tagCategory);
+
+        // Inverse validation with current tag's own name seeded as "not a conflict"
+        const nameInput = document.getElementById('tag-edit-name');
+        const nameError = document.getElementById('tag-edit-name-error');
+        let nameConflict = false;
+        let validationTimer = null;
+
+        const validateName = async () => {
+            const val = nameInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+            if (!val || val === tagName.toLowerCase()) {
+                nameConflict = false;
+                nameInput.classList.remove('border-danger');
+                nameError.style.display = 'none';
+                return;
+            }
+            // Check if name conflicts with an existing tag or alias
+            try {
+                const res = await fetch(`/api/tags/${encodeURIComponent(val)}`);
+                if (res.ok) {
+                    nameConflict = true;
+                    nameInput.classList.add('border-danger');
+                    nameError.textContent = window.i18n.t('notifications.admin.tag_name_conflict');
+                    nameError.style.display = '';
+                    return;
+                }
+                const aliasRes = await fetch(`/api/admin/check-alias?name=${encodeURIComponent(val)}`);
+                if (aliasRes.ok) {
+                    const aliasData = await aliasRes.json();
+                    if (aliasData.exists) {
+                        nameConflict = true;
+                        nameInput.classList.add('border-danger');
+                        nameError.textContent = window.i18n.t('notifications.admin.tag_name_conflict');
+                        nameError.style.display = '';
+                        return;
+                    }
+                }
+            } catch (e) { /* network error: allow save */ }
+            nameConflict = false;
+            nameInput.classList.remove('border-danger');
+            nameError.style.display = 'none';
+        };
+
+        nameInput.addEventListener('input', () => {
+            // Replace spaces with underscores as user types
+            const pos = nameInput.selectionStart;
+            nameInput.value = nameInput.value.replace(/ /g, '_');
+            nameInput.setSelectionRange(pos, pos);
+            clearTimeout(validationTimer);
+            validationTimer = setTimeout(validateName, 400);
+        });
+
+        nameInput.focus();
+        nameInput.select();
+
+        const doSave = async () => {
+            const newName = nameInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+            if (!newName) {
+                nameInput.classList.add('border-danger');
+                nameError.textContent = window.i18n.t('admin.tags_management.tag_name');
+                nameError.style.display = '';
+                return;
+            }
+            if (nameConflict) {
+                nameInput.focus();
+                return;
+            }
+            const newCategory = categorySelect.getValue();
+            modal.remove();
+            try {
+                const result = await app.apiCall(`/api/admin/tags/${tagId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name: newName, category: newCategory })
+                });
+                app.showNotification(
+                    window.i18n.t('notifications.admin.tag_updated', { old_name: result.old_name }),
+                    'success'
+                );
+                await this.searchTags();
+                await this.app.content.loadTagStats();
+            } catch (e) {
+                app.showNotification(e.message, 'error', window.i18n.t('notifications.admin.error_updating_tag'));
+            }
+        };
+
+        document.getElementById('tag-edit-save').addEventListener('click', doSave);
+        document.getElementById('tag-edit-cancel').addEventListener('click', () => {
+            modal.remove();
+            this.showTagManageModal(tagId, tagName, tagCategory);
+        });
+
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); doSave(); }
+        });
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+                this.showTagManageModal(tagId, tagName, tagCategory);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
     }
 
     async clearAllTags() {
