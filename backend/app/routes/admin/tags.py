@@ -335,6 +335,54 @@ async def delete_tag(
         db.rollback()
         raise HTTPException(status_code=400, detail=safe_error_detail("Error deleting tag", e))
 
+@router.put("/tags/{tag_id}")
+async def update_tag(
+    tag_id: int,
+    data: dict,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Rename a tag and/or change its category"""
+    from ...models import TagAlias
+    from ...utils.cache import invalidate_tag_cache
+
+    try:
+        tag = db.query(Tag).filter(Tag.id == tag_id).first()
+        if not tag:
+            raise HTTPException(status_code=404, detail="error_tag_not_found")
+
+        new_name = (data.get("name") or "").strip().lower()
+        new_category = data.get("category", tag.category)
+
+        if not new_name:
+            raise HTTPException(status_code=400, detail="error_tag_name_empty")
+
+        old_name = tag.name
+
+        # Only validate name conflict when the name is actually changing
+        if new_name != old_name:
+            conflict = db.query(Tag).filter(Tag.name == new_name).first()
+            if conflict:
+                raise HTTPException(status_code=409, detail="error_tag_name_conflict")
+
+            alias_conflict = db.query(TagAlias).filter(TagAlias.alias_name == new_name).first()
+            if alias_conflict:
+                raise HTTPException(status_code=409, detail="error_tag_name_conflict")
+
+            tag.name = new_name
+
+        tag.category = new_category
+        db.commit()
+        invalidate_tag_cache()
+
+        return {"old_name": old_name, "tag_name": tag.name, "category": tag.category}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=safe_error_detail("Error updating tag", e))
+
 @router.get("/check-alias")
 async def check_alias(
     name: str,
