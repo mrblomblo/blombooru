@@ -719,30 +719,31 @@ class AdminContent {
 
         document.body.appendChild(modal);
 
-        document.getElementById('tag-manage-edit').addEventListener('click', () => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+
+        const closeModal = () => {
             modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        };
+
+        document.getElementById('tag-manage-edit').addEventListener('click', () => {
+            closeModal();
             this.showTagEditModal(tagId, tagName, tagCategory);
         });
 
         document.getElementById('tag-manage-delete').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.deleteTag(tagId, tagName, tagCategory);
         });
 
-        document.getElementById('tag-manage-cancel').addEventListener('click', () => {
-            modal.remove();
-        });
+        document.getElementById('tag-manage-cancel').addEventListener('click', closeModal);
 
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
+            if (e.target === modal) closeModal();
         });
 
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', handleEscape);
-            }
-        };
         document.addEventListener('keydown', handleEscape);
     }
 
@@ -866,6 +867,18 @@ class AdminContent {
         nameInput.focus();
         nameInput.select();
 
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                this.showTagManageModal(tagId, tagName, tagCategory);
+            }
+        };
+
+        const closeModal = () => {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        };
+
         const doSave = async () => {
             const newName = nameInput.value.trim().toLowerCase().replace(/\s+/g, '_');
             if (!newName) {
@@ -879,7 +892,7 @@ class AdminContent {
                 return;
             }
             const newCategory = categorySelect.getValue();
-            modal.remove();
+            closeModal();
             try {
                 const result = await app.apiCall(`/api/admin/tags/${tagId}`, {
                     method: 'PUT',
@@ -898,7 +911,7 @@ class AdminContent {
 
         document.getElementById('tag-edit-save').addEventListener('click', doSave);
         document.getElementById('tag-edit-cancel').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.showTagManageModal(tagId, tagName, tagCategory);
         });
 
@@ -906,13 +919,6 @@ class AdminContent {
             if (e.key === 'Enter') { e.preventDefault(); doSave(); }
         });
 
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', handleEscape);
-                this.showTagManageModal(tagId, tagName, tagCategory);
-            }
-        };
         document.addEventListener('keydown', handleEscape);
     }
 
@@ -1209,40 +1215,40 @@ class AdminContent {
 
         document.body.appendChild(modal);
 
-        // Event listeners
-        document.getElementById('album-manage-rename').addEventListener('click', () => {
+        // Event listeners setup
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        };
+
+        const closeModal = () => {
             modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        };
+
+        document.getElementById('album-manage-rename').addEventListener('click', () => {
+            closeModal();
             this.showRenameAlbumModal(albumId, albumName, currentParentId);
         });
 
         document.getElementById('album-manage-parent').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.showChangeParentModal(albumId, albumName, currentParentId);
         });
 
         document.getElementById('album-manage-delete').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.deleteAlbum(albumId, albumName, currentParentId);
         });
 
-        document.getElementById('album-manage-cancel').addEventListener('click', () => {
-            modal.remove();
-        });
+        document.getElementById('album-manage-cancel').addEventListener('click', closeModal);
 
         // Close on outside click
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
+            if (e.target === modal) closeModal();
         });
 
-        // Close on Escape
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', handleEscape);
-            }
-        };
         document.addEventListener('keydown', handleEscape);
     }
 
@@ -1285,6 +1291,18 @@ class AdminContent {
         input.select();
 
         // Event listeners
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                this.showAlbumManageModal(albumId, currentName, currentParentId);
+            }
+        };
+
+        const closeModal = () => {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        };
+
         const confirmRename = async () => {
             const newName = input.value.trim();
             if (!newName) {
@@ -1292,12 +1310,12 @@ class AdminContent {
                 return;
             }
             if (newName === currentName) {
-                modal.remove();
+                closeModal();
                 this.showAlbumManageModal(albumId, currentName, currentParentId);
                 return;
             }
 
-            modal.remove();
+            closeModal();
 
             try {
                 await app.apiCall(`/api/albums/${albumId}`, {
@@ -1323,7 +1341,7 @@ class AdminContent {
         document.getElementById('album-rename-confirm').addEventListener('click', confirmRename);
 
         document.getElementById('album-rename-cancel').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.showAlbumManageModal(albumId, currentName, currentParentId);
         });
 
@@ -1337,19 +1355,11 @@ class AdminContent {
         // Close on outside click - return to manage modal
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.remove();
+                closeModal();
                 this.showAlbumManageModal(albumId, currentName, currentParentId);
             }
         });
 
-        // Close on Escape - return to manage modal
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', handleEscape);
-                this.showAlbumManageModal(albumId, currentName, currentParentId);
-            }
-        };
         document.addEventListener('keydown', handleEscape);
     }
 
@@ -1470,9 +1480,21 @@ class AdminContent {
         const changeParentSelect = new CustomSelect(selectElement);
 
         // Event listeners
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                this.showAlbumManageModal(albumId, albumName, currentParentId);
+            }
+        };
+
+        const closeModal = () => {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        };
+
         document.getElementById('album-parent-confirm').addEventListener('click', async () => {
             const newParentId = selectElement.dataset.value;
-            modal.remove();
+            closeModal();
 
             // Check if parent actually changed
             const oldParentId = currentParentId || '';
@@ -1505,26 +1527,18 @@ class AdminContent {
         });
 
         document.getElementById('album-parent-cancel').addEventListener('click', () => {
-            modal.remove();
+            closeModal();
             this.showAlbumManageModal(albumId, albumName, currentParentId);
         });
 
         // Close on outside click - return to manage modal
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.remove();
+                closeModal();
                 this.showAlbumManageModal(albumId, albumName, currentParentId);
             }
         });
 
-        // Close on Escape - return to manage modal
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', handleEscape);
-                this.showAlbumManageModal(albumId, albumName, currentParentId);
-            }
-        };
         document.addEventListener('keydown', handleEscape);
     }
 
