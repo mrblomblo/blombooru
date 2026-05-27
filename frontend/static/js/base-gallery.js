@@ -993,7 +993,7 @@ class BaseGallery {
         } else {
             sortedTags = Array.from(this.tagCounts.entries())
                 .sort((a, b) => b[1].count - a[1].count)
-                .slice(0, 20);
+                .slice(0, this.popularTagsLimit || 20);
         }
 
         if (sortedTags.length === 0) {
@@ -1024,6 +1024,55 @@ class BaseGallery {
                 </div>
             `;
         }).join('');
+    }
+
+    // ==================== Related Tags / Tags Section ====================
+
+    async refreshTagsSection() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = (urlParams.get('q') || '').trim();
+        const useRelated = (this.popularTagsMode === 'search_related') && searchQuery !== '';
+
+        // Update the section title dynamically
+        const titleEl = document.getElementById('popular-tags-title');
+        if (titleEl) {
+            titleEl.textContent = useRelated
+                ? window.i18n.t('gallery.related_tags')
+                : window.i18n.t('gallery.popular_tags');
+        }
+
+        if (useRelated) {
+            await this._fetchRelatedTags(searchQuery);
+        } else {
+            this.renderPopularTags();
+        }
+    }
+
+    async _fetchRelatedTags(query) {
+        if (!this.elements.popularTags) return;
+
+        this.elements.popularTags.innerHTML =
+            `<p class="text-secondary">${window.i18n.t('common.loading')}</p>`;
+
+        try {
+            const params = new URLSearchParams({
+                q: query,
+                limit: this.popularTagsLimit || 20,
+            });
+            if (this.currentRating) {
+                params.set('rating', this.currentRating);
+            }
+            const res = await fetch(`/api/tags/search-related?${params.toString()}`, {
+                credentials: 'include'
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this.renderPopularTags(data);
+        } catch (err) {
+            console.error('Error fetching related tags:', err);
+            // Fallback to current-page tags
+            this.renderPopularTags();
+        }
     }
 
     // ==================== Loading State ====================

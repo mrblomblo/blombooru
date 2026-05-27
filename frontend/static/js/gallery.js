@@ -13,6 +13,10 @@ class Gallery extends BaseGallery {
     init() {
         this.initCommon();
 
+        // Read popular tags settings from server-injected data attributes
+        this.popularTagsMode = this.elements.grid?.dataset.popularTagsMode || 'current_page';
+        this.popularTagsLimit = parseInt(this.elements.grid?.dataset.popularTagsLimit || '20', 10);
+
         // Get page from URL
         this.currentPage = parseInt(this.getUrlParam('page', 1));
 
@@ -74,7 +78,7 @@ class Gallery extends BaseGallery {
             if (data.items && data.items.length > 0) {
                 this.processTagCounts(data.items);
                 this.renderItems(data.items);
-                this.renderPopularTags();
+                await this.refreshTagsSection();
                 this.renderPagination();
             } else if (this.currentPage === 1) {
                 this.showEmptyState(searchQuery ? window.i18n.t('gallery.no_results_found') : window.i18n.t('gallery.no_media_found'));
