@@ -69,55 +69,93 @@
                     </div>
                 </div>
 
-                <!-- Row 3: Default Sort + Order -->
-                <div>
-                    <label class="block text-xs font-bold mb-2">
-                        {{ t('admin.settings.default_sort') }}
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div id="default-sort" class="custom-select w-full" data-value="uploaded_at">
-                            <button
-                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
-                                type="button">
-                                <span class="custom-select-value text">
-                                    {{ t('admin.settings.upload_date') }}
-                                </span>
-                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
-                                    width="12" height="12" viewBox="0 0 12 12">
-                                    <path fill="currentColor" d="M6 9L1 4h10z" />
-                                </svg>
-                            </button>
-                            <div
-                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="uploaded_at">{{ t('admin.settings.upload_date') }}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="filename">{{ t('admin.settings.file_name') }}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="file_size">{{ t('admin.settings.file_size') }}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="file_type">{{ t('admin.settings.file_type') }}</div>
+                <!-- Row 3: Default Sort + Order | Popular Tags Mode + Limit -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.default_sort') }}
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div id="default-sort" class="custom-select w-full" data-value="uploaded_at">
+                                <button
+                                    class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                    type="button">
+                                    <span class="custom-select-value text">
+                                        {{ t('admin.settings.upload_date') }}
+                                    </span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                        width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="uploaded_at">{{ t('admin.settings.upload_date') }}</div>
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="filename">{{ t('admin.settings.file_name') }}</div>
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="file_size">{{ t('admin.settings.file_size') }}</div>
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="file_type">{{ t('admin.settings.file_type') }}</div>
+                                </div>
+                            </div>
+                            <div id="default-order" class="custom-select w-full" data-value="desc">
+                                <button
+                                    class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                    type="button">
+                                    <span class="custom-select-value text">
+                                        {{ t('admin.settings.descending') }}
+                                    </span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                        width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="desc">{{ t('admin.settings.descending') }}</div>
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="asc">{{ t('admin.settings.ascending') }}</div>
+                                </div>
                             </div>
                         </div>
-                        <div id="default-order" class="custom-select w-full" data-value="desc">
-                            <button
-                                class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
-                                type="button">
-                                <span class="custom-select-value text">
-                                    {{ t('admin.settings.descending') }}
-                                </span>
-                                <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
-                                    width="12" height="12" viewBox="0 0 12 12">
-                                    <path fill="currentColor" d="M6 9L1 4h10z" />
-                                </svg>
-                            </button>
-                            <div
-                                class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="desc">{{ t('admin.settings.descending') }}</div>
-                                <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
-                                    data-value="asc">{{ t('admin.settings.ascending') }}</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-2">
+                            {{ t('admin.settings.popular_tags_settings') }}
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div id="popular-tags-mode" class="custom-select w-full" data-value="current_page">
+                                <button
+                                    class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                    type="button">
+                                    <span class="custom-select-value text">
+                                        {{ t('admin.settings.popular_tags_mode_page') }}
+                                    </span>
+                                    <svg class="custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary"
+                                        width="12" height="12" viewBox="0 0 12 12">
+                                        <path fill="currentColor" d="M6 9L1 4h10z" />
+                                    </svg>
+                                </button>
+                                <div
+                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="current_page">
+                                        {{ t('admin.settings.popular_tags_mode_page') }}
+                                    </div>
+                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs"
+                                        data-value="search_related">
+                                        {{ t('admin.settings.popular_tags_mode_related') }}
+                                    </div>
+                                </div>
                             </div>
+                            <input type="number" id="popular-tags-limit" name="popular_tags_limit" min="1" max="100"
+                                value="20" title="{{ t('admin.settings.popular_tags_limit') }}"
+                                placeholder="{{ t('admin.settings.popular_tags_limit') }}"
+                                class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
                         </div>
                     </div>
                 </div>

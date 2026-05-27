@@ -24,6 +24,11 @@ class AdminSystem {
             this.defaultOrderSelect = new CustomSelect(defaultOrderElement);
         }
 
+        const popularTagsModeElement = document.getElementById('popular-tags-mode');
+        if (popularTagsModeElement) {
+            this.popularTagsModeSelect = new CustomSelect(popularTagsModeElement);
+        }
+
         const sidebarFilterModeElement = document.getElementById('sidebar-filter-mode');
         if (sidebarFilterModeElement) {
             this.sidebarFilterModeSelect = new CustomSelect(sidebarFilterModeElement);
@@ -523,6 +528,15 @@ class AdminSystem {
                 this.defaultOrderSelect.setValue(settings.default_order);
             }
 
+            if (settings.popular_tags_mode && this.popularTagsModeSelect) {
+                this.popularTagsModeSelect.setValue(settings.popular_tags_mode);
+            }
+
+            const popularTagsLimitInput = document.getElementById('popular-tags-limit');
+            if (popularTagsLimitInput && settings.popular_tags_limit !== undefined) {
+                popularTagsLimitInput.value = settings.popular_tags_limit;
+            }
+
             if (settings.require_auth !== undefined) {
                 const requireAuthCheckbox = document.getElementById('require-auth');
                 if (requireAuthCheckbox) requireAuthCheckbox.checked = settings.require_auth;
@@ -682,6 +696,9 @@ class AdminSystem {
 
         const defaultSort = this.defaultSortSelect ? this.defaultSortSelect.getValue() : null;
         const defaultOrder = this.defaultOrderSelect ? this.defaultOrderSelect.getValue() : null;
+        const popularTagsMode = this.popularTagsModeSelect ? this.popularTagsModeSelect.getValue() : 'current_page';
+        const popularTagsLimitRaw = document.getElementById('popular-tags-limit')?.value;
+        const popularTagsLimit = popularTagsLimitRaw ? Math.max(1, Math.min(100, parseInt(popularTagsLimitRaw) || 20)) : 20;
         const requireAuth = document.getElementById('require-auth')?.checked || false;
 
         const redisSettings = {
@@ -725,6 +742,8 @@ class AdminSystem {
             items_per_page: itemsPerPageNum,
             default_sort: defaultSort,
             default_order: defaultOrder,
+            popular_tags_mode: popularTagsMode,
+            popular_tags_limit: popularTagsLimit,
             external_share_url: externalShareUrl || null,
             require_auth: requireAuth,
             redis: redisSettings,
