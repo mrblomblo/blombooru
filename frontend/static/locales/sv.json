@@ -187,7 +187,7 @@
             "popular_tags_settings": "Populära Taggar",
             "popular_tags_mode": "Visningsläge för Populära Taggar",
             "popular_tags_mode_page": "Endast Aktuell Sida",
-            "popular_tags_mode_related": "Globalt Relaterade Taggar",
+            "popular_tags_mode_related": "Globalt Relaterade",
             "popular_tags_limit": "Antal Populära Taggar",
             "require_auth": "Kräv autentisering för att visa media",
             "require_auth_hint": "När aktiverat måste användare logga in för att visa media. Publika rutter som delningslänkar och statiska filer förblir publika.",

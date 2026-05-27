@@ -187,7 +187,7 @@
             "popular_tags_settings": "Popular Tags",
             "popular_tags_mode": "Popular Tags Mode",
             "popular_tags_mode_page": "Current Page Only",
-            "popular_tags_mode_related": "Globally Related Tags",
+            "popular_tags_mode_related": "Globally Related",
             "popular_tags_limit": "Tag Limit",
             "require_auth": "Require Authentication to View Media",
             "require_auth_hint": "When enabled, users must log in to view media. Public routes such as share links and static files remain public.",
