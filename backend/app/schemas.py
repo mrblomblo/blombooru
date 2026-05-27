@@ -142,6 +142,8 @@ class SettingsUpdate(BaseModel):
     items_per_page: Optional[int] = None
     default_sort: Optional[str] = None
     default_order: Optional[str] = None
+    popular_tags_mode: Optional[str] = None
+    popular_tags_limit: Optional[int] = None
     theme: Optional[str] = None
     language: Optional[str] = None
     external_share_url: Optional[str] = None
