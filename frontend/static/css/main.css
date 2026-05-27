@@ -420,6 +420,7 @@ span.checked:hover {
 
 .popular-tag-item:last-child {
     border-bottom: none;
+    padding-bottom: 0;
 }
 
 .popular-tag-name {
