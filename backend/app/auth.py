@@ -64,63 +64,6 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-def get_current_user(
-    token: Optional[str] = Depends(oauth2_scheme),
-    admin_token: Optional[str] = Cookie(default=None),
-    db: Session = Depends(get_db)
-):
-    token_to_use = admin_token or token
-    
-    if not token_to_use:
-        return None
-    
-    try:
-        payload = jwt.decode(token_to_use, settings.SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-    except JWTError:
-        return None
-    
-    user = db.query(User).filter(User.username == username).first()
-    return user
-
-def get_current_admin_user(
-    current_user: Optional[User] = Depends(get_current_user)
-):
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
-    return current_user
-
-def is_admin_mode(admin_mode: Optional[str] = Cookie(default=None)):
-    """Check if the admin_mode UI toggle cookie is set.
-    
-    NOTE: This is NOT a security gate. It is a UI safety toggle that prevents
-    accidental destructive actions (like deleting media) when the user is not
-    actively in "admin mode". Actual authentication is enforced separately by
-    get_current_admin_user(), which validates the JWT token.
-    """
-    return admin_mode == "true"
-
-def require_admin_mode(
-    current_user: User = Depends(get_current_admin_user),
-    admin_mode_active: bool = Depends(is_admin_mode)
-):
-    """Require both a valid JWT session AND the admin_mode UI toggle.
-    
-    Security is enforced by get_current_admin_user (JWT validation).
-    The admin_mode check is a UX safeguard against accidental actions.
-    """
-    if not admin_mode_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You need to be logged in as the admin to perform this action"
-        )
-    return current_user
-
 def generate_api_key() -> str:
     """Generate a new API key with 'blom_' prefix"""
     random_part = secrets.token_urlsafe(32)
@@ -135,8 +78,6 @@ def verify_api_key(db: Session, key: str) -> Optional[User]:
     Verify an API key and return the associated User if valid.
     Also updates the last_used_at timestamp.
     """
-    from datetime import datetime
-
     from .models import ApiKey
     
     key_hash = hash_api_key(key)
@@ -171,3 +112,66 @@ def get_current_user_from_api_key(
         return None
     
     return verify_api_key(db, authorization)
+
+def get_current_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    admin_token: Optional[str] = Cookie(default=None),
+    db: Session = Depends(get_db)
+):
+    token_to_use = admin_token or token
+    
+    if not token_to_use:
+        return None
+    
+    if token_to_use.startswith("blom_"):
+        return verify_api_key(db, token_to_use)
+    
+    try:
+        payload = jwt.decode(token_to_use, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+    except JWTError:
+        return None
+    
+    user = db.query(User).filter(User.username == username).first()
+    return user
+
+def get_current_admin_user(
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+    return current_user
+
+def is_admin_mode(admin_mode: Optional[str] = Cookie(default=None)):
+    """Check if the admin_mode UI toggle cookie is set.
+    
+    NOTE: This is NOT a security gate. It is a UI safety toggle that prevents
+    accidental destructive actions (like deleting media) when the user is not
+    actively in "admin mode". Actual authentication is enforced separately by
+    get_current_admin_user(), which validates the JWT token.
+    """
+    return admin_mode == "true"
+
+def require_admin_mode(
+    current_user: User = Depends(get_current_admin_user),
+    admin_mode_active: bool = Depends(is_admin_mode),
+    api_key_user: Optional[User] = Depends(get_current_user_from_api_key)
+):
+    """Require authentication and, for browser sessions, the admin_mode UI toggle.
+
+    Security is enforced by get_current_admin_user (JWT validation).
+    The admin_mode check is a UX safeguard against accidental actions.
+    """
+    if api_key_user:
+        return current_user
+    if not admin_mode_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You need to be logged in as the admin to perform this action"
+        )
+    return current_user
