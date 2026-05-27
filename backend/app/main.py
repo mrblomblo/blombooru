@@ -190,6 +190,8 @@ async def index(request: Request):
         "app_name": settings.APP_NAME,
         "default_sort": settings.get_default_sort(),
         "default_order": settings.get_default_order(),
+        "popular_tags_mode": settings.get_popular_tags_mode(),
+        "popular_tags_limit": settings.get_popular_tags_limit(),
         "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
         "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
@@ -305,6 +307,8 @@ async def albums_page(request: Request):
         "app_name": settings.APP_NAME,
         "default_sort": settings.get_default_sort(),
         "default_order": settings.get_default_order(),
+        "popular_tags_mode": settings.get_popular_tags_mode(),
+        "popular_tags_limit": settings.get_popular_tags_limit(),
         "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
         "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
@@ -322,6 +326,8 @@ async def album_detail_page(request: Request, album_id: int, db: Session = Depen
         "album_id": album_id,
         "default_sort": settings.get_default_sort(),
         "default_order": settings.get_default_order(),
+        "popular_tags_mode": settings.get_popular_tags_mode(),
+        "popular_tags_limit": settings.get_popular_tags_limit(),
         "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
         "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
