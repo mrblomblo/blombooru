@@ -470,6 +470,7 @@ class BaseGallery {
         const bulkAlbumBtn = document.getElementById('bulk-album-btn');
         const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
         const bulkManageTagsBtn = document.getElementById('bulk-manage-tags-btn');
+        const bulkRatingBtn = document.getElementById('bulk-rating-btn');
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => this.handleSelectAll());
@@ -488,6 +489,9 @@ class BaseGallery {
         }
         if (bulkManageTagsBtn) {
             bulkManageTagsBtn.addEventListener('click', () => this.openBulkManageTagsModal());
+        }
+        if (bulkRatingBtn) {
+            bulkRatingBtn.addEventListener('click', () => this.bulkChangeRating());
         }
     }
 
@@ -937,6 +941,27 @@ class BaseGallery {
 
     async bulkRemove() {
         // Override in subclass if needed
+    }
+
+    bulkChangeRating() {
+        const itemCount = this.selectedItems.size;
+        if (itemCount === 0) return;
+
+        if (typeof BulkRatingModal === 'undefined') {
+            console.warn('BulkRatingModal not loaded');
+            return;
+        }
+
+        if (!this.bulkRatingModal) {
+            this.bulkRatingModal = new BulkRatingModal({
+                onSave: () => {
+                    this.clearSelection();
+                    this.loadContent();
+                }
+            });
+        }
+
+        this.bulkRatingModal.show(this.selectedItems);
     }
 
     // ==================== Tooltip ====================
