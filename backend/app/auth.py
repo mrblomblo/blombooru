@@ -121,7 +121,11 @@ def get_current_user(
     token_to_use = admin_token or token
     
     if not token_to_use:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     if token_to_use.startswith("blom_"):
         return verify_api_key(db, token_to_use)
