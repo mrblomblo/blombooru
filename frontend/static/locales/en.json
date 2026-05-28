@@ -690,6 +690,9 @@
             "message": "Are you sure you want to remove {count} item(s) from this album?",
             "title": "Remove from Album"
         },
+        "bulk_rating": {
+            "title": "Change Rating"
+        },
         "buttons": {
             "save_all": "Save All",
             "saving": "Saving..."

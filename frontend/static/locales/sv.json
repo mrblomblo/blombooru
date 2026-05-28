@@ -690,6 +690,9 @@
             "message": "Är du säker på att du vill ta bort {count} objekt från detta album?",
             "title": "Ta bort från album"
         },
+        "bulk_rating": {
+            "title": "Ändra betyg"
+        },
         "buttons": {
             "save_all": "Spara alla",
             "saving": "Sparar..."

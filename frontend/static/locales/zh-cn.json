@@ -690,6 +690,9 @@
             "message": "您确定要从该相册中移除这 {count} 个项目吗？",
             "title": "从相册移除"
         },
+        "bulk_rating": {
+            "title": ""
+        },
         "buttons": {
             "save_all": "全部保存",
             "saving": "正在保存..."
