@@ -12,8 +12,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
         <div class="xl:col-span-4 lg:col-span-3">
             {{ bulk_actions(['select_all', 'deselect_all', 'delete', 'album', 'manage_tags', 'rating']) }}
 
-            <div id="gallery-grid"
-                data-popular-tags-mode="{{ popular_tags_mode }}"
+            <div id="gallery-grid" data-popular-tags-mode="{{ popular_tags_mode }}"
                 data-popular-tags-limit="{{ popular_tags_limit }}"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
             </div>
@@ -45,6 +44,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
 <script src="/static/js/bulk-manage-tags-modal.js?v={{ cache_buster }}"></script>
 <script src="/static/js/bulk-manual-tag-editor-modal.js?v={{ cache_buster }}"></script>
 <script src="/static/js/bulk-ai-tags-modal.js?v={{ cache_buster }}"></script>
+<script src="/static/js/bulk-rating-modal.js?v={{ cache_buster }}"></script>
 <script src="/static/js/bulk-wd-tagger-modal.js?v={{ cache_buster }}"></script>
 <script src="/static/js/base-gallery.js?v={{ cache_buster }}"></script>
 <script src="/static/js/gallery.js?v={{ cache_buster }}"></script>
