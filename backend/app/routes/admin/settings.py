@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from ...config import APP_VERSION
+
 from ...auth import get_current_admin_user, require_admin_mode
 from ...config import settings
 from ...models import User
@@ -95,6 +97,17 @@ async def get_current_theme():
     if theme:
         return theme.to_dict()
     return theme_registry.get_theme("default_dark").to_dict()
+
+@router.get("/instance-info")
+async def get_instance_info():
+    """Return harmless instance metadata (public, no auth required)."""
+    return {
+        "app_name": settings.APP_NAME,
+        "app_version": APP_VERSION,
+        "auth_required": settings.REQUIRE_AUTH,
+        "theme": settings.CURRENT_THEME,
+        "language": settings.CURRENT_LANGUAGE,
+    }
 
 @router.get("/languages")
 async def get_languages():
