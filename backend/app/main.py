@@ -127,6 +127,11 @@ static_path = Path(__file__).parent.parent.parent / "frontend" / "static"
 templates_path = Path(__file__).parent.parent.parent / "frontend" / "templates"
 
 app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+_custom_themes_dir = settings.DATA_DIR / "custom_themes"
+_custom_themes_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/data/themes", StaticFiles(directory=str(_custom_themes_dir)), name="custom_themes")
+
 templates = Jinja2Templates(directory=str(templates_path))
 
 templates.env.globals['app_version'] = APP_VERSION
@@ -174,6 +179,24 @@ app.include_router(system.router)
 app.include_router(booru_import.router)
 app.include_router(booru_config.router)
 app.include_router(tag_implications.router)
+
+def _get_theme_for_context(is_admin: bool = False):
+    """Return the theme dict to inject into template context. Uses the theme's backup theme in the Admin Panel."""
+    from .themes import theme_registry
+    from .custom_themes import get_backup_theme_for
+
+    theme = theme_registry.get_theme(settings.CURRENT_THEME)
+    if theme is None:
+        theme = theme_registry.get_theme("default_dark")
+    if theme is None:
+        return None
+
+    if is_admin and theme.is_custom:
+        backup = get_backup_theme_for(theme.id)
+        if backup:
+            return backup.to_dict()
+
+    return theme.to_dict()
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -223,7 +246,8 @@ async def admin_panel(request: Request):
 
     return templates.TemplateResponse("admin.html", {
         "request": request,
-        "app_name": settings.APP_NAME
+        "app_name": settings.APP_NAME,
+        "current_theme": _get_theme_for_context(is_admin=True),
     })
 
 @app.get("/login", response_class=HTMLResponse)
@@ -344,8 +368,16 @@ async def service_worker():
 async def manifest(request: Request):
     """Dynamic PWA manifest based on settings and theme"""
     from .themes import theme_registry
+    from .custom_themes import get_backup_theme_for
     
     current_theme = theme_registry.get_theme(settings.CURRENT_THEME)
+
+    # For custom themes use the backup theme's PWA colors, because the custom
+    # CSS might not define --primary-color / --background reliably.
+    if current_theme and current_theme.is_custom:
+        backup = get_backup_theme_for(current_theme.id)
+        if backup:
+            current_theme = backup
     
     # Defaults if theme not found
     theme_color = "#3b82f6"
