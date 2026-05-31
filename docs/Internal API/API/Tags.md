@@ -1,7 +1,7 @@
 ## Tags
 
 > [!NOTE]
-> Last updated: `April 27, 2026`
+> Last updated: `May 31, 2026`
 
 **Base path:** `/api/tags`
 
@@ -64,6 +64,28 @@ GET /api/tags/related?tags=tag1,tag2
 ```
 
 Returns up to 20 tags that frequently co-occur with the given set, excluding the input tags.
+
+### Get related tags for a search query
+
+```
+GET /api/tags/search-related?q=<query>&rating=<rating>&limit=20
+```
+
+| Query param | Type | Description |
+|---|---|---|
+| `q` | string | Full search query string (same syntax as `/api/search`) |
+| `rating` | string | Optional rating filter |
+| `limit` | int | Max results (1--100, default: 20) |
+
+Returns the tags most commonly found on the results of the given query, ordered by frequency. Input tags already present in the query are excluded from the results.
+
+**Response:**
+
+```json
+[
+  { "name": "fox", "category": "general", "count": 42, "frequency": 15 }
+]
+```
 
 ### Create tag
 

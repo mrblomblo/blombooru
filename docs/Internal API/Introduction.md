@@ -4,11 +4,33 @@
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling. The docs are also not guaranteed to be up to date with the latest changes in the API.
 
 > [!NOTE]
-> Last updated: `April 27, 2026`  
+> Last updated: `May 31, 2026`  
 > Update date for the docs can be found in the individual doc files.
 
 
 All endpoints are served under the same origin as the blombooru web UI. JSON is returned by default; requests that accept a request body expect `Content-Type: application/json` unless noted otherwise.
+
+---
+
+## Instance Discovery
+
+Before doing anything else, call the instance-info endpoint. It is **always public** (no authentication required) and tells you everything a client needs to bootstrap:
+
+```
+GET /api/admin/instance-info
+```
+
+```json
+{
+  "app_name": "Blombooru",
+  "app_version": "1.2.0",
+  "auth_required": false,
+  "theme": { /* ThemeMetadata */ },
+  "language": { "id": "en", "name": "English", "native_name": "English" }
+}
+```
+
+The `auth_required` field corresponds to the `REQUIRE_AUTH` setting. When it is `true`, Layer 1 authentication (see below) is active and most endpoints will reject unauthenticated requests. When it is `false`, public read access is open and only write endpoints enforce credentials.
 
 ---
 
@@ -83,9 +105,6 @@ curl --request PATCH \
      --data '{"rating":"safe","description":"..."}'
 ```
 
-> [!NOTE]
-> This method *should* work, but doesn't seem to be working at the moment. The recommended method is to use the session cookie jar.
-
 ---
 
 ### Obtaining a JWT via Login
@@ -115,32 +134,13 @@ The login endpoint also sets `admin_token=<jwt>` (HttpOnly) and `admin_mode=true
 
 ---
 
-### Error Reference
-
-| Status | Body | Cause |
-|---|---|---|
-| `401` | `Authentication required` | `REQUIRE_AUTH` is enabled and no valid credential was provided (Layer 1 rejection) |
-| `401` | `Not authenticated` | Route reached but credential was invalid or user not found (route-level rejection) |
-| `403` | `You need to be logged in as the admin...` | Valid credential provided but `admin_mode=true` cookie is absent (Layer 2 rejection) |
-
-> [!NOTE]
-> When `REQUIRE_AUTH` is `false`, Layer 1 is bypassed. Layer 2 (`admin_mode=true` cookie) is always active for write endpoints regardless.
-
----
-
 ## Common Types
 
-### Rating
-
-`"safe"` | `"questionable"` | `"explicit"`
-
-### Tag Category
-
-`"general"` | `"artist"` | `"character"` | `"copyright"` | `"meta"`
-
-### File Type
-
-`"image"` | `"video"` | `"gif"`
+| Type | Values |
+|---|---|
+| **Rating** | `"safe"` \| `"questionable"` \| `"explicit"` |
+| **Tag Category** | `"general"` \| `"artist"` \| `"character"` \| `"copyright"` \| `"meta"` |
+| **File Type** | `"image"` \| `"video"` \| `"gif"` |
 
 ---
 
@@ -154,30 +154,39 @@ All error responses follow the FastAPI default format:
 
 ### Common Status Codes
 
-| Code | Meaning |
-|---|---|
-| 400 | Bad request / validation error |
-| 401 | Missing or invalid credentials |
-| 403 | Authenticated but `admin_mode` not active |
-| 404 | Resource not found |
-| 409 | Conflict (e.g. duplicate media hash) |
-| 429 | Rate limited (login attempts) |
-| 500 | Internal server error |
-| 502 | External service error (e.g. GitHub API unreachable) |
+| Code | Meaning | Notes |
+|---|---|---|
+| 400 | Bad request / validation error | |
+| 401 | Missing or invalid credentials | `"Authentication required"` = Layer 1 rejection; `"Not authenticated"` = invalid credential |
+| 403 | Authenticated but `admin_mode` not active | Layer 2 rejection; supply `Cookie: admin_mode=true` |
+| 404 | Resource not found | |
+| 409 | Conflict | e.g. duplicate media hash |
+| 429 | Rate limited | Login endpoint only |
+| 500 | Internal server error | |
+| 502 | External service error | e.g. GitHub API or remote booru unreachable |
+
+> [!NOTE]
+> When `REQUIRE_AUTH` is `false`, Layer 1 is bypassed entirely. Layer 2 (`admin_mode=true` cookie) is always enforced for write endpoints regardless.
 
 ## API Endpoints
 
 | Category | Description | Link |
 |---|---|---|
+| **AI Tagger** | WDv3 model tag prediction | [AI Tagger](/docs/Internal%20API/API/AI%20Tagger.md) |
 | **Albums** | Album management, contents, hierarchy | [Albums](/docs/Internal%20API/API/Albums.md) |
 | **Booru Config** | External booru credentials | [Booru Config](/docs/Internal%20API/API/Booru%20Config.md) |
+| **Booru Import** | Fetch and download posts from external boorus | [Booru Import](/docs/Internal%20API/API/Booru%20Import.md) |
 | **Media** | Media listing, uploading, and updating | [Media](/docs/Internal%20API/API/Media.md) |
 | **Search** | Tag-based search and random media | [Search](/docs/Internal%20API/API/Search.md) |
+| **Shared Media** | Public endpoints for shared media links | [Shared Media](/docs/Internal%20API/API/Shared%20Media.md) |
 | **Tag Implications** | Tag implication rules | [Tag Implications](/docs/Internal%20API/API/Tag%20Implications.md) |
 | **Tags** | Tag listing, related tags, autocomplete | [Tags](/docs/Internal%20API/API/Tags.md) |
 | **Updates** | System update and release checking | [Updates](/docs/Internal%20API/API/Updates.md) |
 | **Admin: API Keys** | API key generation and management | [Admin/API Management](/docs/Internal%20API/API/Admin/API%20Management.md) |
 | **Admin: Auth & Account** | Admin login, admin mode, credentials | [Admin/Auth and Account](/docs/Internal%20API/API/Admin/Auth%20and%20Account.md) |
-| **Admin: Media Stats** | Untracked file scanning and metrics | [Admin/Media](/docs/Internal%20API/API/Admin/Media.md) |
-| **Admin: Settings** | App configuration, Redis, Themes | [Admin/Settings](/docs/Internal%20API/API/Admin/Settings.md) |
+| **Admin: Backup & Import** | Tag/media export and full backup import | [Admin/Backup](/docs/Internal%20API/API/Admin/Backup.md) |
+| **Admin: Custom Themes** | Custom theme CRUD and import/export | [Admin/Custom Themes](/docs/Internal%20API/API/Admin/Custom%20Themes.md) |
+| **Admin: Media** | Untracked file scanning, stats, and thumbnail management | [Admin/Media](/docs/Internal%20API/API/Admin/Media.md) |
+| **Admin: Settings** | App configuration, instance info, themes, languages | [Admin/Settings](/docs/Internal%20API/API/Admin/Settings.md) |
+| **Admin: Shared Tags** | Shared tag database sync and status | [Admin/Shared Tags](/docs/Internal%20API/API/Admin/Shared%20Tags.md) |
 | **Admin: Tags Management** | Tag CSV imports, bulk operations | [Admin/Tags](/docs/Internal%20API/API/Admin/Tags.md) |

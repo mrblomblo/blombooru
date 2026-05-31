@@ -1,7 +1,7 @@
 ## Admin: Settings
 
 > [!NOTE]
-> Last updated: `May 29, 2026`
+> Last updated: `May 31, 2026`
 
 **Base path:** `/api/admin`
 
@@ -41,6 +41,9 @@ Content-Type: application/json
 
 All fields are optional; only supplied fields are updated.
 
+> [!NOTE]
+> Password fields (`redis.password`, `shared_tags.password`) are returned as `"***"` by `GET /api/admin/settings`. Sending `"***"` back in a PATCH leaves the stored password unchanged. Send `null` to clear a password, or send the new plaintext value to change it.
+
 ### Test Redis connection
 
 Requires `require_admin_mode`.
@@ -56,26 +59,54 @@ Content-Type: application/json
 
 ### Get available themes
 
+No auth required.
+
 ```
 GET /api/admin/themes
 ```
 
-### Get instance info (public)
+**Response:** `{ "themes": ThemeMetadata[], "current_theme": "default_dark" }`
+
+### Get instance info
+
+No auth required. Returns harmless public metadata consumed by the frontend on first load.
 
 ```
 GET /api/admin/instance-info
 ```
 
-Returns the instance info including theme, version, and if auth is required for media viewing.
+**Response:**
+
+```json
+{
+  "app_name": "Blombooru",
+  "app_version": "1.2.0",
+  "auth_required": false,
+  "theme": { /* ThemeMetadata */ },
+  "language": {
+    "id": "en",
+    "name": "English",
+    "native_name": "English"
+  }
+}
+```
 
 ### Get available languages
+
+No auth required.
 
 ```
 GET /api/admin/languages
 ```
 
+**Response:** `{ "languages": LanguageMetadata[], "current_language": "en" }`
+
 ### Get translations
+
+No auth required.
 
 ```
 GET /api/admin/translations?lang=en
 ```
+
+Returns the full translation string map for the requested language (or the currently configured language if `lang` is omitted).

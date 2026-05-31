@@ -1,7 +1,7 @@
 ## Albums
 
 > [!NOTE]
-> Last updated: `April 27, 2026`
+> Last updated: `May 31, 2026`
 
 **Base path:** `/api/albums`
 
@@ -13,8 +13,8 @@ GET /api/albums
 
 | Query param | Type | Default | Description |
 |---|---|---|---|
-| `page` | int | 1 | |
-| `limit` | int | settings | |
+| `page` | int | 1 | Page number |
+| `limit` | int | settings | Items per page |
 | `sort` | string | `created_at` | `created_at`, `name`, `last_modified` |
 | `order` | string | `desc` | `asc` or `desc` |
 | `rating` | string | | Rating filter |
@@ -84,12 +84,12 @@ GET /api/albums/{id}/contents
 
 | Query param | Type | Default | Description |
 |---|---|---|---|
-| `page` | int | 1 | |
-| `limit` | int | settings | |
+| `page` | int | 1 | Page number |
+| `limit` | int | settings | Items per page |
 | `q` | string | | Tag search query applied to media |
 | `rating` | string | | Rating filter |
-| `sort` | string | `uploaded_at` | |
-| `order` | string | `desc` | |
+| `sort` | string | `uploaded_at` | Sort field: `uploaded_at`, `filename`, `file_size` |
+| `order` | string | `desc` | `asc` or `desc` |
 
 **Response:**
 

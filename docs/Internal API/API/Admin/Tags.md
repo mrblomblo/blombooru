@@ -1,7 +1,7 @@
 ## Admin: Tags
 
 > [!NOTE]
-> Last updated: `April 27, 2026`
+> Last updated: `May 31, 2026`
 
 **Base path:** `/api/admin`
 
@@ -67,6 +67,21 @@ DELETE /api/admin/tags/{id}
 ```
 
 Also deletes from the shared tag database if shared tags are enabled.
+
+### Rename or update a tag (admin)
+
+Requires `require_admin_mode`. Renames the tag and/or changes its category.
+
+```
+PUT /api/admin/tags/{id}
+Content-Type: application/json
+
+{ "name": "new_name", "category": "artist" }
+```
+
+Both fields are required. Returns `409` if the new name conflicts with an existing tag or alias.
+
+**Response:** `{ "old_name": "fox", "tag_name": "new_name", "category": "artist" }`
 
 ### Delete all tags
 
