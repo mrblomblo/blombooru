@@ -10,6 +10,7 @@ class Theme:
     is_dark: bool
     primary_color: str
     background_color: str
+    is_custom: bool = False
     
     def to_dict(self) -> Dict:
         return {
@@ -18,7 +19,8 @@ class Theme:
             "css_path": self.css_path,
             "is_dark": self.is_dark,
             "primary_color": self.primary_color,
-            "background_color": self.background_color
+            "background_color": self.background_color,
+            "is_custom": self.is_custom,
         }
 
 class ThemeRegistry:
@@ -31,6 +33,10 @@ class ThemeRegistry:
     def register_theme(self, theme: Theme) -> None:
         """Register a new theme"""
         self._themes[theme.id] = theme
+
+    def unregister_theme(self, theme_id: str) -> None:
+        """Remove a theme from the registry (used when deleting custom themes)"""
+        self._themes.pop(theme_id, None)
     
     def get_theme(self, theme_id: str) -> Optional[Theme]:
         """Get a theme by ID"""
@@ -39,6 +45,13 @@ class ThemeRegistry:
     def get_all_themes(self) -> List[Theme]:
         """Get all registered themes"""
         return list(self._themes.values())
+    
+    def get_builtin_themes(self) -> List["Theme"]:
+        """Return only the built-in (non-custom) themes, sorted by name."""
+        return sorted(
+            [t for t in self._themes.values() if not t.is_custom],
+            key=lambda t: t.name,
+        )
     
     def theme_exists(self, theme_id: str) -> bool:
         """Check if a theme exists"""
@@ -200,3 +213,11 @@ class ThemeRegistry:
         ))
 
 theme_registry = ThemeRegistry()
+
+# Register custom themes saved on disk so they appear in the picker at startup.
+try:
+    from .custom_themes import custom_theme_manager
+    custom_theme_manager.load_from_disk()
+except Exception as _e:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(f"Could not load custom themes: {_e}")
