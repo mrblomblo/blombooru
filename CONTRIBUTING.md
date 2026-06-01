@@ -158,7 +158,7 @@ Want to add a new color scheme? Here's how.
 
 4. **Test it!** Select your theme from the theme picker in the Admin Panel and make sure things look right. Check at least the homepage, a media page, and the admin panel.
 
-When creating your PR, please include at least one screenshot. The homepage is a good choice since it showcases many different elements.
+When creating your PR, please include at least one screenshot. A screenshot of the `/theme-preview` page (`http://127.0.0.1:8000/theme-preview`) is mandatory.
 
 ### Updating an Existing Theme
 
