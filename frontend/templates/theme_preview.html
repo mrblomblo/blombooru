@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Theme Preview - Blombooru{% endblock %}
+
+{#
+    Theme preview page.
+    Shows the user's current theme's color palette and metadata.
+    The app name is always "Blombooru" for privacy.
+    The custom background is suppressed via the context override.
+    Designed to fit a 1920x1080 (16:9) display without scrolling.
+#}
+
+{% block head_extra %}
+<style>
+    /* Lock the main scroll container for this page only */
+    #main-scroll {
+        overflow: hidden !important;
+    }
+
+    .tp-root {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        grid-template-rows: 1fr;
+        gap: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Left panel */
+    .tp-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border-right: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    /* Right panel */
+    .tp-right {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    /* Section label */
+    .tp-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--text-secondary);
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+    }
+
+    /* Swatch row */
+    .tp-swatch-row {
+        display: flex;
+        gap: 0.25rem;
+        align-items: flex-start;
+    }
+
+    .tp-swatch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .tp-swatch-block {
+        width: 100%;
+        height: 2rem;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    /* Tag swatch is slightly taller so the in-swatch label fits */
+    .tp-swatch-block.tag-block {
+        height: 2.25rem;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 2px;
+    }
+
+    .tp-swatch-name {
+        font-size: 0.55rem;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.2;
+        word-break: break-word;
+        width: 100%;
+    }
+
+    .tp-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Identity block */
+    .tp-identity {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    /* UI Samples */
+    .tp-samples {
+        padding: 0.75rem 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        overflow: hidden;
+    }
+
+    /* Privacy note at the very bottom of the left panel */
+    .tp-note {
+        padding: 0.5rem 1rem;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    /* Sample header strip */
+    .tp-header-sample {
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.35rem 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tp-root">
+
+    {# ======================================================
+       LEFT PANEL — identity + UI samples
+    ====================================================== #}
+    <div class="tp-left">
+
+        {# ---- Theme identity ---- #}
+        <div class="tp-identity">
+            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                {# Primary colour swatch #}
+                <div style="
+                    width: 2.5rem; height: 2.5rem; flex-shrink: 0; border: 1px solid var(--border);
+                    background-color: {{ current_theme.primary_color if current_theme else 'var(--primary-color)' }};
+                "></div>
+
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                        <span style="font-weight: 700; font-size: 0.8rem;">
+                            {{ current_theme.name if current_theme else 'Unknown' }}
+                        </span>
+                        {% if current_theme and current_theme.is_custom %}
+                        <span style="font-size: 0.6rem; padding: 1px 5px; border: 1px solid var(--primary-color); color: var(--primary-color);">
+                            Custom
+                        </span>
+                        {% endif %}
+                        {% if current_theme %}
+                        <span class="text-secondary" style="font-size: 0.6rem; padding: 1px 5px; border: 1px solid var(--border);">
+                            {{ 'Dark' if current_theme.is_dark else 'Light' }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {% if current_theme and current_theme.is_custom and backup_theme %}
+                    <div class="text-secondary" style="font-size: 0.65rem; margin-bottom: 0.2rem;">
+                        Backup: <span style="color: var(--text); font-weight: 500;">{{ backup_theme.name }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div style="display: flex; gap: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.3rem;">
+                            <span style="
+                                display: inline-block; width: 0.6rem; height: 0.6rem;
+                                border-radius: 50%; border: 1px solid var(--border);
+                                background-color: {{ current_theme.primary_color if current_theme else '#3b82f6' }};
+                            "></span>
+                            <code class="text-secondary" style="font-size: 0.6rem;">
+                                {{ current_theme.primary_color if current_theme else '—' }}
+                            </code>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.3rem;">
+                            <span style="
+                                display: inline-block; width: 0.6rem; height: 0.6rem;
+                                border-radius: 50%; border: 1px solid var(--border);
+                                background-color: {{ current_theme.background_color if current_theme else '#0f172a' }};
+                            "></span>
+                            <code class="text-secondary" style="font-size: 0.6rem;">
+                                {{ current_theme.background_color if current_theme else '—' }}
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ---- UI Samples ---- #}
+        <div class="tp-samples">
+
+            {# Page heading #}
+            <div style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
+                <h1 style="font-weight: 700; font-size: 0.8rem; margin-bottom: 0.1rem;">Theme Preview</h1>
+                <p class="text-secondary" style="font-size: 0.65rem;">Active theme colour palette and identity.</p>
+            </div>
+
+            {# Sample header #}
+            <div class="tp-section">
+                <p class="tp-label">Header sample</p>
+                <div class="tp-header-sample">
+                    <span style="font-weight: 700; font-size: 0.75rem; color: var(--primary-color);">Blombooru</span>
+                    <div style="display: flex; gap: 0.4rem;">
+                        <span class="bg" style="border: 1px solid var(--border); padding: 2px 8px; font-size: 0.65rem;">Albums</span>
+                        <span class="bg" style="border: 1px solid var(--border); padding: 2px 8px; font-size: 0.65rem;">Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            {# Tags #}
+            <div class="tp-section">
+                <p class="tp-label">Tags</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.2rem;">
+                    <span class="tag artist" style="color: var(--tag-text);">artist_name</span>
+                    <span class="tag character" style="color: var(--tag-text);">character_name</span>
+                    <span class="tag copyright" style="color: var(--tag-text);">copyright</span>
+                    <span class="tag general" style="color: var(--tag-text);">general_tag</span>
+                    <span class="tag meta" style="color: var(--tag-text);">meta</span>
+                </div>
+            </div>
+
+            {# Controls #}
+            <div class="tp-section">
+                <p class="tp-label">Controls</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;">
+                    <button style="padding: 2px 10px; font-size: 0.65rem; border: 1px solid var(--border); background: var(--background); color: var(--text);">Default</button>
+                    <button style="padding: 2px 10px; font-size: 0.65rem; border: 1px solid var(--primary-color); background: var(--primary-color); color: var(--primary-text);">Primary</button>
+                    <button style="padding: 2px 10px; font-size: 0.65rem; border: 1px solid var(--green); background: var(--green); color: var(--primary-text);">Success</button>
+                    <button style="padding: 2px 10px; font-size: 0.65rem; border: 1px solid var(--red); background: var(--red); color: var(--primary-text);">Danger</button>
+                    <input type="text" placeholder="Input field"
+                           style="padding: 2px 8px; font-size: 0.65rem; border: 1px solid var(--border); background: var(--background); color: var(--text); outline: none; width: 7rem;"
+                           readonly>
+                </div>
+            </div>
+
+            {# Typography #}
+            <div class="tp-section">
+                <p class="tp-label">Typography</p>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                    <p style="font-weight: 700; font-size: 0.75rem;">Primary text — bold heading</p>
+                    <p style="font-size: 0.65rem;">Regular body text used throughout the interface.</p>
+                    <p class="text-secondary" style="font-size: 0.65rem;">Secondary text for labels and supplementary info.</p>
+                    <p class="text-tertiary" style="font-size: 0.65rem;">Tertiary text for the quietest metadata.</p>
+                    <a href="#" style="font-size: 0.65rem; color: var(--primary-color);" onclick="return false;">Link / primary accent</a>
+                </div>
+            </div>
+
+        </div>
+
+        {# ---- Privacy note ---- #}
+        <div class="tp-note">
+            <p class="text-tertiary" style="font-size: 0.6rem;">
+                Private page — your instance name is not shown here.
+            </p>
+        </div>
+
+    </div>
+
+    {# ======================================================
+       RIGHT PANEL — full colour palette
+    ====================================================== #}
+    <div class="tp-right">
+
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-shrink: 0;">
+            <h2 style="font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Colour Palette</h2>
+        </div>
+
+        {# Core #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Core</p>
+            <div class="tp-swatch-row">
+                {% set core_vars = [
+                    ('--primary-color',      'Primary'),
+                    ('--primary-hover',      'Prim. Hover'),
+                    ('--background',         'Background'),
+                    ('--surface',            'Surface'),
+                    ('--surface-hover',      'Surf. Hover'),
+                    ('--surface-light',      'Surf. Light'),
+                    ('--surface-light-hover','Surf. Lt. Hov'),
+                ] %}
+                {% for var, label in core_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Text #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Text</p>
+            <div class="tp-swatch-row">
+                {% set text_vars = [
+                    ('--text',           'Text'),
+                    ('--text-secondary', 'Secondary'),
+                    ('--text-tertiary',  'Tertiary'),
+                    ('--primary-text',   'On Primary'),
+                    ('--tag-text',       'Tag Text'),
+                ] %}
+                {% for var, label in text_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Accents & Border #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Accents &amp; Border</p>
+            <div class="tp-swatch-row">
+                {% set accent_vars = [
+                    ('--border',  'Border'),
+                    ('--green',   'Green'),
+                    ('--orange',  'Orange'),
+                    ('--red',     'Red'),
+                    ('--blue',    'Blue'),
+                    ('--white',   'White'),
+                    ('--black',   'Black'),
+                ] %}
+                {% for var, label in accent_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Semantic (success/warning/danger/info) #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Semantic</p>
+            <div class="tp-swatch-row">
+                {% set semantic_vars = [
+                    ('--success',       'Success'),
+                    ('--success-hover', 'Succ. Hover'),
+                    ('--info',          'Info'),
+                    ('--info-hover',    'Info Hover'),
+                    ('--warning',       'Warning'),
+                    ('--warning-hover', 'Warn. Hover'),
+                    ('--danger',        'Danger'),
+                    ('--danger-hover',  'Dang. Hover'),
+                ] %}
+                {% for var, label in semantic_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Tag categories #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Tag Categories</p>
+            <div class="tp-swatch-row">
+                {% set tag_vars = [
+                    ('--tag-artist',    'Artist'),
+                    ('--tag-character', 'Character'),
+                    ('--tag-copyright', 'Copyright'),
+                    ('--tag-general',   'General'),
+                    ('--tag-meta',      'Meta'),
+                ] %}
+                {% for var, label in tag_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block tag-block" style="background-color: var({{ var }});">
+                        <span style="color: var(--tag-text); font-size: 0.5rem; font-weight: 600;">{{ label }}</span>
+                    </div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Media outlines #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Media Outlines</p>
+            <div class="tp-swatch-row">
+                {% set outline_vars = [
+                    ('--video-outline',  'Video'),
+                    ('--gif-outline',    'GIF'),
+                    ('--parent-outline', 'Parent'),
+                    ('--child-outline',  'Child'),
+                ] %}
+                {% for var, label in outline_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+                {# fill remaining flex space so swatch row doesn't stretch #}
+                <div style="flex: 3 1 0;"></div>
+            </div>
+        </div>
+
+        {# Rating #}
+        <div class="tp-section" style="flex-shrink: 0;">
+            <p class="tp-label">Ratings</p>
+            <div class="tp-swatch-row">
+                {% set rating_vars = [
+                    ('--rating-safe',         'Safe'),
+                    ('--rating-questionable', 'Questionable'),
+                    ('--rating-explicit',     'Explicit'),
+                ] %}
+                {% for var, label in rating_vars %}
+                <div class="tp-swatch">
+                    <div class="tp-swatch-block" style="background-color: var({{ var }});"></div>
+                    <span class="tp-swatch-name">{{ label }}</span>
+                </div>
+                {% endfor %}
+                <div style="flex: 4 1 0;"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

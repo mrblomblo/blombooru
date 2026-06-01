@@ -357,6 +357,56 @@ async def album_detail_page(request: Request, album_id: int, db: Session = Depen
         "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })
 
+@app.get("/theme-preview", response_class=HTMLResponse, include_in_schema=False)
+async def theme_preview_page(request: Request):
+    """Private theme preview page. Shows the current theme's palette.
+
+    Requires authentication. The instance name is always shown as 'Blombooru',
+    and the custom background is suppressed for privacy.
+    """
+    from .auth import get_current_user
+    from .database import SessionLocal
+    from urllib.parse import quote
+
+    admin_token = request.cookies.get("admin_token")
+    authenticated = False
+    if admin_token and SessionLocal is not None:
+        db = SessionLocal()
+        try:
+            user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
+            if user is not None:
+                authenticated = True
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+    if not authenticated:
+        return_url = quote("/theme-preview")
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/login?return={return_url}", status_code=302)
+
+    from .themes import theme_registry
+    from .custom_themes import get_backup_theme_for
+
+    theme = theme_registry.get_theme(settings.CURRENT_THEME)
+    if theme is None:
+        theme = theme_registry.get_theme("default_dark")
+
+    backup_theme = None
+    if theme and theme.is_custom:
+        backup_theme = get_backup_theme_for(theme.id)
+
+    context = {
+        "request": request,
+        "app_name": "Blombooru",
+        "current_theme": theme.to_dict() if theme else None,
+        "backup_theme": backup_theme.to_dict() if backup_theme else None,
+        "custom_background": lambda: {"enabled": False},
+    }
+
+    return templates.TemplateResponse("theme_preview.html", context)
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse(str(static_path / "favicon.ico"))
