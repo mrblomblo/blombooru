@@ -19,7 +19,7 @@ from .database import get_db, init_db, init_engine
 from .models import Media, Album
 from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
                      danbooru, media, search, sharing, system, tag_implications,
-                     tags)
+                     tags, instance_info)
 from .translations import language_registry, translation_helper
 from .utils.logger import logger
 
@@ -168,6 +168,7 @@ def _is_authenticated_admin(request) -> bool:
 templates.env.globals['is_admin'] = _is_authenticated_admin
 
 app.include_router(admin.router)
+app.include_router(instance_info.router)
 app.include_router(media.router)
 app.include_router(tags.router)
 app.include_router(search.router)

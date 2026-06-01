@@ -38,7 +38,7 @@
         // Load theme on page load
         (async function loadTheme() {
             try {
-                const response = await fetch('/api/admin/instance-info');
+                const response = await fetch('/api/instance-info');
                 const data = await response.json();
 
                 const themeLink = document.getElementById('theme-stylesheet');

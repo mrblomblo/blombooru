@@ -1,7 +1,7 @@
 ## Admin: Settings
 
 > [!NOTE]
-> Last updated: `May 31, 2026`
+> Last updated: `June 1, 2026`
 
 **Base path:** `/api/admin`
 
@@ -66,30 +66,6 @@ GET /api/admin/themes
 ```
 
 **Response:** `{ "themes": ThemeMetadata[], "current_theme": "default_dark" }`
-
-### Get instance info
-
-No auth required. Returns harmless public metadata consumed by the frontend on first load.
-
-```
-GET /api/admin/instance-info
-```
-
-**Response:**
-
-```json
-{
-  "app_name": "Blombooru",
-  "app_version": "1.2.0",
-  "auth_required": false,
-  "theme": { /* ThemeMetadata */ },
-  "language": {
-    "id": "en",
-    "name": "English",
-    "native_name": "English"
-  }
-}
-```
 
 ### Get available languages
 

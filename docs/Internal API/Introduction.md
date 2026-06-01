@@ -4,7 +4,7 @@
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling. The docs are also not guaranteed to be up to date with the latest changes in the API.
 
 > [!NOTE]
-> Last updated: `May 31, 2026`  
+> Last updated: `June 1, 2026`  
 > Update date for the docs can be found in the individual doc files.
 
 
@@ -17,7 +17,7 @@ All endpoints are served under the same origin as the blombooru web UI. JSON is 
 Before doing anything else, call the instance-info endpoint. It is **always public** (no authentication required) and tells you everything a client needs to bootstrap:
 
 ```
-GET /api/admin/instance-info
+GET /api/instance-info
 ```
 
 ```json
