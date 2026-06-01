@@ -14,7 +14,7 @@ All endpoints are served under the same origin as the blombooru web UI. JSON is 
 
 ## Instance Discovery
 
-Before doing anything else, call the instance-info endpoint. It is **always public** (no authentication required) and tells you everything a client needs to bootstrap:
+Before doing anything else, call the instance-info endpoint. It is **always public** (no authentication required) and tells you everything a client needs to bootstrap. See the [Instance Info](/docs/Internal%20API/API/Instance%20Info.md) documentation for full details on the response payload.
 
 ```
 GET /api/instance-info
@@ -23,9 +23,9 @@ GET /api/instance-info
 ```json
 {
   "app_name": "Blombooru",
-  "app_version": "1.2.0",
+  "app_version": "1.40.0",
   "auth_required": false,
-  "theme": { /* ThemeMetadata */ },
+  "theme": { /* ThemeMetadata with backup theme */ },
   "language": { "id": "en", "name": "English", "native_name": "English" }
 }
 ```
@@ -172,6 +172,7 @@ All error responses follow the FastAPI default format:
 
 | Category | Description | Link |
 |---|---|---|
+| **Instance Info** | Harmless public metadata for clients | [Instance Info](/docs/Internal%20API/API/Instance%20Info.md) |
 | **AI Tagger** | WDv3 model tag prediction | [AI Tagger](/docs/Internal%20API/API/AI%20Tagger.md) |
 | **Albums** | Album management, contents, hierarchy | [Albums](/docs/Internal%20API/API/Albums.md) |
 | **Booru Config** | External booru credentials | [Booru Config](/docs/Internal%20API/API/Booru%20Config.md) |
