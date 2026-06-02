@@ -55,6 +55,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send, Message
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler (startup and shutdown)"""
+    cleanup_task = None
     # Startup
     if settings.DEBUG:
         logger.warning("DEBUG MODE ENABLED - DO NOT USE IN PRODUCTION")
@@ -75,10 +76,12 @@ async def lifespan(app: FastAPI):
                     try:
                         cleanup_archive_chunks(max_age_seconds=3600)
                         cleanup_media_chunks(max_age_seconds=3600)
+                    except asyncio.CancelledError:
+                        break
                     except Exception as e:
                         logger.error(f"Upload chunks cleanup error: {e}")
 
-            asyncio.create_task(periodic_upload_chunks_cleanup())
+            cleanup_task = asyncio.create_task(periodic_upload_chunks_cleanup())
 
             logger.info("Blombooru started successfully")
         except Exception as e:
@@ -89,6 +92,8 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    if cleanup_task:
+        cleanup_task.cancel()
     try:
         from .routes.ai_tagger import shutdown_tagger_resources
         shutdown_tagger_resources()
