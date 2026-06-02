@@ -32,13 +32,17 @@ class GelbooruClient(BooruClient):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.user_id = user_id
+
+        # Don't leak auth params to image URLs.
+        self._auth_params = {}
+        if api_key and user_id:
+            self._auth_params = {"api_key": api_key, "user_id": user_id}
+
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": "Blombooru/1.0 (booru-import)",
-            "Accept": "application/json",
+            "Referer": f"{self.base_url}/",
         })
-        if api_key and user_id:
-            self.session.params = {"api_key": api_key, "user_id": user_id}
 
     @classmethod
     def can_handle_url(cls, url: str) -> bool:
@@ -66,10 +70,11 @@ class GelbooruClient(BooruClient):
 
     def _request_with_retry(self, url: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """Make a GET request with basic retry/backoff for rate limits."""
+        merged_params = {**self._auth_params, **(params or {})}
         last_error = None
         for attempt in range(self.MAX_RETRIES + 1):
             try:
-                response = self.session.get(url, params=params, timeout=15)
+                response = self.session.get(url, params=merged_params, timeout=15)
                 
                 if response.status_code == 429:
                     # Back off when rate-limited

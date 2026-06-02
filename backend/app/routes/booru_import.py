@@ -282,11 +282,19 @@ async def proxy_image(
         raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
     
     try:
-        client = get_client_for_url(url, db=db)
-        if client:
-            external_resp = client.session.get(url, stream=True, timeout=60)
-        else:
-            external_resp = requests.get(url, stream=True, timeout=60, headers={"User-Agent": "Blombooru/1.0 (booru-import)"})
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        referer = f"{parsed.scheme}://{parsed.netloc}/"
+
+        external_resp = requests.get(
+            url,
+            stream=True,
+            timeout=60,
+            headers={
+                "User-Agent": "Blombooru/1.0 (booru-import)",
+                "Referer": referer,
+            },
+        )
             
         if external_resp.status_code == 403:
             raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_image_403")
