@@ -344,16 +344,17 @@ class ChunkedMediaResponse(FileResponse):
     """
     Limit the maximum size of a single Range request.
     """
-    MAX_RANGE_SIZE = 5 * 1024 * 1024  # 5 MB
+    MAX_RANGE_SIZE = 25 * 1024 * 1024  # 25 MB
 
-    @classmethod
-    def _parse_ranges(cls, range_: str, file_size: int) -> list[tuple[int, int]]:
-        ranges = super()._parse_ranges(range_, file_size)
+    @staticmethod
+    def _parse_range_header(http_range: str, file_size: int) -> list[tuple[int, int]]:
+        from starlette.responses import FileResponse
+        ranges = FileResponse._parse_range_header(http_range, file_size)
         
         capped_ranges = []
         for start, end in ranges:
-            if end - start > cls.MAX_RANGE_SIZE:
-                end = start + cls.MAX_RANGE_SIZE
+            if end - start > ChunkedMediaResponse.MAX_RANGE_SIZE:
+                end = start + ChunkedMediaResponse.MAX_RANGE_SIZE
             capped_ranges.append((start, end))
             
         return capped_ranges
