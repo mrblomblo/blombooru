@@ -1,4 +1,3 @@
-import uuid
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -6,7 +5,6 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..models import Media
 from .logger import logger
-from .media_helpers import sanitize_filename
 from .media_processor import calculate_file_hash
 
 SUPPORTED_EXTENSIONS = {
@@ -33,16 +31,13 @@ def find_untracked_media(db: Session) -> dict:
     tracked_hashes = set()
     # 2. Absolute file paths (backup method)
     tracked_paths = set()
-    # 3. Filenames
-    tracked_filenames = set()
     
     all_media = db.query(Media).all()
     
     for media in all_media:
         if media.hash:
             tracked_hashes.add(media.hash)
-        if media.filename:
-            tracked_filenames.add(media.filename)
+
         if media.path:
             try:
                 abs_path = (settings.BASE_DIR / media.path).resolve()
@@ -60,7 +55,6 @@ def find_untracked_media(db: Session) -> dict:
     logger.info(f"Scanning directory: {original_dir}")
     logger.debug(f"Tracked hashes: {len(tracked_hashes)}")
     logger.debug(f"Tracked paths: {len(tracked_paths)}")
-    logger.debug(f"Tracked filenames: {len(tracked_filenames)}")
     
     for file_path in original_dir.rglob('*'):
         if file_path.is_symlink():
@@ -73,8 +67,6 @@ def find_untracked_media(db: Session) -> dict:
             abs_path = str(file_path.resolve())
             
             if abs_path in tracked_paths:
-                continue
-            if file_path.name in tracked_filenames:
                 continue
             
             file_hash = calculate_file_hash(file_path)
