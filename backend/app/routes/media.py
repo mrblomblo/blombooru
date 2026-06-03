@@ -740,7 +740,7 @@ def cleanup_archive_chunks(max_age_seconds: int = 0):
 @router.post("/archive-chunk")
 async def upload_archive_chunk(
     file: UploadFile = File(...),
-    upload_id: str = Form(...),
+    upload_id: Optional[str] = Form(None),
     chunk_index: int = Form(...),
     total_chunks: int = Form(...),
     filename: str = Form(...),
@@ -749,12 +749,13 @@ async def upload_archive_chunk(
     """Receive a single chunk of an archive upload."""
     import re
 
-    # Validate upload_id is a UUID to prevent path traversal
-    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
-        raise HTTPException(status_code=400, detail="Invalid upload_id")
-
     if chunk_index < 0 or chunk_index >= total_chunks:
         raise HTTPException(status_code=400, detail="Invalid chunk_index")
+
+    if chunk_index == 0 and not upload_id:
+        upload_id = str(uuid.uuid4())
+    elif not upload_id or not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid or missing upload_id")
 
     contents = await file.read()
     if len(contents) > MAX_CHUNK_SIZE:
@@ -775,7 +776,7 @@ async def upload_archive_chunk(
     with open(chunk_path, 'wb') as f:
         f.write(contents)
 
-    return {"received": chunk_index, "total": total_chunks}
+    return {"upload_id": upload_id, "received": chunk_index, "total": total_chunks}
 
 @router.post("/extract-archive")
 async def extract_archive(
@@ -976,7 +977,7 @@ def cleanup_media_chunks(max_age_seconds: int = 0):
 @router.post("/upload-chunk")
 async def upload_media_chunk(
     file: UploadFile = File(...),
-    upload_id: str = Form(...),
+    upload_id: Optional[str] = Form(None),
     chunk_index: int = Form(...),
     total_chunks: int = Form(...),
     filename: str = Form(...),
@@ -985,11 +986,13 @@ async def upload_media_chunk(
     """Receive a single chunk of a media upload."""
     import re
 
-    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
-        raise HTTPException(status_code=400, detail="Invalid upload_id")
-
     if chunk_index < 0 or chunk_index >= total_chunks:
         raise HTTPException(status_code=400, detail="Invalid chunk_index")
+
+    if chunk_index == 0 and not upload_id:
+        upload_id = str(uuid.uuid4())
+    elif not upload_id or not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid or missing upload_id")
 
     contents = await file.read()
     if len(contents) > MAX_CHUNK_SIZE:
@@ -1008,7 +1011,7 @@ async def upload_media_chunk(
     with open(chunk_path, 'wb') as f:
         f.write(contents)
 
-    return {"received": chunk_index, "total": total_chunks}
+    return {"upload_id": upload_id, "received": chunk_index, "total": total_chunks}
 
 @router.post("/upload-finalize", response_model=MediaResponse)
 async def finalize_chunked_upload(

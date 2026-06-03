@@ -1,7 +1,7 @@
 ## Media
 
 > [!NOTE]
-> Last updated: `April 27, 2026`
+> Last updated: `June 3, 2026`
 
 **Base path:** `/api/media`
 
@@ -173,13 +173,21 @@ POST /api/media/upload-finalize       # Reassemble and process
 
 `upload-chunk` fields (multipart):
 
-| Field | Type | Description |
-|---|---|---|
-| `file` | file | Chunk data (max 99 MB per chunk) |
-| `upload_id` | string | UUID identifying the session |
-| `chunk_index` | int | Zero-based chunk index |
-| `total_chunks` | int | Total number of chunks |
-| `filename` | string | Original filename |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `file` | file | Yes | Chunk data (max 99 MB per chunk) |
+| `upload_id` | string | No on chunk 0, Yes after | UUID identifying the session. Omit on the first chunk (`chunk_index == 0`) and the server will generate one; include the returned value on all subsequent chunks. |
+| `chunk_index` | int | Yes | Zero-based chunk index |
+| `total_chunks` | int | Yes | Total number of chunks |
+| `filename` | string | Yes | Original filename |
+
+`upload-chunk` response:
+
+```json
+{ "upload_id": "<server-assigned uuid>", "received": 0, "total": 4 }
+```
+
+The `upload_id` is present in every chunk response (not just the first) so callers can always retrieve it.
 
 `upload-finalize` fields (multipart): `upload_id`, `rating`, `tags`, `album_ids`, `source`, `category_hints` (same as regular upload).
 
@@ -194,7 +202,11 @@ GET    /api/media/archive-file/{upload_id}/{file_id}  # Fetch extracted file
 DELETE /api/media/archive-cleanup/{upload_id} # Clean up session
 ```
 
-`archive-chunk` and `extract-archive` use the same `upload_id` / `chunk_index` / `total_chunks` / `filename` pattern as chunked upload.
+`archive-chunk` follows the same server-assigned `upload_id` pattern as `upload-chunk` above: omit `upload_id` on `chunk_index == 0` and use the value returned in the response for all subsequent chunks. The response shape is identical:
+
+```json
+{ "upload_id": "<server-assigned uuid>", "received": 0, "total": 2 }
+```
 
 `extract-archive` response:
 

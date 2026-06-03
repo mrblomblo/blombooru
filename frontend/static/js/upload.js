@@ -691,9 +691,9 @@ class Uploader {
         try {
             const CHUNK_SIZE = 99 * 1024 * 1024; // 99MB per chunk
             const totalChunks = Math.ceil(archiveFile.size / CHUNK_SIZE);
-            const uploadId = crypto.randomUUID();
+            let uploadId = null;
 
-            // Upload chunks sequentially
+            // Upload chunks sequentially with the upload_id that's assigned by the server
             for (let i = 0; i < totalChunks; i++) {
                 const start = i * CHUNK_SIZE;
                 const end = Math.min(start + CHUNK_SIZE, archiveFile.size);
@@ -704,7 +704,7 @@ class Uploader {
 
                 const chunkForm = new FormData();
                 chunkForm.append('file', chunk, archiveFile.name);
-                chunkForm.append('upload_id', uploadId);
+                if (uploadId) chunkForm.append('upload_id', uploadId);
                 chunkForm.append('chunk_index', i.toString());
                 chunkForm.append('total_chunks', totalChunks.toString());
                 chunkForm.append('filename', archiveFile.name);
@@ -719,6 +719,9 @@ class Uploader {
                     const detail = errorData?.detail || chunkResponse.statusText;
                     throw new Error(`Failed to upload chunk ${i + 1}/${totalChunks}: ${detail}`);
                 }
+
+                const chunkData = await chunkResponse.json();
+                if (i === 0) uploadId = chunkData.upload_id;
             }
 
             // Trigger extraction
@@ -1114,9 +1117,9 @@ class Uploader {
     async _uploadFileChunked(fileData, uniqueTags, allAlbumIds, chunkSize) {
         const file = fileData.file;
         const totalChunks = Math.ceil(file.size / chunkSize);
-        const uploadId = crypto.randomUUID();
+        let uploadId = null;
 
-        // Upload chunks sequentially
+        // Upload chunks sequentially with the upload_id that's assigned by the server
         for (let i = 0; i < totalChunks; i++) {
             const start = i * chunkSize;
             const end = Math.min(start + chunkSize, file.size);
@@ -1124,7 +1127,7 @@ class Uploader {
 
             const chunkForm = new FormData();
             chunkForm.append('file', chunk, file.name);
-            chunkForm.append('upload_id', uploadId);
+            if (uploadId) chunkForm.append('upload_id', uploadId);
             chunkForm.append('chunk_index', i.toString());
             chunkForm.append('total_chunks', totalChunks.toString());
             chunkForm.append('filename', file.name);
@@ -1139,6 +1142,9 @@ class Uploader {
                 const detail = errorData?.detail || chunkResponse.statusText;
                 throw new Error(`Failed to upload chunk ${i + 1}/${totalChunks}: ${detail}`);
             }
+
+            const chunkData = await chunkResponse.json();
+            if (i === 0) uploadId = chunkData.upload_id;
         }
 
         // Reassemble and process
