@@ -27,15 +27,49 @@ async def scan_media(
         'files': [f['path'] for f in result['files']]
     }
 
+@router.get("/get-untracked-file-info")
+async def get_untracked_file_info(
+    path: str,
+    current_user: User = Depends(require_admin_mode)
+):
+    """Return metadata (name, size, mime_type) for an untracked file without serving its bytes."""
+    import mimetypes
+    
+    file_path = Path(path)
+    
+    if not file_path.is_absolute():
+        raise HTTPException(status_code=400, detail="Invalid file path")
+    
+    try:
+        file_path = file_path.resolve()
+        if not file_path.is_relative_to(settings.ORIGINAL_DIR.resolve()):
+            raise ValueError()
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if not mime_type:
+        mime_type = "application/octet-stream"
+    
+    stat = file_path.stat()
+    
+    return {
+        "name": file_path.name,
+        "size": stat.st_size,
+        "mime_type": mime_type,
+    }
+
 @router.get("/get-untracked-file")
 async def get_untracked_file(
     path: str,
     current_user: User = Depends(require_admin_mode)
 ):
-    """Serve an untracked file for importing"""
+    """Serve an untracked file for importing. Used for direct preview usage."""
     import mimetypes
-    from pathlib import Path
-
+    
     from fastapi.responses import FileResponse
     
     file_path = Path(path)
