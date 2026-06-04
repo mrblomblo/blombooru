@@ -50,6 +50,46 @@ span.checked:hover {
     background-color: var(--primary-hover);
 }
 
+/* Header logo and title styling
+   Override these in your theme or custom CSS to customise the logo colors.
+   --logo-icon-primary  : fill color for the outer SVG shape (defaults to --primary-color)
+   --logo-icon-secondary: fill color for the inner SVG glyph (defaults to --primary-text)
+   --logo-text-color    : color of the app-name text next to the logo (defaults to --primary-color)
+
+   To use a raster image (PNG, WebP, etc.) instead of the SVG, set
+   display:none on #header-logo-svg and display:block on #header-logo-img, then point src at your image.
+*/
+:root {
+    --logo-icon-primary: var(--primary-color);
+    --logo-icon-secondary: var(--primary-text);
+    --logo-text-color: var(--primary-color);
+}
+
+#header-logo {
+    color: var(--logo-text-color);
+}
+
+#header-logo-title {
+    color: var(--logo-text-color);
+    transition: color 0.15s;
+}
+
+/* SVG path fills - controlled via CSS variables so themes can override them */
+#header-logo-svg path:nth-child(1) {
+    fill: var(--logo-icon-primary);
+}
+
+#header-logo-svg path:nth-child(2) {
+    fill: var(--logo-icon-secondary);
+}
+
+#header-logo-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: none;
+}
+
 /* Tag input styling */
 #tags-input:empty:before,
 [contenteditable="true"]:empty:before,
