@@ -57,12 +57,14 @@ span.checked:hover {
    --logo-text-color    : color of the app-name text next to the logo (defaults to --primary-color)
 
    To use a raster image (PNG, WebP, etc.) instead of the SVG, set
-   display:none on #header-logo-svg and display:block on #header-logo-img, then point src at your image.
+   display:none on #header-logo-svg and display:block on #header-logo-img,
+   then set content:url('your-image.png') on #header-logo-img
 */
 :root {
     --logo-icon-primary: var(--primary-color);
     --logo-icon-secondary: var(--primary-text);
     --logo-text-color: var(--primary-color);
+    --logo-text-hover-color: var(--primary-hover);
 }
 
 #header-logo {
@@ -74,7 +76,10 @@ span.checked:hover {
     transition: color 0.15s;
 }
 
-/* SVG path fills - controlled via CSS variables so themes can override them */
+#header-logo:hover #header-logo-title {
+    color: var(--logo-text-hover-color);
+}
+
 #header-logo-svg path:nth-child(1) {
     fill: var(--logo-icon-primary);
 }
@@ -84,9 +89,9 @@ span.checked:hover {
 }
 
 #header-logo-img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
+    max-height: 28px;
+    width: auto;
+    content: url('/static/images/pwa-icon.png');
     display: none;
 }
 
