@@ -69,19 +69,23 @@
     {% set z = (bg.zoom if bg.zoom is defined else 100) / 100.0 %}
     {% set is_intrinsic = (bg.size in ['tile', 'auto']) %}
     {% set inv_z = (1.0 / z) if (is_intrinsic and z > 0 and z < 1.0) else 1.0 %}
-    <div id="custom-background" style="
-        position: fixed; z-index: -1; pointer-events: none;
-        width: {{ 100 * inv_z }}%; height: {{ 100 * inv_z }}%;
-        left: {{ bg.position_x * (1.0 - inv_z) }}%; top: {{ bg.position_y * (1.0 - inv_z) }}%;
-        background-image: url('/api/media/{{ bg.media_id }}/file');
-        background-size: {{ 'auto' if bg.size == 'tile' else bg.size }};
-        background-position: {{ bg.position_x }}% {{ bg.position_y }}%;
-        background-repeat: {{ 'repeat' if bg.size == 'tile' else 'no-repeat' }};
-        transform-origin: {{ bg.position_x }}% {{ bg.position_y }}%;
-        transform: scale({{ z }});
-        opacity: {{ bg.opacity / 100.0 }};
-        filter: blur({{ bg.blur }}px) brightness({{ bg.brightness }}%) saturate({{ bg.saturation }}%) contrast({{ bg.contrast }}%);
-    "></div>
+    <style>
+        #custom-background {
+            position: fixed; z-index: -1; pointer-events: none;
+            width: {{ 100 * inv_z }}%; height: {{ 100 * inv_z }}%;
+            left: {{ bg.position_x * (1.0 - inv_z) }}%; top: {{ bg.position_y * (1.0 - inv_z) }}%;
+            background-image: url('/api/media/{{ bg.media_id }}/file');
+            background-size: {{ 'auto' if bg.size == 'tile' else bg.size }};
+            background-position: {{ bg.position_x }}% {{ bg.position_y }}%;
+            background-repeat: {{ 'repeat' if bg.size == 'tile' else 'no-repeat' }};
+            transform-origin: {{ bg.position_x }}% {{ bg.position_y }}%;
+            transform: scale({{ z }});
+            opacity: {{ bg.opacity / 100.0 }};
+            filter: blur({{ bg.blur }}px) brightness({{ bg.brightness }}%) saturate({{ bg.saturation }}%) contrast({{
+                bg.contrast }}%);
+        }
+    </style>
+    <div id="custom-background"></div>
     {% endif %}
     {% if show_header is not defined or show_header %}
     {% block header %}
