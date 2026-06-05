@@ -6,6 +6,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    {% set _robots_is_shared = is_shared_page if is_shared_page is defined else false %}
+    {% set _robots_is_home_or_search = (request.url.path == '/') %}
+    {% if _robots_is_shared %}
+    <meta name="robots" content="index, follow">
+    {% elif _robots_is_home_or_search %}
+    <meta name="robots" content="{{ 'noindex, nofollow' if require_auth() else 'index, follow' }}">
+    {% else %}
+    <meta name="robots" content="noindex, nofollow">
+    {% endif %}
     {% block pwa %}
     <link rel="manifest" href="/manifest.json?v={{ cache_buster }}">
     <script>
