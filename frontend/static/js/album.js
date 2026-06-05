@@ -52,8 +52,13 @@ class AlbumViewer extends BaseGallery {
                     `<a href="/album/${p.id}" class="hover:text-primary">${p.name}</a>`
                 ).join(' > ');
                 breadcrumbEl.innerHTML = `${rootLink} > ${crumbs} > ${this.album.name}`;
+
+                const titlePath = data.parents.map(p => p.name).join(' > ') + ' > ' + this.album.name;
+                document.title = `${titlePath} - ${window._appName || document.title.split(' - ').pop()}`;
             } else {
                 breadcrumbEl.innerHTML = `${rootLink} > ${this.album.name}`;
+
+                document.title = `${this.album.name} - ${window._appName || document.title.split(' - ').pop()}`;
             }
         } catch (error) {
             console.error('Error loading breadcrumb:', error);

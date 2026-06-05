@@ -38,6 +38,7 @@
     <script>
         window.CURRENT_LANGUAGE = '{{ current_language() }}';
         window.SIDEBAR_FILTER_MODE = '{{ sidebar_filter_mode if sidebar_filter_mode is defined else "" }}';
+        window._appName = '{{ app_name | e }}';
     </script>
     <script id="translations-data" type="application/json">
         {{ get_translations_json() | safe }}

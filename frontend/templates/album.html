@@ -2,6 +2,8 @@
 {% from "components/macros.html" import rating_filter, sorting_options, bulk_actions, page_jump_modal,
 loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar_end %}
 
+{% block title %}{{ t('common.albums') }} - {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
