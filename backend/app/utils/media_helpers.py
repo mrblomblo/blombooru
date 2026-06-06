@@ -373,7 +373,7 @@ async def serve_media_file(file_path: Path, mime_type: str, error_message: str =
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
     
-    cache_headers = {"Cache-Control": "public, max-age=86400, immutable"}
+    cache_headers = {"Cache-Control": "public, max-age=31536000, immutable"}
     
     if not strip_metadata:
         return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers)
