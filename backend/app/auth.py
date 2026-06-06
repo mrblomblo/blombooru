@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -97,21 +97,46 @@ def verify_api_key(db: Session, key: str) -> Optional[User]:
     return api_key.user
 
 def get_current_user_from_api_key(
-    authorization: Optional[str] = Depends(oauth2_scheme),
+    request: Request,
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """
-    FastAPI dependency to get current user from API key.
-    Expects Authorization: Bearer <api_key> header.
+    FastAPI dependency to get current user from any API key presentation:
+    - Authorization: Bearer blom_<key>
+    - Authorization: blom_<key>  (bare, no Bearer prefix)
+    - Authorization: Basic <base64(user:blom_key)>
+    - ?api_key=blom_<key> query parameter
     """
-    if not authorization:
-        return None
-    
-    # Extract the key from "Bearer <key>"
-    if not authorization.startswith("blom_"):
-        return None
-    
-    return verify_api_key(db, authorization)
+    import base64 as _base64
+
+    auth_header = request.headers.get("Authorization", "")
+
+    # Bearer blom_<key>
+    if auth_header.startswith("Bearer blom_"):
+        key = auth_header[7:]
+        return verify_api_key(db, key)
+
+    # Bare blom_<key> (no Bearer prefix)
+    if auth_header.startswith("blom_"):
+        return verify_api_key(db, auth_header)
+
+    # Basic auth with API key as the password field
+    if auth_header.startswith("Basic "):
+        try:
+            decoded = _base64.b64decode(auth_header[6:]).decode("utf-8")
+            if ":" in decoded:
+                _, password = decoded.split(":", 1)
+                if password.startswith("blom_"):
+                    return verify_api_key(db, password)
+        except Exception:
+            pass
+
+    # ?api_key= query parameter
+    api_key = request.query_params.get("api_key")
+    if api_key and api_key.startswith("blom_"):
+        return verify_api_key(db, api_key)
+
+    return None
 
 def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
@@ -121,11 +146,7 @@ def get_current_user(
     token_to_use = admin_token or token
     
     if not token_to_use:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return None
     
     if token_to_use.startswith("blom_"):
         return verify_api_key(db, token_to_use)
@@ -155,25 +176,31 @@ def is_admin_mode(admin_mode: Optional[str] = Cookie(default=None)):
     """Check if the admin_mode UI toggle cookie is set.
     
     NOTE: This is NOT a security gate. It is a UI safety toggle that prevents
-    accidental destructive actions (like deleting media) when the user is not
-    actively in "admin mode". Actual authentication is enforced separately by
-    get_current_admin_user(), which validates the JWT token.
+    accidental destructive actions. Authentication is enforced separately.
     """
     return admin_mode == "true"
 
 def require_admin_mode(
-    current_user: User = Depends(get_current_admin_user),
+    request: Request,
+    current_user: Optional[User] = Depends(get_current_user),
     admin_mode_active: bool = Depends(is_admin_mode),
     api_key_user: Optional[User] = Depends(get_current_user_from_api_key)
 ):
-    """Require authentication and, for browser sessions, the admin_mode UI toggle.
-
-    Security is enforced by get_current_admin_user (JWT validation).
-    The admin_mode check is a UX safeguard against accidental actions.
-    """
+    """Require admin credentials (session JWT or API key) plus the admin_mode UI toggle for browser sessions."""
+    # API key takes priority as API clients don't have the admin_mode cookie
     if api_key_user:
-        return current_user
-    if not admin_mode_active:
+        return api_key_user
+
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Only enforce the admin_mode toggle for browser sessions (identified by the admin_token cookie)
+    has_session_cookie = bool(request.cookies.get("admin_token"))
+    if has_session_cookie and not admin_mode_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You need to be logged in as the admin to perform this action"
