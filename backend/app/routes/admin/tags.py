@@ -251,7 +251,7 @@ async def import_tags_csv(
 
 @router.get("/tag-stats")
 async def get_tag_stats(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Get tag statistics"""
@@ -266,7 +266,7 @@ async def get_tag_stats(
 @router.get("/search-tags")
 async def search_tags(
     q: str,
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Search tags"""
