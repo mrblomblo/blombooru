@@ -28,7 +28,8 @@ def cache_response(expire: int = 3600, key_prefix: str = "cache"):
             
             # Generate cache key based on URL and query params
             url = str(request.url)
-            key = f"{key_prefix}:{hashlib.md5(url.encode()).hexdigest()}"
+            api_key_component = getattr(request.state, "resolved_api_key", None) or ""
+            key = f"{key_prefix}:{hashlib.md5((url + api_key_component).encode()).hexdigest()}"
             
             cached_data = redis_cache.get(key)
             if cached_data:
