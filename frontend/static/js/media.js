@@ -117,6 +117,7 @@ class MediaViewer extends MediaViewerBase {
         if (tagsInput) {
             new TagAutocomplete(tagsInput, {
                 multipleValues: true,
+                allowCreate: true,
                 onSelect: () => {
                     setTimeout(() => this.validateAndStyleTags(), 100);
                 }

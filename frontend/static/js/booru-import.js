@@ -283,6 +283,7 @@ class BooruImporter {
         if (tagsInput && typeof TagAutocomplete !== 'undefined') {
             new TagAutocomplete(tagsInput, {
                 multipleValues: true,
+                allowCreate: true,
                 containerClasses: 'surface border border-color shadow-lg z-50',
             });
         }

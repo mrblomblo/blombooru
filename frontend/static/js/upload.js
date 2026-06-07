@@ -384,6 +384,7 @@ class Uploader {
         if (typeof TagAutocomplete !== 'undefined') {
             new TagAutocomplete(baseTagsInput, {
                 multipleValues: true,
+                allowCreate: true,
                 onSelect: () => {
                     setTimeout(() => {
                         this.tagInputHelper.validateAndStyleTags(baseTagsInput);
@@ -529,6 +530,7 @@ class Uploader {
         if (typeof TagAutocomplete !== 'undefined') {
             new TagAutocomplete(individualTagsInput, {
                 multipleValues: true,
+                allowCreate: true,
                 onSelect: () => {
                     setTimeout(() => {
                         this.tagInputHelper.validateAndStyleTags(individualTagsInput);

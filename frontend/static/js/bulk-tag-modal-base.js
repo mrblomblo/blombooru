@@ -511,6 +511,7 @@ class BulkTagModalBase {
             if (typeof TagAutocomplete !== 'undefined') {
                 new TagAutocomplete(input, {
                     multipleValues: true,
+                    allowCreate: true,
                     containerClasses: 'surface border border-color shadow-lg z-50',
                     onSelect: () => this.triggerValidation(input)
                 });

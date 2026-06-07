@@ -32,6 +32,7 @@ class TagImplicationManager {
             if (typeof TagAutocomplete !== 'undefined') {
                 new TagAutocomplete(this.targetInput, {
                     multipleValues: true,
+                    allowCreate: true,
                     onSelect: () => {
                         setTimeout(() => this.tagInputHelper.validateAndStyleTags(
                             this.targetInput,
@@ -48,6 +49,7 @@ class TagImplicationManager {
             if (typeof TagAutocomplete !== 'undefined') {
                 new TagAutocomplete(this.impliedInput, {
                     multipleValues: true,
+                    allowCreate: true,
                     onSelect: () => {
                         setTimeout(() => this.tagInputHelper.validateAndStyleTags(this.impliedInput), 100);
                     }
