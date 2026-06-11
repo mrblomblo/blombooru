@@ -598,7 +598,9 @@
         "remove_from_album": "Удалить из альбома",
         "select_all": "Выбрать все",
         "selecting_all": "Выбираем все...",
-        "sort_by": "Сортировать по"
+        "sort_by": "Сортировать по",
+        "sort_random": "Случайно",
+        "sort_tag_count": "Кол-во тегов"
     },
     "login": {
         "enter_credentials": "Введите свои учетные данные для доступа к {app_name}",

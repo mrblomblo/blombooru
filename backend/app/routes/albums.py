@@ -20,6 +20,7 @@ from ..utils.album_utils import (get_album_popular_tags, get_album_rating,
                                  update_album_last_modified)
 from ..utils.cache import cache_response, invalidate_album_cache
 from ..utils.logger import logger
+from ..utils.media_sort import apply_media_sort
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
@@ -361,6 +362,7 @@ async def get_album_contents(
     q: Optional[str] = Query(default=None),
     sort: str = Query(default="uploaded_at"),
     order: str = Query(default="desc"),
+    seed: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Get album contents (media + sub-albums, paginated)"""
@@ -410,23 +412,24 @@ async def get_album_contents(
             media_query = media_query.filter(Media.rating.in_(allowed_ratings.get(rating, [])))
     
     # Sort Media
-    media_sort_mapping = {
-        'uploaded_at': Media.id,
-        'filename': Media.filename,
-        'name': Media.filename,
-        'file_size': Media.file_size,
-        'file_type': Media.file_type,
-        'last_modified': Media.id
-    }
-    
-    # Default to Media.id if key not found
-    media_sort_column = media_sort_mapping.get(sort, Media.id)
-    
-    # Apply Sort using column methods
-    if sort_order == "asc":
-        media_query = media_query.order_by(media_sort_column.asc())
+    if sort in ('random', 'tag_count'):
+        media_query = apply_media_sort(media_query, sort, sort_order, db, seed)
     else:
-        media_query = media_query.order_by(media_sort_column.desc())
+        media_sort_mapping = {
+            'uploaded_at': Media.id,
+            'filename': Media.filename,
+            'name': Media.filename,
+            'file_size': Media.file_size,
+            'file_type': Media.file_type,
+            'last_modified': Media.id
+        }
+        
+        media_sort_column = media_sort_mapping.get(sort, Media.id)
+        
+        if sort_order == "asc":
+            media_query = media_query.order_by(media_sort_column.asc())
+        else:
+            media_query = media_query.order_by(media_sort_column.desc())
 
     # Get total count BEFORE pagination
     total_media = media_query.count()

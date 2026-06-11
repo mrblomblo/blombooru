@@ -598,7 +598,9 @@
         "remove_from_album": "Ta bort från album",
         "select_all": "Välj alla",
         "selecting_all": "Väljer alla...",
-        "sort_by": "Sortera efter"
+        "sort_by": "Sortera efter",
+        "sort_random": "Slumpmässig",
+        "sort_tag_count": "Antal taggar"
     },
     "login": {
         "enter_credentials": "Ange dina uppgifter för att komma åt {app_name}",

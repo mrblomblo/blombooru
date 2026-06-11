@@ -84,10 +84,9 @@ class AlbumViewer extends BaseGallery {
         try {
             const params = new URLSearchParams({
                 page: this.currentPage,
-                rating: this.currentRating,
-                sort: this.getSortValue(),
-                order: this.getOrderValue()
+                rating: this.currentRating
             });
+            this.appendSortParams(params);
 
             if (this.currentCustomFilter) {
                 params.set('q', this.currentCustomFilter);
@@ -149,13 +148,6 @@ class AlbumViewer extends BaseGallery {
     onRatingChange() {
         this.loadContent();
         this.loadPopularTagsFromAPI();
-    }
-
-    onSortChange() {
-        this.currentSort = this.getSortValue();
-        this.currentOrder = this.getOrderValue();
-        this.updateUrlParams({ sort: this.currentSort, order: this.currentOrder });
-        this.loadContent();
     }
 
     renderContents(data) {
