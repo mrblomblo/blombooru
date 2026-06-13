@@ -235,10 +235,16 @@
                             </button>
                         </div>
 
-                        <!-- Danger Chain -->
-                        <button id="delete-btn" class="btn-danger w-full px-3 py-1.5">
-                            {{ t('media.actions.delete_media') }}
-                        </button>
+                        <!-- Danger Actions Row -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="update-post-btn"
+                                class="btn w-full px-3 py-1.5 border-danger text-danger hover:bg-danger hover:tag-text">
+                                {{ t('media.actions.update_post') }}
+                            </button>
+                            <button id="delete-btn" class="btn-danger w-full px-3 py-1.5">
+                                {{ t('media.actions.delete_media') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

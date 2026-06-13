@@ -521,6 +521,11 @@ class MediaViewer extends MediaViewerBase {
         this.el('add-to-albums-btn')?.addEventListener('click', () => {
             this.addToAlbums();
         });
+
+        this.el('update-post-btn')?.addEventListener('click', () => {
+            const modal = new UpdatePostModal(this.mediaId, this.currentMedia);
+            modal.show();
+        });
     }
 
     // ==================== WD Tagger Methods ====================
