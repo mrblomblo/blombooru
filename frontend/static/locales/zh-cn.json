@@ -610,7 +610,8 @@
     "media": {
         "actions": {
             "delete_media": "删除媒体",
-            "relations": "关联关系"
+            "relations": "关联关系",
+            "update_post": ""
         },
         "ai_metadata": {
             "title": "AI 生成数据",
@@ -793,6 +794,29 @@
             "confirm": "是的，取消分享",
             "message": "您确定要取消分享此媒体吗？分享链接将失效。",
             "title": "取消分享媒体"
+        },
+        "update_post": {
+            "source_picker_title": "",
+            "from_url": "",
+            "from_url_desc": "",
+            "from_device": "",
+            "from_device_desc": "",
+            "what_to_update": "",
+            "tag_mode": "",
+            "merge_tags": "",
+            "replace_tags": "",
+            "update_file": "",
+            "apply": "",
+            "resolution_upgrade": "",
+            "resolution_same": "",
+            "resolution_smaller": "",
+            "drop_file_here": "",
+            "file_selected": "",
+            "applying": "",
+            "success": "",
+            "error_no_changes": "",
+            "error_identical_file": "",
+            "error_duplicate_file": ""
         }
     },
     "nav": {

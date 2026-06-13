@@ -610,7 +610,8 @@
     "media": {
         "actions": {
             "delete_media": "Удалить медиафайл(ы)",
-            "relations": "Связано с"
+            "relations": "Связано с",
+            "update_post": ""
         },
         "ai_metadata": {
             "show_less": "Показывать меньше",
@@ -793,6 +794,29 @@
             "confirm": "Да, убрать общий доступ",
             "message": "Вы уверены, что хотите отменить публикацию этого медиафайла? Публичная ссылка перестанет работать",
             "title": "Убрать общий доступ к медиафайлу"
+        },
+        "update_post": {
+            "source_picker_title": "",
+            "from_url": "",
+            "from_url_desc": "",
+            "from_device": "",
+            "from_device_desc": "",
+            "what_to_update": "",
+            "tag_mode": "",
+            "merge_tags": "",
+            "replace_tags": "",
+            "update_file": "",
+            "apply": "",
+            "resolution_upgrade": "",
+            "resolution_same": "",
+            "resolution_smaller": "",
+            "drop_file_here": "",
+            "file_selected": "",
+            "applying": "",
+            "success": "",
+            "error_no_changes": "",
+            "error_identical_file": "",
+            "error_duplicate_file": ""
         }
     },
     "nav": {
