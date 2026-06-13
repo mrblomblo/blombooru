@@ -19,7 +19,7 @@ from .database import get_db, init_db, init_engine
 from .models import Media, Album
 from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
                      danbooru, media, search, sharing, system, tag_implications,
-                     tags, instance_info)
+                     tags, instance_info, url_import)
 from .translations import language_registry, translation_helper
 from .utils.logger import logger
 
@@ -246,6 +246,7 @@ app.include_router(ai_tagger.router)
 app.include_router(danbooru.router)
 app.include_router(system.router)
 app.include_router(booru_import.router)
+app.include_router(url_import.router)
 app.include_router(booru_config.router)
 app.include_router(tag_implications.router)
 

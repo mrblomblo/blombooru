@@ -36,6 +36,22 @@
                 <p class="text-xs">{{ t('admin.media_management.drop_media') }}</p>
                 <input type="file" id="file-input" multiple accept="image/*,video/*,.zip,.tar.gz,.tgz">
             </div>
+
+            <div id="url-import-section" class="mt-4 pt-4 border-t">
+                <p class="text-xs text-secondary mb-3">
+                    {{ t('admin.media_management.url_import.hint') }}
+                </p>
+                <div class="flex gap-2 mb-3">
+                    <input type="url" id="url-import-input"
+                        class="flex-1 bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
+                        placeholder="{{ t('admin.media_management.url_import.url_placeholder') }}">
+                    <button id="url-import-fetch-btn" class="btn-primary whitespace-nowrap">
+                        {{ t('admin.media_management.url_import.fetch') }}
+                    </button>
+                </div>
+                <div id="url-import-status" class="mt-3" style="display: none;"></div>
+                <div id="url-import-preview-area" class="mt-3" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
