@@ -302,19 +302,19 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/media-picker-modal.js?v={{ cache_buster }}"></script>
-<script src="/static/js/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
-<script src="/static/js/tooltip-helper.js?v={{ cache_buster }}"></script>
-<script src="/static/js/tag-input-helper.js?v={{ cache_buster }}"></script>
-<script src="/static/js/custom-select.js?v={{ cache_buster }}"></script>
-<script src="/static/js/album-picker.js?v={{ cache_buster }}"></script>
-<script src="/static/js/ai-tag-utils.js?v={{ cache_buster }}"></script>
-<script src="/static/js/media-viewer-base.js?v={{ cache_buster }}"></script>
-<script src="/static/js/update-post-modal-base.js?v={{ cache_buster }}"></script>
-<script src="/static/js/update-post-url-import.js?v={{ cache_buster }}"></script>
-<script src="/static/js/update-post-device-upload.js?v={{ cache_buster }}"></script>
-<script src="/static/js/update-post-modal.js?v={{ cache_buster }}"></script>
-<script src="/static/js/media.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/media-picker-modal.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/tooltip-helper.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/tag-input-helper.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/custom-select.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/album-picker.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/ai-tag-utils.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/media-viewer-base.js?v={{ cache_buster }}"></script>
+<script src="/static/js/update-post/update-post-modal-base.js?v={{ cache_buster }}"></script>
+<script src="/static/js/update-post/update-post-url-import.js?v={{ cache_buster }}"></script>
+<script src="/static/js/update-post/update-post-device-upload.js?v={{ cache_buster }}"></script>
+<script src="/static/js/update-post/update-post-modal.js?v={{ cache_buster }}"></script>
+<script src="/static/js/pages/media.js?v={{ cache_buster }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const mediaId = "{{ media_id }}";
