@@ -1,37 +1,55 @@
-const CACHE_NAME = 'blombooru-1-24-0';
+const CACHE_NAME = 'blombooru-__APP_VERSION__';
+const IS_DEBUG = __DEBUG__;
+
 const STATIC_ASSETS = [
     '/static/css/tailwind.css',
     '/static/css/main.css',
     '/static/images/no-thumbnail.png',
     '/static/images/pwa-icon.png',
     '/static/images/pwa-icon-192.png',
-    '/static/js/admin.js',
-    '/static/js/ai-tag-utils.js',
-    '/static/js/album-picker.js',
-    '/static/js/album.js',
-    '/static/js/albums.js',
-    '/static/js/base-gallery.js',
-    '/static/js/bulk-ai-tags-modal.js',
-    '/static/js/bulk-tag-modal-base.js',
-    '/static/js/bulk-wd-tagger-modal.js',
-    '/static/js/custom-select.js',
-    '/static/js/fullscreen-mediaviewer.js',
-    '/static/js/gallery.js',
-    '/static/js/login.js',
-    '/static/js/main.js',
-    '/static/js/media-viewer-base.js',
-    '/static/js/media.js',
-    '/static/js/modal-helper.js',
-    '/static/js/shared.js',
-    '/static/js/tag-autocomplete.js',
-    '/static/js/tag-input-helper.js',
-    '/static/js/tooltip-helper.js',
-    '/static/js/upload.js',
+    '/static/js/pages/login.js',
+    '/static/js/pages/main.js',
+    '/static/js/pages/gallery.js',
+    '/static/js/pages/albums.js',
+    '/static/js/pages/album.js',
+    '/static/js/pages/media.js',
+    '/static/js/pages/shared.js',
+    '/static/js/components/modal-helper.js',
+    '/static/js/components/tag-autocomplete.js',
+    '/static/js/components/tooltip-helper.js',
+    '/static/js/components/custom-select.js',
+    '/static/js/components/album-picker.js',
+    '/static/js/components/tag-input-helper.js',
+    '/static/js/components/ai-tag-utils.js',
+    '/static/js/components/fullscreen-mediaviewer.js',
+    '/static/js/components/media-viewer-base.js',
+    '/static/js/components/media-picker-modal.js',
+    '/static/js/components/base-gallery.js',
+    '/static/js/bulk/bulk-tag-modal-base.js',
+    '/static/js/bulk/bulk-manage-tags-modal.js',
+    '/static/js/bulk/bulk-manual-tag-editor-modal.js',
+    '/static/js/bulk/bulk-ai-tags-modal.js',
+    '/static/js/bulk/bulk-wd-tagger-modal.js',
+    '/static/js/bulk/bulk-rating-modal.js',
+    '/static/js/update-post/update-post-modal-base.js',
+    '/static/js/update-post/update-post-modal.js',
+    '/static/js/update-post/update-post-url-import.js',
+    '/static/js/update-post/update-post-device-upload.js',
+    '/static/js/admin/admin.js',
+    '/static/js/admin/upload.js',
+    '/static/js/admin/booru-import.js',
+    '/static/js/admin/booru-config.js',
+    '/static/js/admin/tag-implications.js',
+    '/static/js/admin/stats.js',
+    '/static/js/admin/system.js',
+    '/static/js/admin/content.js',
+    '/static/js/admin/account.js',
     '/static/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
+    if (IS_DEBUG) return;
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(STATIC_ASSETS);
@@ -41,6 +59,10 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
+
+    if (IS_DEBUG) {
+        return;
+    }
 
     const url = new URL(event.request.url);
 
@@ -90,11 +112,9 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
+                cacheNames
+                    .filter((cacheName) => IS_DEBUG || cacheName !== CACHE_NAME)
+                    .map((cacheName) => caches.delete(cacheName))
             );
         }).then(() => {
             return self.clients.claim();

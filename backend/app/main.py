@@ -481,7 +481,11 @@ async def favicon():
 
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
-    return FileResponse(str(static_path / "sw.js"), media_type="application/javascript")
+    from fastapi import Response
+    content = (static_path / "sw.js").read_text()
+    content = content.replace('__APP_VERSION__', APP_VERSION)
+    content = content.replace('__DEBUG__', str(settings.DEBUG).lower())
+    return Response(content=content, media_type="application/javascript")
 
 @app.get("/manifest.json", response_class=JSONResponse)
 async def manifest(request: Request):
