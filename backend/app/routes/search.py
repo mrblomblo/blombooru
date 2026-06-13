@@ -10,6 +10,7 @@ from ..database import get_db
 from ..models import Media
 from ..schemas import MediaResponse
 from ..utils.cache import cache_response
+from ..utils.media_sort import apply_media_sort
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/search", tags=["search"])
@@ -23,6 +24,9 @@ async def search_media(
     rating: Optional[str] = None,
     page: int = 1,
     limit: int = Query(None),
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
+    seed: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Search media with tag-based query"""
@@ -40,6 +44,13 @@ async def search_media(
 
     # Apply all criteria
     query = apply_search_criteria(query, parsed, db)
+
+    # Apply UI sort/order unless the search query specifies its own ordering
+    if 'order' not in parsed['meta'] and 'sort' not in parsed['meta']:
+        sort_by = sort if sort else settings.get_default_sort()
+        sort_order = order if order else settings.get_default_order()
+        query = query.order_by(None)
+        query = apply_media_sort(query, sort_by, sort_order, db, seed)
     
     # Pagination
     offset = (page - 1) * limit

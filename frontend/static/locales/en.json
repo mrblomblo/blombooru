@@ -598,7 +598,9 @@
         "remove_from_album": "Remove from Album",
         "select_all": "Select All",
         "selecting_all": "Selecting All...",
-        "sort_by": "Sort By"
+        "sort_by": "Sort By",
+        "sort_random": "Random",
+        "sort_tag_count": "# of Tags"
     },
     "login": {
         "enter_credentials": "Enter your credentials to access {app_name}",

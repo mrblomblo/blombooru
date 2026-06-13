@@ -201,6 +201,7 @@ class CustomSelect {
         const option = document.createElement('div');
         option.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs';
         option.dataset.value = value;
+        option.dataset.baseLabel = text;
         option.textContent = text;
 
         this._bindOptionEvents(option);

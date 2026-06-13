@@ -29,11 +29,10 @@ class AlbumsOverview extends BaseGallery {
         try {
             const params = new URLSearchParams({
                 page: this.currentPage,
-                sort: this.getSortValue(),
-                order: this.getOrderValue(),
                 root_only: 'true',
                 rating: this.currentRating
             });
+            this.appendSortParams(params);
 
             const response = await fetch(`/api/albums?${params}`);
             if (!response.ok) throw new Error(window.i18n.t('albums.failed_load_list'));

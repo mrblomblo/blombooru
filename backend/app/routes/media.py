@@ -33,6 +33,7 @@ from ..utils.media_helpers import (create_stripped_media_cache,
                                    get_unique_filename, sanitize_filename,
                                    serve_media_file)
 from ..utils.media_processor import calculate_file_hash, process_media_file
+from ..utils.media_sort import apply_media_sort
 from ..utils.thumbnail_generator import generate_thumbnail
 
 router = APIRouter(prefix="/api/media", tags=["media"])
@@ -471,6 +472,7 @@ async def get_media_list(
     rating: Optional[str] = None,
     sort: Optional[str] = None,
     order: Optional[str] = None,
+    seed: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Get paginated media list"""
@@ -490,19 +492,7 @@ async def get_media_list(
         # Sorting
         sort_by = sort if sort else settings.get_default_sort()
         sort_order = order if order else settings.get_default_order()
-        
-        sort_column = Media.uploaded_at
-        if sort_by == 'filename':
-            sort_column = Media.filename
-        elif sort_by == 'file_size':
-            sort_column = Media.file_size
-        elif sort_by == 'file_type':
-            sort_column = Media.file_type
-            
-        if sort_order == 'asc':
-            query = query.order_by(sort_column.asc())
-        else:
-            query = query.order_by(sort_column.desc())
+        query = apply_media_sort(query, sort_by, sort_order, db, seed)
         
         # Pagination
         offset = (page - 1) * limit
