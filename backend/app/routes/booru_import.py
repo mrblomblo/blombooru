@@ -1,4 +1,6 @@
 import hashlib
+import ipaddress
+import socket
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -269,6 +271,50 @@ async def download_and_import(
         logger.exception("Import error occurred", exc_info=True)
         raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.import_error:::{safe_error_detail('Import error', e)}")
 
+def _validate_url_not_ssrf(url: str) -> None:
+    """
+    Resolve the hostname in url to an IP address and reject any address that
+    falls within a private, loopback, link-local, or otherwise reserved range.
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
+
+    try:
+        # getaddrinfo returns all addresses, check every one.
+        addrinfos = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        raise HTTPException(
+            status_code=400,
+            detail="admin.media_management.booru_import.error_invalid_url"
+        )
+
+    for _family, _type, _proto, _canonname, sockaddr in addrinfos:
+        raw_ip = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(raw_ip)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
+
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="admin.media_management.booru_import.error_ssrf_blocked"
+            )
+
 @router.get("/proxy-image")
 async def proxy_image(
     url: str, 
@@ -280,7 +326,9 @@ async def proxy_image(
     """
     if not url.startswith("http"):
         raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
-    
+
+    _validate_url_not_ssrf(url)
+
     try:
         from urllib.parse import urlparse
         parsed = urlparse(url)
@@ -290,22 +338,39 @@ async def proxy_image(
             url,
             stream=True,
             timeout=60,
+            allow_redirects=False,
             headers={
                 "User-Agent": "Blombooru/1.0 (booru-import)",
                 "Referer": referer,
             },
         )
-            
+        
+        if external_resp.status_code in (301, 302, 303, 307, 308):
+            # Refuse to follow redirects
+            raise HTTPException(
+                status_code=422,
+                detail="admin.media_management.booru_import.error_redirect_not_followed"
+            )
+
         if external_resp.status_code == 403:
             raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_image_403")
         if external_resp.status_code == 404:
             raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_image_404")
              
         external_resp.raise_for_status()
-        
+
+        content_type = external_resp.headers.get("content-type", "")
+        # Strip parameters (e.g. "image/jpeg; charset=...") before checking
+        mime_type = content_type.split(";")[0].strip().lower()
+        if not (mime_type.startswith("image/") or mime_type.startswith("video/")):
+            raise HTTPException(
+                status_code=422,
+                detail="admin.media_management.booru_import.error_not_an_image"
+            )
+
         return StreamingResponse(
             external_resp.iter_content(chunk_size=8192),
-            media_type=external_resp.headers.get("content-type"),
+            media_type=content_type,
             headers={"Cache-Control": "public, max-age=3600"}
         )
     except HTTPException:
