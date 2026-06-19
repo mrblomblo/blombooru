@@ -31,6 +31,7 @@ async def get_optional_current_user(
 ) -> Optional[User]:
     """Resolves the user from credentials if present, else None."""
     user = None
+    resolved_key: Optional[str] = None
     
     # 1. Bearer Token
     if authorization:
@@ -38,8 +39,12 @@ async def get_optional_current_user(
             token = authorization[7:]
             if token.startswith("blom_"):
                 user = verify_api_key(db, token)
+                if user:
+                    resolved_key = token
         elif authorization.startswith("blom_"):
             user = verify_api_key(db, authorization)
+            if user:
+                resolved_key = authorization
     
     # 2. Basic Auth
     if not user and credentials:
@@ -48,12 +53,16 @@ async def get_optional_current_user(
             user = verify_api_key(db, potential_key)
             if user and credentials.username and credentials.username != user.username:
                 user = None
+            if user:
+                resolved_key = potential_key
     
     # 3. Query Params
     if not user and api_key:
         user = verify_api_key(db, api_key)
         if user and login and login != user.username:
             user = None
+        if user:
+            resolved_key = api_key
             
     # 4. Cookie (Session)
     if not user:
@@ -64,6 +73,8 @@ async def get_optional_current_user(
                 user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
             except Exception:
                 pass
+
+    request.state.resolved_api_key = resolved_key
 
     return user
 
@@ -171,19 +182,20 @@ def get_flattened_media_ids(db: Session, root_album_id: int) -> List[int]:
     
     return sorted(r[0] for r in results)
 
-def format_media_response(media: Media, base_url: str) -> dict:
-    """
-    Formats a Media object into a Danbooru v2 compatible JSON dictionary.
-    """
+def format_media_response(media: Media, base_url: str, auth_key: Optional[str] = None) -> dict:
+    """Formats a Media object into a Danbooru v2 compatible JSON dictionary."""
     # Handle enum value or string representation
     r_val = media.rating.value if hasattr(media.rating, 'value') else str(media.rating)
     rating = RATING_MAP.get(r_val, "q")
 
     # Generate URLs
     media_id = media.id
-    file_url = f"{base_url}/api/media/{media_id}/file"
+    key_suffix = f"?api_key={auth_key}" if (auth_key and settings.REQUIRE_AUTH) else ""
+    file_url = f"{base_url}/api/media/{media_id}/file{key_suffix}"
     has_thumb = bool(media.thumbnail_path)
-    preview_url = f"{base_url}/api/media/{media_id}/thumbnail" if has_thumb else file_url
+    preview_url = (
+        f"{base_url}/api/media/{media_id}/thumbnail{key_suffix}" if has_thumb else file_url
+    )
     
     file_ext = Path(media.filename).suffix.lstrip('.') if media.filename else "jpg"
     uploaded_at = media.uploaded_at.isoformat(timespec='milliseconds') if media.uploaded_at else None
@@ -336,7 +348,8 @@ async def get_posts_json(
     media_list = query.offset(offset).limit(limit).all()
     
     base_url = get_base_url(request)
-    return [format_media_response(m, base_url) for m in media_list]
+    auth_key = getattr(request.state, "resolved_api_key", None)
+    return [format_media_response(m, base_url, auth_key=auth_key) for m in media_list]
 
 @router.get("/posts/{post_id}.json")
 @router.get("/posts/{post_id}")
@@ -356,8 +369,9 @@ async def get_post_json(
     
     if not media:
         raise HTTPException(status_code=404, detail="Post not found")
-        
-    return format_media_response(media, get_base_url(request))
+
+    auth_key = getattr(request.state, "resolved_api_key", None)
+    return format_media_response(media, get_base_url(request), auth_key=auth_key)
 
 @router.get("/users.json")
 @cache_response(expire=3600, key_prefix="danbooru")

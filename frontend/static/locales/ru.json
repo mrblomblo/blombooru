@@ -148,6 +148,9 @@
                 "error_save_failed": "Не удалось сохранить загруженный файл: {error}",
                 "error_duplicate": "Медиафайл с таким же хэшем уже существует (дубль {filename})",
                 "error_invalid_url": "Неверный URL",
+                "error_redirect_not_followed": "",
+                "error_ssrf_blocked": "",
+                "error_not_an_image": "",
                 "error_image_403": "Доступ запрещен сайтом Booru (403)",
                 "error_image_404": "Изображение не найдено (404)",
                 "error_proxy_failed": "Не удалось получить изображение: {error}",
@@ -340,7 +343,9 @@
             "tags_to_add": "Теги к добавлению",
             "tags_without_prefix": "Теги без префикса будут добавлены в категорию \"Общие (general)\"",
             "title": "Управление тегами",
-            "total_tags": "Всего тегов"
+            "total_tags": "Всего тегов",
+            "create_tag": "",
+            "create_tag_submit": ""
         },
         "tags_implications": {
             "title": "Связки тегов",
@@ -608,7 +613,8 @@
     "media": {
         "actions": {
             "delete_media": "Удалить медиафайл(ы)",
-            "relations": "Связано с"
+            "relations": "Связано с",
+            "update_post": ""
         },
         "ai_metadata": {
             "show_less": "Показывать меньше",
@@ -791,6 +797,29 @@
             "confirm": "Да, убрать общий доступ",
             "message": "Вы уверены, что хотите отменить публикацию этого медиафайла? Публичная ссылка перестанет работать",
             "title": "Убрать общий доступ к медиафайлу"
+        },
+        "update_post": {
+            "source_picker_title": "",
+            "from_url": "",
+            "from_url_desc": "",
+            "from_device": "",
+            "from_device_desc": "",
+            "what_to_update": "",
+            "tag_mode": "",
+            "merge_tags": "",
+            "replace_tags": "",
+            "update_file": "",
+            "apply": "",
+            "resolution_upgrade": "",
+            "resolution_same": "",
+            "resolution_smaller": "",
+            "drop_file_here": "",
+            "file_selected": "",
+            "applying": "",
+            "success": "",
+            "error_no_changes": "",
+            "error_identical_file": "",
+            "error_duplicate_file": ""
         }
     },
     "nav": {
@@ -852,6 +881,10 @@
             "tag_updated": "Тег '{old_name}' успешно обновлен",
             "error_updating_tag": "Ошибка при обновлении тега",
             "tag_name_conflict": "Тег или псевдоним с таким названием уже существуют",
+            "tag_updated": "",
+            "error_updating_tag": "",
+            "tag_name_conflict": "",
+            "tag_created": "Тег '{name}' создан",
             "tags_added_successfully": "Теги успешно добавлены!",
             "tags_already_exist": "Все теги уже существуют или являются псевдонимами.",
             "tags_created": "Созданы теги:",

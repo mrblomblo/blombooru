@@ -6,6 +6,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    {% set _robots_is_shared = is_shared_page if is_shared_page is defined else false %}
+    {% set _robots_is_home_or_search = (request.url.path == '/') %}
+    {% if _robots_is_shared %}
+    <meta name="robots" content="index, follow">
+    {% elif _robots_is_home_or_search %}
+    <meta name="robots" content="{{ 'noindex, nofollow' if require_auth() else 'index, follow' }}">
+    {% else %}
+    <meta name="robots" content="noindex, nofollow">
+    {% endif %}
     {% block pwa %}
     <link rel="manifest" href="/manifest.json?v={{ cache_buster }}">
     <script>
@@ -29,6 +38,7 @@
     <script>
         window.CURRENT_LANGUAGE = '{{ current_language() }}';
         window.SIDEBAR_FILTER_MODE = '{{ sidebar_filter_mode if sidebar_filter_mode is defined else "" }}';
+        window._appName = '{{ app_name | e }}';
     </script>
     <script id="translations-data" type="application/json">
         {{ get_translations_json() | safe }}
@@ -68,8 +78,8 @@
     {% if bg.enabled and bg.media_id and not _is_login and (not _is_shared or not require_auth()) %}
     {% set z = (bg.zoom if bg.zoom is defined else 100) / 100.0 %}
     {% set is_intrinsic = (bg.size in ['tile', 'auto']) %}
-    {% set inv_z = (1.0 / z) if (is_intrinsic and z > 0 and z < 1.0) else 1.0 %}
-    <div id="custom-background" style="
+    {% set inv_z = (1.0 / z) if (is_intrinsic and z > 0 and z < 1.0) else 1.0 %} <style>
+        #custom-background {
         position: fixed; z-index: -1; pointer-events: none;
         width: {{ 100 * inv_z }}%; height: {{ 100 * inv_z }}%;
         left: {{ bg.position_x * (1.0 - inv_z) }}%; top: {{ bg.position_y * (1.0 - inv_z) }}%;
@@ -80,46 +90,107 @@
         transform-origin: {{ bg.position_x }}% {{ bg.position_y }}%;
         transform: scale({{ z }});
         opacity: {{ bg.opacity / 100.0 }};
-        filter: blur({{ bg.blur }}px) brightness({{ bg.brightness }}%) saturate({{ bg.saturation }}%) contrast({{ bg.contrast }}%);
-    "></div>
-    {% endif %}
-    {% if show_header is not defined or show_header %}
-    {% block header %}
-    <header id="main-header"
-        class="surface border-b z-50 shrink-0 fixed top-0 w-full transition-transform duration-300 ease-in-out">
-        <div class="container mx-auto px-4 py-2">
-            <div class="flex items-center justify-between gap-4">
-                <a href="/" class="text-lg font-bold text-primary transition-colors hover:text-primary">
-                    <span class="flex gap-2">
-                        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"
-                            viewBox="0 0 28 28">
-                            <path
-                                d="m23.078 3.281 0.279 0.232C26.027 5.807 27.726 9.3 28 12.797c0.226 3.764 -0.823 7.386 -3.281 10.281 -0.077 0.092 -0.153 0.184 -0.232 0.279C22.193 26.027 18.7 27.726 15.203 28c-3.764 0.226 -7.386 -0.823 -10.281 -3.281 -0.092 -0.077 -0.184 -0.153 -0.279 -0.232C1.973 22.193 0.274 18.7 0 15.203c-0.226 -3.764 0.823 -7.386 3.281 -10.281 0.077 -0.092 0.153 -0.184 0.232 -0.279C8.412 -1.059 17.427 -1.517 23.078 3.281"
-                                fill="var(--primary-color)" />
-                            <path
-                                d="m11.67 6.257 0.342 0.001q0.357 0.002 0.715 0.01c0.361 0.007 0.722 0.009 1.084 0.01q0.348 0.003 0.697 0.007l0.323 0.002c1.822 0.043 3.614 0.828 4.892 2.13 1.311 1.434 1.903 3.099 1.935 5.036l0.017 0.368c0.021 0.672 -0.04 1.112 -0.345 1.71 -0.076 0.304 -0.076 0.304 -0.109 0.547h-0.219l-0.007 0.369C20.832 17.656 19.645 18.557 18.813 19.359l-0.294 0.31C18.266 19.906 18.266 19.906 17.958 19.94L17.719 19.906v0.219c-0.17 0.089 -0.341 0.175 -0.513 0.26l-0.288 0.146c-1.164 0.408 -2.395 0.39 -3.614 0.381l-0.501 -0.001a352.078 352.078 0 0 1 -1.305 -0.005c-0.446 -0.002 -0.892 -0.003 -1.337 -0.004Q8.853 20.898 7.547 20.891c-0.008 -0.804 -0.014 -1.607 -0.018 -2.411q-0.002 -0.409 -0.007 -0.819c-0.004 -0.394 -0.006 -0.788 -0.007 -1.182 -0.002 -0.121 -0.003 -0.241 -0.005 -0.365 0 -1.728 0.593 -3.106 1.799 -4.334 1.412 -1.319 3.139 -1.572 4.991 -1.513 1.021 0.059 1.946 0.454 2.634 1.221 0.164 0.213 0.316 0.424 0.457 0.653l0.124 0.185c0.149 0.397 0.135 0.788 0.135 1.209l0.008 0.256c0.005 0.94 -0.397 1.618 -1.033 2.287l-0.328 0.109 -0.005 -0.32c-0.037 -0.998 -0.104 -1.884 -0.863 -2.619 -0.912 -0.719 -1.838 -0.779 -2.96 -0.67 -0.828 0.173 -1.556 0.647 -2.078 1.313 -0.638 1.001 -0.632 1.993 -0.636 3.138a187.469 187.469 0 0 1 -0.008 0.521c-0.007 0.421 -0.01 0.842 -0.012 1.263q1.129 -0.011 2.258 -0.029 0.383 -0.005 0.767 -0.009c2.652 0.056 2.652 0.056 4.932 -1.117L17.938 17.391c0.328 -0.328 0.328 -0.328 0.488 -0.47 0.2 -0.221 0.282 -0.421 0.387 -0.699l0.103 -0.268c0.038 -0.103 0.077 -0.207 0.116 -0.313l0.085 -0.193c0.251 -0.594 0.294 -1.12 0.284 -1.762l-0.003 -0.293c-0.016 -0.68 -0.076 -1.285 -0.366 -1.908l-0.117 -0.253c-0.688 -1.347 -1.685 -2.054 -3.106 -2.521 -0.466 -0.119 -0.921 -0.115 -1.399 -0.111l-0.638 -0.006q-0.497 -0.002 -0.993 -0.001c-0.322 0 -0.645 -0.003 -0.967 -0.007l-0.298 0.003C10.867 8.581 10.483 8.472 9.953 8.094c-0.122 -0.231 -0.122 -0.231 -0.144 -0.472l-0.033 -0.238c0.246 -1.008 0.971 -1.152 1.894 -1.127"
-                                fill="var(--primary-text)" />
-                        </svg>
-                        {{ app_name }}
-                    </span>
-                </a>
+        filter: blur({{ bg.blur }}px) brightness({{ bg.brightness }}%) saturate({{ bg.saturation }}%) contrast({{
+        bg.contrast }}%);
+        }
+        </style>
+        <div id="custom-background"></div>
+        {% endif %}
+        {% if show_header is not defined or show_header %}
+        {% block header %}
+        <header id="main-header"
+            class="surface border-b z-50 shrink-0 fixed top-0 w-full transition-transform duration-300 ease-in-out">
+            <div class="container mx-auto px-4 py-2">
+                <div class="flex items-center justify-between gap-4">
+                    <a href="/" class="text-lg font-bold text-primary transition-colors hover:text-primary">
+                        <span class="flex gap-2" id="header-logo">
+                            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+                                viewBox="0 0 28 28" id="header-logo-svg">
+                                <path
+                                    d="m23.078 3.281 0.279 0.232C26.027 5.807 27.726 9.3 28 12.797c0.226 3.764 -0.823 7.386 -3.281 10.281 -0.077 0.092 -0.153 0.184 -0.232 0.279C22.193 26.027 18.7 27.726 15.203 28c-3.764 0.226 -7.386 -0.823 -10.281 -3.281 -0.092 -0.077 -0.184 -0.153 -0.279 -0.232C1.973 22.193 0.274 18.7 0 15.203c-0.226 -3.764 0.823 -7.386 3.281 -10.281 0.077 -0.092 0.153 -0.184 0.232 -0.279C8.412 -1.059 17.427 -1.517 23.078 3.281" />
+                                <path
+                                    d="m11.67 6.257 0.342 0.001q0.357 0.002 0.715 0.01c0.361 0.007 0.722 0.009 1.084 0.01q0.348 0.003 0.697 0.007l0.323 0.002c1.822 0.043 3.614 0.828 4.892 2.13 1.311 1.434 1.903 3.099 1.935 5.036l0.017 0.368c0.021 0.672 -0.04 1.112 -0.345 1.71 -0.076 0.304 -0.076 0.304 -0.109 0.547h-0.219l-0.007 0.369C20.832 17.656 19.645 18.557 18.813 19.359l-0.294 0.31C18.266 19.906 18.266 19.906 17.958 19.94L17.719 19.906v0.219c-0.17 0.089 -0.341 0.175 -0.513 0.26l-0.288 0.146c-1.164 0.408 -2.395 0.39 -3.614 0.381l-0.501 -0.001a352.078 352.078 0 0 1 -1.305 -0.005c-0.446 -0.002 -0.892 -0.003 -1.337 -0.004Q8.853 20.898 7.547 20.891c-0.008 -0.804 -0.014 -1.607 -0.018 -2.411q-0.002 -0.409 -0.007 -0.819c-0.004 -0.394 -0.006 -0.788 -0.007 -1.182 -0.002 -0.121 -0.003 -0.241 -0.005 -0.365 0 -1.728 0.593 -3.106 1.799 -4.334 1.412 -1.319 3.139 -1.572 4.991 -1.513 1.021 0.059 1.946 0.454 2.634 1.221 0.164 0.213 0.316 0.424 0.457 0.653l0.124 0.185c0.149 0.397 0.135 0.788 0.135 1.209l0.008 0.256c0.005 0.94 -0.397 1.618 -1.033 2.287l-0.328 0.109 -0.005 -0.32c-0.037 -0.998 -0.104 -1.884 -0.863 -2.619 -0.912 -0.719 -1.838 -0.779 -2.96 -0.67 -0.828 0.173 -1.556 0.647 -2.078 1.313 -0.638 1.001 -0.632 1.993 -0.636 3.138a187.469 187.469 0 0 1 -0.008 0.521c-0.007 0.421 -0.01 0.842 -0.012 1.263q1.129 -0.011 2.258 -0.029 0.383 -0.005 0.767 -0.009c2.652 0.056 2.652 0.056 4.932 -1.117L17.938 17.391c0.328 -0.328 0.328 -0.328 0.488 -0.47 0.2 -0.221 0.282 -0.421 0.387 -0.699l0.103 -0.268c0.038 -0.103 0.077 -0.207 0.116 -0.313l0.085 -0.193c0.251 -0.594 0.294 -1.12 0.284 -1.762l-0.003 -0.293c-0.016 -0.68 -0.076 -1.285 -0.366 -1.908l-0.117 -0.253c-0.688 -1.347 -1.685 -2.054 -3.106 -2.521 -0.466 -0.119 -0.921 -0.115 -1.399 -0.111l-0.638 -0.006q-0.497 -0.002 -0.993 -0.001c-0.322 0 -0.645 -0.003 -0.967 -0.007l-0.298 0.003C10.867 8.581 10.483 8.472 9.953 8.094c-0.122 -0.231 -0.122 -0.231 -0.144 -0.472l-0.033 -0.238c0.246 -1.008 0.971 -1.152 1.894 -1.127" />
+                            </svg>
+                            <img id="header-logo-img" alt="{{ app_name }}">
+                            <span id="header-logo-title">{{ app_name }}</span>
+                        </span>
+                    </a>
 
-                <!-- Desktop Search -->
-                <div class="flex-1 max-w-2xl hidden sm:block">
-                    <form id="search-form" class="flex gap-2 items-center">
-                        <div class="relative flex-1">
-                            <input type="text" id="search-input" name="q"
-                                placeholder="{{ t('nav.search_placeholder') }}"
-                                value="{{ request.query_params.get('q', '') }}"
-                                class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
-                        </div>
-                        <button type="button" id="search-random-btn"
-                            class="p-1 border bg text hover:border-primary transition-colors"
-                            title="{{ t('search.random') }}">
-                            {{ dice_icon() }}
-                        </button>
-                        <button type="button" id="search-help-btn"
-                            class="p-1 border bg text hover:border-primary transition-colors"
+                    <!-- Desktop Search -->
+                    <div class="flex-1 max-w-2xl hidden sm:block">
+                        <form id="search-form" class="flex gap-2 items-center">
+                            <div class="relative flex-1">
+                                <input type="text" id="search-input" name="q"
+                                    placeholder="{{ t('nav.search_placeholder') }}"
+                                    value="{{ request.query_params.get('q', '') }}"
+                                    class="w-full bg px-3 py-1 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                            </div>
+                            <button type="button" id="search-random-btn"
+                                class="p-1 border bg text hover:border-primary transition-colors"
+                                title="{{ t('search.random') }}">
+                                {{ dice_icon() }}
+                            </button>
+                            <button type="button" id="search-help-btn"
+                                class="p-1 border bg text hover:border-primary transition-colors"
+                                title="Search Syntax Guide">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Desktop Navigation -->
+                    <nav class="hidden sm:block">
+                        <ul class="flex gap-2 items-center">
+                            <li id="nav-albums-item">
+                                <a href="/albums"
+                                    class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
+                                    {{ t('common.albums') }}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/admin"
+                                    class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
+                                    {{ t('common.admin_panel') }}
+                                </a>
+                            </li>
+                            {% if is_admin(request) %}
+                            <li>
+                                <a href="/admin?tab=content#media-management" title="{{ t('nav.upload') }}"
+                                    class="block p-1 border bg hover:border-primary transition-colors text">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 8L12 3M12 3L7 8M12 3V15"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                    </svg>
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <a href="#" id="logout-btn" title="{{ t('nav.logout') }}"
+                                    class="block p-1 border bg hover:border-primary transition-colors text">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M16 17L21 12M21 12L16 7M21 12H9M9 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H9"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div class="sm:hidden flex gap-2">
+                        <button type="button" id="search-help-btn-mobile"
+                            class="sm:hidden p-2 border bg hover:border-primary transition-colors"
                             title="Search Syntax Guide">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -129,261 +200,205 @@
                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
                             </svg>
                         </button>
-                    </form>
+
+                        <!-- Mobile Nav Toggle -->
+                        <button id="mobile-menu-btn"
+                            class="group sm:hidden relative inline-flex items-center justify-center w-8 h-8 border bg hover:border-primary transition-colors focus:outline-none"
+                            aria-controls="mobile-menu" aria-expanded="false">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span
+                                class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
+                            duration-200 ease-out -translate-y-2 group-[.is-active]:translate-y-0 group-[.is-active]:scale-x-0 group-[.is-active]:opacity-0"></span>
+
+                            <span
+                                class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
+                            duration-200 ease-out group-[.is-active]:-rotate-45 group-[.is-active]:scale-x-110 group-[.is-active]:bg-primary"></span>
+                            <span
+                                class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full transition-all
+                            duration-200 ease-out group-[.is-active]:rotate-45 group-[.is-active]:scale-x-110 group-[.is-active]:bg-primary"></span>
+
+                            <span
+                                class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
+                            duration-200 ease-out translate-y-2 group-[.is-active]:translate-y-0 group-[.is-active]:scale-x-0 group-[.is-active]:opacity-0"></span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Desktop Navigation -->
-                <nav class="hidden sm:block">
-                    <ul class="flex gap-2 items-center">
-                        <li id="nav-albums-item">
+                <!-- Mobile Navigation -->
+                <nav id="mobile-menu" class="sm:hidden hidden border-y my-2">
+                    <ul class="flex flex-col py-2 gap-1">
+                        <li id="nav-albums-item-mobile">
                             <a href="/albums"
-                                class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
+                                class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
                                 {{ t('common.albums') }}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/admin"
-                                class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                                {{ t('common.admin_panel') }}
                             </a>
                         </li>
                         {% if is_admin(request) %}
                         <li>
-                            <a href="/admin?tab=content#media-management" title="{{ t('nav.upload') }}"
-                                class="block p-1 border bg hover:border-primary transition-colors text">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 8L12 3M12 3L7 8M12 3V15"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                </svg>
+                            <a href="/admin?tab=content#media-management"
+                                class="btn-dark w-full justify-start px-4 py-2">
+                                {{ t('nav.upload') }}
                             </a>
                         </li>
                         {% endif %}
                         <li>
-                            <a href="#" id="logout-btn" title="{{ t('nav.logout') }}"
-                                class="block p-1 border bg hover:border-primary transition-colors text">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M16 17L21 12M21 12L16 7M21 12H9M9 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H9"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                </svg>
+                            <a href="/admin"
+                                class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
+                                {{ t('common.admin_panel') }}
                             </a>
+                        </li>
+                        <li>
+                            <a href="#" id="logout-btn-mobile" class="btn-dark w-full justify-start px-4 py-2">
+                                {{ t('nav.logout') }} </a>
                         </li>
                     </ul>
                 </nav>
 
-                <div class="sm:hidden flex gap-2">
-                    <button type="button" id="search-help-btn-mobile"
-                        class="sm:hidden p-2 border bg hover:border-primary transition-colors"
-                        title="Search Syntax Guide">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                    </button>
-
-                    <!-- Mobile Nav Toggle -->
-                    <button id="mobile-menu-btn"
-                        class="group sm:hidden relative inline-flex items-center justify-center w-8 h-8 border bg hover:border-primary transition-colors focus:outline-none"
-                        aria-controls="mobile-menu" aria-expanded="false">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span
-                            class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
-                            duration-200 ease-out -translate-y-2 group-[.is-active]:translate-y-0 group-[.is-active]:scale-x-0 group-[.is-active]:opacity-0"></span>
-
-                        <span
-                            class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
-                            duration-200 ease-out group-[.is-active]:-rotate-45 group-[.is-active]:scale-x-110 group-[.is-active]:bg-primary"></span>
-                        <span
-                            class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full transition-all
-                            duration-200 ease-out group-[.is-active]:rotate-45 group-[.is-active]:scale-x-110 group-[.is-active]:bg-primary"></span>
-
-                        <span
-                            class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 h-0.5 w-5 rounded-full bg-current transition-all
-                            duration-200 ease-out translate-y-2 group-[.is-active]:translate-y-0 group-[.is-active]:scale-x-0 group-[.is-active]:opacity-0"></span>
-                    </button>
+                <!-- Mobile Search -->
+                <div class="mt-2 sm:hidden">
+                    <form id="search-form-mobile" class="flex gap-2 items-center">
+                        <div class="relative flex-1">
+                            <input type="text" id="search-input-mobile" name="q"
+                                placeholder="{{ t('nav.search_placeholder') }}"
+                                value="{{ request.query_params.get('q', '') }}"
+                                class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
+                        </div>
+                        <button type="button" id="search-random-btn-mobile"
+                            class="p-2 border bg hover:border-primary transition-colors"
+                            title="{{ t('search.random') }}">
+                            {{ dice_icon() }}
+                        </button>
+                    </form>
                 </div>
             </div>
-
-            <!-- Mobile Navigation -->
-            <nav id="mobile-menu" class="sm:hidden hidden border-y my-2">
-                <ul class="flex flex-col py-2 gap-1">
-                    <li id="nav-albums-item-mobile">
-                        <a href="/albums"
-                            class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
-                            {{ t('common.albums') }}
-                        </a>
-                    </li>
-                    {% if is_admin(request) %}
-                    <li>
-                        <a href="/admin?tab=content#media-management" class="btn-dark w-full justify-start px-4 py-2">
-                            {{ t('nav.upload') }}
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <a href="/admin"
-                            class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
-                            {{ t('common.admin_panel') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" id="logout-btn-mobile" class="btn-dark w-full justify-start px-4 py-2">
-                            {{ t('nav.logout') }} </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <!-- Mobile Search -->
-            <div class="mt-2 sm:hidden">
-                <form id="search-form-mobile" class="flex gap-2 items-center">
-                    <div class="relative flex-1">
-                        <input type="text" id="search-input-mobile" name="q"
-                            placeholder="{{ t('nav.search_placeholder') }}"
-                            value="{{ request.query_params.get('q', '') }}"
-                            class="w-full bg px-3 py-2 border text text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
-                    </div>
-                    <button type="button" id="search-random-btn-mobile"
-                        class="p-2 border bg hover:border-primary transition-colors" title="{{ t('search.random') }}">
-                        {{ dice_icon() }}
-                    </button>
-                </form>
-            </div>
-        </div>
-    </header>
-    {% endblock %}
-    {% endif %}
-
-    <main id="main-scroll" class="flex-1 h-full overflow-y-auto flex flex-col">
-        <div class="flex-1 w-full">
-            {% block content %}{% endblock %}
-        </div>
-
-        {% if show_footer is not defined or show_footer %}
-        {% block footer %}
-        <footer class="surface border-t mt-8">
-            <div class="container mx-auto px-4 py-6">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="text-secondary text-xs">
-                        <p>&copy; {{ app_name }} {{ get_current_year() }}. Powered by
-                            <a href="https://github.com/mrblomblo/blombooru"
-                                class="text-primary transition-colors hover:text-primary" target="_blank"
-                                rel="noopener noreferrer" referrerPolicy="no-referrer">Blombooru</a>
-                            <span class="italic">v{{ app_version }}</span>.
-                        </p>
-                    </div>
-
-                    <div class="flex gap-4 text-xs">
-                        <a href="https://github.com/mrblomblo/blombooru"
-                            class="text-secondary transition-colors hover:text-primary" target="_blank">GitHub</a>
-                        <span class="text-tertiary">&#x2022;</span>
-                        <a href="#" class="text-secondary transition-colors hover:text-primary"
-                            onclick="document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'}); return false;">
-                            {{ t('footer.back_to_top') }}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        </header>
         {% endblock %}
         {% endif %}
-    </main>
 
-    <script src="/static/js/modal-helper.js?v={{ cache_buster }}"></script>
-    <script src="/static/js/main.js?v={{ cache_buster }}"></script>
-    <script src="/static/js/tag-autocomplete.js?v={{ cache_buster }}"></script>
+        <main id="main-scroll" class="flex-1 h-full overflow-y-auto flex flex-col">
+            <div class="flex-1 w-full">
+                {% block content %}{% endblock %}
+            </div>
 
-    {% if show_header is not defined or show_header %}
-    <script>
-        // Initialize tag autocomplete
-        const searchInput = document.getElementById('search-input');
-        const searchInputMobile = document.getElementById('search-input-mobile');
-        if (searchInput) {
-            new TagAutocomplete(searchInput, {
-                multipleValues: true
-            });
-        }
-        if (searchInputMobile) {
-            new TagAutocomplete(searchInputMobile, {
-                multipleValues: true
-            });
-        }
-    </script>
-    {% endif %}
+            {% if show_footer is not defined or show_footer %}
+            {% block footer %}
+            <footer class="surface border-t mt-8">
+                <div class="container mx-auto px-4 py-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div class="text-secondary text-xs">
+                            <p>&copy; {{ app_name }} {{ get_current_year() }}. Powered by
+                                <a href="https://github.com/mrblomblo/blombooru"
+                                    class="text-primary transition-colors hover:text-primary" target="_blank"
+                                    rel="noopener noreferrer" referrerPolicy="no-referrer">Blombooru</a>
+                                <span class="italic">v{{ app_version }}</span>.
+                            </p>
+                        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const header = document.getElementById('main-header');
-            const mainScroll = document.getElementById('main-scroll');
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const logoutBtn = document.getElementById('logout-btn');
-            const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+                        <div class="flex gap-4 text-xs">
+                            <a href="https://github.com/mrblomblo/blombooru"
+                                class="text-secondary transition-colors hover:text-primary" target="_blank">GitHub</a>
+                            <span class="text-tertiary">&#x2022;</span>
+                            <a href="#" class="text-secondary transition-colors hover:text-primary"
+                                onclick="document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'}); return false;">
+                                {{ t('footer.back_to_top') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            {% endblock %}
+            {% endif %}
+        </main>
 
-            if (!header || !mainScroll) return;
+        <script src="/static/js/components/modal-helper.js?v={{ cache_buster }}"></script>
+        <script src="/static/js/pages/main.js?v={{ cache_buster }}"></script>
+        <script src="/static/js/components/tag-autocomplete.js?v={{ cache_buster }}"></script>
 
-            const adjustPadding = () => {
-                const height = header.offsetHeight;
-                mainScroll.style.paddingTop = `${height}px`;
-            };
-
-            adjustPadding();
-            window.addEventListener('resize', adjustPadding);
-
-            let lastScrollTop = 0;
-
-            mainScroll.addEventListener('scroll', () => {
-                const currentScroll = mainScroll.scrollTop;
-
-                if (currentScroll <= 0) {
-                    header.classList.remove('-translate-y-full');
-                    return;
-                }
-
-                if (currentScroll > lastScrollTop && currentScroll > 60) {
-                    header.classList.add('-translate-y-full');
-                }
-                else if (currentScroll < lastScrollTop) {
-                    header.classList.remove('-translate-y-full');
-                }
-
-                lastScrollTop = currentScroll;
-            });
-
-            if (mobileMenuBtn && mobileMenu) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    const isHidden = mobileMenu.classList.toggle('hidden');
-                    mobileMenuBtn.classList.toggle('is-active');
-                    mobileMenuBtn.setAttribute('aria-expanded', !isHidden);
-                    setTimeout(adjustPadding, 10);
+        {% if show_header is not defined or show_header %}
+        <script>
+            // Initialize tag autocomplete
+            const searchInput = document.getElementById('search-input');
+            const searchInputMobile = document.getElementById('search-input-mobile');
+            if (searchInput) {
+                new TagAutocomplete(searchInput, {
+                    multipleValues: true
                 });
-
-                document.addEventListener('click', (e) => {
-                    if (!header.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        mobileMenuBtn.classList.remove('is-active');
-                        mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                        setTimeout(adjustPadding, 10);
-                    }
-                });
-
-                if (logoutBtnMobile && logoutBtn) {
-                    logoutBtnMobile.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        logoutBtn.click();
-                    });
-                }
             }
-        });
-    </script>
+            if (searchInputMobile) {
+                new TagAutocomplete(searchInputMobile, {
+                    multipleValues: true
+                });
+            }
+        </script>
+        {% endif %}
 
-    {% block extra_js %}{% endblock %}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const header = document.getElementById('main-header');
+                const mainScroll = document.getElementById('main-scroll');
+                const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+                const mobileMenu = document.getElementById('mobile-menu');
+                const logoutBtn = document.getElementById('logout-btn');
+                const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+
+                if (!header || !mainScroll) return;
+
+                const adjustPadding = () => {
+                    const height = header.offsetHeight;
+                    mainScroll.style.paddingTop = `${height}px`;
+                };
+
+                adjustPadding();
+                window.addEventListener('resize', adjustPadding);
+
+                let lastScrollTop = 0;
+
+                mainScroll.addEventListener('scroll', () => {
+                    const currentScroll = mainScroll.scrollTop;
+
+                    if (currentScroll <= 0) {
+                        header.classList.remove('-translate-y-full');
+                        return;
+                    }
+
+                    if (currentScroll > lastScrollTop && currentScroll > 60) {
+                        header.classList.add('-translate-y-full');
+                    }
+                    else if (currentScroll < lastScrollTop) {
+                        header.classList.remove('-translate-y-full');
+                    }
+
+                    lastScrollTop = currentScroll;
+                });
+
+                if (mobileMenuBtn && mobileMenu) {
+                    mobileMenuBtn.addEventListener('click', () => {
+                        const isHidden = mobileMenu.classList.toggle('hidden');
+                        mobileMenuBtn.classList.toggle('is-active');
+                        mobileMenuBtn.setAttribute('aria-expanded', !isHidden);
+                        setTimeout(adjustPadding, 10);
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!header.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenuBtn.classList.remove('is-active');
+                            mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                            setTimeout(adjustPadding, 10);
+                        }
+                    });
+
+                    if (logoutBtnMobile && logoutBtn) {
+                        logoutBtnMobile.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            logoutBtn.click();
+                        });
+                    }
+                }
+            });
+        </script>
+
+        {% block extra_js %}{% endblock %}
 </body>
 
 </html>

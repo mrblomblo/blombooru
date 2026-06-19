@@ -56,7 +56,7 @@ class AdminSystem {
             if (!el) return;
             this.app.tagInputHelper.setupTagInput(el, id, { onValidate: () => { } });
             if (typeof TagAutocomplete !== 'undefined') {
-                new TagAutocomplete(el, { multipleValues: true });
+                new TagAutocomplete(el, { multipleValues: true, allowCreate: true });
             }
         });
 

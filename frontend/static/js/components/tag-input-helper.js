@@ -4,6 +4,12 @@ class TagInputHelper {
         this.validationTimeouts = new Map();
         this._implicationCache = null;   // null = not loaded, [] = loaded empty
         this._implicationLoadPromise = null;
+
+        window.addEventListener('tagCreated', (e) => {
+            if (e.detail && e.detail.name) {
+                this.tagValidationCache.set(e.detail.name, true);
+            }
+        });
     }
 
     // HTML escaping to prevent injection

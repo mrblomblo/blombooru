@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - {{ app_name }}{% endblock %}
+{% block title %}{{ t('login.title', app_name=app_name) }}{% endblock %}
 
 {% block pwa %}{% endblock %}
 
@@ -25,8 +25,7 @@
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors">
                 </div>
 
-                <button type="submit" id="login-btn"
-                    class="btn-primary w-full font-bold">
+                <button type="submit" id="login-btn" class="btn-primary w-full font-bold">
                     {{ t('login.login_button') }}
                 </button>
             </form>
@@ -42,5 +41,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/login.js?v={{ cache_buster }}"></script>
+<script src="/static/js/pages/login.js?v={{ cache_buster }}"></script>
 {% endblock %}

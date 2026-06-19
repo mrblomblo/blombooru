@@ -163,7 +163,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 if user:
                     return True
             except Exception:
-                return False
+                pass
         
         return False
     

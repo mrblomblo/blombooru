@@ -45,6 +45,7 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
         if (typeof TagAutocomplete !== 'undefined') {
             new TagAutocomplete(quickInput, {
                 multipleValues: true,
+                allowCreate: true,
                 containerClasses: 'surface border border-color shadow-lg z-50',
                 onSelect: () => this.triggerValidation(quickInput)
             });

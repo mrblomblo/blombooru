@@ -5,7 +5,7 @@
 
 {% block pwa %}{% endblock %}
 
-{% block title %}Setup - Blombooru{% endblock %}
+{% block title %}{{ t('onboarding.setup_title') }} - {{ app_name | default('Blombooru') }}{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 my-4 max-w-2xl">

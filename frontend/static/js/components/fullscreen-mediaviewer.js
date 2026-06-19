@@ -57,6 +57,7 @@ class FullscreenMediaViewer {
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.overlay.classList.contains('active')) {
+                e.stopImmediatePropagation();
                 this.close();
             }
         });

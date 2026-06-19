@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("/backup/tags")
 async def backup_tags(
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(require_admin_mode)
 ):
     """Export all tags and aliases as a CSV file compatible with the import format."""
     from ...database import SessionLocal
@@ -42,7 +42,7 @@ async def backup_tags(
 
 @router.get("/backup/media")
 async def backup_media(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
 ):
     """Download a ZIP backup of all media files"""
     files_gen = get_media_files_generator()
@@ -56,7 +56,7 @@ async def backup_media(
 
 @router.get("/backup/full")
 async def backup_full_db(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Download a full backup (Media + Database JSON)"""

@@ -148,6 +148,9 @@
                 "error_save_failed": "Failed to save downloaded file: {error}",
                 "error_duplicate": "Media already exists (duplicate of {filename})",
                 "error_invalid_url": "Invalid URL",
+                "error_redirect_not_followed": "Redirects are not allowed",
+                "error_ssrf_blocked": "Access to internal networks is forbidden",
+                "error_not_an_image": "URL did not return an image or video",
                 "error_image_403": "Access denied by booru site (403)",
                 "error_image_404": "Image not found (404)",
                 "error_proxy_failed": "Failed to fetch image: {error}",
@@ -340,7 +343,9 @@
             "tags_to_add": "Tags to Add",
             "tags_without_prefix": "Tags without a prefix will be added as \"general\" category.",
             "title": "Tags Management",
-            "total_tags": "Total Tags"
+            "total_tags": "Total Tags",
+            "create_tag": "Create Tag",
+            "create_tag_submit": "Create"
         },
         "tags_implications": {
             "title": "Tag Implications",
@@ -608,7 +613,8 @@
     "media": {
         "actions": {
             "delete_media": "Delete Media",
-            "relations": "Relations"
+            "relations": "Relations",
+            "update_post": "Update Post"
         },
         "ai_metadata": {
             "show_less": "Show Less",
@@ -791,6 +797,29 @@
             "confirm": "Yes, Unshare",
             "message": "Are you sure you want to unshare this media? The share link will stop working.",
             "title": "Unshare Media"
+        },
+        "update_post": {
+            "source_picker_title": "Choose Source",
+            "from_url": "From URL",
+            "from_url_desc": "Import metadata and/or media from an external booru post",
+            "from_device": "From Device",
+            "from_device_desc": "Replace media with a file from your device",
+            "what_to_update": "What to Update",
+            "tag_mode": "Tag Handling Mode",
+            "merge_tags": "Merge tags (keep existing, add new)",
+            "replace_tags": "Replace tags (use only new)",
+            "update_file": "Media File",
+            "apply": "Apply Update",
+            "resolution_upgrade": "(larger than current {cw}\u00d7{ch})",
+            "resolution_same": "(same resolution)",
+            "resolution_smaller": "(smaller than current)",
+            "drop_file_here": "Drop media file here or click to browse",
+            "file_selected": "{name} selected",
+            "applying": "Applying...",
+            "success": "Post updated successfully",
+            "error_no_changes": "No update options selected",
+            "error_identical_file": "The replacement file is identical to the current file",
+            "error_duplicate_file": "This file already exists as another post"
         }
     },
     "nav": {
@@ -852,6 +881,7 @@
             "tag_updated": "Tag '{old_name}' updated successfully",
             "error_updating_tag": "Error updating tag",
             "tag_name_conflict": "A tag or alias with this name already exists",
+            "tag_created": "Tag '{name}' created",
             "tags_added_successfully": "Tags added successfully!",
             "tags_already_exist": "All tags already exist or are aliases.",
             "tags_created": "Tags created:",

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import and_, case, desc, func, or_
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user, require_admin_mode
+from ..auth import require_admin_mode
 from ..database import get_db
 from ..models import Media, RatingEnum, Tag, User, blombooru_media_tags
 from ..schemas import TagCategoryEnum, TagCreate, TagResponse

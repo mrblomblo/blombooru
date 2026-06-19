@@ -5,7 +5,7 @@
 
 {% block pwa %}{% endblock %}
 
-{% block title %}{% if media %}{{ media.filename }} - {% endif %}Shared - {{ app_name }}{% endblock %}
+{% block title %}{{ t('shared.shared_media') }} - {{ app_name }}{% endblock %}
 
 {% block head_extra %}
 {% if media %}
@@ -41,10 +41,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
-<script src="/static/js/ai-tag-utils.js?v={{ cache_buster }}"></script>
-<script src="/static/js/media-viewer-base.js?v={{ cache_buster }}"></script>
-<script src="/static/js/shared.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/fullscreen-mediaviewer.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/ai-tag-utils.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/media-viewer-base.js?v={{ cache_buster }}"></script>
+<script src="/static/js/pages/shared.js?v={{ cache_buster }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const shareUuid = '{{ share_uuid }}';

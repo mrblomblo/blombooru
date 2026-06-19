@@ -148,6 +148,9 @@
                 "error_save_failed": "Kunde inte spara nedladdad fil: {error}",
                 "error_duplicate": "Media finns redan (duplikat av {filename})",
                 "error_invalid_url": "Ogiltig URL",
+                "error_redirect_not_followed": "Omdirigeringar är inte tillåtna",
+                "error_ssrf_blocked": "Åtkomst till interna nätverk är förbjuden",
+                "error_not_an_image": "URL returnerade ingen bild eller video",
                 "error_image_403": "Åtkomst nekad av booru-sidan (403)",
                 "error_image_404": "Bilden hittades inte (404)",
                 "error_proxy_failed": "Kunde inte hämta bilden: {error}",
@@ -340,7 +343,9 @@
             "tags_to_add": "Taggar att lägga till",
             "tags_without_prefix": "Taggar utan prefix läggs till som \"allmän\" kategori.",
             "title": "Tagghantering",
-            "total_tags": "Totalt antal taggar"
+            "total_tags": "Totalt antal taggar",
+            "create_tag": "Skapa Tagg",
+            "create_tag_submit": "Skapa"
         },
         "tags_implications": {
             "title": "Taggimplikationer",
@@ -607,8 +612,9 @@
     },
     "media": {
         "actions": {
-            "delete_media": "Radera media",
-            "relations": "Relationer"
+            "delete_media": "Radera Media",
+            "relations": "Relationer",
+            "update_post": "Uppdatera Inlägg"
         },
         "ai_metadata": {
             "show_less": "Visa Mindre",
@@ -791,6 +797,29 @@
             "confirm": "Ja, sluta dela",
             "message": "Är du säker på att du vill sluta dela denna media? Delningslänken slutar fungera.",
             "title": "Sluta dela media"
+        },
+        "update_post": {
+            "source_picker_title": "Välj Källa",
+            "from_url": "Från URL",
+            "from_url_desc": "Importera metadata och/eller media från ett externt booru-inlägg",
+            "from_device": "Från Enhet",
+            "from_device_desc": "Ersätt media med en fil från din enhet",
+            "what_to_update": "Vad som ska uppdateras",
+            "tag_mode": "Tagghanteringsläge",
+            "merge_tags": "Slå samman taggar (behåll befintliga, lägg till nya)",
+            "replace_tags": "Ersätt taggar (använd endast nya)",
+            "update_file": "Mediafil",
+            "apply": "Verkställ Uppdatering",
+            "resolution_upgrade": "(större än nuvarande {cw}\u00d7{ch})",
+            "resolution_same": "(samma upplösning)",
+            "resolution_smaller": "(mindre än nuvarande)",
+            "drop_file_here": "Släpp mediafil här eller klicka för att bläddra",
+            "file_selected": "{name} valdes",
+            "applying": "Verkställer...",
+            "success": "Inlägget uppdaterades!",
+            "error_no_changes": "Inga uppdateringsalternativ valdes",
+            "error_identical_file": "Ersättningsfilen är identisk med den nuvarande filen",
+            "error_duplicate_file": "Denna fil existerar redan som ett annat inlägg"
         }
     },
     "nav": {
@@ -852,6 +881,7 @@
             "tag_updated": "Tagg '{old_name}' uppdaterad",
             "error_updating_tag": "Fel vid uppdatering av tagg",
             "tag_name_conflict": "Tagg eller taggalias med detta namn existerar redan",
+            "tag_created": "Tagg '{name}' skapad",
             "tags_added_successfully": "Taggar tillagda!",
             "tags_already_exist": "Alla taggar finns redan eller är alias.",
             "tags_created": "Taggar skapade:",

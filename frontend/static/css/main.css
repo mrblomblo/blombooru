@@ -50,6 +50,51 @@ span.checked:hover {
     background-color: var(--primary-hover);
 }
 
+/* Header logo and title styling
+   Override these in your theme or custom CSS to customise the logo colors.
+   --logo-icon-primary  : fill color for the outer SVG shape (defaults to --primary-color)
+   --logo-icon-secondary: fill color for the inner SVG glyph (defaults to --primary-text)
+   --logo-text-color    : color of the app-name text next to the logo (defaults to --primary-color)
+
+   To use a raster image (PNG, WebP, etc.) instead of the SVG, set
+   display:none on #header-logo-svg and display:block on #header-logo-img,
+   then set content:url('your-image.png') on #header-logo-img
+*/
+:root {
+    --logo-icon-primary: var(--primary-color);
+    --logo-icon-secondary: var(--primary-text);
+    --logo-text-color: var(--primary-color);
+    --logo-text-hover-color: var(--primary-hover);
+}
+
+#header-logo {
+    color: var(--logo-text-color);
+}
+
+#header-logo-title {
+    color: var(--logo-text-color);
+    transition: color 0.15s;
+}
+
+#header-logo:hover #header-logo-title {
+    color: var(--logo-text-hover-color);
+}
+
+#header-logo-svg path:nth-child(1) {
+    fill: var(--logo-icon-primary);
+}
+
+#header-logo-svg path:nth-child(2) {
+    fill: var(--logo-icon-secondary);
+}
+
+#header-logo-img {
+    max-height: 28px;
+    width: auto;
+    content: url('/static/images/pwa-icon.png');
+    display: none;
+}
+
 /* Tag input styling */
 #tags-input:empty:before,
 [contenteditable="true"]:empty:before,
@@ -146,6 +191,15 @@ span.checked:hover {
 
 .tag-suggestion .tag-category .meta {
     background-color: var(--tag-meta);
+}
+
+.tag-suggestion.tag-create-new {
+    background-color: color-mix(in srgb, var(--primary-color) 8%, var(--surface));
+}
+
+.tag-suggestion.tag-create-new:hover,
+.tag-suggestion.tag-create-new.selected {
+    background-color: color-mix(in srgb, var(--primary-color) 18%, var(--surface));
 }
 
 /* Tag styling */

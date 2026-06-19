@@ -9,10 +9,11 @@ from fastapi import (APIRouter, BackgroundTasks, Depends, File, Form,
                      HTTPException, Query, Request, UploadFile)
 from fastapi.responses import FileResponse
 from PIL import Image
+from pydantic import BaseModel
 from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from ..auth import get_current_user, require_admin_mode
+from ..auth import require_admin_mode
 from ..config import settings
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
@@ -35,6 +36,270 @@ from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail
 
 router = APIRouter(prefix="/api/media", tags=["media"])
+
+class PostUpdateRequest(BaseModel):
+    """Request body for the Update Post (from-source) endpoint.
+
+    Controls which fields are overwritten and how. Defaults to the least destructive option.
+    """
+    update_tags: bool = False
+    tags: Optional[list[str]] = None
+    merge_tags: bool = True          # True = merge (add new, keep old); False = replace (remove old, set new)
+    category_hints: Optional[dict[str, str]] = None
+    update_rating: bool = False
+    rating: Optional[str] = None
+    update_source: bool = False
+    source: Optional[str] = None
+    update_description: bool = False
+    description: Optional[str] = None
+    update_filename: bool = False
+    filename: Optional[str] = None
+    update_file: bool = False
+    file_url: Optional[str] = None
+
+@router.patch("/{media_id}/update-from-source", response_model=MediaResponse)
+async def update_from_source(
+    media_id: int,
+    req: PostUpdateRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Update an existing post's metadata and/or media file.
+
+    Supports selective overwriting: callers set update_* flags for only the
+    fields they want changed.
+    """
+    media = db.query(Media).options(joinedload(Media.tags)).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    affected_tag_ids: list[int] = []
+
+    if req.update_tags and req.tags is not None:
+        old_tag_ids = [tag.id for tag in media.tags]
+
+        if req.merge_tags:
+            # Merge: keep existing tags, add any that are missing
+            existing_names = {tag.name.lower() for tag in media.tags}
+            new_names = [t for t in req.tags if t.strip().lower() not in existing_names]
+            if new_names:
+                new_tags = get_or_create_tags(db, new_names, category_hints=req.category_hints)
+                media.tags = list(media.tags) + new_tags
+        else:
+            # Replace: remove all current tags and set the new list
+            media.tags = get_or_create_tags(db, req.tags, category_hints=req.category_hints)
+
+        new_tag_ids = [tag.id for tag in media.tags]
+        affected_tag_ids = list(set(old_tag_ids + new_tag_ids))
+
+    if req.update_rating and req.rating:
+        media.rating = req.rating
+
+    if req.update_source:
+        media.source = req.source or None
+
+    if req.update_description:
+        media.description = req.description or None
+
+    if req.update_filename and req.filename:
+        new_filename = sanitize_filename(req.filename)
+        if new_filename and new_filename != media.filename:
+            old_path = settings.BASE_DIR / media.path
+            new_unique = get_unique_filename(settings.ORIGINAL_DIR, new_filename)
+            new_path = settings.ORIGINAL_DIR / new_unique
+
+            if old_path.exists():
+                old_path.rename(new_path)
+
+            if media.thumbnail_path:
+                old_thumb = settings.BASE_DIR / media.thumbnail_path
+                new_thumb_name = Path(new_unique).stem + ".jpg"
+                new_thumb = settings.THUMBNAIL_DIR / new_thumb_name
+                if old_thumb.exists():
+                    old_thumb.rename(new_thumb)
+                media.thumbnail_path = str(new_thumb.relative_to(settings.BASE_DIR))
+
+            media.filename = new_unique
+            media.path = str(new_path.relative_to(settings.BASE_DIR))
+
+    if req.update_file:
+        if not req.file_url:
+            raise HTTPException(status_code=400, detail="file_url is required when update_file is true")
+
+        import requests as _requests
+        try:
+            dl = _requests.get(req.file_url, timeout=60, stream=True)
+            dl.raise_for_status()
+        except _requests.HTTPError as e:
+            raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
+        except _requests.RequestException as e:
+            raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
+
+        suffix = Path(req.file_url.split("?")[0]).suffix or ".bin"
+        import tempfile
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                for chunk in dl.iter_content(chunk_size=8192):
+                    tmp.write(chunk)
+                tmp_path = Path(tmp.name)
+
+            new_hash = calculate_file_hash(tmp_path)
+
+            if new_hash == media.hash:
+                tmp_path.unlink(missing_ok=True)
+                raise HTTPException(status_code=409, detail="The replacement file is identical to the current file")
+
+            duplicate = db.query(Media).filter(Media.hash == new_hash, Media.id != media_id).first()
+            if duplicate:
+                tmp_path.unlink(missing_ok=True)
+                raise HTTPException(status_code=409, detail=f"Media already exists (duplicate of {duplicate.filename})")
+
+            old_file = settings.BASE_DIR / media.path
+            old_file.unlink(missing_ok=True)
+            shutil.move(str(tmp_path), str(old_file))
+            tmp_path = None
+
+            new_meta = process_media_file(old_file)
+
+            # Regenerate thumbnail
+            if media.thumbnail_path:
+                old_thumb = settings.BASE_DIR / media.thumbnail_path
+                old_thumb.unlink(missing_ok=True)
+
+            thumb_name = Path(media.filename).stem + ".jpg"
+            thumb_path = settings.THUMBNAIL_DIR / thumb_name
+            generate_thumbnail(old_file, thumb_path, new_meta["file_type"])
+            media.thumbnail_path = str(thumb_path.relative_to(settings.BASE_DIR)) if thumb_path.exists() else None
+
+            media.hash = new_hash
+            media.file_type = new_meta["file_type"]
+            media.mime_type = new_meta["mime_type"]
+            media.file_size = new_meta["file_size"]
+            media.width = new_meta["width"]
+            media.height = new_meta["height"]
+            media.duration = new_meta["duration"]
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            if tmp_path and tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+            logger.exception("Error replacing media file")
+            raise HTTPException(status_code=500, detail=safe_error_detail("File replacement failed", e))
+
+    db.commit()
+
+    if affected_tag_ids:
+        update_tag_counts(db, affected_tag_ids)
+        db.commit()
+
+    db.refresh(media)
+    invalidate_media_cache()
+    invalidate_media_item_cache(media_id)
+    invalidate_tag_cache()
+
+    return MediaResponse.model_validate(media)
+
+@router.post("/{media_id}/update-file-finalize", response_model=MediaResponse)
+async def update_file_finalize(
+    media_id: int,
+    upload_id: str = Form(...),
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Reassemble a previously chunked device-file upload and replace the stored media.
+
+    Chunks must have been uploaded via POST /api/media/upload-chunk beforehand.
+    This endpoint mirrors the logic of upload-finalize but replaces an existing
+    media record rather than creating a new one.
+    """
+    import re
+    import json as _json
+
+    if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
+        raise HTTPException(status_code=400, detail="Invalid upload_id")
+
+    media = db.query(Media).options(joinedload(Media.tags)).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    chunk_dir = MEDIA_CHUNKS_DIR / upload_id
+    if not chunk_dir.exists():
+        raise HTTPException(status_code=400, detail="No chunks found for this upload_id")
+
+    meta_path = chunk_dir / "meta.json"
+    if not meta_path.exists():
+        raise HTTPException(status_code=400, detail="Missing upload metadata")
+
+    with open(meta_path) as f:
+        meta = _json.load(f)
+
+    filename = meta["filename"]
+    total_chunks = meta["total_chunks"]
+
+    for i in range(total_chunks):
+        if not (chunk_dir / f"chunk_{i}").exists():
+            raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+
+    # Reassemble into a temporary location, then swap
+    try:
+        tmp_assembled = chunk_dir / "assembled_file"
+        with open(tmp_assembled, "wb") as out_f:
+            for i in range(total_chunks):
+                with open(chunk_dir / f"chunk_{i}", "rb") as chunk_f:
+                    shutil.copyfileobj(chunk_f, out_f)
+
+        new_hash = calculate_file_hash(tmp_assembled)
+
+        if new_hash == media.hash:
+            shutil.rmtree(chunk_dir, ignore_errors=True)
+            raise HTTPException(status_code=409, detail="The replacement file is identical to the current file")
+
+        duplicate = db.query(Media).filter(Media.hash == new_hash, Media.id != media_id).first()
+        if duplicate:
+            shutil.rmtree(chunk_dir, ignore_errors=True)
+            raise HTTPException(status_code=409, detail=f"Media already exists (duplicate of {duplicate.filename})")
+
+        old_file = settings.BASE_DIR / media.path
+        old_file.unlink(missing_ok=True)
+        shutil.move(str(tmp_assembled), str(old_file))
+
+        shutil.rmtree(chunk_dir, ignore_errors=True)
+
+        new_meta = process_media_file(old_file)
+
+        # Regenerate thumbnail
+        if media.thumbnail_path:
+            old_thumb = settings.BASE_DIR / media.thumbnail_path
+            old_thumb.unlink(missing_ok=True)
+
+        thumb_name = Path(media.filename).stem + ".jpg"
+        thumb_path = settings.THUMBNAIL_DIR / thumb_name
+        generate_thumbnail(old_file, thumb_path, new_meta["file_type"])
+        media.thumbnail_path = str(thumb_path.relative_to(settings.BASE_DIR)) if thumb_path.exists() else None
+
+        media.hash = new_hash
+        media.file_type = new_meta["file_type"]
+        media.mime_type = new_meta["mime_type"]
+        media.file_size = new_meta["file_size"]
+        media.width = new_meta["width"]
+        media.height = new_meta["height"]
+        media.duration = new_meta["duration"]
+
+        db.commit()
+        db.refresh(media)
+        invalidate_media_cache()
+        invalidate_media_item_cache(media_id)
+
+        return MediaResponse.model_validate(media)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        shutil.rmtree(chunk_dir, ignore_errors=True)
+        logger.exception("Error in update-file-finalize")
+        raise HTTPException(status_code=500, detail=safe_error_detail("File update failed", e))
 
 def update_tag_counts(db: Session, tag_ids: List[int]):
     """Update post counts for given tags"""

@@ -148,6 +148,9 @@
                 "error_save_failed": "保存已下载的文件失败：{error}",
                 "error_duplicate": "媒体已存在（与 {filename} 重复）",
                 "error_invalid_url": "无效的 URL",
+                "error_redirect_not_followed": "",
+                "error_ssrf_blocked": "",
+                "error_not_an_image": "",
                 "error_image_403": "源站拒绝访问图片 (403)",
                 "error_image_404": "未找到图片 (404)",
                 "error_proxy_failed": "获取图片失败：{error}",
@@ -340,7 +343,9 @@
             "tags_to_add": "待添加标签",
             "tags_without_prefix": "不带前缀的标签将被添加为“常规”类别。",
             "title": "标签管理",
-            "total_tags": "标签总数"
+            "total_tags": "标签总数",
+            "create_tag": "",
+            "create_tag_submit": ""
         },
         "tags_implications": {
             "title": "",
@@ -608,7 +613,8 @@
     "media": {
         "actions": {
             "delete_media": "删除媒体",
-            "relations": "关联关系"
+            "relations": "关联关系",
+            "update_post": ""
         },
         "ai_metadata": {
             "title": "AI 生成数据",
@@ -791,6 +797,29 @@
             "confirm": "是的，取消分享",
             "message": "您确定要取消分享此媒体吗？分享链接将失效。",
             "title": "取消分享媒体"
+        },
+        "update_post": {
+            "source_picker_title": "",
+            "from_url": "",
+            "from_url_desc": "",
+            "from_device": "",
+            "from_device_desc": "",
+            "what_to_update": "",
+            "tag_mode": "",
+            "merge_tags": "",
+            "replace_tags": "",
+            "update_file": "",
+            "apply": "",
+            "resolution_upgrade": "",
+            "resolution_same": "",
+            "resolution_smaller": "",
+            "drop_file_here": "",
+            "file_selected": "",
+            "applying": "",
+            "success": "",
+            "error_no_changes": "",
+            "error_identical_file": "",
+            "error_duplicate_file": ""
         }
     },
     "nav": {
@@ -852,6 +881,7 @@
             "tag_updated": "",
             "error_updating_tag": "",
             "tag_name_conflict": "",
+            "tag_created": "",
             "tags_added_successfully": "标签添加成功！",
             "tags_already_exist": "所有标签已存在或已作为别名存在。",
             "tags_created": "已创建标签：",

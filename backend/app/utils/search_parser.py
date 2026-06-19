@@ -224,7 +224,9 @@ def parse_filesize(value: str) -> Dict[str, Any]:
 
 def wildcard_to_regex(pattern: str) -> str:
     """Convert wildcard pattern to PostgreSQL regex pattern"""
-    special_chars = ['.', '^', '$', '+', '(', ')', '[', ']', '{', '}', '|', '\\']
+    pattern = pattern.replace('\\', '\\\\')
+    
+    special_chars = ['.', '^', '$', '+', '(', ')', '[', ']', '{', '}', '|']
     for char in special_chars:
         pattern = pattern.replace(char, '\\' + char)
     

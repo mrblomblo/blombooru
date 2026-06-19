@@ -99,7 +99,7 @@ async def get_untracked_file(
 
 @router.get("/media-stats")
 async def get_media_stats(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Get media statistics"""
@@ -121,7 +121,7 @@ async def get_media_stats(
 
 @router.get("/stats")
 async def get_comprehensive_stats(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Get comprehensive statistics for admin dashboard"""

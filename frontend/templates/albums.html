@@ -2,6 +2,8 @@
 {% from "components/macros.html" import rating_filter, sorting_options, page_jump_modal,
 loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 
+{% block title %}{{ t('common.albums') }} - {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-4">
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
@@ -36,8 +38,8 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/tooltip-helper.js?v={{ cache_buster }}"></script>
-<script src="/static/js/custom-select.js?v={{ cache_buster }}"></script>
-<script src="/static/js/base-gallery.js?v={{ cache_buster }}"></script>
-<script src="/static/js/albums.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/tooltip-helper.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/custom-select.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/base-gallery.js?v={{ cache_buster }}"></script>
+<script src="/static/js/pages/albums.js?v={{ cache_buster }}"></script>
 {% endblock %}

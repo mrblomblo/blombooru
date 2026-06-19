@@ -341,10 +341,9 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
         return None
 
 class ChunkedMediaResponse(FileResponse):
-    """
-    Limit the maximum size of a single Range request.
-    """
-    MAX_RANGE_SIZE = 25 * 1024 * 1024  # 25 MB
+    """FileResponse subclass with Range request capping and video-specific initial chunking."""
+    MAX_RANGE_SIZE = 25 * 1024 * 1024       # 25 MB
+    INITIAL_VIDEO_CHUNK = 2 * 1024 * 1024   # 2 MB
 
     @staticmethod
     def _parse_range_header(http_range: str, file_size: int) -> list[tuple[int, int]]:
@@ -362,8 +361,11 @@ class ChunkedMediaResponse(FileResponse):
     async def __call__(self, scope, receive, send) -> None:
         headers = dict(scope.get("headers", []))
         if b"range" not in headers:
-            # Force a Range request to prevent streaming the entire file in one go.
-            scope["headers"].append((b"range", b"bytes=0-"))
+            # Inject a bounded initial range for videos to avoid connection starvation
+            is_video = self.media_type and self.media_type.startswith("video/")
+            if is_video:
+                end_byte = self.INITIAL_VIDEO_CHUNK - 1
+                scope["headers"].append((b"range", f"bytes=0-{end_byte}".encode()))
         await super().__call__(scope, receive, send)
 
 async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
@@ -371,7 +373,7 @@ async def serve_media_file(file_path: Path, mime_type: str, error_message: str =
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
     
-    cache_headers = {"Cache-Control": "public, max-age=86400, immutable"}
+    cache_headers = {"Cache-Control": "public, max-age=31536000, immutable"}
     
     if not strip_metadata:
         return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers)

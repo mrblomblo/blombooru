@@ -13,7 +13,7 @@ from ...utils.logger import logger
 router = APIRouter()
 
 @router.get("/settings")
-async def get_settings(current_user: User = Depends(get_current_admin_user)):
+async def get_settings(current_user: User = Depends(require_admin_mode)):
     """Get current settings"""
     safe_settings = settings.settings.copy()
     if "database" in safe_settings:
