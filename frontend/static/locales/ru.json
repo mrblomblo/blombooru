@@ -148,9 +148,9 @@
                 "error_save_failed": "Не удалось сохранить загруженный файл: {error}",
                 "error_duplicate": "Медиафайл с таким же хэшем уже существует (дубль {filename})",
                 "error_invalid_url": "Неверный URL",
-                "error_redirect_not_followed": "",
-                "error_ssrf_blocked": "",
-                "error_not_an_image": "",
+                "error_redirect_not_followed": "Редиректы запрещены",
+                "error_ssrf_blocked": "Доступ к внутренним сетям запрещен",
+                "error_not_an_image": "URL не вернул медиафайл",
                 "error_image_403": "Доступ запрещен сайтом Booru (403)",
                 "error_image_404": "Изображение не найдено (404)",
                 "error_proxy_failed": "Не удалось получить изображение: {error}",
@@ -344,8 +344,8 @@
             "tags_without_prefix": "Теги без префикса будут добавлены в категорию \"Общие (general)\"",
             "title": "Управление тегами",
             "total_tags": "Всего тегов",
-            "create_tag": "",
-            "create_tag_submit": ""
+            "create_tag": "Создать тег",
+            "create_tag_submit": "Создать"
         },
         "tags_implications": {
             "title": "Связки тегов",
@@ -614,7 +614,7 @@
         "actions": {
             "delete_media": "Удалить медиафайл(ы)",
             "relations": "Связано с",
-            "update_post": ""
+            "update_post": "Обновить пост"
         },
         "ai_metadata": {
             "show_less": "Показывать меньше",
@@ -799,27 +799,27 @@
             "title": "Убрать общий доступ к медиафайлу"
         },
         "update_post": {
-            "source_picker_title": "",
-            "from_url": "",
-            "from_url_desc": "",
-            "from_device": "",
-            "from_device_desc": "",
-            "what_to_update": "",
-            "tag_mode": "",
-            "merge_tags": "",
-            "replace_tags": "",
-            "update_file": "",
-            "apply": "",
-            "resolution_upgrade": "",
-            "resolution_same": "",
-            "resolution_smaller": "",
-            "drop_file_here": "",
-            "file_selected": "",
-            "applying": "",
-            "success": "",
-            "error_no_changes": "",
-            "error_identical_file": "",
-            "error_duplicate_file": ""
+            "source_picker_title": "Выбрать источник",
+            "from_url": "Из URL",
+            "from_url_desc": "Импортировать метаданные и/или медиа из поста с внешнего booru",
+            "from_device": "С устройства",
+            "from_device_desc": "Заменить медиа в посте на другой файл с вашего устройства",
+            "what_to_update": "Что обновить",
+            "tag_mode": "Режим обработки тегов",
+            "merge_tags": "Слияние (существующие + новые)",
+            "replace_tags": "Перезапись (только новые)",
+            "update_file": "Медиафайл",
+            "apply": "Применить обновление",
+            "resolution_upgrade": "(больше текущего разрешения {cw}\u00d7{ch})",
+            "resolution_same": "(то же разрешение)",
+            "resolution_smaller": "(меньше текущего разрешения)",
+            "drop_file_here": "Перетащите файл сюда или нажмите для выбора",
+            "file_selected": "Выбрано: {name}",
+            "applying": "Обновляется...",
+            "success": "Пост успешно обновлён",
+            "error_no_changes": "Не выбраны параметры для обновления",
+            "error_identical_file": "Файл для перезаписи идентичен текущему",
+            "error_duplicate_file": "Этот файл уже используется другим постом"
         }
     },
     "nav": {
@@ -881,9 +881,6 @@
             "tag_updated": "Тег '{old_name}' успешно обновлен",
             "error_updating_tag": "Ошибка при обновлении тега",
             "tag_name_conflict": "Тег или псевдоним с таким названием уже существуют",
-            "tag_updated": "",
-            "error_updating_tag": "",
-            "tag_name_conflict": "",
             "tag_created": "Тег '{name}' создан",
             "tags_added_successfully": "Теги успешно добавлены!",
             "tags_already_exist": "Все теги уже существуют или являются псевдонимами.",
