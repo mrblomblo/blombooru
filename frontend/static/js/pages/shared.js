@@ -142,7 +142,7 @@ class SharedViewer extends MediaViewerBase {
                     <div class="surface p-3 border">
                         <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('common.actions')}</h3>
                         <div class="space-y-2">
-                            <a id="download-btn" href="/api/shared/${this.shareUuid}/file" download="${media.filename}" 
+                            <a id="download-btn" href="/api/shared/${this.shareUuid}/file${media.hash ? '?v=' + media.hash : ''}" download="${media.filename}" 
                                class="btn-primary flex items-center justify-center gap-2 w-full text-sm font-medium ${this.isProcessing ? 'pointer-events-none opacity-50' : ''}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -194,7 +194,7 @@ class SharedViewer extends MediaViewerBase {
         if (media.file_type === 'video') {
             return `
                 <video controls loop id="shared-media-video" style="max-width: 100%; max-height: 80vh; margin: 0 auto;">
-                    <source src="/api/shared/${this.shareUuid}/file" type="${media.mime_type}">
+                    <source src="/api/shared/${this.shareUuid}/file${media.hash ? '?v=' + media.hash : ''}" type="${media.mime_type}">
                 </video>
                 <div id="video-error" style="display: none;" class="flex flex-col items-center justify-center py-8 text-secondary">
                     <img src="/static/images/no-thumbnail.png" alt="${window.i18n.t('common.media_not_found')}" class="w-32 h-32 mb-4 opacity-50">
@@ -203,7 +203,7 @@ class SharedViewer extends MediaViewerBase {
             `;
         } else {
             return `
-                <img src="/api/shared/${this.shareUuid}/file?t=${Date.now()}" alt="${media.filename}" 
+                <img src="/api/shared/${this.shareUuid}/file${media.hash ? '?v=' + media.hash : ''}" alt="${media.filename}" 
                      id="shared-media-image" 
                      style="max-width: 100%; max-height: 80vh; margin: 0 auto; cursor: pointer;">
             `;
@@ -216,7 +216,7 @@ class SharedViewer extends MediaViewerBase {
             if (sharedImage && this.fullscreenViewer && sharedImage.src) {
                 sharedImage.addEventListener('click', () => {
                     if (sharedImage.dataset.failed === 'true') return;
-                    this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file`, false);
+                    this.fullscreenViewer.open(`/api/shared/${this.shareUuid}/file${this.currentMedia && this.currentMedia.hash ? '?v=' + this.currentMedia.hash : ''}`, false);
                 });
             }
         }, 0);

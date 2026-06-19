@@ -73,6 +73,7 @@ class SharedMediaResponse(MediaBase):
     share_uuid: Optional[str]
     share_language: Optional[str] = None
     share_ai_metadata: bool
+    hash: str
     tags: List[SharedTagResponse] = []
     
     model_config = ConfigDict(from_attributes=True)

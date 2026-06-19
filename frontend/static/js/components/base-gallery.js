@@ -1253,7 +1253,7 @@ class BaseGallery {
             img.src = '/static/images/no-thumbnail.png';
         };
 
-        img.src = `/api/media/${media.id}/thumbnail`;
+        img.src = `/api/media/${media.id}/thumbnail${media.hash ? '?v=' + media.hash : ''}`;
 
         if (img.complete && img.naturalWidth > 0) {
             markLoaded();

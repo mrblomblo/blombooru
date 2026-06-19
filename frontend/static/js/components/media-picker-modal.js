@@ -613,7 +613,7 @@ class MediaPickerModal {
 
         // Thumbnail
         const img = document.createElement('img');
-        img.src = `/api/media/${media.id}/thumbnail`;
+        img.src = `/api/media/${media.id}/thumbnail${media.hash ? '?v=' + media.hash : ''}`;
         img.alt = media.filename || `Media ${media.id}`;
         img.loading = 'lazy';
         img.className = 'w-full aspect-square object-cover transition-all';

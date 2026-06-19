@@ -222,7 +222,7 @@ class MediaViewer extends MediaViewerBase {
             video.loop = true;
 
             const source = document.createElement('source');
-            source.src = `/api/media/${media.id}/file`;
+            source.src = `/api/media/${media.id}/file${media.hash ? '?v=' + media.hash : ''}`;
             source.type = media.mime_type;
 
             video.appendChild(source);
@@ -240,7 +240,7 @@ class MediaViewer extends MediaViewerBase {
             container.appendChild(video);
         } else {
             const img = document.createElement('img');
-            img.src = `/api/media/${media.id}/file`;
+            img.src = `/api/media/${media.id}/file${media.hash ? '?v=' + media.hash : ''}`;
             img.alt = media.filename;
             img.id = 'main-media-image';
             img.style.cursor = 'pointer';
@@ -255,7 +255,7 @@ class MediaViewer extends MediaViewerBase {
             img.onload = () => {
                 if (!img.src.includes('no-thumbnail.png')) {
                     img.addEventListener('click', () => {
-                        this.fullscreenViewer.open(`/api/media/${media.id}/file`, false);
+                        this.fullscreenViewer.open(`/api/media/${media.id}/file${media.hash ? '?v=' + media.hash : ''}`, false);
                     });
                 }
             };
@@ -264,7 +264,7 @@ class MediaViewer extends MediaViewerBase {
             container.appendChild(img);
         }
 
-        this.el('download-btn').href = `/api/media/${media.id}/file`;
+        this.el('download-btn').href = `/api/media/${media.id}/file${media.hash ? '?v=' + media.hash : ''}`;
         this.el('download-btn').download = media.filename;
     }
 
@@ -414,7 +414,7 @@ class MediaViewer extends MediaViewerBase {
         link.href = `/media/${media.id}${queryString ? '?' + queryString : ''}`;
 
         const img = document.createElement('img');
-        img.src = `/api/media/${media.id}/thumbnail`;
+        img.src = `/api/media/${media.id}/thumbnail${media.hash ? '?v=' + media.hash : ''}`;
         img.alt = media.filename;
         img.loading = 'lazy';
         img.className = 'transition-colors';
