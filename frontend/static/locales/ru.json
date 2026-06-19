@@ -161,7 +161,7 @@
             "adding_tags": "Добавление тегов...",
             "already_latest": "Обновление не требуется",
             "import_completed": "Импорт завершен успешно!",
-            "scan_loading": "Загрузка {count} файла(ов)...",
+            "scan_loading": "Загрузка {count} файл(-ов)...",
             "scan_progress": "Загрузка {current}/{total}...",
             "skipped_too_long": "Пропущено (слишком длинное):",
             "update_error": "Ошибка проверки обновлений: {error}",
@@ -465,8 +465,8 @@
             "tag_overflow": "+{count}"
         },
         "notifications": {
-            "updated_failed": "Не удалось обновить {count} элемент(ов)",
-            "updated_success": "Успешно обновлено {count} элемент(ов)"
+            "updated_failed": "Не удалось обновить {count} элемент(-ов)",
+            "updated_success": "Успешно обновлено {count} элемент(-ов)"
         },
         "progress": {
             "checking_model": "Проверка статуса AI модели...",
@@ -612,8 +612,8 @@
     },
     "media": {
         "actions": {
-            "delete_media": "Удалить медиафайл(ы)",
-            "relations": "Связано с",
+            "delete_media": "Удалить пост",
+            "relations": "Связанные",
             "update_post": "Обновить пост"
         },
         "ai_metadata": {
@@ -653,16 +653,16 @@
             "child_badge": "ДОЧЕРНИЙ ЭЛЕМЕНТ",
             "clear_selection": "Очистить выделение",
             "parent_badge": "РОДИТЕЛЬ",
-            "remove_children": "Удалить {count} дочерний(х) элемент(ов)",
+            "remove_children": "Удалить {count} дочерний(-х) элемент(-ов)",
             "remove_selected": "Удалить выделенные",
             "search_hint": "Отображаются элементы, связанные по тегам. Используйте поиск, чтобы найти больше",
             "search_results": "Результаты поиска для: {query}",
             "selected": "{count} выбрано",
             "set_parent": "Установить как родителя",
-            "showing_related_items": "Отображается {count} связанный(х) элемент(ов)",
+            "showing_related_items": "Отображается {count} связанный(-х) элемент(-ов)",
             "title": "Управление",
             "has_one_child": "Этот элемент имеет 1 дочерний элемент",
-            "has_children": "Этот элемент имеет {count} дочерний(х) элемент(ов)",
+            "has_children": "Этот элемент имеет {count} дочерний(-х) элемент(-ов)",
             "parent_label": "Родитель:",
             "parent_id_link": "ID {id}",
             "children_count": "{count} дочерний",
@@ -772,7 +772,7 @@
             "title": "Скачать модель"
         },
         "remove_children": {
-            "message": "Вы уверены, что хотите удалить {count} дочерних элемент(ов)",
+            "message": "Вы уверены, что хотите удалить {count} дочерних элемент(-ов)",
             "title": "Удалить дочерние элементы"
         },
         "remove_parent": {
@@ -906,7 +906,7 @@
         "delete_success": "Уcпешно удалено",
         "error_occurred": "Произошла ошибка",
         "gallery": {
-            "added_to_albums": "Добавлено {itemCount} элемент(ов) в {albumCount} альбом(ов)",
+            "added_to_albums": "Добавлено {itemCount} элемент(-ов) в {albumCount} альбом(-ов)",
             "error_adding_to_albums": "Ошибка при добавлении в альбомы",
             "failed_to_select_all": "Не удалось выбрать все элементы",
             "items_selected": "Выбрано {count} элементов всего",
@@ -1031,10 +1031,10 @@
         "progress": {
             "duplicates_skipped": "{count} дублей пропущено",
             "extracted_error": "Ошибка извлечения {filename}: {error}",
-            "extracted_success": "Извлечено {count} файл(ов) из {filename}",
+            "extracted_success": "Извлечено {count} файл(-ов) из {filename}",
             "extracting": "Извлечение {filename}...",
             "failed": "{count} не удалось",
-            "upload_success": "Успешно загружен(о) {count} файл(ов)",
+            "upload_success": "Успешно загружен(-о) {count} файл(-ов)",
             "uploading": "Загрузка...",
             "uploading_progress": "Загрузка {current}/{total}..."
         },
