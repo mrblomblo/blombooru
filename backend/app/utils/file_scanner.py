@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -20,6 +21,10 @@ def is_supported_file(filename: str) -> bool:
         if ext in extensions:
             return True
     return False
+
+def natural_sort_key(s: str) -> list:
+    """Key function for natural (human-friendly) alphanumeric sort."""
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', str(s))]
 
 def find_untracked_media(db: Session) -> dict:
     """Find untracked media files without processing them"""
@@ -88,10 +93,6 @@ def find_untracked_media(db: Session) -> dict:
             continue
     
     logger.debug(f"Found {len(untracked_files)} untracked files")
-    
-    import re
-    def natural_sort_key(s):
-        return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', str(s))]
     
     untracked_files.sort(key=lambda x: natural_sort_key(x['path']))
     

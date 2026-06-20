@@ -627,7 +627,7 @@ class Uploader {
         files.sort((a, b) => {
             const pathA = a.webkitRelativePath || a.name || '';
             const pathB = b.webkitRelativePath || b.name || '';
-            return pathA.localeCompare(pathB, undefined, { numeric: true });
+            return pathA.localeCompare(pathB, undefined, { numeric: true, sensitivity: 'base' });
         });
 
         // Show loading state on the upload area
