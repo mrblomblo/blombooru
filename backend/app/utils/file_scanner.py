@@ -89,6 +89,12 @@ def find_untracked_media(db: Session) -> dict:
     
     logger.debug(f"Found {len(untracked_files)} untracked files")
     
+    import re
+    def natural_sort_key(s):
+        return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', str(s))]
+    
+    untracked_files.sort(key=lambda x: natural_sort_key(x['path']))
+    
     return {
         'new_files': len(untracked_files),
         'files': untracked_files

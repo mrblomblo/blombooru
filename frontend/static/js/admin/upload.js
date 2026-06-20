@@ -624,6 +624,12 @@ class Uploader {
         if (this.isProcessingFiles) return;
         this.isProcessingFiles = true;
 
+        files.sort((a, b) => {
+            const pathA = a.webkitRelativePath || a.name || '';
+            const pathB = b.webkitRelativePath || b.name || '';
+            return pathA.localeCompare(pathB, undefined, { numeric: true });
+        });
+
         // Show loading state on the upload area
         const originalContent = this.uploadArea.innerHTML;
         const uploadAreaText = this.uploadArea.querySelector('p');
