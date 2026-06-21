@@ -46,14 +46,14 @@ The `admin_mode` cookie is a **UI safety toggle**, not a security mechanism. It 
 
 ### Debug Mode
 
-When troubleshooting, you might be tempted to turn on debug mode (`BLOMBOORU_DEBUG=true`). In this mode, HTTP error responses will include full exception messages, including stack traces, file paths, and database details.
+When troubleshooting, you should turn on debug mode (either by setting `BLOMBOORU_DEBUG=true` in `.env` or by using the `--debug` option for `run.py`). With debug mode enabled, potentially sensitive information may be exposed, so heed the following warning.
 
 > [!WARNING]
-> **Do not run debug mode on a publicly accessible instance!** This exposes sensitive internal information that an attacker could use to compromise your server.
+> **Do not run debug mode on a publicly accessible instance!** This can expose potentially sensitive internal information.
 
 ## Reporting Vulnerabilities
 
-If you discover a security vulnerability, please help make Blombooru safer! Open a new GitHub issue or contact the maintainer directly. 
+If you discover a security vulnerability, please help make Blombooru safer! Create a GitHub [security advisory](https://github.com/mrblomblo/blombooru/security/advisories/new) or contact Blomblo directly.
 
 > [!NOTE]
 > There is currently no bug bounty program, but your contributions to the project's security are greatly appreciated!
