@@ -15,7 +15,7 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
     getContentHTML() {
         const prefix = this.options.classPrefix;
         return `
-            <div class="${prefix}-content h-full flex flex-col" style="display: none;">
+            <div class="${prefix}-content flex-1 flex flex-col min-h-0" style="display: none;">
                 <p class="text-secondary mb-3 text-xs sm:text-sm flex-shrink-0">${window.i18n.t('bulk_modal.messages.review_tags')}</p>
                 <div class="flex gap-2 mb-3 flex-shrink-0 items-start">
                     <div class="relative flex-1 min-w-0">

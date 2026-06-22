@@ -93,7 +93,7 @@ class BulkTagModalBase {
                 </div>
                 
                 <!-- Body -->
-                <div class="flex-1 overflow-auto p-4">
+                <div class="flex-1 overflow-hidden p-4 flex flex-col">
                     ${this.getBodyHTML()}
                 </div>
                 
@@ -141,7 +141,7 @@ class BulkTagModalBase {
     getContentHTML() {
         const prefix = this.options.classPrefix;
         return `
-            <div class="${prefix}-content h-full flex flex-col" style="display: none;">
+            <div class="${prefix}-content flex-1 flex flex-col min-h-0" style="display: none;">
                 <p class="text-secondary mb-3 text-xs sm:text-sm flex-shrink-0">${window.i18n.t('bulk_modal.messages.review_tags')}</p>
                 <div class="${prefix}-items space-y-3 overflow-y-auto flex-1 -mx-4 px-4 pb-2" style="overscroll-behavior: contain;"></div>
             </div>
