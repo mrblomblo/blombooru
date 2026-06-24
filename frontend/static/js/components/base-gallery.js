@@ -53,8 +53,11 @@ class BaseGallery {
         }
 
         const urlParams = new URLSearchParams(window.location.search);
+        const sortControls = document.querySelector('.js-sort-controls');
+        const defaultOrderFromDom = sortControls?.dataset.defaultOrder || this.options.defaultOrder;
+
         this.currentSort = urlParams.get('sort') || this.elements.sortBy?.dataset.value || this.options.defaultSort;
-        this.currentOrder = urlParams.get('order') || this.options.defaultOrder;
+        this.currentOrder = urlParams.get('order') || defaultOrderFromDom;
         this.currentRandomSeed = urlParams.get('seed') || null;
     }
 
@@ -201,6 +204,8 @@ class BaseGallery {
         }
 
         this.sortBySelects = [];
+        this.sortOrderToggles = document.querySelectorAll('.js-sort-order-toggle');
+        this.sortRandomRegenBtns = document.querySelectorAll('.js-sort-random-regen');
 
         const sortByElements = document.querySelectorAll('.js-sort-by-select');
         const params = new URLSearchParams(window.location.search);
@@ -217,13 +222,7 @@ class BaseGallery {
                 this.sortBySelects.forEach(s => {
                     if (s !== select) s.setValue(newValue, false);
                 });
-                this.handleSortSelection(newValue);
-            });
-
-            select.dropdown.querySelectorAll('.custom-select-option').forEach(option => {
-                if (!option.dataset.baseLabel) {
-                    option.dataset.baseLabel = option.textContent.trim();
-                }
+                this.handleSortChange(newValue);
             });
 
             this.sortBySelects.push(select);
@@ -231,12 +230,21 @@ class BaseGallery {
 
         this.sortBySelect = this.sortBySelects[0];
 
+        this.sortOrderToggles.forEach(btn => {
+            btn.addEventListener('click', () => this.toggleSortOrder());
+        });
+
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.regenerateRandomSeed());
+        });
+
         if (this.currentSort === 'random' && !this.currentRandomSeed) {
             this.currentRandomSeed = String(Date.now());
             this.syncSortUrlParams();
         }
 
-        this.updateSortDisplay();
+        this.updateSortControlsVisibility();
+        this.updateSortOrderToggleState();
     }
 
     getSortValue() {
@@ -250,72 +258,58 @@ class BaseGallery {
         return this.currentOrder;
     }
 
-    handleSortSelection(newSort) {
+    handleSortChange(newSort) {
         const previousSort = this.currentSort;
+        this.currentSort = newSort;
 
-        if (newSort === previousSort) {
-            if (newSort === 'random') {
+        if (newSort === 'random') {
+            if (previousSort !== 'random' || !this.currentRandomSeed) {
                 this.currentRandomSeed = String(Date.now());
-            } else {
-                this.currentOrder = this.currentOrder === 'asc' ? 'desc' : 'asc';
             }
         } else {
-            this.currentSort = newSort;
-            if (newSort === 'random') {
-                this.currentRandomSeed = String(Date.now());
-            } else {
-                this.currentRandomSeed = null;
-                this.currentOrder = 'desc';
-            }
+            this.currentRandomSeed = null;
         }
 
-        this.updateSortDisplay();
+        this.updateSortControlsVisibility();
         this.syncSortUrlParams();
         this.onSortChange();
     }
 
-    getSortOrderIndicator(order) {
-        return order === 'asc' ? '↑' : '↓';
+    toggleSortOrder() {
+        if (this.currentSort === 'random') return;
+
+        this.currentOrder = this.currentOrder === 'asc' ? 'desc' : 'asc';
+        this.updateSortOrderToggleState();
+        this.syncSortUrlParams();
+        this.onSortChange();
     }
 
-    getSortBaseLabel(option) {
-        return option.dataset.baseLabel || option.textContent.trim();
+    regenerateRandomSeed() {
+        if (this.currentSort !== 'random') return;
+
+        this.currentRandomSeed = String(Date.now());
+        this.syncSortUrlParams();
+        this.onSortChange();
     }
 
-    formatSortLabel(baseLabel, sortValue, order, previewNext = false) {
-        if (sortValue === 'random') {
-            return previewNext ? `${baseLabel} ↻` : baseLabel;
-        }
-        const displayOrder = previewNext
-            ? (order === 'asc' ? 'desc' : 'asc')
-            : order;
-        return `${baseLabel} ${this.getSortOrderIndicator(displayOrder)}`;
+    updateSortControlsVisibility() {
+        const isRandom = this.currentSort === 'random';
+
+        this.sortOrderToggles.forEach(btn => {
+            btn.classList.toggle('hidden', isRandom);
+            btn.disabled = isRandom;
+        });
+
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.classList.toggle('hidden', !isRandom);
+        });
     }
 
-    updateSortDisplay() {
-        if (!this.sortBySelects) return;
-
-        this.sortBySelects.forEach(select => {
-            select.dropdown.querySelectorAll('.custom-select-option').forEach(option => {
-                const baseLabel = this.getSortBaseLabel(option);
-                const value = option.dataset.value;
-
-                if (value === this.currentSort) {
-                    option.textContent = this.formatSortLabel(
-                        baseLabel, value, this.currentOrder, true
-                    );
-                } else {
-                    option.textContent = baseLabel;
-                }
-            });
-
-            const currentOption = select.dropdown.querySelector(`[data-value="${this.currentSort}"]`);
-            if (currentOption) {
-                const baseLabel = this.getSortBaseLabel(currentOption);
-                select.valueDisplay.textContent = this.formatSortLabel(
-                    baseLabel, this.currentSort, this.currentOrder, false
-                );
-            }
+    updateSortOrderToggleState() {
+        this.sortOrderToggles.forEach(btn => {
+            btn.dataset.order = this.currentOrder;
+            btn.classList.remove('asc', 'desc');
+            btn.classList.add(this.currentOrder);
         });
     }
 
@@ -323,15 +317,16 @@ class BaseGallery {
         const params = {
             sort: this.currentSort,
             order: this.currentOrder,
-            seed: this.currentRandomSeed
+            seed: this.currentSort === 'random' ? this.currentRandomSeed : null
         };
         this.updateUrlParams(params);
     }
 
     appendSortParams(params) {
-        params.set('sort', this.getSortValue());
+        const sort = this.getSortValue();
+        params.set('sort', sort);
         params.set('order', this.getOrderValue());
-        if (this.getSortValue() === 'random' && this.currentRandomSeed) {
+        if (sort === 'random' && this.currentRandomSeed) {
             params.set('seed', this.currentRandomSeed);
         }
     }
@@ -343,7 +338,6 @@ class BaseGallery {
     addSortOption(value, label) {
         if (this.sortBySelects) {
             this.sortBySelects.forEach(select => select.addOption(value, label));
-            this.updateSortDisplay();
         }
     }
 

@@ -472,7 +472,7 @@ async def get_media_list(
     rating: Optional[str] = None,
     sort: Optional[str] = None,
     order: Optional[str] = None,
-    seed: Optional[str] = None,
+    seed: Optional[str] = Query(default=None),
     db: Session = Depends(get_db)
 ):
     """Get paginated media list"""

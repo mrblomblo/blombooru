@@ -17,12 +17,17 @@ class AdminSystem {
         const defaultSortElement = document.getElementById('default-sort');
         if (defaultSortElement) {
             this.defaultSortSelect = new CustomSelect(defaultSortElement);
+            defaultSortElement.addEventListener('change', () => {
+                this.updateDefaultOrderVisibility();
+            });
         }
 
         const defaultOrderElement = document.getElementById('default-order');
         if (defaultOrderElement) {
             this.defaultOrderSelect = new CustomSelect(defaultOrderElement);
         }
+
+        this.updateDefaultOrderVisibility();
 
         const popularTagsModeElement = document.getElementById('popular-tags-mode');
         if (popularTagsModeElement) {
@@ -298,6 +303,14 @@ class AdminSystem {
         div.style.transform = `scale(${z})`;
         div.style.opacity = (opacity / 100).toFixed(2);
         div.style.filter = `blur(${blur}px) brightness(${brightness}%) saturate(${saturation}%) contrast(${contrast}%)`;
+    }
+
+    updateDefaultOrderVisibility() {
+        const orderEl = document.getElementById('default-order');
+        if (!orderEl || !this.defaultSortSelect) return;
+
+        const isRandom = this.defaultSortSelect.getValue() === 'random';
+        orderEl.classList.toggle('hidden', isRandom);
     }
 
     cleanupCustomButtons() {
@@ -577,6 +590,7 @@ class AdminSystem {
 
             if (settings.default_sort && this.defaultSortSelect) {
                 this.defaultSortSelect.setValue(settings.default_sort);
+                this.updateDefaultOrderVisibility();
             }
 
             if (settings.default_order && this.defaultOrderSelect) {

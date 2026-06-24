@@ -696,6 +696,14 @@ span.checked:hover {
     background-color: var(--surface-hover);
 }
 
+.sort-order-toggle .sort-order-chevron {
+    transition: transform 0.2s ease;
+}
+
+.sort-order-toggle.asc .sort-order-chevron {
+    transform: rotate(180deg);
+}
+
 /* Share icon overlay */
 .share-icon {
     position: absolute;

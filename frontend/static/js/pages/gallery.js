@@ -1,8 +1,7 @@
 class Gallery extends BaseGallery {
     constructor() {
         super({
-            gridSelector: '#gallery-grid',
-            defaultSort: 'uploaded_at'
+            gridSelector: '#gallery-grid'
         });
 
         if (this.elements.grid) {

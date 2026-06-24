@@ -26,7 +26,7 @@ async def search_media(
     limit: int = Query(None),
     sort: Optional[str] = None,
     order: Optional[str] = None,
-    seed: Optional[str] = None,
+    seed: Optional[str] = Query(default=None),
     db: Session = Depends(get_db)
 ):
     """Search media with tag-based query"""
