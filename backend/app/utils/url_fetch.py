@@ -9,6 +9,7 @@ import requests
 
 from ..enums import FileTypeEnum
 from .media_processor import determine_file_type
+from .url_security import UrlValidationError, validate_url_not_ssrf
 
 SUPPORTED_MIME_TYPES = {
     "image/jpeg",
@@ -20,7 +21,6 @@ SUPPORTED_MIME_TYPES = {
 }
 
 DEFAULT_TIMEOUT = 60
-MAX_DOWNLOAD_BYTES = 500 * 1024 * 1024  # 500 MB
 
 class UrlFetchError(Exception):
     def __init__(self, message: str, status_code: int = 400):
@@ -28,20 +28,47 @@ class UrlFetchError(Exception):
         self.status_code = status_code
         super().__init__(message)
 
+def _raise_url_validation_error(reason: str) -> None:
+    if reason == "ssrf_blocked":
+        raise UrlFetchError("admin.media_management.url_import.error_ssrf_blocked", 403)
+    raise UrlFetchError("admin.media_management.url_import.error_invalid_url")
+
+def _check_ssrf(url: str) -> None:
+    try:
+        validate_url_not_ssrf(url)
+    except UrlValidationError as e:
+        _raise_url_validation_error(e.reason)
+
 def validate_media_url(url: str) -> str:
     parsed = urlparse(url.strip())
     if parsed.scheme not in ("http", "https"):
         raise UrlFetchError("admin.media_management.url_import.error_invalid_url")
     if not parsed.netloc:
         raise UrlFetchError("admin.media_management.url_import.error_invalid_url")
-    return url.strip()
+    url = url.strip()
+    _check_ssrf(url)
+    return url
 
 def _filename_from_content_disposition(header: Optional[str]) -> Optional[str]:
     if not header:
         return None
-    match = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)"?', header, re.IGNORECASE)
-    if match:
-        return unquote(match.group(1).strip())
+
+    extended = re.search(r"filename\*=([^;]+)", header, re.IGNORECASE)
+    if extended:
+        value = extended.group(1).strip()
+        if "''" in value:
+            _charset, encoded = value.split("''", 1)
+            return unquote(encoded.strip().strip('"'))
+        return unquote(value.strip().strip('"'))
+
+    quoted = re.search(r'filename="([^"]+)"', header, re.IGNORECASE)
+    if quoted:
+        return quoted.group(1).strip()
+
+    simple = re.search(r"filename=([^;\s]+)", header, re.IGNORECASE)
+    if simple:
+        return unquote(simple.group(1).strip().strip('"'))
+
     return None
 
 def _filename_from_url(url: str) -> str:
@@ -70,34 +97,9 @@ def _request_headers(url: str) -> dict:
         "Referer": referer,
     }
 
-def probe_media_url(url: str) -> dict:
-    """Probe a direct media URL and return metadata without downloading the full file."""
-    url = validate_media_url(url)
-
-    try:
-        response = requests.head(
-            url,
-            timeout=DEFAULT_TIMEOUT,
-            allow_redirects=True,
-            headers=_request_headers(url),
-        )
-        if response.status_code == 405 or response.status_code >= 500:
-            response = requests.get(
-                url,
-                timeout=DEFAULT_TIMEOUT,
-                allow_redirects=True,
-                headers={**_request_headers(url), "Range": "bytes=0-0"},
-                stream=True,
-            )
-    except requests.Timeout:
-        raise UrlFetchError("admin.media_management.url_import.error_timeout", 504)
-    except requests.ConnectionError:
-        raise UrlFetchError("admin.media_management.url_import.error_connection", 502)
-    except requests.RequestException as e:
-        raise UrlFetchError(
-            f"admin.media_management.url_import.error_request:::{str(e)}",
-            502,
-        )
+def _probe_response_metadata(response: requests.Response, original_url: str) -> dict:
+    final_url = response.url or original_url
+    _check_ssrf(final_url)
 
     if response.status_code == 403:
         raise UrlFetchError("admin.media_management.url_import.error_access_denied", 403)
@@ -112,7 +114,7 @@ def probe_media_url(url: str) -> dict:
     content_type = (response.headers.get("content-type") or "").split(";")[0].strip().lower()
     filename = (
         _filename_from_content_disposition(response.headers.get("content-disposition"))
-        or _filename_from_url(response.url or url)
+        or _filename_from_url(final_url)
     )
 
     if not content_type:
@@ -124,19 +126,54 @@ def probe_media_url(url: str) -> dict:
 
     content_length = response.headers.get("content-length")
     file_size = int(content_length) if content_length and content_length.isdigit() else None
-    if file_size is not None and file_size > MAX_DOWNLOAD_BYTES:
-        raise UrlFetchError("admin.media_management.url_import.error_too_large", 400)
 
     file_type = determine_file_type(content_type, filename)
     is_video = file_type == FileTypeEnum.video
 
     return {
-        "file_url": response.url or url,
+        "file_url": final_url,
         "filename": filename,
         "content_type": content_type,
         "file_size": file_size,
         "is_video": is_video,
     }
+
+def probe_media_url(url: str) -> dict:
+    """Probe a direct media URL and return metadata without downloading the full file."""
+    url = validate_media_url(url)
+    response: Optional[requests.Response] = None
+
+    try:
+        try:
+            response = requests.head(
+                url,
+                timeout=DEFAULT_TIMEOUT,
+                allow_redirects=True,
+                headers=_request_headers(url),
+            )
+            if response.status_code == 405 or response.status_code >= 500:
+                response.close()
+                response = requests.get(
+                    url,
+                    timeout=DEFAULT_TIMEOUT,
+                    allow_redirects=True,
+                    headers={**_request_headers(url), "Range": "bytes=0-0"},
+                    stream=True,
+                )
+        except requests.Timeout:
+            raise UrlFetchError("admin.media_management.url_import.error_timeout", 504)
+        except requests.ConnectionError:
+            raise UrlFetchError("admin.media_management.url_import.error_connection", 502)
+        except requests.RequestException as e:
+            raise UrlFetchError(
+                f"admin.media_management.url_import.error_request:::{str(e)}",
+                502,
+            )
+
+        return _probe_response_metadata(response, url)
+    finally:
+        if response is not None:
+            response.close()
 
 def fetch_media_stream(url: str) -> Tuple[requests.Response, str]:
     """Download a media URL as a streaming response. Caller must close the response."""
@@ -160,40 +197,36 @@ def fetch_media_stream(url: str) -> Tuple[requests.Response, str]:
             502,
         )
 
-    if response.status_code == 403:
-        response.close()
-        raise UrlFetchError("admin.media_management.url_import.error_access_denied", 403)
-    if response.status_code == 404:
-        response.close()
-        raise UrlFetchError("admin.media_management.url_import.error_not_found", 404)
-    if response.status_code >= 400:
-        status = response.status_code
-        response.close()
-        raise UrlFetchError(
-            f"admin.media_management.url_import.error_http:::{status}",
-            502,
+    try:
+        _check_ssrf(response.url or url)
+
+        if response.status_code == 403:
+            raise UrlFetchError("admin.media_management.url_import.error_access_denied", 403)
+        if response.status_code == 404:
+            raise UrlFetchError("admin.media_management.url_import.error_not_found", 404)
+        if response.status_code >= 400:
+            raise UrlFetchError(
+                f"admin.media_management.url_import.error_http:::{response.status_code}",
+                502,
+            )
+
+        content_type = (response.headers.get("content-type") or "").split(";")[0].strip().lower()
+        filename = (
+            _filename_from_content_disposition(response.headers.get("content-disposition"))
+            or _filename_from_url(response.url or url)
         )
 
-    content_type = (response.headers.get("content-type") or "").split(";")[0].strip().lower()
-    filename = (
-        _filename_from_content_disposition(response.headers.get("content-disposition"))
-        or _filename_from_url(response.url or url)
-    )
+        if not content_type:
+            guessed, _ = mimetypes.guess_type(filename)
+            content_type = (guessed or "").lower()
 
-    if not content_type:
-        guessed, _ = mimetypes.guess_type(filename)
-        content_type = (guessed or "").lower()
+        if not _is_supported_media(content_type, filename):
+            raise UrlFetchError("admin.media_management.url_import.error_unsupported_type", 400)
 
-    if not _is_supported_media(content_type, filename):
+        return response, content_type
+    except Exception:
         response.close()
-        raise UrlFetchError("admin.media_management.url_import.error_unsupported_type", 400)
-
-    content_length = response.headers.get("content-length")
-    if content_length and content_length.isdigit() and int(content_length) > MAX_DOWNLOAD_BYTES:
-        response.close()
-        raise UrlFetchError("admin.media_management.url_import.error_too_large", 400)
-
-    return response, content_type
+        raise
 
 def _filename_from_response(url: str, response: requests.Response) -> str:
     filename = (
@@ -217,8 +250,6 @@ def download_media_to_temp(url: str) -> Tuple[Path, str]:
                 if not chunk:
                     continue
                 total_bytes += len(chunk)
-                if total_bytes > MAX_DOWNLOAD_BYTES:
-                    raise UrlFetchError("admin.media_management.url_import.error_too_large", 400)
                 tmp.write(chunk)
 
         if total_bytes == 0:

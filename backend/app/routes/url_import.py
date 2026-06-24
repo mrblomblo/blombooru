@@ -21,6 +21,12 @@ from ..utils.url_fetch import UrlFetchError, download_media_to_temp, fetch_media
 
 router = APIRouter(prefix="/api/media/url-import", tags=["url-import"])
 
+def _stream_with_cleanup(response, chunk_size: int = 8192):
+    try:
+        yield from response.iter_content(chunk_size=chunk_size)
+    finally:
+        response.close()
+
 class FetchRequest(BaseModel):
     url: str
 
@@ -57,7 +63,7 @@ async def proxy_media_url(
     try:
         response, content_type = fetch_media_stream(url)
         return StreamingResponse(
-            response.iter_content(chunk_size=8192),
+            _stream_with_cleanup(response),
             media_type=content_type,
             headers={"Cache-Control": "no-store"},
         )
@@ -120,8 +126,8 @@ async def import_media_url(
                 source=source,
                 category_hints=category_hints_str,
             )
-        except HTTPException as e:
-            if e.status_code == 409 and file_path.exists():
+        except HTTPException:
+            if file_path and file_path.exists():
                 file_path.unlink(missing_ok=True)
             raise
 

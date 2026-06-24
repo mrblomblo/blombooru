@@ -28,6 +28,10 @@ class UrlImporter {
                     this.fetchMedia();
                 }
             });
+
+            this.urlInput.addEventListener('paste', () => {
+                setTimeout(() => this.fetchMedia(), 100);
+            });
         }
     }
 
@@ -103,10 +107,20 @@ class UrlImporter {
         if (!this.previewArea) return;
 
         const proxyUrl = `/api/media/url-import/proxy?url=${encodeURIComponent(media.file_url)}`;
+        const skeletonStyle = "background-image: linear-gradient(90deg, var(--surface) 0%, color-mix(in srgb, var(--surface-light), var(--surface) 40%) 50%, var(--surface) 100%); background-size: 200% 100%; animation: skeleton-wave 2s infinite linear;";
+        const clearSkeleton = "this.closest('#url-import-thumb-wrap').style.animation='none'; this.closest('#url-import-thumb-wrap').style.backgroundImage='none';";
+
         const previewHtml = media.is_video
-            ? `<video src="${proxyUrl}" class="w-32 h-32 object-contain surface border" muted></video>`
-            : `<img src="${proxyUrl}" alt="Preview" class="w-32 h-32 object-contain surface border"
-                    onerror="this.style.display='none'">`;
+            ? `<div class="w-32 h-32 surface border relative overflow-hidden" style="${skeletonStyle}" id="url-import-thumb-wrap">
+                    <video src="${proxyUrl}" class="w-full h-full object-contain opacity-0 transition-opacity duration-300" muted
+                        onloadeddata="this.style.opacity='1'; ${clearSkeleton}"
+                        onerror="this.style.display='none'; ${clearSkeleton}"></video>
+               </div>`
+            : `<div class="w-32 h-32 surface border relative overflow-hidden" style="${skeletonStyle}" id="url-import-thumb-wrap">
+                    <img src="${proxyUrl}" alt="Preview" class="w-full h-full object-contain opacity-0 transition-opacity duration-300"
+                        onload="this.style.opacity='1'; ${clearSkeleton}"
+                        onerror="this.style.display='none'; ${clearSkeleton}">
+               </div>`;
 
         this.previewArea.innerHTML = `
             <div class="bg surface border p-4">
@@ -142,6 +156,16 @@ class UrlImporter {
         this.previewArea.querySelector('#url-import-queue-btn')?.addEventListener('click', () => {
             this.addToQueue();
         });
+
+        const previewEl = this.previewArea.querySelector('#url-import-thumb-wrap img, #url-import-thumb-wrap video');
+        if (previewEl) {
+            previewEl.style.cursor = 'pointer';
+            previewEl.addEventListener('click', () => {
+                if (this.uploader && this.uploader.fullscreenViewer) {
+                    this.uploader.fullscreenViewer.open(proxyUrl, media.is_video);
+                }
+            });
+        }
     }
 
     async addToQueue() {

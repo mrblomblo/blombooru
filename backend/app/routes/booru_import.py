@@ -1,6 +1,4 @@
 import hashlib
-import ipaddress
-import socket
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -24,6 +22,7 @@ from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail
+from ..utils.url_security import UrlValidationError, validate_url_not_ssrf
 from .media import get_or_create_tags, update_tag_counts
 
 router = APIRouter(prefix="/api/booru-import", tags=["booru-import"])
@@ -276,48 +275,18 @@ async def download_and_import(
         raise HTTPException(status_code=500, detail=f"admin.media_management.booru_import.import_error:::{safe_error_detail('Import error', e)}")
 
 def _validate_url_not_ssrf(url: str) -> None:
-    """
-    Resolve the hostname in url to an IP address and reject any address that
-    falls within a private, loopback, link-local, or otherwise reserved range.
-    """
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    scheme = parsed.scheme.lower()
-    if scheme not in ("http", "https"):
-        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
-
-    hostname = parsed.hostname
-    if not hostname:
-        raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
-
     try:
-        # getaddrinfo returns all addresses, check every one.
-        addrinfos = socket.getaddrinfo(hostname, None)
-    except socket.gaierror:
-        raise HTTPException(
-            status_code=400,
-            detail="admin.media_management.booru_import.error_invalid_url"
-        )
-
-    for _family, _type, _proto, _canonname, sockaddr in addrinfos:
-        raw_ip = sockaddr[0]
-        try:
-            ip = ipaddress.ip_address(raw_ip)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
-
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_multicast
-            or ip.is_reserved
-            or ip.is_unspecified
-        ):
+        validate_url_not_ssrf(url)
+    except UrlValidationError as e:
+        if e.reason == "ssrf_blocked":
             raise HTTPException(
                 status_code=403,
-                detail="admin.media_management.booru_import.error_ssrf_blocked"
+                detail="admin.media_management.booru_import.error_ssrf_blocked",
             )
+        raise HTTPException(
+            status_code=400,
+            detail="admin.media_management.booru_import.error_invalid_url",
+        )
 
 @router.get("/proxy-image")
 async def proxy_image(

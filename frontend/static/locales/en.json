@@ -178,7 +178,7 @@
                 "error_connection": "Could not connect to the remote server",
                 "error_request": "Request failed: {error}",
                 "error_http": "Remote server returned error {error}",
-                "error_too_large": "File is too large to import (max 500 MB)",
+                "error_ssrf_blocked": "This URL is not allowed for security reasons",
                 "error_fetch_failed": "Failed to check URL: {error}",
                 "error_proxy_failed": "Failed to download file: {error}",
                 "error_empty_file": "The remote file is empty",

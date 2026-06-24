@@ -178,7 +178,7 @@
                 "error_connection": "",
                 "error_request": "",
                 "error_http": "",
-                "error_too_large": "",
+                "error_ssrf_blocked": "",
                 "error_fetch_failed": "",
                 "error_proxy_failed": "",
                 "error_empty_file": "",
