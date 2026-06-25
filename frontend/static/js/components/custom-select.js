@@ -6,6 +6,8 @@ class CustomSelect {
         this.valueDisplay = element.querySelector('.custom-select-value');
         this.selectedValue = element.dataset.value || '';
         this.focusedIndex = -1;
+        this.disabled = false;
+        this.arrow = element.querySelector('.custom-select-arrow');
 
         this.init();
         this.initializeExistingOptions();
@@ -13,6 +15,7 @@ class CustomSelect {
 
     init() {
         this.trigger.addEventListener('click', (e) => {
+            if (this.disabled) return;
             e.stopPropagation();
             this.toggle();
         });
@@ -57,6 +60,8 @@ class CustomSelect {
     }
 
     toggle() {
+        if (this.disabled) return;
+
         if (this.element.classList.contains('open')) {
             this.close();
         } else {
@@ -65,6 +70,8 @@ class CustomSelect {
     }
 
     open() {
+        if (this.disabled) return;
+
         document.querySelectorAll('.custom-select.open').forEach(select => {
             if (select !== this.element) {
                 select.classList.remove('open');
@@ -108,6 +115,8 @@ class CustomSelect {
     }
 
     handleKeyboard(e) {
+        if (this.disabled) return;
+
         const isOpen = this.element.classList.contains('open');
         const options = this.dropdown.querySelectorAll('.custom-select-option');
 
@@ -184,6 +193,33 @@ class CustomSelect {
         return this.selectedValue;
     }
 
+    setDisabled(disabled) {
+        this.disabled = disabled;
+        this.trigger.disabled = disabled;
+
+        if (disabled) {
+            this.trigger.classList.remove('bg', 'hover:border-primary', 'focus:border-primary', 'cursor-pointer');
+            this.trigger.classList.add('surface', 'cursor-not-allowed');
+            this.valueDisplay.classList.remove('text');
+            this.valueDisplay.classList.add('text-tertiary');
+            if (this.arrow) {
+                this.arrow.classList.remove('text-secondary');
+                this.arrow.classList.add('text-tertiary');
+            }
+            this.close();
+            return;
+        }
+
+        this.trigger.classList.add('bg', 'hover:border-primary', 'focus:border-primary', 'cursor-pointer');
+        this.trigger.classList.remove('surface', 'cursor-not-allowed');
+        this.valueDisplay.classList.add('text');
+        this.valueDisplay.classList.remove('text-tertiary');
+        if (this.arrow) {
+            this.arrow.classList.add('text-secondary');
+            this.arrow.classList.remove('text-tertiary');
+        }
+    }
+
     setOptions(optionsData) {
         this.dropdown.innerHTML = '';
         optionsData.forEach(optionData => {
@@ -201,6 +237,7 @@ class CustomSelect {
         const option = document.createElement('div');
         option.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs';
         option.dataset.value = value;
+        option.dataset.baseLabel = text;
         option.textContent = text;
 
         this._bindOptionEvents(option);

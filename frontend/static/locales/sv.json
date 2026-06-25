@@ -601,7 +601,11 @@
         "remove_from_album": "Ta bort från album",
         "select_all": "Välj alla",
         "selecting_all": "Väljer alla...",
-        "sort_by": "Sortera efter"
+        "sort_by": "Sortera efter",
+        "sort_random": "",
+        "sort_regen_random": "",
+        "sort_tag_count": "",
+        "sort_toggle_order": ""
     },
     "login": {
         "enter_credentials": "Ange dina uppgifter för att komma åt {app_name}",

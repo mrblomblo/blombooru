@@ -601,7 +601,11 @@
         "remove_from_album": "Удалить из альбома",
         "select_all": "Выбрать все",
         "selecting_all": "Выбираем все...",
-        "sort_by": "Сортировать по"
+        "sort_by": "Сортировать по",
+        "sort_random": "",
+        "sort_regen_random": "",
+        "sort_tag_count": "",
+        "sort_toggle_order": ""
     },
     "login": {
         "enter_credentials": "Введите свои учетные данные для доступа к {app_name}",

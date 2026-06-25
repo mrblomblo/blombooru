@@ -20,6 +20,7 @@ from ..utils.album_utils import (get_album_popular_tags, get_album_rating,
                                  update_album_last_modified)
 from ..utils.cache import cache_response, invalidate_album_cache
 from ..utils.logger import logger
+from ..utils.media_sort import apply_album_sort, apply_media_sort
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
@@ -39,6 +40,7 @@ async def get_albums(
     limit: Optional[int] = Query(default=None),
     sort: Optional[str] = Query(default="created_at"),
     order: Optional[str] = Query(default="desc"),
+    seed: Optional[str] = Query(default=None),
     rating: Optional[str] = None,
     root_only: bool = Query(default=False),
     db: Session = Depends(get_db)
@@ -53,17 +55,10 @@ async def get_albums(
         # Only show albums that are not children of any other album
         query = query.filter(~Album.id.in_(db.query(blombooru_album_hierarchy.c.child_album_id)))
     
-    # Apply sorting
-    sort_column = Album.created_at
-    if sort == "name":
-        sort_column = Album.name
-    elif sort == "last_modified":
-        sort_column = Album.last_modified
-    
-    if order == "desc":
-        query = query.order_by(desc(sort_column))
-    else:
-        query = query.order_by(asc(sort_column))
+    sort_order = order.lower() if order else "desc"
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
+    query = apply_album_sort(query, sort or "created_at", sort_order, seed)
     
     # Get all albums
     all_albums = query.all()
@@ -361,6 +356,7 @@ async def get_album_contents(
     q: Optional[str] = Query(default=None),
     sort: str = Query(default="uploaded_at"),
     order: str = Query(default="desc"),
+    seed: Optional[str] = Query(default=None),
     db: Session = Depends(get_db)
 ):
     """Get album contents (media + sub-albums, paginated)"""
@@ -410,23 +406,18 @@ async def get_album_contents(
             media_query = media_query.filter(Media.rating.in_(allowed_ratings.get(rating, [])))
     
     # Sort Media
-    media_sort_mapping = {
-        'uploaded_at': Media.id,
-        'filename': Media.filename,
-        'name': Media.filename,
-        'file_size': Media.file_size,
-        'file_type': Media.file_type,
-        'last_modified': Media.id
-    }
-    
-    # Default to Media.id if key not found
-    media_sort_column = media_sort_mapping.get(sort, Media.id)
-    
-    # Apply Sort using column methods
-    if sort_order == "asc":
-        media_query = media_query.order_by(media_sort_column.asc())
-    else:
-        media_query = media_query.order_by(media_sort_column.desc())
+    media_query = apply_media_sort(
+        media_query,
+        sort,
+        sort_order,
+        db,
+        seed,
+        column_overrides={
+            'uploaded_at': Media.id,
+            'last_modified': Media.id,
+            'name': Media.filename,
+        },
+    )
 
     # Get total count BEFORE pagination
     total_media = media_query.count()
@@ -443,22 +434,7 @@ async def get_album_contents(
         blombooru_album_hierarchy.c.parent_album_id == album_id
     )
     
-    # Sort Albums
-    album_sort_mapping = {
-        'name': Album.name,
-        'filename': Album.name,
-        'last_modified': Album.last_modified,
-        'uploaded_at': Album.created_at
-    }
-    
-    album_sort_column = album_sort_mapping.get(sort, Album.created_at)
-    
-    # Apply Sort using column methods
-    if sort_order == "asc":
-        child_albums_query = child_albums_query.order_by(album_sort_column.asc())
-    else:
-        child_albums_query = child_albums_query.order_by(album_sort_column.desc())
-
+    child_albums_query = apply_album_sort(child_albums_query, sort, sort_order, seed)
     child_albums = child_albums_query.all()
     
     # Build Album Response List (with rating logic)

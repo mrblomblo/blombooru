@@ -24,6 +24,7 @@ const STATIC_ASSETS = [
     '/static/js/components/fullscreen-mediaviewer.js',
     '/static/js/components/media-viewer-base.js',
     '/static/js/components/media-picker-modal.js',
+    '/static/js/components/dice-icon.js',
     '/static/js/components/base-gallery.js',
     '/static/js/bulk/bulk-tag-modal-base.js',
     '/static/js/bulk/bulk-manage-tags-modal.js',

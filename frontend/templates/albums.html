@@ -5,12 +5,18 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 {% block title %}{{ t('common.albums') }} - {{ app_name }}{% endblock %}
 
 {% block content %}
+{% set album_sort_options = {
+    'uploaded_at': t('admin.settings.upload_date'),
+    'last_modified': t('albums.sort_last_modified'),
+    'filename': t('admin.settings.file_name'),
+    'random': t('gallery.sort_random')
+} %}
 <div class="container mx-auto px-4 py-4">
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Albums Grid -->
         <div class="xl:col-span-4 lg:col-span-3">
             {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
-            {{ sorting_options(default_sort=default_sort, default_order=default_order, location='mobile') }}
+            {{ sorting_options(sort_options=album_sort_options, default_sort=default_sort, default_order=default_order, location='mobile') }}
 
             <div id="albums-grid"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 gap-2">
@@ -23,7 +29,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
         <!-- Sidebar -->
         {{ sidebar_start() }}
         {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
-        {{ sorting_options(default_sort=default_sort, default_order=default_order) }}
+        {{ sorting_options(sort_options=album_sort_options, default_sort=default_sort, default_order=default_order) }}
 
         <h3 class="text-sm font-bold mb-2 pb-1 border-b">{{ t('gallery.popular_tags') }}</h3>
         <div id="popular-tags" class="text-xs">
@@ -40,6 +46,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 {% block extra_js %}
 <script src="/static/js/components/tooltip-helper.js?v={{ cache_buster }}"></script>
 <script src="/static/js/components/custom-select.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/dice-icon.js?v={{ cache_buster }}"></script>
 <script src="/static/js/components/base-gallery.js?v={{ cache_buster }}"></script>
 <script src="/static/js/pages/albums.js?v={{ cache_buster }}"></script>
 {% endblock %}

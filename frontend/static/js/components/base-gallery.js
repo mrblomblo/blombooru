@@ -6,7 +6,6 @@ class BaseGallery {
             popularTagsSelector: '#popular-tags',
             pageNavSelector: '#page-nav',
             sortBySelector: '#sort-by-select',
-            sortOrderSelector: '#sort-order-select',
             enableTooltips: true,
             enablePagination: true,
             enableRatingFilter: true,
@@ -24,7 +23,7 @@ class BaseGallery {
         this.tagCounts = new Map();
         this.tooltipHelper = null;
         this.sortBySelect = null;
-        this.sortOrderSelect = null;
+        this.currentRandomSeed = null;
 
         // Selection state
         this.lastSelectedId = null;
@@ -40,8 +39,7 @@ class BaseGallery {
             loading: document.querySelector(this.options.loadingSelector),
             popularTags: document.querySelector(this.options.popularTagsSelector),
             pageNav: document.querySelector(this.options.pageNavSelector),
-            sortBy: document.querySelector(this.options.sortBySelector),
-            sortOrder: document.querySelector(this.options.sortOrderSelector)
+            sortBy: document.querySelector(this.options.sortBySelector)
         };
 
         // Current state
@@ -54,8 +52,13 @@ class BaseGallery {
             this.currentCustomFilter = '';
         }
 
-        this.currentSort = this.elements.sortBy?.dataset.value || this.options.defaultSort;
-        this.currentOrder = this.elements.sortOrder?.dataset.value || this.options.defaultOrder;
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortControls = document.querySelector('.js-sort-controls');
+        const defaultOrderFromDom = sortControls?.dataset.defaultOrder || this.options.defaultOrder;
+
+        this.currentSort = urlParams.get('sort') || this.elements.sortBy?.dataset.value || this.options.defaultSort;
+        this.currentOrder = urlParams.get('order') || defaultOrderFromDom;
+        this.currentRandomSeed = urlParams.get('seed') || null;
     }
 
     /**
@@ -201,56 +204,50 @@ class BaseGallery {
         }
 
         this.sortBySelects = [];
-        this.sortOrderSelects = [];
+        this.sortOrderToggles = document.querySelectorAll('.js-sort-order-toggle');
+        this.sortRandomRegenBtns = document.querySelectorAll('.js-sort-random-regen');
 
-        // 1. Setup Sort By Selects
         const sortByElements = document.querySelectorAll('.js-sort-by-select');
         const params = new URLSearchParams(window.location.search);
 
         sortByElements.forEach(element => {
             const select = new CustomSelect(element);
 
-            // Set initial value from URL if present
             if (params.has('sort')) {
                 select.setValue(params.get('sort'));
             }
 
-            // Sync changes to other instances and reload
             element.addEventListener('change', (e) => {
                 const newValue = e.detail.value;
                 this.sortBySelects.forEach(s => {
-                    if (s !== select) s.setValue(newValue);
+                    if (s !== select) s.setValue(newValue, false);
                 });
-                this.onSortChange();
+                this.handleSortChange(newValue);
             });
 
             this.sortBySelects.push(select);
         });
 
-        // 2. Setup Sort Order Selects
-        const sortOrderElements = document.querySelectorAll('.js-sort-order-select');
+        this.sortBySelect = this.sortBySelects[0];
 
-        sortOrderElements.forEach(element => {
-            const select = new CustomSelect(element);
-
-            if (params.has('order')) {
-                select.setValue(params.get('order'));
-            }
-
-            element.addEventListener('change', (e) => {
-                const newValue = e.detail.value;
-                this.sortOrderSelects.forEach(s => {
-                    if (s !== select) s.setValue(newValue);
-                });
-                this.onSortChange();
-            });
-
-            this.sortOrderSelects.push(select);
+        this.sortOrderToggles.forEach(btn => {
+            btn.addEventListener('click', () => this.toggleSortOrder());
         });
 
-        // Backwards compatibility for single access
-        this.sortBySelect = this.sortBySelects[0];
-        this.sortOrderSelect = this.sortOrderSelects[0];
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.regenerateRandomSeed());
+        });
+
+        if (this.currentSort === 'random' && !this.currentRandomSeed) {
+            this.currentRandomSeed = String(Date.now());
+            this.syncSortUrlParams();
+        }
+
+        this.updateSortControlsVisibility();
+        this.updateSortOrderToggleState();
+        if (this.currentSort === 'random') {
+            this.rollSortRandomDice();
+        }
     }
 
     getSortValue() {
@@ -261,16 +258,93 @@ class BaseGallery {
     }
 
     getOrderValue() {
-        if (this.sortOrderSelects && this.sortOrderSelects.length > 0) {
-            return this.sortOrderSelects[0].getValue();
-        }
         return this.currentOrder;
     }
 
+    handleSortChange(newSort) {
+        const previousSort = this.currentSort;
+        this.currentSort = newSort;
+
+        if (newSort === 'random') {
+            if (previousSort !== 'random' || !this.currentRandomSeed) {
+                this.currentRandomSeed = String(Date.now());
+            }
+            this.rollSortRandomDice();
+        } else {
+            this.currentRandomSeed = null;
+        }
+
+        this.updateSortControlsVisibility();
+        this.syncSortUrlParams();
+        this.onSortChange();
+    }
+
+    toggleSortOrder() {
+        if (this.currentSort === 'random') return;
+
+        this.currentOrder = this.currentOrder === 'asc' ? 'desc' : 'asc';
+        this.updateSortOrderToggleState();
+        this.syncSortUrlParams();
+        this.onSortChange();
+    }
+
+    regenerateRandomSeed() {
+        if (this.currentSort !== 'random') return;
+
+        this.currentRandomSeed = String(Date.now());
+        this.rollSortRandomDice();
+        this.syncSortUrlParams();
+        this.onSortChange();
+    }
+
+    rollSortRandomDice() {
+        if (typeof renderDiceIcon === 'undefined') return;
+
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.innerHTML = renderDiceIcon();
+        });
+    }
+
+    updateSortControlsVisibility() {
+        const isRandom = this.currentSort === 'random';
+
+        this.sortOrderToggles.forEach(btn => {
+            btn.classList.toggle('hidden', isRandom);
+            btn.disabled = isRandom;
+        });
+
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.classList.toggle('hidden', !isRandom);
+        });
+    }
+
+    updateSortOrderToggleState() {
+        this.sortOrderToggles.forEach(btn => {
+            btn.dataset.order = this.currentOrder;
+            btn.classList.remove('asc', 'desc');
+            btn.classList.add(this.currentOrder);
+        });
+    }
+
+    syncSortUrlParams() {
+        const params = {
+            sort: this.currentSort,
+            order: this.currentOrder,
+            seed: this.currentSort === 'random' ? this.currentRandomSeed : null
+        };
+        this.updateUrlParams(params);
+    }
+
+    appendSortParams(params) {
+        const sort = this.getSortValue();
+        params.set('sort', sort);
+        params.set('order', this.getOrderValue());
+        if (sort === 'random' && this.currentRandomSeed) {
+            params.set('seed', this.currentRandomSeed);
+        }
+    }
+
     onSortChange() {
-        this.currentSort = this.getSortValue();
-        this.currentOrder = this.getOrderValue();
-        this.updateUrlParams({ sort: this.currentSort, order: this.currentOrder });
         this.loadContent();
     }
 

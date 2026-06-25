@@ -601,7 +601,11 @@
         "remove_from_album": "从相册中移除",
         "select_all": "全选",
         "selecting_all": "正在全选...",
-        "sort_by": "排序方式"
+        "sort_by": "排序方式",
+        "sort_random": "",
+        "sort_regen_random": "",
+        "sort_tag_count": "",
+        "sort_toggle_order": ""
     },
     "login": {
         "enter_credentials": "输入您的凭据以访问 {app_name}",
