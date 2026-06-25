@@ -2,14 +2,12 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 
-
 class UrlValidationError(Exception):
     """Raised when a URL fails security validation."""
 
     def __init__(self, reason: str):
         self.reason = reason
         super().__init__(reason)
-
 
 def validate_url_not_ssrf(url: str) -> None:
     """

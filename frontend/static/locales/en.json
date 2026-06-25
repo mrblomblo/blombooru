@@ -173,7 +173,7 @@
                 "error_invalid_url": "Invalid URL. Must be a direct http or https link.",
                 "error_access_denied": "Access denied by the remote server (403). The site may require login.",
                 "error_not_found": "Media not found at this URL (404)",
-                "error_unsupported_type": "Unsupported file type. Only JPG, PNG, GIF, WEBP, MP4, and WEBM are supported.",
+                "error_unsupported_type": "Unsupported file type. Refer to the above list for supported formats.",
                 "error_timeout": "Request timed out while contacting the remote server",
                 "error_connection": "Could not connect to the remote server",
                 "error_request": "Request failed: {error}",
