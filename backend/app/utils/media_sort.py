@@ -7,7 +7,8 @@ from sqlalchemy.orm import Query, Session
 from ..models import Album, Media, blombooru_media_tags
 
 MAX_RANDOM_SEED_LENGTH = 32
-_RANDOM_SEED_PATTERN = re.compile(r"^\d{1,32}$")
+DEFAULT_RANDOM_SEED = "0"
+_RANDOM_SEED_PATTERN = re.compile(rf"^\d{{1,{MAX_RANDOM_SEED_LENGTH}}}$")
 
 
 def normalize_random_seed(seed: Optional[str]) -> Optional[str]:
@@ -15,6 +16,10 @@ def normalize_random_seed(seed: Optional[str]) -> Optional[str]:
     if not seed or not _RANDOM_SEED_PATTERN.match(seed):
         return None
     return seed
+
+
+def _effective_random_seed(seed: Optional[str]) -> str:
+    return normalize_random_seed(seed) or DEFAULT_RANDOM_SEED
 
 
 def apply_media_sort(
@@ -30,11 +35,9 @@ def apply_media_sort(
     overrides = column_overrides or {}
 
     if sort_by == "random":
-        normalized_seed = normalize_random_seed(seed)
-        if normalized_seed:
-            hash_input = func.concat(cast(Media.id, String), literal(normalized_seed))
-            return query.order_by(func.md5(hash_input))
-        return query.order_by(func.random())
+        effective_seed = _effective_random_seed(seed)
+        hash_input = func.concat(cast(Media.id, String), literal(effective_seed))
+        return query.order_by(func.md5(hash_input))
 
     if sort_by == "tag_count":
         if db is None:
@@ -74,11 +77,9 @@ def apply_album_sort(
     ascending = sort_order == "asc"
 
     if sort_by == "random":
-        normalized_seed = normalize_random_seed(seed)
-        if normalized_seed:
-            hash_input = func.concat(cast(Album.id, String), literal(normalized_seed))
-            return query.order_by(func.md5(hash_input))
-        return query.order_by(func.random())
+        effective_seed = _effective_random_seed(seed)
+        hash_input = func.concat(cast(Album.id, String), literal(effective_seed))
+        return query.order_by(func.md5(hash_input))
 
     if sort_by == "name" or sort_by == "filename":
         sort_column = Album.name

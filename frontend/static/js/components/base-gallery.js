@@ -245,6 +245,9 @@ class BaseGallery {
 
         this.updateSortControlsVisibility();
         this.updateSortOrderToggleState();
+        if (this.currentSort === 'random') {
+            this.rollSortRandomDice();
+        }
     }
 
     getSortValue() {
@@ -266,6 +269,7 @@ class BaseGallery {
             if (previousSort !== 'random' || !this.currentRandomSeed) {
                 this.currentRandomSeed = String(Date.now());
             }
+            this.rollSortRandomDice();
         } else {
             this.currentRandomSeed = null;
         }
@@ -288,8 +292,17 @@ class BaseGallery {
         if (this.currentSort !== 'random') return;
 
         this.currentRandomSeed = String(Date.now());
+        this.rollSortRandomDice();
         this.syncSortUrlParams();
         this.onSortChange();
+    }
+
+    rollSortRandomDice() {
+        if (typeof renderDiceIcon === 'undefined') return;
+
+        this.sortRandomRegenBtns.forEach(btn => {
+            btn.innerHTML = renderDiceIcon();
+        });
     }
 
     updateSortControlsVisibility() {

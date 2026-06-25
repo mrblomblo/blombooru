@@ -434,22 +434,7 @@ async def get_album_contents(
         blombooru_album_hierarchy.c.parent_album_id == album_id
     )
     
-    # Sort Albums
-    album_sort_mapping = {
-        'name': Album.name,
-        'filename': Album.name,
-        'last_modified': Album.last_modified,
-        'uploaded_at': Album.created_at
-    }
-    
-    album_sort_column = album_sort_mapping.get(sort, Album.created_at)
-    
-    # Apply Sort using column methods
-    if sort_order == "asc":
-        child_albums_query = child_albums_query.order_by(album_sort_column.asc())
-    else:
-        child_albums_query = child_albums_query.order_by(album_sort_column.desc())
-
+    child_albums_query = apply_album_sort(child_albums_query, sort, sort_order, seed)
     child_albums = child_albums_query.all()
     
     # Build Album Response List (with rating logic)

@@ -18,7 +18,7 @@ class AdminSystem {
         if (defaultSortElement) {
             this.defaultSortSelect = new CustomSelect(defaultSortElement);
             defaultSortElement.addEventListener('change', () => {
-                this.updateDefaultOrderVisibility();
+                this.updateDefaultOrderState();
             });
         }
 
@@ -27,7 +27,7 @@ class AdminSystem {
             this.defaultOrderSelect = new CustomSelect(defaultOrderElement);
         }
 
-        this.updateDefaultOrderVisibility();
+        this.updateDefaultOrderState();
 
         const popularTagsModeElement = document.getElementById('popular-tags-mode');
         if (popularTagsModeElement) {
@@ -305,12 +305,11 @@ class AdminSystem {
         div.style.filter = `blur(${blur}px) brightness(${brightness}%) saturate(${saturation}%) contrast(${contrast}%)`;
     }
 
-    updateDefaultOrderVisibility() {
-        const orderEl = document.getElementById('default-order');
-        if (!orderEl || !this.defaultSortSelect) return;
+    updateDefaultOrderState() {
+        if (!this.defaultOrderSelect) return;
 
-        const isRandom = this.defaultSortSelect.getValue() === 'random';
-        orderEl.classList.toggle('hidden', isRandom);
+        const isRandom = this.defaultSortSelect?.getValue() === 'random';
+        this.defaultOrderSelect.setDisabled(isRandom);
     }
 
     cleanupCustomButtons() {
@@ -590,7 +589,7 @@ class AdminSystem {
 
             if (settings.default_sort && this.defaultSortSelect) {
                 this.defaultSortSelect.setValue(settings.default_sort);
-                this.updateDefaultOrderVisibility();
+                this.updateDefaultOrderState();
             }
 
             if (settings.default_order && this.defaultOrderSelect) {
