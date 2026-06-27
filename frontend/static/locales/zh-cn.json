@@ -1040,6 +1040,14 @@
         "shared_media": "共享媒体",
         "view_original": "查看原图"
     },
+    "tags_gallery": {
+        "sort_created_at": "",
+        "sort_tag_name": "",
+        "sort_post_count": "",
+        "sort_category": "",
+        "failed_load_list": "",
+        "no_visible_tags": ""
+    },
     "upload": {
         "base_settings": {
             "base_albums": "基础相册",

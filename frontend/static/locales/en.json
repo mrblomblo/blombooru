@@ -1040,6 +1040,14 @@
         "shared_media": "Shared Media",
         "view_original": "View Original"
     },
+    "tags_gallery": {
+        "sort_created_at": "Creation Date",
+        "sort_tag_name": "Tag Name",
+        "sort_post_count": "Post Count",
+        "sort_category": "Category",
+        "failed_load_list": "Failed to load tags",
+        "no_visible_tags": "No visible tags found"
+    },
     "upload": {
         "base_settings": {
             "base_albums": "Base Albums",
