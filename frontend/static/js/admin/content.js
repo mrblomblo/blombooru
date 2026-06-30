@@ -457,13 +457,13 @@ class AdminContent {
             fullImportArea.classList.remove('drag-over');
 
             if (e.dataTransfer.files.length > 0) {
-                this.uploadFullBackup(e.dataTransfer.files[0]);
+                this.app.system.uploadFullBackup(e.dataTransfer.files[0]);
             }
         });
 
         fullImportInput?.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                this.uploadFullBackup(e.target.files[0]);
+                this.app.system.uploadFullBackup(e.target.files[0]);
             }
         });
 
