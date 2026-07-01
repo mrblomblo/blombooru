@@ -424,8 +424,6 @@ async def tags_overview_page(request: Request):
         "app_name": settings.APP_NAME,
         "default_sort": settings.get_default_sort(),
         "default_order": settings.get_default_order(),
-        "popular_tags_mode": settings.get_popular_tags_mode(),
-        "popular_tags_limit": settings.get_popular_tags_limit(),
         "sidebar_filter_mode": settings.SIDEBAR_FILTER_MODE,
         "sidebar_custom_buttons": settings.SIDEBAR_CUSTOM_BUTTONS
     })

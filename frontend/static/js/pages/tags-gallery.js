@@ -27,9 +27,9 @@ class TagsGallery extends BaseGallery {
 
         try {
             const params = new URLSearchParams({
-               page:this.currentPage,
-               sort:this.getSortValue(),
-               order:this.getOrderValue()
+               page: this.currentPage,
+               sort: this.getSortValue(),
+               order: this.getOrderValue()
             });
 
             const response = await fetch(`/api/tags/list?${params}`);
@@ -63,13 +63,13 @@ class TagsGallery extends BaseGallery {
 
     createTagDataContainer(tag){
         return `
-            <div class="bg p-3 border flex justify-between items-center">
+            <div class="surface p-3 border flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text" style="font-size: 1rem">${tag.name}</a>
-                    <span class="text-s text-secondary">(${tag.post_count})</span>
-                    <span class="text-s text-secondary">(${new Date(tag.created_at).toLocaleString()})</span>
+                    <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text">${tag.name}</a>
+                    <span class="text-xs text-secondary">(${tag.post_count})</span>
+                    <span class="text-xs text-secondary">(${new Date(tag.created_at).toLocaleString()})</span>
                 </div>
-                <span class="text-s text-secondary uppercase">${tag.category}</span>
+                <span class="text-xs text-secondary uppercase">${tag.category}</span>
             </div>
         `;
     }

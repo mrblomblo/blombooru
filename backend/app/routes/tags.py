@@ -57,12 +57,12 @@ async def get_tags(
 @router.get("/list/", response_model=dict)
 @cache_response(expire=3600, key_prefix="tags_list")
 async def get_tags_list(
-        request: Request,
-        page: int = 1,
-        limit: Optional[int] = Query(default=None),
-        sort: Optional[str] = Query(default="post_count"),
-        order: Optional[str] = Query(default="desc"),
-        db: Session = Depends(get_db)
+    request: Request,
+    page: int = 1,
+    limit: Optional[int] = Query(default=None),
+    sort: Optional[str] = Query(default="post_count"),
+    order: Optional[str] = Query(default="desc"),
+    db: Session = Depends(get_db)
 ):
     """Get paginated tag list"""
     limit = get_effective_limit(limit)
@@ -86,13 +86,9 @@ async def get_tags_list(
         query = query.order_by(asc(sort_column))
 
     # Get All Tags
-    all_tags = query.all()
-    total = len(all_tags)
-
-    # Paginate List
-    start = (page - 1) * limit
-    end = start + limit
-    paginated_tags = all_tags[start:end]
+    total_tags = query.count()
+    page_start = (page - 1) * limit
+    paginated_tags = query.offset(page_start).limit(limit).all()
 
     # Build Response
     return_items = []
@@ -107,10 +103,10 @@ async def get_tags_list(
 
     return {
         "items": return_items,
-        "total": total,
+        "total": total_tags,
         "page": page,
         "limit": limit,
-        "pages": max(1, (total + limit - 1) // limit)
+        "pages": max(1, (total_tags + limit - 1) // limit)
     }
 
 @router.get("/autocomplete")
