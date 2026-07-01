@@ -147,6 +147,12 @@
                     <!-- Desktop Navigation -->
                     <nav class="hidden sm:block">
                         <ul class="flex gap-2 items-center">
+                            <li>
+                                <a href="/tags-gallery"
+                                   class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/tags-gallery') or request.url.path.startswith('/tags-gallery/') else 'text' }}">
+                                    {{ t('common.tags') }}
+                                </a>
+                            </li>
                             <li id="nav-albums-item">
                                 <a href="/albums"
                                     class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">
@@ -227,6 +233,12 @@
                 <!-- Mobile Navigation -->
                 <nav id="mobile-menu" class="sm:hidden hidden border-y my-2">
                     <ul class="flex flex-col py-2 gap-1">
+                        <li id="nav-tags-gallery-item-mobile">
+                            <a href="/tags-gallery"
+                                class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/tags-gallery') or request.url.path.startswith('/tags-gallery/') else 'text' }}">
+                                {{ t('common.tags') }}
+                            </a>
+                        </li>
                         <li id="nav-albums-item-mobile">
                             <a href="/albums"
                                 class="btn-dark w-full justify-start px-4 py-2 {{ 'text-primary' if request.url.path.startswith('/albums') or request.url.path.startswith('/album/') else 'text' }}">

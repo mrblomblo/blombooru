@@ -1,10 +1,11 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, case, desc, func, or_
+from sqlalchemy import and_, asc, case, desc, func, or_
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
+from ..config import settings
 from ..database import get_db
 from ..models import Media, RatingEnum, Tag, User, blombooru_media_tags
 from ..schemas import TagCategoryEnum, TagCreate, TagResponse
@@ -12,6 +13,11 @@ from ..utils.cache import cache_response, invalidate_tag_cache
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 router = APIRouter(prefix="/api/tags", tags=["tags"])
+
+def get_effective_limit(limit: Optional[int]) -> int:
+    if limit is None or limit <= 0:
+        return settings.get_items_per_page()
+    return limit
 
 @router.get("/", response_model=List[TagResponse])
 @router.get("", response_model=List[TagResponse])
@@ -46,6 +52,62 @@ async def get_tags(
     tags = query.limit(limit).all()
     
     return tags
+
+@router.get("/list", response_model=dict)
+@router.get("/list/", response_model=dict)
+@cache_response(expire=3600, key_prefix="tags_list")
+async def get_tags_list(
+    request: Request,
+    page: int = 1,
+    limit: Optional[int] = Query(default=None),
+    sort: Optional[str] = Query(default="post_count"),
+    order: Optional[str] = Query(default="desc"),
+    db: Session = Depends(get_db)
+):
+    """Get paginated tag list"""
+    limit = get_effective_limit(limit)
+
+    # Build query
+    query = db.query(Tag)
+
+    # Apply Sorting
+    sort_column = Tag.post_count
+    if sort == "tag_name":
+        sort_column = Tag.name
+    elif sort == "category":
+        sort_column = Tag.category
+    elif sort == "created_at":
+        sort_column = Tag.created_at
+
+    # Apply Sorting Order
+    if order == "desc":
+        query = query.order_by(desc(sort_column))
+    else:
+        query = query.order_by(asc(sort_column))
+
+    # Get All Tags
+    total_tags = query.count()
+    page_start = (page - 1) * limit
+    paginated_tags = query.offset(page_start).limit(limit).all()
+
+    # Build Response
+    return_items = []
+    for tag in paginated_tags:
+        return_items.append(TagResponse(
+            name=tag.name,
+            category=tag.category,
+            id=tag.id,
+            post_count=tag.post_count,
+            created_at=tag.created_at
+        ))
+
+    return {
+        "items": return_items,
+        "total": total_tags,
+        "page": page,
+        "limit": limit,
+        "pages": max(1, (total_tags + limit - 1) // limit)
+    }
 
 @router.get("/autocomplete")
 @cache_response(expire=3600, key_prefix="autocomplete")

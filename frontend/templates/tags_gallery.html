@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import sorting_options, page_jump_modal,
+loading_indicator, page_navigation, sidebar_start, sidebar_end %}
+
+{% block title %}{{ t('common.tags') }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
+        <!-- Tags Stack -->
+        <div class="xl:col-span-4 lg:col-span-3">
+            {{ sorting_options(sort_options={
+                'post_count': t('tags_gallery.sort_post_count'),
+                'created_at': t('tags_gallery.sort_created_at'),
+                'tag_name': t('tags_gallery.sort_tag_name'),
+                'category': t('tags_gallery.sort_category')
+            }, default_sort=default_sort, default_order=default_order, location='mobile') }}
+
+            <div id="tags-grid"
+                 class="grid grid-cols-1 gap-2">
+            </div>
+
+            {{ loading_indicator() }}
+            {{ page_navigation() }}
+        </div>
+
+        <!-- Sidebar -->
+        {{ sidebar_start() }}
+        {{ sorting_options(sort_options={
+            'post_count': t('tags_gallery.sort_post_count'),
+            'created_at': t('tags_gallery.sort_created_at'),
+            'tag_name': t('tags_gallery.sort_tag_name'),
+            'category': t('tags_gallery.sort_category')
+        }, default_sort=default_sort, default_order=default_order) }}
+        {{ sidebar_end() }}
+    </div>
+</div>
+
+{{ page_jump_modal() }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/components/custom-select.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/base-gallery.js?v={{ cache_buster }}"></script>
+<script src="/static/js/pages/tags-gallery.js?v={{ cache_buster }}"></script>
+{% endblock %}
