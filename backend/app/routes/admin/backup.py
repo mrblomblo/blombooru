@@ -111,6 +111,7 @@ async def backup_full_db(
             "height": m.height,
             "duration": m.duration,
             "rating": m.rating.value if m.rating else 'safe',
+            "description": m.description,
             "tags": [t.name for t in m.tags],
             "archive_path": archive_path,
             "parent_hash": m.parent.hash if m.parent else None
