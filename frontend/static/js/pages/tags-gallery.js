@@ -25,6 +25,8 @@ class TagsGallery extends BaseGallery {
         this.isLoading = true;
         this.showLoading();
 
+        this.elements.grid.innerHTML = '';
+
         try {
             const params = new URLSearchParams({
                page: this.currentPage,
@@ -58,20 +60,42 @@ class TagsGallery extends BaseGallery {
             return;
         }
 
-        this.elements.grid.innerHTML = tags.map(tag => this.createTagDataContainer(tag)).join('');
+        tags.forEach(tag => {
+            const element = this.createTagItem(tag);
+            this.elements.grid.appendChild(element);
+        });
     }
 
-    createTagDataContainer(tag){
-        return `
-            <div class="surface p-3 border flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <a href="/?q=${encodeURIComponent(tag.name)}" class="tag ${tag.category} tag-text">${tag.name}</a>
-                    <span class="text-xs text-secondary">(${tag.post_count})</span>
-                    <span class="text-xs text-secondary">(${new Date(tag.created_at).toLocaleString()})</span>
-                </div>
-                <span class="text-xs text-secondary uppercase">${tag.category}</span>
-            </div>
-        `;
+    createTagItem(for_tag) {
+        const surface = document.createElement("div")
+        surface.className = "surface p-3 border flex flex-wrap justify-between items-center gap-2"
+
+        const name_flex_box = document.createElement("div")
+        name_flex_box.className = "flex flex-wrap items-center gap-2 overflow-hidden"
+        surface.appendChild(name_flex_box)
+
+        const tag_name = document.createElement("a")
+        tag_name.href = `/?q=${encodeURIComponent(for_tag.name)}`
+        tag_name.className = `tag ${for_tag.category} tag-text overflow-hidden whitespace-nowrap text-ellipsis`
+        tag_name.textContent = `${for_tag.name}`
+        name_flex_box.appendChild(tag_name)
+
+        const post_count = document.createElement("span")
+        post_count.className = "text-xs text-secondary"
+        post_count.textContent = `(${for_tag.post_count})`
+        name_flex_box.appendChild(post_count)
+
+        const created_at = document.createElement("span")
+        created_at.className = "text-xs text-secondary"
+        created_at.textContent = `${new Date(for_tag.created_at).toLocaleString()}`
+        name_flex_box.appendChild(created_at)
+
+        const category = document.createElement("span")
+        category.className = "text-xs text-secondary uppercase"
+        category.textContent = `${for_tag.category}`
+        surface.appendChild(category)
+
+        return surface;
     }
 }
 
