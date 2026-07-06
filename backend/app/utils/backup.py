@@ -317,7 +317,8 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
             width=media_data.get('width'),
             height=media_data.get('height'),
             duration=media_data.get('duration'),
-            rating=media_data.get('rating', 'safe')
+            rating=media_data.get('rating', 'safe'),
+            description=media_data.get('description')
         )
         db.add(new_media)
         db.flush() # Get ID
