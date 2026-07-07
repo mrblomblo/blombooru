@@ -68,7 +68,7 @@ class TagsGallery extends BaseGallery {
 
     createTagItem(for_tag) {
         const surface = document.createElement("div")
-        surface.className = "surface p-3 border flex flex-wrap justify-start items-center gap-2"
+        surface.className = "surface p-3 border flex flex-wrap items-center gap-2"
 
         const tag_name = document.createElement("a")
         tag_name.href = `/?q=${encodeURIComponent(for_tag.name)}`
@@ -77,7 +77,7 @@ class TagsGallery extends BaseGallery {
         surface.appendChild(tag_name)
 
         const detail_preview_box = document.createElement("div")
-        detail_preview_box.className = "flex flex-wrap justify-between items-center gap-2"
+        detail_preview_box.className = "flex justify-between items-center gap-2 flex-1"
         surface.appendChild(detail_preview_box)
 
         const post_count = document.createElement("span")
@@ -86,21 +86,19 @@ class TagsGallery extends BaseGallery {
         detail_preview_box.appendChild(post_count)
 
         const created_at = document.createElement("span")
-        created_at.className = "text-xs text-secondary"
-        let options = {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            hour: "numeric",
-            minute: "numeric"
-        };
-        created_at.textContent = `${new Intl.DateTimeFormat(undefined, options).format(new Date(for_tag.created_at))}`
+        created_at.className = "text-xs text-secondary text-center"
+        let creation_date = new Date(for_tag.created_at)
+        created_at.textContent = `${
+            new Intl.DateTimeFormat(undefined, {dateStyle: "short"}).format(creation_date)
+        } ${
+            new Intl.DateTimeFormat(undefined, {timeStyle: "short", hour12: false}).format(creation_date)
+        }`
         detail_preview_box.appendChild(created_at)
 
         const category = document.createElement("span")
         category.className = "text-xs text-secondary uppercase flex-1 text-right"
         category.textContent = `${for_tag.category}`
-        surface.appendChild(category)
+        detail_preview_box.appendChild(category)
 
         return surface;
     }
