@@ -68,30 +68,37 @@ class TagsGallery extends BaseGallery {
 
     createTagItem(for_tag) {
         const surface = document.createElement("div")
-        surface.className = "surface p-3 border flex flex-wrap justify-between items-center gap-2"
-
-        const name_flex_box = document.createElement("div")
-        name_flex_box.className = "flex flex-wrap items-center gap-2 overflow-hidden"
-        surface.appendChild(name_flex_box)
+        surface.className = "surface p-3 border flex flex-wrap justify-start items-center gap-2"
 
         const tag_name = document.createElement("a")
         tag_name.href = `/?q=${encodeURIComponent(for_tag.name)}`
         tag_name.className = `tag ${for_tag.category} tag-text overflow-hidden whitespace-nowrap text-ellipsis`
         tag_name.textContent = `${for_tag.name}`
-        name_flex_box.appendChild(tag_name)
+        surface.appendChild(tag_name)
+
+        const detail_preview_box = document.createElement("div")
+        detail_preview_box.className = "flex flex-wrap justify-between items-center gap-2"
+        surface.appendChild(detail_preview_box)
 
         const post_count = document.createElement("span")
         post_count.className = "text-xs text-secondary"
         post_count.textContent = `(${for_tag.post_count})`
-        name_flex_box.appendChild(post_count)
+        detail_preview_box.appendChild(post_count)
 
         const created_at = document.createElement("span")
         created_at.className = "text-xs text-secondary"
-        created_at.textContent = `${new Date(for_tag.created_at).toLocaleString()}`
-        name_flex_box.appendChild(created_at)
+        let options = {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric"
+        };
+        created_at.textContent = `${new Intl.DateTimeFormat(undefined, options).format(new Date(for_tag.created_at))}`
+        detail_preview_box.appendChild(created_at)
 
         const category = document.createElement("span")
-        category.className = "text-xs text-secondary uppercase"
+        category.className = "text-xs text-secondary uppercase flex-1 text-right"
         category.textContent = `${for_tag.category}`
         surface.appendChild(category)
 
