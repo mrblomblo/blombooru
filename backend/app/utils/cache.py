@@ -75,7 +75,7 @@ def invalidate_media_cache():
 
 def invalidate_tag_cache():
     """Invalidate all tag-related caches"""
-    invalidate_cache("tags", "tag_detail", "autocomplete", "danbooru", "media_list", "search")
+    invalidate_cache("tags", "tag_detail", "tags_list", "autocomplete", "danbooru", "media_list", "search")
 
 def invalidate_album_cache():
     """Invalidate all album-related caches"""

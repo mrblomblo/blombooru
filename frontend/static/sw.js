@@ -14,6 +14,7 @@ const STATIC_ASSETS = [
     '/static/js/pages/album.js',
     '/static/js/pages/media.js',
     '/static/js/pages/shared.js',
+    '/static/js/pages/tags-gallery.js',
     '/static/js/components/modal-helper.js',
     '/static/js/components/tag-autocomplete.js',
     '/static/js/components/tooltip-helper.js',
