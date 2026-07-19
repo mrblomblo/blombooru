@@ -2,14 +2,15 @@
 
 <img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
   
-![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)
-![Redis](https://img.shields.io/badge/Redis-7+-FF4235?style=flat-square&logo=redis&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-2F6792?style=flat-square&logo=postgresql&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=fff)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000)
+![FastAPI](https://img.shields.io/badge/FastAPI-009485.svg?style=flat-square&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-%23316192.svg?style=flat-square&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-%23DD0031.svg?style=flat-square&logo=redis&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-%2338B2AC.svg?style=flat-square&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=fff)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-[![Discord](https://img.shields.io/discord/1509485861903925269?logo=discord&logoColor=white&color=5865F2&label=Discord&style=flat-square)](https://discord.gg/ywpaZh4tHx)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?&style=flat-square&logo=discord&logoColor=white)](https://discord.gg/ywpaZh4tHx)
 
 
 <a href="./README.md">English</a> • <a href="./README_RU.md">Русский</a> • <a href="./README_ZH_CN.md">简体中文</a> • **Svenska**
