@@ -1,14 +1,16 @@
 import os
-import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Tuple
 
+import huggingface_hub
 import numpy as np
 import onnxruntime as rt
 import pandas as pd
 from PIL import Image
+
+from ..utils.logger import logger
 
 class WDTagger:
     """
@@ -69,58 +71,148 @@ class WDTagger:
                 max_workers=self._num_preprocess_workers,
                 thread_name_prefix="wd_preprocess"
             )
+            self._dynamic_batch_size = 4
+            self._oom_encountered = False
             WDTagger._initialized = True
     
-    def _get_session_options(self) -> rt.SessionOptions:
-        """Create optimized session options for CPU execution."""
+    def _get_session_options(self, providers: list) -> rt.SessionOptions:
         sess_options = rt.SessionOptions()
-        
-        # Enable all graph optimizations
         sess_options.graph_optimization_level = rt.GraphOptimizationLevel.ORT_ENABLE_ALL
-        
-        # Determine optimal thread counts
+
         cpu_count = os.cpu_count() or 4
-        
-        # intra_op: threads for parallelism within a single operator (e.g., matrix multiply)
-        # inter_op: threads for parallelism across operators
-        # For batch processing, we want more intra-op parallelism
         sess_options.intra_op_num_threads = cpu_count
         sess_options.inter_op_num_threads = max(1, cpu_count // 2)
-        
-        # Enable parallel execution mode
         sess_options.execution_mode = rt.ExecutionMode.ORT_PARALLEL
-        
-        # Enable memory pattern optimization
         sess_options.enable_mem_pattern = True
-        
-        # Disable memory arena shrinking for better performance with repeated inference
-        sess_options.enable_cpu_mem_arena = True
-        
+
+        if any(p == "CPUExecutionProvider" or (isinstance(p, tuple) and p[0] == "CPUExecutionProvider") for p in providers):
+            sess_options.enable_cpu_mem_arena = True
+        else:
+            sess_options.enable_cpu_mem_arena = False
+
         return sess_options
+
+    def _resolve_providers(self) -> list:
+        forced = os.getenv("BLOMBOORU_WD_TAGGER_DEVICE", "auto").lower()  # auto | cuda | cpu
+        available = rt.get_available_providers()
+
+        if forced == "cpu":
+            return ["CPUExecutionProvider"]
+
+        if forced == "cuda":
+            if "CUDAExecutionProvider" not in available:
+                raise RuntimeError(
+                    "BLOMBOORU_WD_TAGGER_DEVICE=cuda was set, but this onnxruntime "
+                    "build has no CUDAExecutionProvider. Are you running the -cuda "
+                    "image / installed onnxruntime-gpu?"
+                )
+            return [("CUDAExecutionProvider", self._cuda_provider_options()), "CPUExecutionProvider"]
+
+        # auto (default): use CUDA if it's there, otherwise fall back silently
+        if "CUDAExecutionProvider" in available:
+            return [("CUDAExecutionProvider", self._cuda_provider_options()), "CPUExecutionProvider"]
+        return ["CPUExecutionProvider"]
+
+    def _cuda_provider_options(self) -> dict:
+        return {
+            "device_id": 0,
+            "arena_extend_strategy": "kSameAsRequested",
+            "cudnn_conv_algo_search": "HEURISTIC",
+            "do_copy_in_default_stream": True,
+        }
+
+    def _run_with_oom_retry(self, batch_images: np.ndarray) -> np.ndarray:
+        try:
+            with self._inference_lock:
+                return self._model.run(None, {self._input_name: batch_images})[0]
+        except Exception as e:
+            msg = str(e)
+            is_oom = (
+                "CUDA" in msg
+                and ("memory" in msg.lower() or "alloc" in msg.lower())
+                and batch_images.shape[0] > 1
+            )
+            if is_oom:
+                logger.warning(f"CUDA OOM at batch size {batch_images.shape[0]}, retrying at half size")
+                mid = batch_images.shape[0] // 2
+                first = self._run_with_oom_retry(batch_images[:mid])
+                second = self._run_with_oom_retry(batch_images[mid:])
+                return np.concatenate([first, second], axis=0)
+            raise
     
+    def _process_chunk_oom_protected(
+        self,
+        file_paths: List[str],
+        general_threshold: float,
+        character_threshold: float,
+        hide_rating_tags: bool,
+        character_tags_first: bool
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        try:
+            prepared = self._prepare_images_parallel(file_paths)
+            valid_items = [(fp, img) for fp, img in prepared if img is not None]
+            failed_paths = [fp for fp, img in prepared if img is None]
+            
+            results = {fp: [] for fp in failed_paths}
+            
+            if valid_items:
+                batch_images = np.stack([img for _, img in valid_items], axis=0)
+                
+                with self._inference_lock:
+                    preds = self._model.run(None, {self._input_name: batch_images})[0]
+                
+                for (fp, _), scores in zip(valid_items, preds):
+                    tags = self._extract_tags_from_scores(
+                        scores, general_threshold, character_threshold,
+                        hide_rating_tags, character_tags_first
+                    )
+                    results[fp] = tags
+            
+            return results
+        except Exception as e:
+            msg = str(e).lower()
+            is_oom = (
+                "memory" in msg or "alloc" in msg
+            ) and len(file_paths) > 1
+            
+            if is_oom:
+                logger.warning(f"OOM at chunk size {len(file_paths)}, halving and retrying...")
+                self._oom_encountered = True
+                
+                current_size = len(file_paths)
+                exp = 4
+                while exp * 2 < current_size:
+                    exp *= 2
+                self._dynamic_batch_size = max(4, exp)
+                
+                mid = len(file_paths) // 2
+                first_half = self._process_chunk_oom_protected(
+                    file_paths[:mid], general_threshold, character_threshold,
+                    hide_rating_tags, character_tags_first
+                )
+                second_half = self._process_chunk_oom_protected(
+                    file_paths[mid:], general_threshold, character_threshold,
+                    hide_rating_tags, character_tags_first
+                )
+                first_half.update(second_half)
+                return first_half
+            raise
+
     def _load_model(self, model_name: str = "wd-eva02-large-tagger-v3"):
-        """Load the specified model with CPU optimizations."""
+        """Load the specified model with optimizations."""
         if model_name not in self.AVAILABLE_MODELS:
             raise ValueError(f"Unknown model: {model_name}. Available: {list(self.AVAILABLE_MODELS.keys())}")
         
         if self._current_model_name == model_name and self._model is not None:
             return
         
-        try:
-            import huggingface_hub
-        except ImportError:
-            raise ImportError("huggingface_hub is required. Install with: pip install huggingface_hub")
-        
         model_repo = self.AVAILABLE_MODELS[model_name]
         
-        # Download files
         csv_path = huggingface_hub.hf_hub_download(model_repo, self.LABEL_FILENAME)
         model_path = huggingface_hub.hf_hub_download(model_repo, self.MODEL_FILENAME)
         
-        # Load tags
         df = pd.read_csv(csv_path)
         
-        # Pre-compute indices as numpy arrays for faster lookup
         self._tag_data = {
             'names': df["name"].tolist(),
             'rating': np.where(df["category"] == 9)[0],
@@ -128,16 +220,18 @@ class WDTagger:
             'character': np.where(df["category"] == 4)[0],
         }
         
-        # Create optimized session
-        sess_options = self._get_session_options()
+        # Resolve providers once and pass to session options + inference session
+        providers = self._resolve_providers()
+        sess_options = self._get_session_options(providers)
         
         try:
             self._model = rt.InferenceSession(
                 model_path, 
                 sess_options=sess_options,
-                providers=['CPUExecutionProvider']
+                providers=providers
             )
         except Exception as e:
+            logger.error(f"Failed to load ONNX model with providers {providers}: {e}")
             raise
 
         input_info = self._model.get_inputs()[0]
@@ -329,8 +423,7 @@ class WDTagger:
         processed_image = self._prepare_image(image)
         processed_batch = np.expand_dims(processed_image, axis=0)
         
-        with self._inference_lock:
-            preds = self._model.run(None, {self._input_name: processed_batch})[0]
+        preds = self._run_with_oom_retry(processed_batch)
         
         scores = preds[0]  # First (and only) batch item
         
@@ -363,8 +456,7 @@ class WDTagger:
         batch = np.stack(images, axis=0)
         
         # Run inference
-        with self._inference_lock:
-            preds = self._model.run(None, {self._input_name: batch})[0]
+        preds = self._run_with_oom_retry(batch)
         
         # Extract tags for each image
         results = []
@@ -393,8 +485,7 @@ class WDTagger:
         
         batch = np.expand_dims(prepared, axis=0)
         
-        with self._inference_lock:
-            preds = self._model.run(None, {self._input_name: batch})[0]
+        preds = self._run_with_oom_retry(batch)
         
         return self._extract_tags_from_scores(
             preds[0],
@@ -431,47 +522,38 @@ class WDTagger:
         self.ensure_loaded(model_name)
         
         if batch_size is None:
-            batch_size = self.OPTIMAL_BATCH_SIZES.get(model_name, 4)
+            target_size = self._dynamic_batch_size
+        else:
+            target_size = batch_size
         
         total = len(file_paths)
         results = {}
         processed_count = 0
         
-        # Process in batches
-        for i in range(0, total, batch_size):
-            batch_paths = file_paths[i:i + batch_size]
+        i = 0
+        while i < total:
+            actual_chunk_size = min(target_size, total - i)
+            batch_paths = file_paths[i:i + actual_chunk_size]
             
-            # Parallel preprocessing
-            prepared = self._prepare_images_parallel(batch_paths)
-            
-            # Filter out failed preparations
-            valid_items = [(fp, img) for fp, img in prepared if img is not None]
-            failed_paths = [fp for fp, img in prepared if img is None]
-            
-            # Mark failed as empty
-            for fp in failed_paths:
-                results[fp] = []
-            
-            if valid_items:
-                # Stack valid images
-                batch_images = np.stack([img for _, img in valid_items], axis=0)
-                
-                # Run inference
-                with self._inference_lock:
-                    preds = self._model.run(None, {self._input_name: batch_images})[0]
-                
-                # Extract tags
-                for (fp, _), scores in zip(valid_items, preds):
-                    tags = self._extract_tags_from_scores(
-                        scores, general_threshold, character_threshold,
-                        hide_rating_tags, character_tags_first
-                    )
-                    results[fp] = tags
+            chunk_results = self._process_chunk_oom_protected(
+                batch_paths, general_threshold, character_threshold,
+                hide_rating_tags, character_tags_first
+            )
+            results.update(chunk_results)
             
             processed_count += len(batch_paths)
             
             if progress_callback:
                 progress_callback(processed_count, total)
+                
+            i += actual_chunk_size
+            
+            if batch_size is None:
+                if self._oom_encountered:
+                    self._dynamic_batch_size = min(self._dynamic_batch_size + 1, 64)
+                else:
+                    self._dynamic_batch_size = min(self._dynamic_batch_size * 2, 64)
+                target_size = self._dynamic_batch_size
         
         # Return in original order
         return [(fp, results.get(fp, [])) for fp in file_paths]
@@ -497,34 +579,32 @@ class WDTagger:
         self.ensure_loaded(model_name)
         
         if batch_size is None:
-            batch_size = self.OPTIMAL_BATCH_SIZES.get(model_name, 4)
-        
-        for i in range(0, len(file_paths), batch_size):
-            batch_paths = file_paths[i:i + batch_size]
+            target_size = self._dynamic_batch_size
+        else:
+            target_size = batch_size
             
-            # Parallel preprocessing
-            prepared = self._prepare_images_parallel(batch_paths)
+        i = 0
+        total = len(file_paths)
+        while i < total:
+            actual_chunk_size = min(target_size, total - i)
+            batch_paths = file_paths[i:i + actual_chunk_size]
             
-            # Separate valid and failed
-            valid_items = [(fp, img) for fp, img in prepared if img is not None]
-            failed_paths = [fp for fp, img in prepared if img is None]
+            chunk_results = self._process_chunk_oom_protected(
+                batch_paths, general_threshold, character_threshold,
+                hide_rating_tags, character_tags_first
+            )
             
-            # Yield failed immediately
-            for fp in failed_paths:
-                yield (fp, [])
+            for fp in batch_paths:
+                yield (fp, chunk_results.get(fp, []))
             
-            if valid_items:
-                batch_images = np.stack([img for _, img in valid_items], axis=0)
-                
-                with self._inference_lock:
-                    preds = self._model.run(None, {self._input_name: batch_images})[0]
-                
-                for (fp, _), scores in zip(valid_items, preds):
-                    tags = self._extract_tags_from_scores(
-                        scores, general_threshold, character_threshold,
-                        hide_rating_tags, character_tags_first
-                    )
-                    yield (fp, tags)
+            i += actual_chunk_size
+            
+            if batch_size is None:
+                if self._oom_encountered:
+                    self._dynamic_batch_size = min(self._dynamic_batch_size + 1, 64)
+                else:
+                    self._dynamic_batch_size = min(self._dynamic_batch_size * 2, 64)
+                target_size = self._dynamic_batch_size
     
     def _extract_gif_frame(self, file_path: str, frame_index: int = 0) -> Image.Image:
         """Extract a frame from a GIF."""
