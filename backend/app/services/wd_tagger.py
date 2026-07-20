@@ -65,6 +65,7 @@ class WDTagger:
             self._current_model_name = None
             self._input_name = None
             self._inference_lock = threading.Lock()
+            self._unload_lock = threading.Lock()
             # Preprocessing can be parallelized
             self._num_preprocess_workers = min(4, (os.cpu_count() or 4))
             self._preprocess_executor = ThreadPoolExecutor(
@@ -73,7 +74,42 @@ class WDTagger:
             )
             self._dynamic_batch_size = 4
             self._oom_encountered = False
+            
+            self._idle_timeout = int(os.getenv("BLOMBOORU_WD_TAGGER_IDLE_TIMEOUT", 60))  # 1 min default
+            self._unload_timer = None
+            
             WDTagger._initialized = True
+
+    def _reset_idle_timer(self):
+        """Start or reset the countdown to unload the model."""
+        with self._unload_lock:
+            if self._unload_timer:
+                self._unload_timer.cancel()
+            
+            if self._idle_timeout > 0:
+                self._unload_timer = threading.Timer(self._idle_timeout, self._unload_model)
+                self._unload_timer.daemon = True
+                self._unload_timer.start()
+
+    def _unload_model(self):
+        """Unload the model and free RAM/VRAM if idle."""
+        # Prevent unloading if an inference is currently running
+        if not self._inference_lock.acquire(blocking=False):
+            logger.info("Unload deferred: inference is currently running. Rescheduling...")
+            self._reset_idle_timer()
+            return
+        
+        try:
+            if self._model is not None:
+                logger.info(f"Idle for {self._idle_timeout}s, unloading WD Tagger to free RAM/VRAM...")
+                self._model = None
+                self._current_model_name = None
+                
+                import gc
+                gc.collect()
+                logger.info("WD Tagger model unloaded successfully.")
+        finally:
+            self._inference_lock.release()
     
     def _get_session_options(self, providers: list) -> rt.SessionOptions:
         sess_options = rt.SessionOptions()
@@ -245,6 +281,10 @@ class WDTagger:
             with self._lock:
                 if self._model is None or self._current_model_name != model_name:
                     self._load_model(model_name)
+        
+        with self._unload_lock:
+            if self._unload_timer:
+                self._unload_timer.cancel()
     
     def _prepare_image(self, image: Image.Image) -> np.ndarray:
         """
@@ -427,10 +467,13 @@ class WDTagger:
         
         scores = preds[0]  # First (and only) batch item
         
-        return self._extract_tags_from_scores(
+        results = self._extract_tags_from_scores(
             scores, general_threshold, character_threshold,
             hide_rating_tags, character_tags_first
         )
+        
+        self._reset_idle_timer()
+        return results
     
     def predict_batch(
         self,
@@ -467,6 +510,7 @@ class WDTagger:
             )
             results.append(tags)
         
+        self._reset_idle_timer()
         return results
     
     def predict_from_file(
@@ -487,13 +531,16 @@ class WDTagger:
         
         preds = self._run_with_oom_retry(batch)
         
-        return self._extract_tags_from_scores(
+        results = self._extract_tags_from_scores(
             preds[0],
             kwargs.get('general_threshold', 0.35),
             kwargs.get('character_threshold', 0.85),
             kwargs.get('hide_rating_tags', True),
             kwargs.get('character_tags_first', True)
         )
+        
+        self._reset_idle_timer()
+        return results
     
     def predict_from_files_batch(
         self,
@@ -556,6 +603,7 @@ class WDTagger:
                 target_size = self._dynamic_batch_size
         
         # Return in original order
+        self._reset_idle_timer()
         return [(fp, results.get(fp, [])) for fp in file_paths]
     
     def predict_from_files_streaming(
@@ -585,26 +633,29 @@ class WDTagger:
             
         i = 0
         total = len(file_paths)
-        while i < total:
-            actual_chunk_size = min(target_size, total - i)
-            batch_paths = file_paths[i:i + actual_chunk_size]
-            
-            chunk_results = self._process_chunk_oom_protected(
-                batch_paths, general_threshold, character_threshold,
-                hide_rating_tags, character_tags_first
-            )
-            
-            for fp in batch_paths:
-                yield (fp, chunk_results.get(fp, []))
-            
-            i += actual_chunk_size
-            
-            if batch_size is None:
-                if self._oom_encountered:
-                    self._dynamic_batch_size = min(self._dynamic_batch_size + 1, 64)
-                else:
-                    self._dynamic_batch_size = min(self._dynamic_batch_size * 2, 64)
-                target_size = self._dynamic_batch_size
+        try:
+            while i < total:
+                actual_chunk_size = min(target_size, total - i)
+                batch_paths = file_paths[i:i + actual_chunk_size]
+                
+                chunk_results = self._process_chunk_oom_protected(
+                    batch_paths, general_threshold, character_threshold,
+                    hide_rating_tags, character_tags_first
+                )
+                
+                for fp in batch_paths:
+                    yield (fp, chunk_results.get(fp, []))
+                
+                i += actual_chunk_size
+                
+                if batch_size is None:
+                    if self._oom_encountered:
+                        self._dynamic_batch_size = min(self._dynamic_batch_size + 1, 64)
+                    else:
+                        self._dynamic_batch_size = min(self._dynamic_batch_size * 2, 64)
+                    target_size = self._dynamic_batch_size
+        finally:
+            self._reset_idle_timer()
     
     def _extract_gif_frame(self, file_path: str, frame_index: int = 0) -> Image.Image:
         """Extract a frame from a GIF."""
