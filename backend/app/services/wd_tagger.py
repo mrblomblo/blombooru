@@ -244,31 +244,70 @@ class WDTagger:
         
         model_repo = self.AVAILABLE_MODELS[model_name]
         
-        csv_path = huggingface_hub.hf_hub_download(model_repo, self.LABEL_FILENAME)
-        model_path = huggingface_hub.hf_hub_download(model_repo, self.MODEL_FILENAME)
-        
-        df = pd.read_csv(csv_path)
-        
-        self._tag_data = {
-            'names': df["name"].tolist(),
-            'rating': np.where(df["category"] == 9)[0],
-            'general': np.where(df["category"] == 0)[0],
-            'character': np.where(df["category"] == 4)[0],
-        }
-        
-        # Resolve providers once and pass to session options + inference session
-        providers = self._resolve_providers()
-        sess_options = self._get_session_options(providers)
+        def _fetch_paths(force_download: bool = False):
+            if force_download:
+                logger.info(f"Verifying hashes and re-downloading '{model_name}' if necessary...")
+                return (
+                    huggingface_hub.hf_hub_download(model_repo, self.LABEL_FILENAME, force_download=True),
+                    huggingface_hub.hf_hub_download(model_repo, self.MODEL_FILENAME, force_download=True)
+                )
+            
+            try:
+                # Try to load from local cache first to avoid network requests
+                return (
+                    huggingface_hub.hf_hub_download(model_repo, self.LABEL_FILENAME, local_files_only=True),
+                    huggingface_hub.hf_hub_download(model_repo, self.MODEL_FILENAME, local_files_only=True)
+                )
+            except huggingface_hub.LocalEntryNotFoundError:
+                logger.info(f"Model '{model_name}' not found in cache. Downloading from HuggingFace...")
+                return _fetch_paths(force_download=True)
+
+        csv_path, model_path = _fetch_paths()
         
         try:
+            # Attempt to load the model and labels
+            df = pd.read_csv(csv_path)
+            self._tag_data = {
+                'names': df["name"].tolist(),
+                'rating': np.where(df["category"] == 9)[0],
+                'general': np.where(df["category"] == 0)[0],
+                'character': np.where(df["category"] == 4)[0],
+            }
+            
+            providers = self._resolve_providers()
+            sess_options = self._get_session_options(providers)
+            
             self._model = rt.InferenceSession(
                 model_path, 
                 sess_options=sess_options,
                 providers=providers
             )
         except Exception as e:
-            logger.error(f"Failed to load ONNX model with providers {providers}: {e}")
-            raise
+            # If loading fails (e.g. corrupted file), force network check and re-download
+            logger.warning(f"Failed to load model from cache: {e}. Verifying hashes and re-downloading...")
+            csv_path, model_path = _fetch_paths(force_download=True)
+            
+            # Retry loading
+            df = pd.read_csv(csv_path)
+            self._tag_data = {
+                'names': df["name"].tolist(),
+                'rating': np.where(df["category"] == 9)[0],
+                'general': np.where(df["category"] == 0)[0],
+                'character': np.where(df["category"] == 4)[0],
+            }
+            
+            providers = self._resolve_providers()
+            sess_options = self._get_session_options(providers)
+            
+            try:
+                self._model = rt.InferenceSession(
+                    model_path, 
+                    sess_options=sess_options,
+                    providers=providers
+                )
+            except Exception as inner_e:
+                logger.error(f"Failed to load ONNX model with providers {providers}: {inner_e}")
+                raise
 
         input_info = self._model.get_inputs()[0]
         self._target_size = input_info.shape[2]
