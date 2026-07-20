@@ -72,5 +72,30 @@ jobs:
             BUILD_ENV=ghcr
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=cpu
+          cache-to: type=gha,scope=cpu,mode=max
+
+      - name: Extract metadata (tags, labels) for CUDA image
+        id: meta-cuda
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}-cuda
+            type=raw,value=latest-cuda,enable=${{ !github.event.release.prerelease }}
+            type=semver,pattern={{major}}.{{minor}}-cuda,enable=${{ !github.event.release.prerelease }}
+            type=raw,value=pre-cuda,enable=${{ github.event.release.prerelease }}
+
+      - name: Build and push CUDA image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            BUILD_ENV=ghcr
+            REQUIREMENTS_FILE=requirements-cuda.txt
+          tags: ${{ steps.meta-cuda.outputs.tags }}
+          labels: ${{ steps.meta-cuda.outputs.labels }}
+          cache-from: type=gha,scope=cuda
+          cache-to: type=gha,scope=cuda,mode=max
