@@ -51,6 +51,7 @@ Blombooru is a private, single-user alternative to boorus like Danbooru and Gelb
   - [Docker *(Recommended)*](#docker-recommended)
     - [Deployment Options](#deployment-options)
     - [Quick Start (Pre-built Image)](#quick-start-pre-built-image)
+    - [Hardware Acceleration](#hardware-acceleration)
     - [Using Pre-release Builds](#using-pre-release-builds)
     - [Development Builds (Local)](#development-builds-local)
     - [Running Multiple Instances](#running-multiple-instances)
@@ -103,7 +104,7 @@ Blombooru is a private, single-user alternative to boorus like Danbooru and Gelb
 
 - **AI-Friendly:** Easily view accompanying AI metadata for almost any media generated with SwarmUI, ComfyUI, A1111, and more. You can even append tags to the tag editor directly from the AI prompt.
 
-- **Automatic Tagging:** Fast-track tagging with the WDv3 Auto Tagger integration, which analyzes images and suggests accurate tags with a single click.
+- **Automatic Tagging:** Fast-track tagging with the WDv3 Auto Tagger integration, which analyzes images and suggests accurate tags with a single click. Supports optional Nvidia GPU acceleration for lightning-fast batch processing.
 
 - **Tag Implications:** Define relationships between tags. When a target tag (or set of tags) is applied to a media item, the implied tags are automatically added as well.
 
@@ -156,7 +157,9 @@ This is the recommended method for using Blombooru. Pre-built images are availab
 | Option | Image Tag | Use Case |
 |:-------|:----------|:---------|
 | **Latest Stable** | `latest` (default) | Production use, tracks the latest GitHub release |
+| **Latest Stable (CUDA)** | `latest-cuda` | Production use with CUDA acceleration |
 | **Pre-release** | `pre` | Testing upcoming versions, tracks the latest GitHub pre-release |
+| **Pre-release (CUDA)** | `pre-cuda` | Testing upcoming versions with CUDA acceleration |
 | **Pinned Version** | `1.2.3` / `1.2` / `1` | Pinning to a specific stable version |
 | **Pinned Pre-release** | `1.2.3-rc.1` | Pinning to a specific pre-release |
 | **Development** | Local build | Contributing, modifying source code |
@@ -165,7 +168,7 @@ This is the recommended method for using Blombooru. Pre-built images are availab
 
 1. **Download the required files**
 
-    Create a folder for Blombooru (e.g., `blombooru`), then download the `docker-compose.yml` and `example.env` files from the [latest release](https://github.com/mrblomblo/blombooru/releases/latest) and place them inside it.
+    Create a folder for Blombooru (e.g., `blombooru`), then download the `docker-compose.yml` and `example.env` files from the [latest release](https://github.com/mrblomblo/blombooru/releases/latest) and place them inside it. (Optionally, if you plan to use GPU acceleration, also download hwaccel.yml).
 
 2. **Customize the environment variables**  
     Create a copy of the `example.env` file and name it `.env`. Then open the newly created file with your favorite text editor and edit the values after the `=` on each row. The most important one to change is the example password assigned to `POSTGRES_PASSWORD`. The others *can* stay as they are, unless, for example, port 8000 is already in use by another program.
@@ -203,6 +206,53 @@ This is the recommended method for using Blombooru. Pre-built images are availab
     ```bash
     docker compose down
     ```
+
+#### Hardware Acceleration
+
+If you have an Nvidia GPU and want to significantly speed up the WDv3 Auto Tagger, you can use the CUDA-accelerated Docker image. 
+
+> [!IMPORTANT]
+> You must have the Nvidia Container Toolkit installed on your host machine, and your GPU drivers must be up to date. It is also assumed that you are using a somewhat recent GPU.
+
+Setup:
+
+1. **Download the hwaccel.yml file**  
+    Download the `hwaccel.yml` file from the latest release and place it in the same folder as your `docker-compose.yml` and `.env` files.
+
+2. **Edit docker-compose.yml**  
+    Open your `docker-compose.yml` file, find the web service, and uncomment (remove the three `#` symbols from the beginning of) the `extends:` block:
+
+    ```yaml
+    services:
+      web:
+        image: ghcr.io/mrblomblo/blombooru:${BLOMBOORU_TAG:-latest}
+        extends:
+          file: hwaccel.yml
+          service: cuda
+    ```
+
+3. **Configure the environment variable**  
+    In your `.env` file, ensure the tagger device is set to `auto` (default) or `cuda`:
+
+    ```env
+    BLOMBOORU_WD_TAGGER_DEVICE=auto # Options: auto, cuda, cpu
+    ```
+
+4. **Start the container**  
+    Pull the new CUDA image and start the container:
+
+    ```bash
+    docker compose up -d
+    ```
+
+> [!WARNING]
+> If you are using the latest-cuda image, you must uncomment the `extends:` block in your `docker-compose.yml`. If you use the CUDA image but do not pass the GPU to the container, Blombooru will crash when it attempts to load the AI model.
+
+The `BLOMBOORU_WD_TAGGER_DEVICE` environment variable controls how the tagger initializes:
+
+- `auto` (default): Uses the GPU if the `onnxruntime-gpu` package is installed, otherwise uses the CPU.
+- `cuda`: Strictly enforces GPU usage. If the package is not installed, Blombooru will throw an error and refuse to start.
+- `cpu`: Forces CPU usage, even if a GPU is available.
 
 #### Using Pre-release Builds
 
@@ -401,6 +451,9 @@ If you want multiple Blombooru instances to share the same tag database (so tags
     source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
     pip install -r requirements.txt
     ```
+
+    > [!NOTE]
+    > If you plan to use an Nvidia GPU for AI tagging, install the CUDA requirements file instead (`requirements-cuda.txt`). You will also need the appropriate Nvidia drivers and CUDA toolkit installed on your host system.
 
 3. **Create a PostgreSQL database**  
     Create a new database and a user with permissions for that database. Blombooru will handle creating the necessary tables.
