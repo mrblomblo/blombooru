@@ -6,6 +6,9 @@ services:
     build:
       context: .
     image: blombooru:dev
+    # extends:
+    #   file: hwaccel.dev.yml
+    #   service: cuda
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     env_file:

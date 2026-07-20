@@ -1,0 +1,15 @@
+services:
+  cpu: {}
+
+  cuda:
+    image: blombooru:dev-cuda
+    build:
+      args:
+        REQUIREMENTS_FILE: requirements-cuda.txt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

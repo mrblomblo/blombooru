@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 file git \
   && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./requirements.txt
+ARG REQUIREMENTS_FILE=requirements.txt
+COPY ${REQUIREMENTS_FILE} ./requirements.txt
 RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 

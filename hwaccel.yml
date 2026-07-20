@@ -1,0 +1,12 @@
+services:
+  cpu: {}
+
+  cuda:
+    image: ghcr.io/mrblomblo/blombooru:${BLOMBOORU_TAG:-latest}-cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
