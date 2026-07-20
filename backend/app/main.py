@@ -1,3 +1,22 @@
+import os
+import sys
+import sysconfig
+import glob
+
+# Hacky but seems to work
+if os.name == 'posix':
+    site_packages = sysconfig.get_paths()['purelib']
+    nvidia_lib_dirs = glob.glob(os.path.join(site_packages, 'nvidia', '*', 'lib'))
+    valid_dirs = [p for p in nvidia_lib_dirs if os.path.isdir(p)]
+    
+    if valid_dirs:
+        new_ld_path = ':'.join(valid_dirs)
+        current_ld_path = os.environ.get('LD_LIBRARY_PATH', '')
+        
+        if not all(p in current_ld_path for p in valid_dirs):
+            os.environ['LD_LIBRARY_PATH'] = f"{new_ld_path}:{current_ld_path}"
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+
 import asyncio
 import json
 import subprocess
