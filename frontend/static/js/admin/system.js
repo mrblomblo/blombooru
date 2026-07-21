@@ -1257,7 +1257,7 @@ class AdminSystem {
                 commitsHtml += `
                 <div class="border-b last:border-0 text-left">
                     <div class="flex items-center bg p-2 gap-2">
-                        <a href="https://github.com/mrblomblo/blombooru/commit/${this.app.escapeHtml(c.hash)}" target="_blank" class="font-mono text-xs bg-primary primary-text px-1 hover:bg-primary transition-colors">${this.app.escapeHtml(c.hash)}</a>
+                        <a href="https://github.com/mrblomblo/blombooru/commit/${this.app.escapeHtml(c.hash)}" target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" class="font-mono text-xs bg-primary primary-text px-1 hover:bg-primary transition-colors">${this.app.escapeHtml(c.hash)}</a>
                         <span class="text-xs">${this.app.escapeHtml(c.message)}</span>
                     </div>
                 </div>`;

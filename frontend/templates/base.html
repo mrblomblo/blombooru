@@ -149,7 +149,7 @@
                         <ul class="flex gap-2 items-center">
                             <li>
                                 <a href="/tags-gallery"
-                                   class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/tags-gallery') or request.url.path.startswith('/tags-gallery/') else 'text' }}">
+                                    class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/tags-gallery') or request.url.path.startswith('/tags-gallery/') else 'text' }}">
                                     {{ t('common.tags') }}
                                 </a>
                             </li>
@@ -308,7 +308,8 @@
 
                         <div class="flex gap-4 text-xs">
                             <a href="https://github.com/mrblomblo/blombooru"
-                                class="text-secondary transition-colors hover:text-primary" target="_blank">GitHub</a>
+                                class="text-secondary transition-colors hover:text-primary" target="_blank"
+                                rel="noopener noreferrer" referrerPolicy="no-referrer">GitHub</a>
                             <span class="text-tertiary">&#x2022;</span>
                             <a href="#" class="text-secondary transition-colors hover:text-primary"
                                 onclick="document.getElementById('main-scroll').scrollTo({top: 0, behavior: 'smooth'}); return false;">
