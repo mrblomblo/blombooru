@@ -1,7 +1,7 @@
 ## Media
 
 > [!NOTE]
-> Last updated: `June 3, 2026`
+> Last updated: `July 21, 2026`
 
 **Base path:** `/api/media`
 

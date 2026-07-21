@@ -1,7 +1,7 @@
 ## Shared Media
 
 > [!NOTE]
-> Last updated: `May 31, 2026`
+> Last updated: `July 21, 2026`
 
 **Base path:** `/api/shared`
 
