@@ -34,6 +34,10 @@ GET /api/shared/{share_uuid}/file
 
 Streams the original media file. If `share_ai_metadata` is `false` on the share, EXIF/generation metadata is stripped on the fly before serving.
 
+| Param | Type | Description |
+|---|---|---|
+| `chunked` | bool | Optional. When `true`, video responses without a `Range` header are limited to an initial 2MB chunk (for in-browser playback). Default `false` returns the full file. |
+
 ### Serve shared thumbnail
 
 ```

@@ -65,6 +65,10 @@ GET /api/media/{id}/file
 
 Streams the original media file.
 
+| Param | Type | Description |
+|---|---|---|
+| `chunked` | bool | Optional. When `true`, video responses without a `Range` header are limited to an initial 2MB chunk (for in-browser playback). Default `false` returns the full file. |
+
 ### Serve thumbnail
 
 ```

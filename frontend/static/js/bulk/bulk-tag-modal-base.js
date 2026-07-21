@@ -217,9 +217,9 @@ class BulkTagModalBase {
                         const index = parseInt(itemDiv.dataset.index);
                         const item = this.itemsData[index];
                         if (item && item.mediaId) {
-                            const src = `/api/media/${item.mediaId}/file`;
                             // Detect if video based on filename extension
                             const isVideo = item.filename && /\.(mp4|webm|mov|avi|mkv)$/i.test(item.filename);
+                            const src = `/api/media/${item.mediaId}/file${isVideo ? '?chunked=true' : ''}`;
                             this.fullscreenViewer.open(src, isVideo);
                         }
                     }

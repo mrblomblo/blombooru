@@ -341,9 +341,13 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
         return None
 
 class ChunkedMediaResponse(FileResponse):
-    """FileResponse subclass with Range request capping and video-specific initial chunking."""
+    """FileResponse subclass with Range request capping and optional video initial chunking."""
     MAX_RANGE_SIZE = 25 * 1024 * 1024       # 25 MB
     INITIAL_VIDEO_CHUNK = 2 * 1024 * 1024   # 2 MB
+
+    def __init__(self, *args, chunked: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.chunked = chunked
 
     @staticmethod
     def _parse_range_header(http_range: str, file_size: int) -> list[tuple[int, int]]:
@@ -360,15 +364,21 @@ class ChunkedMediaResponse(FileResponse):
 
     async def __call__(self, scope, receive, send) -> None:
         headers = dict(scope.get("headers", []))
-        if b"range" not in headers:
-            # Inject a bounded initial range for videos to avoid connection starvation
+        # Opt-in: inject a bounded initial range for videos to avoid connection starvation
+        if self.chunked and b"range" not in headers:
             is_video = self.media_type and self.media_type.startswith("video/")
             if is_video:
                 end_byte = self.INITIAL_VIDEO_CHUNK - 1
                 scope["headers"].append((b"range", f"bytes=0-{end_byte}".encode()))
         await super().__call__(scope, receive, send)
 
-async def serve_media_file(file_path: Path, mime_type: str, error_message: str = "File not found", strip_metadata: bool = False) -> FileResponse:
+async def serve_media_file(
+    file_path: Path,
+    mime_type: str,
+    error_message: str = "File not found",
+    strip_metadata: bool = False,
+    chunked: bool = False,
+) -> FileResponse:
     """Serve a media file with error handling, optional metadata stripping, and browser caching."""
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=error_message)
@@ -376,15 +386,15 @@ async def serve_media_file(file_path: Path, mime_type: str, error_message: str =
     cache_headers = {"Cache-Control": "public, max-age=31536000, immutable"}
     
     if not strip_metadata:
-        return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers)
+        return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers, chunked=chunked)
     
     if mime_type and mime_type.startswith('image/'):
         cache_path = await create_stripped_media_cache(file_path, mime_type)
         if cache_path:
-            return ChunkedMediaResponse(cache_path, media_type=mime_type, headers=cache_headers)
+            return ChunkedMediaResponse(cache_path, media_type=mime_type, headers=cache_headers, chunked=chunked)
     
     # Fallback to original file if stripping not supported or failed
-    return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers)
+    return ChunkedMediaResponse(file_path, media_type=mime_type, headers=cache_headers, chunked=chunked)
 
 def delete_media_cache(file_path: Path):
     """Delete the cached version of a media file if it exists."""

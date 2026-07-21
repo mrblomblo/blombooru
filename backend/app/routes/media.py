@@ -582,7 +582,7 @@ async def get_media(media_id: int, db: Session = Depends(get_db)):
     return result
 
 @router.get("/{media_id}/file")
-async def get_media_file(media_id: int):
+async def get_media_file(media_id: int, chunked: bool = False):
     """Serve media file"""
     db = next(get_db())
     try:
@@ -594,7 +594,7 @@ async def get_media_file(media_id: int):
     finally:
         db.close()
 
-    return await serve_media_file(file_path, mime_type)
+    return await serve_media_file(file_path, mime_type, chunked=chunked)
 
 @router.get("/{media_id}/thumbnail")
 async def get_media_thumbnail(media_id: int):

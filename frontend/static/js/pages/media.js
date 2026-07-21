@@ -222,7 +222,7 @@ class MediaViewer extends MediaViewerBase {
             video.loop = true;
 
             const source = document.createElement('source');
-            source.src = `/api/media/${media.id}/file${media.hash ? '?v=' + media.hash : ''}`;
+            source.src = `/api/media/${media.id}/file?chunked=true${media.hash ? '&v=' + media.hash : ''}`;
             source.type = media.mime_type;
 
             video.appendChild(source);

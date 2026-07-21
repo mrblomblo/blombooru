@@ -38,7 +38,7 @@ async def get_shared_content(share_uuid: str, request: Request, db: Session = De
     raise HTTPException(status_code=404, detail="Shared content not found")
 
 @router.get("/{share_uuid}/file")
-async def get_shared_file(share_uuid: str, request: Request):
+async def get_shared_file(share_uuid: str, request: Request, chunked: bool = False):
     """Serve shared media file with metadata stripped if AI metadata not shared"""
     shared_limiter.check(request)
     db = next(get_db())
@@ -55,7 +55,7 @@ async def get_shared_file(share_uuid: str, request: Request):
     finally:
         db.close()
 
-    return await serve_media_file(file_path, mime_type, strip_metadata=strip_metadata)
+    return await serve_media_file(file_path, mime_type, strip_metadata=strip_metadata, chunked=chunked)
 
 @router.get("/{share_uuid}/thumbnail")
 async def get_shared_thumbnail(share_uuid: str, request: Request):
