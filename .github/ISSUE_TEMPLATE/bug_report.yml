@@ -14,7 +14,7 @@ body:
       options:
         - label: I have searched the [issue tracker](https://github.com/mrblomblo/blombooru/issues) for a bug report that matches the one I want to file without success.
           required: true
-        - label: I have checked that I'm using the latest [stable version](https://github.com/mrblomblo/blombooru/releases/latest) of the app.
+        - label: I have checked that I'm using the latest [official release](https://github.com/mrblomblo/blombooru/releases/latest) of the app. If not (e.g., if you're using the dev version or a pre-release), please mention either the commit you're on, or the pre-release tag in the "Additional Context" box!
           required: true
   - type: textarea
     id: '2'
