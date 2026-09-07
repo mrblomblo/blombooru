@@ -1,14 +1,14 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, asc, case, desc, func
+from sqlalchemy import and_, asc, case, desc, func, or_
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
 from ..config import settings
 from ..database import get_db
-from ..models import Media, RatingEnum, Tag, TagAlias, User, blombooru_media_tags
-from ..schemas import BatchTagValidateRequest, TagCategoryEnum, TagCreate, TagResponse
+from ..models import Media, RatingEnum, Tag, TagAlias, TagRating, User, blombooru_media_tags
+from ..schemas import BatchTagValidateRequest, TagCategoryEnum, TagCreate, TagResponse, TagImpliedRatings
 from ..utils.cache import cache_response, invalidate_tag_cache
 from ..utils.search_parser import (apply_custom_filters_or,
                                    apply_search_criteria, parse_search_query)
@@ -74,12 +74,21 @@ async def get_tags(
     search: Optional[str] = None,
     names: Optional[str] = Query(None, description="Comma-separated list of tag names"),
     category: Optional[TagCategoryEnum] = None,
+    rating: Optional[str] = Query(default=None),
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
     """Get tags with optional filtering"""
     query = db.query(Tag)
-    
+
+    # Apply Rating Filter
+    if rating:
+        ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
+        valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+        if valid_ratings or "none" in ratings_list:
+            query = query.filter(or_(~Tag.rating_entry.has(), Tag.rating_entry.has(TagRating.rating.in_(valid_ratings))))
+
+    # Return only exact Tag name matches
     if names:
         tag_names = [n.strip().lower() for n in names.split(",") if n.strip()]
         if tag_names:
@@ -87,7 +96,23 @@ async def get_tags(
             limit = max(limit, len(tag_names))
             tags = query.all()
             name_map = {t.name: t for t in tags}
-            return [name_map[n] for n in tag_names if n in name_map]
+
+            return_items = []
+            for n in tag_names:
+                if n in name_map:
+                    if name_map[n].rating_entry:
+                        returned_rating = name_map[n].rating_entry.rating
+                    else:
+                        returned_rating = "none"
+                    return_items.append(TagResponse(
+                        name=name_map[n].name,
+                        category=name_map[n].category,
+                        id=name_map[n].id,
+                        rating=returned_rating,
+                        post_count=name_map[n].post_count,
+                        created_at=name_map[n].created_at
+                    ))
+            return return_items
     
     if search:
         search_lower = search.strip().lower()
@@ -111,8 +136,22 @@ async def get_tags(
         query = query.order_by(desc(Tag.post_count), func.length(Tag.name), Tag.name)
     
     tags = query.limit(limit).all()
-    
-    return tags
+
+    return_items = []
+    for tag in tags:
+        if tag.rating_entry:
+            returned_rating = tag.rating_entry.rating
+        else:
+            returned_rating = "none"
+        return_items.append(TagResponse(
+            name=tag.name,
+            category=tag.category,
+            id=tag.id,
+            rating=returned_rating,
+            post_count=tag.post_count,
+            created_at=tag.created_at
+        ))
+    return return_items
 
 @router.get("/list", response_model=dict)
 @router.get("/list/", response_model=dict)
@@ -123,6 +162,7 @@ async def get_tags_list(
     limit: Optional[int] = Query(default=None),
     sort: Optional[str] = Query(default="post_count"),
     order: Optional[str] = Query(default="desc"),
+    rating: Optional[str] = Query(default=None),
     db: Session = Depends(get_db)
 ):
     """Get paginated tag list"""
@@ -146,6 +186,13 @@ async def get_tags_list(
     else:
         query = query.order_by(asc(sort_column))
 
+    # Apply Rating Filter
+    if rating:
+        ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
+        valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+        if valid_ratings or "none" in ratings_list:
+            query = query.filter(or_(~Tag.rating_entry.has(), Tag.rating_entry.has(TagRating.rating.in_(valid_ratings))))
+
     # Get All Tags
     total_tags = query.count()
     page_start = (page - 1) * limit
@@ -154,10 +201,15 @@ async def get_tags_list(
     # Build Response
     return_items = []
     for tag in paginated_tags:
+        if tag.rating_entry:
+            returned_rating = tag.rating_entry.rating
+        else:
+            returned_rating = "none"
         return_items.append(TagResponse(
             name=tag.name,
             category=tag.category,
             id=tag.id,
+            rating=returned_rating,
             post_count=tag.post_count,
             created_at=tag.created_at
         ))
@@ -344,7 +396,18 @@ async def get_tag(request: Request, tag_name: str, db: Session = Depends(get_db)
     tag = db.query(Tag).filter(Tag.name == tag_name.lower()).first()
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
-    return tag
+    if tag.rating_entry:
+        tag_rating = tag.rating_entry.rating
+    else:
+        tag_rating = "none"
+    return TagResponse(
+        name=tag.name,
+        category=tag.category,
+        id=tag.id,
+        rating=tag_rating,
+        post_count=tag.post_count,
+        created_at=tag.created_at
+    )
 
 @router.post("/", response_model=TagResponse)
 async def create_tag(
@@ -363,7 +426,8 @@ async def create_tag(
     
     tag = Tag(
         name=tag_data.name.lower(),
-        category=tag_data.category
+        category=tag_data.category,
+        rating_entry=TagRating(rating=tag_data.rating)
     )
     db.add(tag)
     db.commit()
@@ -376,6 +440,7 @@ async def create_tag(
 async def update_tag(
     tag_id: int,
     category: TagCategoryEnum,
+    rating: Optional[str] = None,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
@@ -385,6 +450,23 @@ async def update_tag(
         raise HTTPException(status_code=404, detail="Tag not found")
     
     tag.category = category
+
+    # If a rating has been specified, create/apply/delete rating entry.
+    if rating is not None:
+        if rating == "none":
+            if tag.rating_entry:
+                db.delete(tag.rating_entry)
+        elif new_rating in RatingEnum:
+            if not tag.rating_entry:
+                db.add(TagRating(
+                    tag_id=tag_id,
+                    rating=rating
+                ))
+            elif tag.rating_entry.rating is not rating:
+                tag.rating_entry.rating = rating
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid Tag Rating: '{new_rating}'. Submit null or use accepted values: 'none', '{RatingEnum.safe}', '{RatingEnum.questionable}', '{RatingEnum.explicit}'.")
+
     db.commit()
     invalidate_tag_cache()
     

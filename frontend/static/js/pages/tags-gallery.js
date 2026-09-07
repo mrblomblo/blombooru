@@ -3,7 +3,6 @@ class TagsGallery extends BaseGallery {
         super({
             gridSelector: '#tags-grid',
             defaultSort: 'post_count',
-            enableRatingFilter: false,
             enableTooltips: false
         });
 
@@ -29,9 +28,10 @@ class TagsGallery extends BaseGallery {
 
         try {
             const params = new URLSearchParams({
-               page: this.currentPage,
-               sort: this.getSortValue(),
-               order: this.getOrderValue()
+                page: this.currentPage,
+                sort: this.getSortValue(),
+                order: this.getOrderValue(),
+                rating: this.currentRating
             });
 
             const response = await fetch(`/api/tags/list?${params}`);
@@ -95,8 +95,13 @@ class TagsGallery extends BaseGallery {
         }`
         detail_preview_box.appendChild(created_at)
 
+        const rating = document.createElement("span")
+        rating.className = "text-xs text-secondary flex-1 text-right"
+        rating.textContent = `${for_tag.rating}`
+        detail_preview_box.appendChild(rating)
+
         const category = document.createElement("span")
-        category.className = "text-xs text-secondary uppercase flex-1 text-right"
+        category.className = "text-xs text-secondary uppercase"
         category.textContent = `${for_tag.category}`
         detail_preview_box.appendChild(category)
 

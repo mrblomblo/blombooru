@@ -429,6 +429,7 @@
             "confirm_merge_alias": "The '{source_tag}' tag and all its aliases will be added as aliases to the tag '{target_tag}'.",
             "tag_name": "Tag Name",
             "tag_category": "Tag Category",
+            "tag_rating": "Tag Rating",
             "tag_aliases": "Tag Aliases",
             "tag_aliases_hint": "Space-separated list of aliases.",
             "tags_exist_hint": "Tags that already exist (or exist as aliases) will be ignored.",
