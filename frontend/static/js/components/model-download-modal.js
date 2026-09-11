@@ -1,7 +1,3 @@
-/**
- * Reusable AI Model Download Modal Component
- * Uses ModalHelper for standardized UI styling, lifecycle, and event handling.
- */
 class ModelDownloadModal {
     constructor(options = {}) {
         this.options = {

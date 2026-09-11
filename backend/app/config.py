@@ -8,7 +8,7 @@ from sqlalchemy.engine import URL
 
 load_dotenv()
 
-APP_VERSION = "1.41.0-rc.2"
+APP_VERSION = "1.41.0-rc.3"
 SCHEMA_VERSION = 8
 
 class Settings:
