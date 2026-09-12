@@ -576,7 +576,7 @@ class MediaPickerModal {
 
     _createGalleryItem(media) {
         const item = document.createElement('div');
-        item.className = 'gallery-item relative cursor-pointer border border-2 group';
+        item.className = 'gallery-item relative cursor-pointer';
         item.dataset.id = media.id;
 
         // Store media data on element for drag-select access
@@ -584,7 +584,7 @@ class MediaPickerModal {
 
         const isSelected = this.selectedItems.has(media.id);
         if (isSelected) {
-            item.classList.add('selected', 'border-primary');
+            item.classList.add('selected');
         }
 
         // Thumbnail
@@ -594,7 +594,7 @@ class MediaPickerModal {
         const img = document.createElement('img');
         img.alt = media.filename || `Media ${media.id}`;
         img.loading = 'lazy';
-        img.className = 'w-full h-full object-cover transition-colors';
+        img.className = 'w-full h-full object-cover';
         img.draggable = false;
 
         const markLoaded = () => {
@@ -627,14 +627,9 @@ class MediaPickerModal {
         link.appendChild(img);
         item.appendChild(link);
 
-        // Selection overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'mpicker-overlay absolute inset-0 bg-primary/30 opacity-0 transition-opacity pointer-events-none';
-        if (isSelected) overlay.classList.add('opacity-100');
-
         // Select indicator
         const indicator = document.createElement('div');
-        indicator.className = 'select-indicator';
+        indicator.className = 'select-indicator primary-text';
         indicator.innerHTML = window.Icons.check({ size: 24 });
 
         // Badge (parent/child indicators for relation manager, etc.)
@@ -670,35 +665,28 @@ class MediaPickerModal {
             this._toggleItemSelection(media, item, e);
         });
 
-        item.appendChild(overlay);
         item.appendChild(indicator);
 
         return item;
     }
 
     _toggleSelection(media, itemElement) {
-        const overlay = itemElement.querySelector('.mpicker-overlay');
-
         if (this.options.mode === 'single') {
             // Deselect everything else first
             if (!this.selectedItems.has(media.id)) {
                 this.selectedItems.clear();
                 this.root.querySelectorAll('.mpicker-gallery .gallery-item').forEach(el => {
-                    el.classList.remove('selected', 'border-primary');
-                    const ov = el.querySelector('.mpicker-overlay');
-                    if (ov) ov.classList.remove('opacity-100');
+                    el.classList.remove('selected');
                 });
             }
         }
 
         if (this.selectedItems.has(media.id)) {
             this.selectedItems.delete(media.id);
-            itemElement.classList.remove('selected', 'border-primary');
-            if (overlay) overlay.classList.remove('opacity-100');
+            itemElement.classList.remove('selected');
         } else {
             this.selectedItems.set(media.id, media);
-            itemElement.classList.add('selected', 'border-primary');
-            if (overlay) overlay.classList.add('opacity-100');
+            itemElement.classList.add('selected');
         }
 
         this._updateFooter();
