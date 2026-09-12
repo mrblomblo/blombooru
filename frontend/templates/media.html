@@ -122,7 +122,7 @@ download_icon, share_icon, select_arrow_icon %}
                 <div id="media-info-content" class="text-xs"></div>
 
                 <!-- Edit Source (Admin Mode Only) -->
-                <div id="edit-source-section" style="display: none;" class="pt-3 border-t">
+                <div id="edit-source-section" style="display: none;" class="pt-2 mt-2 border-t">
                     <label class="block text-xs font-bold mb-2">{{ t('media.info.source_url') }}</label>
                     <input type="url" id="source-input" placeholder="https://example.com/source"
                         class="w-full bg px-2 py-1 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary mb-2">
@@ -132,7 +132,7 @@ download_icon, share_icon, select_arrow_icon %}
                 </div>
 
                 <!-- View Description (Non-admin Mode Only) -->
-                <div id="description-display-section" style="display: none;" class="pt-3 border-t">
+                <div id="description-display-section" style="display: none;" class="pt-2 mt-2 border-t">
                     <p class="block text-xs font-bold mb-2">{{ t('common.description') }}</p>
                     <p id="description-display-text"
                         class="w-full bg px-2 py-1 border text-xs whitespace-pre-wrap break-words"></p>
@@ -152,12 +152,12 @@ download_icon, share_icon, select_arrow_icon %}
             <!-- Tags -->
             <div class="surface p-3 border">
                 <h3 class="text-sm font-bold mb-3 pb-2 border-b">{{ t('common.tags') }}</h3>
-                <div id="tags-container" class="mb-2"></div>
+                <div id="tags-container" class="mb-3"></div>
 
                 <!-- Edit Tags (Admin Mode Only) -->
                 <div id="edit-tags-section" style="display: none;" class="pt-2 border-t">
                     <button type="button" id="edit-tags-toggle"
-                        class="w-full flex justify-between items-center text-left py-2 hover:text-primary transition-colors cursor-pointer">
+                        class="w-full flex justify-between items-center text-left pt-2 hover:text-primary transition-colors cursor-pointer">
                         <span class="text-xs font-bold">{{ t('media.tags.edit_tags') }}</span>
                         {{ chevron_down_icon(size=14, id="edit-tags-chevron",
                         class="transition-transform duration-200") }}

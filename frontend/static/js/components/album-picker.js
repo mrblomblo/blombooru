@@ -227,7 +227,7 @@ class AlbumPicker {
         }
 
         return `
-            <div class="album-picker-item p-2 hover:surface border-b flex items-center gap-2" style="padding-left: 8px;">
+            <div class="album-picker-item p-2 hover:surface border-b flex items-center gap-2 last:border-b-0" style="padding-left: 8px;">
                 ${prefixHtml}
                 <input type="checkbox" 
                        class="w-4 h-4 accent-primary album-checkbox flex-shrink-0" 

@@ -167,6 +167,10 @@ span.checked .filter-check-icon {
     border-bottom: 1px solid var(--border);
 }
 
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
 .tag-suggestion:hover,
 .tag-suggestion.selected {
     background: var(--surface-light);
@@ -240,6 +244,10 @@ span.checked .filter-check-icon {
     margin-bottom: 1rem;
     margin-right: 0;
     width: 100%;
+}
+
+.tag-category:last-child {
+    margin-bottom: 0;
 }
 
 .tag-category h4 {
@@ -520,8 +528,7 @@ a.tag:hover {
 /* Popular tag styling */
 .popular-tag-item {
     align-items: center;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.6rem;
     gap: 0.5rem;
 }
 
@@ -586,8 +593,13 @@ video:focus-visible {
     font-size: 0.7rem;
 }
 
+.info-row:first-child {
+    padding-top: 0;
+}
+
 .info-row:last-child {
     border-bottom: 0;
+    padding-bottom: 0;
 }
 
 .ai-section {

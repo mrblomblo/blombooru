@@ -12,7 +12,9 @@
         <summary
             class="flex items-center justify-between cursor-pointer font-bold text-xs uppercase tracking-wider hover:text-primary transition-colors list-none [&::-webkit-details-marker]:hidden select-none">
             <span>{{ t('gallery.filtering') }}</span>
-            {{ chevron_down_icon(size=14, class="transition-transform duration-200 group-open:rotate-180 flex-shrink-0") }}
+            {{
+            chevron_down_icon(size=14, class="transition-transform duration-200 group-open:rotate-180 flex-shrink-0")
+            }}
         </summary>
         <div class="mt-2.5 pt-2.5 border-t space-y-2.5">
             <div>
@@ -40,9 +42,11 @@
         <summary
             class="text-sm font-bold pb-1 border-b flex items-center justify-between cursor-pointer hover:text-primary transition-colors list-none [&::-webkit-details-marker]:hidden select-none group-open:mb-2.5">
             <span>{{ t('gallery.filtering') }}</span>
-            {{ chevron_down_icon(size=14, class="transition-transform duration-200 group-open:rotate-180 flex-shrink-0") }}
+            {{
+            chevron_down_icon(size=14, class="transition-transform duration-200 group-open:rotate-180 flex-shrink-0")
+            }}
         </summary>
-        <div class="space-y-2.5 mb-1">
+        <div class="space-y-2.5">
             <div>
                 <div class="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">{{
                     t('gallery.rating_filter') }}</div>

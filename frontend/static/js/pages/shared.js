@@ -124,7 +124,7 @@ class SharedViewer extends MediaViewerBase {
 
                     <div class="surface p-3 border">
                         <h3 class="text-sm font-bold mb-3 pb-2 border-b">${window.i18n.t('common.tags')}</h3>
-                        <div id="tags-container"></div>
+                        <div id="tags-container" class="mb-1"></div>
                     </div>
 
                     ${showAIMetadata ? `

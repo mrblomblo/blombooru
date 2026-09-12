@@ -546,8 +546,6 @@ class MediaViewer extends MediaViewerBase {
         for (const tag of items) {
             const item = document.createElement('div');
             item.className = 'popular-tag-item';
-            item.style.borderBottom = 'none';
-            item.style.padding = '0.25rem 0';
 
             const btn = document.createElement('button');
             btn.type = 'button';
