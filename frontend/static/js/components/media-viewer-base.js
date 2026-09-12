@@ -161,27 +161,58 @@ class MediaViewerBase {
         let html = '';
 
         for (const [key, value] of Object.entries(aiData)) {
+            if (value === null || value === undefined || value === '') continue;
+            if (key === 'prompt_tags') continue;
+
             const sectionTitle = this.escapeHtml(this.formatKey(key));
 
-            html += `<div class="ai-section mb-3">`;
-            html += `<h4 class="text-xs font-bold text-primary mb-2">${sectionTitle}</h4>`;
-
-            if (this.isPlainObject(value)) {
-                html += `<div class="ml-2">`;
-                for (const [subKey, subValue] of Object.entries(value)) {
-                    html += `
-                    <div class="ai-data-row">
-                        <span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span>
-                        <div class="text">${this.formatValue(subValue, true)}</div>
-                    </div>
-                `;
+            if (key === 'workflow') {
+                let wfVal = value;
+                if (typeof wfVal === 'string') {
+                    try {
+                        wfVal = JSON.parse(wfVal);
+                    } catch { }
                 }
-                html += `</div>`;
-            } else {
-                html += `<div class="text ml-2">${this.formatValue(value, true)}</div>`;
-            }
+                html += `<div class="ai-section not-last:mb-2"><h4 class="text-xs font-bold text">${sectionTitle}</h4><div class="text">${this.formatValue(wfVal, true)}</div></div>`;
+            } else if (key === 'additional_parameters') {
+                let paramsVal = value;
+                if (typeof paramsVal === 'string') {
+                    try {
+                        paramsVal = JSON.parse(paramsVal);
+                    } catch { }
+                }
+                if (this.isPlainObject(paramsVal)) {
+                    let rowsHtml = '';
+                    for (const [subKey, subValue] of Object.entries(paramsVal)) {
+                        if (subValue === null || subValue === undefined || subValue === '') continue;
+                        rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
+                    }
+                    if (rowsHtml) {
+                        const chevronHtml = (typeof window !== 'undefined' && window.Icons?.chevronDown)
+                            ? window.Icons.chevronDown({ size: 14, class: 'ai-heading-chevron transition-transform duration-200 flex-shrink-0' })
+                            : '<svg width="14" height="14" viewBox="0 0 24 24" class="ai-heading-chevron transition-transform duration-200 flex-shrink-0"><use href="#icon-chevron-down"></use></svg>';
 
-            html += `</div>`;
+                        html += `<div class="ai-section not-last:mb-2">`;
+                        html += `<button type="button" class="ai-heading-toggle w-full flex justify-between items-center text-left hover:text-primary transition-colors cursor-pointer">`;
+                        html += `<span class="text-xs font-bold">${sectionTitle}</span>`;
+                        html += chevronHtml;
+                        html += `</button>`;
+                        html += `<div class="ai-heading-content" style="display: none;">${rowsHtml}</div>`;
+                        html += `</div>`;
+                    }
+                }
+            } else if (this.isPlainObject(value)) {
+                let rowsHtml = '';
+                for (const [subKey, subValue] of Object.entries(value)) {
+                    if (subValue === null || subValue === undefined || subValue === '') continue;
+                    rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
+                }
+                if (rowsHtml) {
+                    html += `<div class="ai-section not-last:mb-2"><h4 class="text-xs font-bold text">${sectionTitle}</h4><div>${rowsHtml}</div></div>`;
+                }
+            } else {
+                html += `<div class="ai-section not-last:mb-2"><h4 class="text-xs font-bold text">${sectionTitle}</h4><div class="text">${this.formatValue(value, true)}</div></div>`;
+            }
         }
 
         return html;
@@ -199,21 +230,43 @@ class MediaViewerBase {
         }
 
         this._aiMetadataClickHandler = (e) => {
+            const headingBtn = e.target.closest('.ai-heading-toggle');
+            if (headingBtn) {
+                const wrapper = headingBtn.closest('.ai-section');
+                const contentDiv = wrapper?.querySelector('.ai-heading-content');
+                const chevron = headingBtn.querySelector('.ai-heading-chevron');
+
+                if (contentDiv) {
+                    const isHidden = contentDiv.style.display === 'none';
+                    contentDiv.style.display = isHidden ? '' : 'none';
+                    if (chevron) {
+                        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                    }
+                }
+                return;
+            }
+
             const btn = e.target.closest('.ai-toggle-btn');
             if (!btn) return;
 
             const wrapper = btn.closest('.ai-expandable-wrapper');
-            const textDiv = wrapper?.querySelector('.ai-text-content');
+            const textDiv = wrapper?.querySelector(':scope > .ai-text-content') || wrapper?.querySelector('.ai-text-content');
 
             if (textDiv) {
                 const isCollapsed = textDiv.classList.contains('is-collapsed');
 
                 if (isCollapsed) {
                     textDiv.classList.remove('is-collapsed');
+                    if (textDiv.dataset.hiddenCollapse === 'true') {
+                        textDiv.style.display = '';
+                    }
                     btn.classList.add('is-expanded');
                     btn.textContent = window.i18n.t('media.ai_metadata.show_less');
                 } else {
                     textDiv.classList.add('is-collapsed');
+                    if (textDiv.dataset.hiddenCollapse === 'true') {
+                        textDiv.style.display = 'none';
+                    }
                     btn.classList.remove('is-expanded');
                     btn.textContent = window.i18n.t('media.ai_metadata.show_more');
                 }
@@ -309,7 +362,15 @@ class MediaViewerBase {
         if (this.isPlainObject(value)) {
             try {
                 const jsonStr = JSON.stringify(value, null, 2);
-                return `<code class="block bg p-2 text-xs overflow-x-auto">${this.escapeHtml(jsonStr)}</code>`;
+                const escaped = this.escapeHtml(jsonStr);
+                const lineCount = (jsonStr.match(/\n/g) || []).length;
+                const needsExpansion = isExpandable && (jsonStr.length > 200 || lineCount > 4);
+
+                if (needsExpansion) {
+                    return `<div class="ai-expandable-wrapper"><div class="ai-text-content ai-structured-content is-collapsed" data-hidden-collapse="true" style="display: none;"><pre class="bg p-2 text-xs overflow-x-auto max-h-60 leading-tight"><code>${escaped}</code></pre></div><button type="button" class="ai-toggle-btn cursor-pointer">${window.i18n.t('media.ai_metadata.show_more')}</button></div>`;
+                }
+
+                return `<pre class="bg p-2 text-xs overflow-x-auto max-h-60 leading-tight"><code>${escaped}</code></pre>`;
             } catch {
                 return '<span class="text-secondary text-xs italic">[Complex Object]</span>';
             }
@@ -321,12 +382,7 @@ class MediaViewerBase {
         const needsExpansion = isExpandable && (str.length > 200 || lineCount > 4);
 
         if (needsExpansion) {
-            return `
-            <div class="ai-expandable-wrapper">
-                <div class="ai-text-content is-collapsed">${escaped}</div>
-                <button type="button" class="ai-toggle-btn cursor-pointer">${window.i18n.t('media.ai_metadata.show_more')}</button>
-            </div>
-        `;
+            return `<div class="ai-expandable-wrapper"><div class="ai-text-content is-collapsed">${escaped}</div><button type="button" class="ai-toggle-btn cursor-pointer">${window.i18n.t('media.ai_metadata.show_more')}</button></div>`;
         }
 
         return `<div class="ai-text-content">${escaped}</div>`;

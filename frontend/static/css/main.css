@@ -591,7 +591,9 @@ video:focus-visible {
 }
 
 .ai-section {
-    border-left: 2px solid var(--primary-color);
+    background-color: var(--background);
+    border-left: 2px solid var(--info);
+    padding: 0.25rem;
     padding-left: 0.5rem;
 }
 
@@ -682,6 +684,12 @@ video:focus-visible {
     position: relative;
 }
 
+.ai-text-content.ai-structured-content,
+.ai-text-content:has(pre),
+.ai-text-content:has(.ai-data-row) {
+    white-space: normal;
+}
+
 .ai-text-content.is-collapsed {
     display: -webkit-box;
     line-clamp: 4;
@@ -694,7 +702,6 @@ video:focus-visible {
 
 .ai-toggle-btn {
     font-size: 0.75rem;
-    font-weight: bold;
     color: var(--primary-color);
     margin-top: 0.25rem;
     cursor: pointer;
@@ -704,10 +711,11 @@ video:focus-visible {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    transition: color var(--default-transition-duration) var(--default-transition-timing-function);
 }
 
 .ai-toggle-btn:hover {
-    text-decoration: underline;
+    color: var(--primary-hover);
 }
 
 .ai-toggle-btn:after {
