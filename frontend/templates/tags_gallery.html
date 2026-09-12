@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/macros.html" import sorting_options, page_jump_modal,
+{% from "components/macros.html" import rating_filter, sorting_options, page_jump_modal,
 loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 
 {% block title %}{{ t('common.tags') }} - {{ app_name }}{% endblock %}
@@ -9,6 +9,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
     <div class="grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 gap-4">
         <!-- Tags Stack -->
         <div class="xl:col-span-4 lg:col-span-3">
+            {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
             {{ sorting_options(sort_options={
                 'post_count': t('tags_gallery.sort_post_count'),
                 'created_at': t('tags_gallery.sort_created_at'),
@@ -26,6 +27,7 @@ loading_indicator, page_navigation, sidebar_start, sidebar_end %}
 
         <!-- Sidebar -->
         {{ sidebar_start() }}
+        {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
         {{ sorting_options(sort_options={
             'post_count': t('tags_gallery.sort_post_count'),
             'created_at': t('tags_gallery.sort_created_at'),

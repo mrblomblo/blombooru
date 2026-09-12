@@ -875,6 +875,17 @@ class AdminContent {
                     }
                 }
 
+                let ratingLabel = 'err';
+                if (tag.rating) {
+                    const ratings = [
+                        { value: 'none', label: window.i18n.t('common.none')},
+                        { value: 'safe', label: window.i18n.t('common.safe') },
+                        { value: 'questionable', label: window.i18n.t('common.questionable') },
+                        { value: 'explicit', label: window.i18n.t('common.explicit') },
+                    ];
+                    ratingLabel = (ratings.find(c => c.value === tag.rating) || ratings[0]).label;
+                }
+
                 return `
                 <div class="bg px-2 py-1.5 ${i === arr.length - 1 ? '' : 'border-b'} flex flex-wrap items-center gap-2">
                     <div class="flex items-center gap-2 min-w-0">
@@ -882,6 +893,7 @@ class AdminContent {
                             data-tag-id="${tag.id}"
                             data-tag-name="${this.app.escapeHtml(tag.name)}"
                             data-tag-category="${tag.category}"
+                            data-tag-rating="${tag.rating}"
                             title="${window.i18n.t('admin.tags_management.manage_tag')}">
                             ${window.Icons.tagMenu({ size: 14 })}
                         </button>
@@ -890,7 +902,8 @@ class AdminContent {
                     <div class="flex justify-between items-center gap-2 flex-1">
                         <span class="text-xs text-secondary">(${tag.post_count})</span>
                         ${creationDateStr ? `<span class="text-xs text-secondary text-center">${creationDateStr}</span>` : ''}
-                        <span class="text-xs text-secondary uppercase flex-1 text-right">${tag.category}</span>
+                        <span class="text-xs text-secondary uppercase flex-1 text-right">${ratingLabel}</span>
+                        <span class="text-xs text-secondary uppercase">${tag.category}</span>
                     </div>
                 </div>
                 `;
@@ -902,7 +915,8 @@ class AdminContent {
                     this.showTagManageModal(
                         btn.dataset.tagId,
                         btn.dataset.tagName,
-                        btn.dataset.tagCategory
+                        btn.dataset.tagCategory,
+                        btn.dataset.tagRating
                     );
                 });
             });
@@ -914,7 +928,7 @@ class AdminContent {
         }
     }
 
-    async deleteTag(tagId, tagName, tagCategory) {
+    async deleteTag(tagId, tagName, tagCategory, tagRating) {
         const modal = new ModalHelper({
             id: 'delete-tag-modal',
             type: 'danger',
@@ -935,8 +949,8 @@ class AdminContent {
                 }
             },
             onCancel: () => {
-                if (tagName && tagCategory) {
-                    this.showTagManageModal(tagId, tagName, tagCategory);
+                if (tagName && tagCategory && tagRating) {
+                    this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
                 }
             }
         });
@@ -944,7 +958,7 @@ class AdminContent {
         modal.show();
     }
 
-    showTagManageModal(tagId, tagName, tagCategory) {
+    showTagManageModal(tagId, tagName, tagCategory, tagRating) {
         const existingModal = document.getElementById('tag-manage-modal');
         if (existingModal) existingModal.remove();
 
@@ -990,17 +1004,17 @@ class AdminContent {
 
         document.getElementById('tag-manage-edit').addEventListener('click', () => {
             closeModal();
-            this.showTagEditModal(tagId, tagName, tagCategory);
+            this.showTagEditModal(tagId, tagName, tagCategory, tagRating);
         });
 
         document.getElementById('tag-manage-merge').addEventListener('click', () => {
             closeModal();
-            this.showTagMergeModal(tagId, tagName, tagCategory);
+            this.showTagMergeModal(tagId, tagName, tagCategory, tagRating);
         });
 
         document.getElementById('tag-manage-delete').addEventListener('click', () => {
             closeModal();
-            this.deleteTag(tagId, tagName, tagCategory);
+            this.deleteTag(tagId, tagName, tagCategory, tagRating);
         });
 
         document.getElementById('tag-manage-cancel').addEventListener('click', closeModal);
@@ -1012,7 +1026,7 @@ class AdminContent {
         document.addEventListener('keydown', handleEscape);
     }
 
-    showTagMergeModal(tagId, tagName, tagCategory) {
+    showTagMergeModal(tagId, tagName, tagCategory, tagRating) {
         const existingModal = document.getElementById('tag-merge-modal');
         if (existingModal) existingModal.remove();
 
@@ -1095,7 +1109,7 @@ class AdminContent {
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
                 closeModal();
-                this.showTagManageModal(tagId, tagName, tagCategory);
+                this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
             }
         };
 
@@ -1106,13 +1120,13 @@ class AdminContent {
 
         document.getElementById('tag-merge-cancel').addEventListener('click', () => {
             closeModal();
-            this.showTagManageModal(tagId, tagName, tagCategory);
+            this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
         });
 
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeModal();
-                this.showTagManageModal(tagId, tagName, tagCategory);
+                this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
             }
         });
 
@@ -1180,7 +1194,7 @@ class AdminContent {
                     }
                 },
                 onCancel: () => {
-                    this.showTagManageModal(tagId, tagName, tagCategory);
+                    this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
                 }
             });
 
@@ -1189,7 +1203,7 @@ class AdminContent {
     }
 
 
-    async showTagEditModal(tagId, tagName, tagCategory) {
+    async showTagEditModal(tagId, tagName, tagCategory, tagRating) {
         const existingModal = document.getElementById('tag-edit-modal');
         if (existingModal) existingModal.remove();
 
@@ -1221,6 +1235,19 @@ class AdminContent {
 
         const currentCatLabel = (categories.find(c => c.value === tagCategory) || categories[0]).label;
 
+        const ratings = [
+            { value: 'none', label: window.i18n.t('common.none')},
+            { value: 'safe', label: window.i18n.t('common.safe') },
+            { value: 'questionable', label: window.i18n.t('common.questionable') },
+            { value: 'explicit', label: window.i18n.t('common.explicit') },
+        ];
+
+        const ratingOptions = ratings.map(c =>
+            `<div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs" data-value="${c.value}">${c.label}</div>`
+        ).join('');
+
+        const currentRatingLabel = (ratings.find(c => c.value === tagRating) || ratings[0]).label;
+
         const modal = document.createElement('div');
         modal.id = 'tag-edit-modal';
         modal.className = 'age-verification-overlay';
@@ -1250,6 +1277,19 @@ class AdminContent {
                         </div>
                     </div>
                 </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold mb-2">${window.i18n.t('admin.tags_management.tag_rating')}</label>
+                    <div id="tag-edit-rating-select" class="custom-select w-full" data-value="${tagRating}">
+                        <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary" type="button">
+                            <span class="custom-select-value text">${currentRatingLabel}</span>
+                            ${window.Icons ? window.Icons.selectArrow({ size: 12 }) : ''}
+                        </button>
+                        <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
+                            ${ratingOptions}
+                        </div>
+                    </div>
+                </div>
 
                 <div class="mb-6">
                     <label class="block text-xs font-bold mb-2">${window.i18n.t('admin.tags_management.tag_aliases')}</label>
@@ -1274,6 +1314,10 @@ class AdminContent {
         const categorySelectEl = document.getElementById('tag-edit-category-select');
         const categorySelect = new CustomSelect(categorySelectEl);
         categorySelect.setValue(tagCategory);
+
+        const ratingSelectEl = document.getElementById('tag-edit-rating-select');
+        const ratingSelect = new CustomSelect(ratingSelectEl);
+        ratingSelect.setValue(tagRating);
 
         const aliasesInput = document.getElementById('tag-edit-aliases');
         const currentAliasSet = new Set(currentAliases.map(a => a.toLowerCase()));
@@ -1365,7 +1409,7 @@ class AdminContent {
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
                 closeModal();
-                this.showTagManageModal(tagId, tagName, tagCategory);
+                this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
             }
         };
 
@@ -1411,11 +1455,12 @@ class AdminContent {
             }
 
             const newCategory = categorySelect.getValue();
+            const newRating = ratingSelect.getValue();
             closeModal();
             try {
                 const result = await app.apiCall(`/api/admin/tags/${tagId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ name: newName, category: newCategory, aliases: validAliases })
+                    body: JSON.stringify({ name: newName, category: newCategory, aliases: validAliases, rating: newRating })
                 });
                 app.showNotification(
                     window.i18n.t('notifications.admin.tag_updated', { old_name: result.old_name }),
@@ -1431,7 +1476,7 @@ class AdminContent {
         document.getElementById('tag-edit-save').addEventListener('click', doSave);
         document.getElementById('tag-edit-cancel').addEventListener('click', () => {
             closeModal();
-            this.showTagManageModal(tagId, tagName, tagCategory);
+            this.showTagManageModal(tagId, tagName, tagCategory, tagRating);
         });
 
         nameInput.addEventListener('keydown', (e) => {
