@@ -63,4 +63,4 @@ tzdata==2025.3
 urllib3==2.6.3
 uvicorn==0.37.0
 webencodings==0.5.1
-wenmode==0.13.3
+wenmode==0.15.0

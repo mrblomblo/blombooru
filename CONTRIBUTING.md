@@ -67,6 +67,15 @@ Here's a brief overview of how the project is organized:
 
 The backend is a [FastAPI](https://fastapi.tiangolo.com/) application written in Python. Routes live in `backend/app/routes/`, models in `backend/app/models.py`, and business logic in `backend/app/services/`.
 
+After making your changes, use the test suite to ensure no existing functionality has been broken. You can run the tests using:
+```bash
+# Linux / macOS
+./venv/bin/python -m unittest discover tests
+
+# Windows (Command Prompt)
+.\venv\Scripts\python.exe -m unittest discover tests
+```
+
 > [!TIP]
 > If you're using Docker for development, rebuild the container after making changes:
 > ```bash

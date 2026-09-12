@@ -14,7 +14,7 @@ from ..utils.logger import logger
 router = APIRouter(prefix="/api/changelog", tags=["changelog"])
 
 CHANGELOG_PATH = settings.BASE_DIR / "CHANGELOG.md"
-wen = Wenmode(github)
+wen = Wenmode(github())
 
 class ChangelogResponse(BaseModel):
     needs_modal: bool

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -253,6 +253,23 @@ class BatchMetadataRequest(BaseModel):
 
 class BatchTagValidateRequest(BaseModel):
     names: List[str]
+
+class BatchResolveCombinedItem(BaseModel):
+    id: Union[int, str]
+    current_tags: List[str] = []
+    new_tags: List[str] = []
+
+class BatchResolveCombinedRequest(BaseModel):
+    items: List[BatchResolveCombinedItem]
+
+class BatchResolveCombinedResultItem(BaseModel):
+    current_tags: List[str]
+    new_tags: List[str]
+    added_tags: List[str]
+
+class BatchResolveCombinedResponse(BaseModel):
+    results: Dict[str, BatchResolveCombinedResultItem]
+    alias_resolutions: Dict[str, str] = {}
 
 class BulkTagUpdateItem(BaseModel):
     id: int

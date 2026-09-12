@@ -1,7 +1,7 @@
 ## Admin: Media
 
 > [!NOTE]
-> Last updated: `June 3, 2026`
+> Last updated: `September 8, 2026`
 
 **Base path:** `/api/admin`
 
@@ -25,11 +25,11 @@ GET /api/admin/stats
 
 Returns an object with the following top-level keys:
 
-- `media` -- total count plus breakdowns by type and rating, and parent/child relationship counts
-- `upload_trends` -- daily upload counts for the past 30 days
-- `tags` -- total tags/aliases, top tags globally and per category, count per category
-- `albums` -- total count and size-bucket distribution
-- `storage` -- total bytes used and average file size
+- `media`: total count plus breakdowns by type and rating, and parent/child relationship counts
+- `upload_trends`: daily upload counts for the past 30 days
+- `tags`: total tags/aliases, top tags globally and per category, count per category
+- `albums`: total count and size-bucket distribution
+- `storage`: total bytes used and average file size
 
 ### Scan for untracked media
 
@@ -85,7 +85,7 @@ POST /api/admin/generate-missing-thumbnails
 
 ### Re-link media files
 
-Requires `require_admin_mode`. Scans storage (`ORIGINAL_DIR`) and re-links database records for moved or renamed media files based on content hash.
+Requires `require_admin_mode`. Scans storage (`ORIGINAL_DIR`) and re-links database records for moved or renamed media files based on content hash. Also renames and moves corresponding transcoded files in `media/transcoded/` to maintain synchronization.
 
 ```
 POST /api/admin/relink-media

@@ -59,18 +59,18 @@ download_icon, share_icon, select_arrow_icon %}
                     style="display: none;">
                     <!-- Previous -->
                     <a id="nav-prev-btn" href="#"
-                        class="relative flex items-center h-12 sm:h-14 flex-1 w-36 sm:max-w-[20%] overflow-hidden border border-border surface hover:border-[var(--color-primary)] transition-all duration-200 group shrink-0"
+                        class="relative flex items-center h-12 sm:h-14 flex-1 w-36 xl:max-w-[20%] overflow-hidden border border-border surface hover:border-[var(--color-primary)] transition-all duration-200 group shrink-0"
                         aria-label="Previous Media" style="visibility: hidden;">
                         <img id="nav-prev-thumb" src="" alt=""
                             class="absolute inset-0 w-full h-full object-cover transition-transform duration-200" />
-                        <div class="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent"></div>
+                        <div class="absolute inset-0 nav-prev-gradient pointer-events-none"></div>
                         <div
-                            class="absolute inset-0 bg-black/70 opacity-50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+                            class="absolute inset-0 nav-btn-hover-overlay opacity-30 sm:opacity-0 sm:group-hover:opacity-75 transition-opacity duration-300 pointer-events-none">
                         </div>
                         <div
-                            class="relative z-10 pl-1 sm:pl-3 flex items-center gap-2 text group-hover:text-primary transition-colors">
-                            {{ chevron_left_icon(size=20, stroke_width=2.5) }}
-                            <span class="font-bold text-xs uppercase tracking-wider">
+                            class="relative z-10 pl-2 sm:pl-3 flex items-center gap-1.5 sm:gap-2 text group-hover:text-primary transition-colors min-w-0">
+                            {{ chevron_left_icon(size=20, stroke_width=2.5, class="shrink-0") }}
+                            <span class="font-bold text-xs uppercase tracking-wider truncate">
                                 {{ t('common.previous') }}
                             </span>
                         </div>
@@ -78,20 +78,20 @@ download_icon, share_icon, select_arrow_icon %}
 
                     <!-- Next -->
                     <a id="nav-next-btn" href="#"
-                        class="relative flex items-center justify-end h-12 sm:h-14 flex-1 w-36 sm:max-w-[20%] overflow-hidden border border-border surface hover:border-[var(--color-primary)] transition-all duration-200 group shrink-0 ml-auto"
+                        class="relative flex items-center justify-end h-12 sm:h-14 flex-1 w-36 xl:max-w-[20%] overflow-hidden border border-border surface hover:border-[var(--color-primary)] transition-all duration-200 group shrink-0 ml-auto"
                         aria-label="Next Media" style="visibility: hidden;">
                         <img id="nav-next-thumb" src="" alt=""
                             class="absolute inset-0 w-full h-full object-cover transition-transform duration-200" />
-                        <div class="absolute inset-0 bg-linear-to-l from-black/80 via-black/40 to-transparent"></div>
+                        <div class="absolute inset-0 nav-next-gradient pointer-events-none"></div>
                         <div
-                            class="absolute inset-0 bg-black/70 opacity-50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+                            class="absolute inset-0 nav-btn-hover-overlay opacity-30 sm:opacity-0 sm:group-hover:opacity-75 transition-opacity duration-300 pointer-events-none">
                         </div>
                         <div
-                            class="relative z-10 pr-1 sm:pr-3 flex items-center gap-2 text group-hover:text-primary transition-colors">
-                            <span class="font-bold text-xs uppercase tracking-wider">
+                            class="relative z-10 pr-2 sm:pr-3 flex items-center gap-1.5 sm:gap-2 text group-hover:text-primary transition-colors min-w-0">
+                            <span class="font-bold text-xs uppercase tracking-wider truncate">
                                 {{ t('common.next') }}
                             </span>
-                            {{ chevron_right_icon(size=20, stroke_width=2.5) }}
+                            {{ chevron_right_icon(size=20, stroke_width=2.5, class="shrink-0") }}
                         </div>
                     </a>
                 </div>

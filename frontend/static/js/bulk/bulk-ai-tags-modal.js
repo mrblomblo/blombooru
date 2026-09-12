@@ -55,7 +55,6 @@ class BulkAITagsModal extends BulkTagModalBase {
         }
 
         // Phase 2: Extract prompts and collect tags
-        const allUniqueTags = new Set();
         const itemsWithPrompts = [];
 
         for (const item of batchItems) {
@@ -66,10 +65,7 @@ class BulkAITagsModal extends BulkTagModalBase {
             if (!aiPrompt) continue;
 
             const promptTags = AITagUtils.parsePromptTags(aiPrompt);
-
             if (promptTags.length === 0) continue;
-
-            promptTags.forEach(tag => allUniqueTags.add(tag));
 
             itemsWithPrompts.push({
                 mediaId: item.id,
@@ -83,40 +79,34 @@ class BulkAITagsModal extends BulkTagModalBase {
             return;
         }
 
-        // Phase 3: Validate tags
+        // Phase 3: Batch resolve combined tags (resolves aliases, canonical names, and implications on combined tags)
+        const itemsToResolve = itemsWithPrompts.map(({ mediaId, mediaData, promptTags }) => ({
+            id: mediaId,
+            current_tags: (mediaData.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t)),
+            new_tags: promptTags
+        }));
+
+        let resolvedResults = {};
         try {
-            await this.validateTags(Array.from(allUniqueTags));
+            resolvedResults = await this.resolveCombinedTagsBatch(itemsToResolve);
         } catch (e) {
             if (e.name === 'AbortError') return;
-            throw e;
+            console.error('Error resolving combined tags batch:', e);
         }
 
         if (this.isCancelled) return;
 
         // Phase 4: Build final data
-        for (const { mediaId, mediaData, promptTags } of itemsWithPrompts) {
-            const currentTags = (mediaData.tags || []).map(t => t.name || t);
-            const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
+        for (const { mediaId, mediaData } of itemsWithPrompts) {
+            const res = resolvedResults[mediaId] || resolvedResults[String(mediaId)];
+            if (!res) continue;
 
-            const validTags = [];
-            const seenTags = new Set();
-
-            for (const tag of promptTags) {
-                const resolvedTag = this.getResolvedTag(tag);
-
-                if (resolvedTag &&
-                    !currentTagsSet.has(resolvedTag.toLowerCase()) &&
-                    !seenTags.has(resolvedTag.toLowerCase())) {
-                    validTags.push(resolvedTag);
-                    seenTags.add(resolvedTag.toLowerCase());
-                }
-            }
-
-            if (validTags.length > 0) {
+            if (res.added_tags && res.added_tags.length > 0) {
                 this.itemsData.push({
                     mediaId,
-                    currentTags,
-                    newTags: validTags,
+                    currentTags: res.current_tags || [],
+                    newTags: res.new_tags || [],
+                    prefilledTags: res.added_tags || [],
                     filename: mediaData.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: mediaId })
                 });
             }
@@ -151,38 +141,22 @@ class BulkAITagsModal extends BulkTagModalBase {
             if (!aiPrompt) return null;
 
             const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
-
             const promptTags = AITagUtils.parsePromptTags(aiPrompt);
+            const currentTags = (mediaData.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t));
 
-            const currentTags = (mediaData.tags || []).map(t => t.name || t);
-            const currentTagsSet = new Set(currentTags.map(t => t.toLowerCase()));
+            const resolvedResults = await this.resolveCombinedTagsBatch([{
+                id: mediaId,
+                current_tags: currentTags,
+                new_tags: promptTags
+            }]);
 
-            const validTags = [];
-            const seenTags = new Set();
-
-            for (const tag of promptTags) {
-                if (currentTagsSet.has(tag)) continue;
-
-                // Validate if not in cache
-                if (!this.tagResolutionCache.has(tag)) {
-                    await this.validateAndCacheTag(tag);
-                }
-
-                const resolvedTag = this.getResolvedTag(tag);
-
-                if (resolvedTag &&
-                    !currentTagsSet.has(resolvedTag.toLowerCase()) &&
-                    !seenTags.has(resolvedTag.toLowerCase())) {
-                    validTags.push(resolvedTag);
-                    seenTags.add(resolvedTag.toLowerCase());
-                }
-            }
-
-            if (validTags.length > 0) {
+            const res = resolvedResults[mediaId] || resolvedResults[String(mediaId)];
+            if (res && res.added_tags && res.added_tags.length > 0) {
                 return {
                     mediaId,
-                    currentTags,
-                    newTags: validTags,
+                    currentTags: res.current_tags || [],
+                    newTags: res.new_tags || [],
+                    prefilledTags: res.added_tags || [],
                     filename: mediaData.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: mediaId })
                 };
             }
@@ -202,22 +176,24 @@ class BulkAITagsModal extends BulkTagModalBase {
         try {
             const result = await this.processMediaItem(item.mediaId);
             if (result && result.newTags.length > 0) {
-                const existingInputTags = this.tagInputHelper
-                    ? this.tagInputHelper.getValidTagsFromInput(inputElement)
-                    : inputElement.textContent.trim().split(/\s+/).filter(t => t);
+                item.currentTags = result.currentTags;
+                item.newTags = result.newTags;
+                item.prefilledTags = result.prefilledTags;
 
-                const existingSet = new Set(existingInputTags.map(t => t.toLowerCase()));
-                const toAdd = result.newTags.filter(t => !existingSet.has(t.toLowerCase()));
+                const prefilledSet = new Set(item.prefilledTags.map(t => t.toLowerCase()));
+                const renderedContent = item.newTags.map(tag => {
+                    const escaped = this.escapeHtml(tag);
+                    if (prefilledSet.has(tag.toLowerCase())) {
+                        return `<span class="new-tag">${escaped}</span>`;
+                    }
+                    return escaped;
+                }).join(' ');
 
-                if (toAdd.length > 0) {
-                    const newValue = [...existingInputTags, ...toAdd].join(' ');
-                    inputElement.textContent = newValue;
-                    this.triggerValidation(inputElement);
-                } else {
-                    this.flashButton(index, 'var(--warning)');
-                }
+                inputElement.innerHTML = renderedContent;
+                this.triggerValidation(inputElement);
+                this.flashButton(index, 'var(--success)');
             } else {
-                this.flashButton(index, 'var(--danger)');
+                this.flashButton(index, 'var(--warning)');
             }
         } catch (e) {
             if (e.name === 'AbortError') return;

@@ -1,7 +1,7 @@
 ## Shared Media
 
 > [!NOTE]
-> Last updated: `July 21, 2026`
+> Last updated: `September 8, 2026`
 
 **Base path:** `/api/shared`
 
@@ -32,7 +32,7 @@ Returns `404` if the UUID does not match an active share link.
 GET /api/shared/{share_uuid}/file
 ```
 
-Streams the original media file. If `share_ai_metadata` is `false` on the share, EXIF/generation metadata is stripped on the fly before serving.
+Streams the shared media file. If a transcoded version exists (e.g. MP4 or WebP), it is used as the base file for public streaming. If `share_ai_metadata` is `false` on the share, EXIF and generation metadata are stripped before serving.
 
 | Param | Type | Description |
 |---|---|---|
@@ -52,7 +52,7 @@ Streams the JPEG thumbnail.
 GET /api/shared/{share_uuid}/metadata
 ```
 
-Returns extracted EXIF / AI generation metadata for the file. Returns `403` if the share was created with `share_ai_metadata: false`.
+Returns extracted EXIF and AI generation metadata for the file. Returns `403` if the share was created with `share_ai_metadata: false`.
 
 ### Get shared file processing status
 
@@ -64,6 +64,7 @@ Used by the frontend to poll whether the metadata-stripped file cache is ready b
 
 **Response:** `{ "status": "ready" | "processing" | "not_stripped" | "error" }`
 
-- `not_stripped` -- AI metadata sharing is enabled, so the original file is served directly without any processing.
-- `processing` -- the stripped cache is being generated; poll again shortly.
-- `ready` -- the stripped file cache is ready to serve.
+- `not_stripped`: AI metadata sharing is enabled, so the file is served directly without stripping.
+- `processing`: The stripped cache is being generated in the background; poll again shortly.
+- `ready`: The stripped file cache is ready to serve.
+- `error`: Failed to locate or process the media file.

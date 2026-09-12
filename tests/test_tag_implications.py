@@ -4,9 +4,16 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
-from backend.app.models import Media, Tag, TagImplication, User
+from backend.app.models import Media, Tag, TagAlias, TagImplication, User
 from backend.app.redis_client import redis_cache
-from backend.app.routes.media import preview_or_create_tags
+from backend.app.routes.media import bulk_update_tags, preview_or_create_tags
+from backend.app.routes.tags import batch_resolve_combined_tags
+from backend.app.schemas import (
+    BatchResolveCombinedItem,
+    BatchResolveCombinedRequest,
+    BulkTagUpdateItem,
+    BulkTagUpdateRequest,
+)
 from backend.app.routes.tag_implications import (
     _clean_patterns,
     _resolve_tag_names,
@@ -681,11 +688,11 @@ class TestTagImplications(BackupTestBase):
         self.db.commit()
 
         payload = ExpandImplicationsRequest(tags=["tabby"])
-        res = asyncio.run(expand_tag_implications(payload, db=self.db))
+        res = asyncio.run(expand_tag_implications(payload, current_user=self.admin_user, db=self.db))
         self.assertEqual(res, {"implied_tags": ["hunter"]})
 
         empty_payload = ExpandImplicationsRequest(tags=[])
-        empty_res = asyncio.run(expand_tag_implications(empty_payload, db=self.db))
+        empty_res = asyncio.run(expand_tag_implications(empty_payload, current_user=self.admin_user, db=self.db))
         self.assertEqual(empty_res, {"implied_tags": []})
 
     def test_simulate_apply_all_large_scale(self):
@@ -721,6 +728,105 @@ class TestTagImplications(BackupTestBase):
         self.assertEqual(affected[0]["added_tags"], [f"child_0", f"grandchild_0"])
         # Performance check: 100 media with 400 chained implications should simulate well under 0.5s
         self.assertLess(duration, 0.5)
+
+    def test_batch_resolve_combined_tags(self):
+        """Verify POST /api/tags/batch-resolve-combined resolves aliases and implications on combined tags."""
+        girl = self._create_tag("girl")
+        blonde_hair = self._create_tag("blonde_hair")
+        blue_eyes = self._create_tag("blue_eyes")
+        swimsuit = self._create_tag("swimsuit")
+        summer = self._create_tag("summer")
+        blue_eyed_girl = self._create_tag("blue_eyed_girl")
+
+        # Alias: blonde -> blonde_hair
+        self.db.add(TagAlias(alias_name="blonde", target_tag_id=blonde_hair.id))
+        # Alias: golden_hair -> blonde_hair
+        self.db.add(TagAlias(alias_name="golden_hair", target_tag_id=blonde_hair.id))
+        # Implication: swimsuit -> summer
+        self.db.add(TagImplication(target_tags=[swimsuit], implied_tags=[summer]))
+        # Conjunction implication: girl + blue_eyes -> blue_eyed_girl
+        self.db.add(TagImplication(target_tags=[girl, blue_eyes], implied_tags=[blue_eyed_girl]))
+        self.db.commit()
+
+        # Item 1: initial has 'girl' and aliased 'blonde'.
+        # new_tags has:
+        # - valid tags: 'blue_eyes', 'swimsuit'
+        # - valid alias: 'golden_hair' (resolves to 'blonde_hair')
+        # - invalid/non-existent tags: 'fake_tag_123', 'blurred_background_effect', 'random_word'
+        req = BatchResolveCombinedRequest(
+            items=[
+                BatchResolveCombinedItem(
+                    id=101,
+                    current_tags=["girl", "blonde"],
+                    new_tags=["blue_eyes", "swimsuit", "golden_hair", "fake_tag_123", "blurred_background_effect", "random_word"],
+                ),
+                BatchResolveCombinedItem(
+                    id=102,
+                    current_tags=["girl"],
+                    new_tags=["non_existent_prose_phrase"],
+                ),
+            ]
+        )
+
+        res = asyncio.run(batch_resolve_combined_tags(req, db=self.db))
+        results = res["results"]
+
+        item101 = results["101"]
+        # Initial tags should have alias resolved
+        self.assertEqual(item101["current_tags"], ["girl", "blonde_hair"])
+        # Combined new_tags must include initial tags, valid new tags, and implied tags
+        self.assertIn("girl", item101["new_tags"])
+        self.assertIn("blonde_hair", item101["new_tags"])
+        self.assertIn("blue_eyes", item101["new_tags"])
+        self.assertIn("swimsuit", item101["new_tags"])
+        self.assertIn("blue_eyed_girl", item101["new_tags"])
+        self.assertIn("summer", item101["new_tags"])
+
+        # Non-existent tags MUST NOT be included
+        self.assertNotIn("fake_tag_123", item101["new_tags"])
+        self.assertNotIn("blurred_background_effect", item101["new_tags"])
+        self.assertNotIn("random_word", item101["new_tags"])
+        self.assertNotIn("fake_tag_123", item101["added_tags"])
+        self.assertNotIn("blurred_background_effect", item101["added_tags"])
+        self.assertNotIn("random_word", item101["added_tags"])
+
+        # added_tags must only include tags NOT in original initial tags
+        self.assertNotIn("girl", item101["added_tags"])
+        self.assertNotIn("blonde_hair", item101["added_tags"])
+        self.assertIn("blue_eyes", item101["added_tags"])
+        self.assertIn("swimsuit", item101["added_tags"])
+        self.assertIn("blue_eyed_girl", item101["added_tags"])
+        self.assertIn("summer", item101["added_tags"])
+
+        # Item 102 only had non-existent tags in new_tags, so added_tags is empty and new_tags equals current_tags
+        item102 = results["102"]
+        self.assertEqual(item102["current_tags"], ["girl"])
+        self.assertEqual(item102["new_tags"], ["girl"])
+        self.assertEqual(item102["added_tags"], [])
+
+    def test_bulk_update_tags_expands_implications(self):
+        """Verify bulk_update_tags applies implications when saving."""
+        swimsuit = self._create_tag("swimsuit_bulk")
+        summer = self._create_tag("summer_bulk")
+        self.db.add(TagImplication(target_tags=[swimsuit], implied_tags=[summer]))
+        self.db.commit()
+
+        media = self._create_media("test_bulk_imp.jpg")
+        self.db.commit()
+
+        req = BulkTagUpdateRequest(
+            items=[
+                BulkTagUpdateItem(id=media.id, tags=["swimsuit_bulk"])
+            ]
+        )
+        res = asyncio.run(bulk_update_tags(req, current_user=self.admin_user, db=self.db))
+        self.assertEqual(res.updated_count, 1)
+
+        # Verify media now has both swimsuit_bulk and implied summer_bulk
+        self.db.refresh(media)
+        assigned_tag_names = {t.name for t in media.tags}
+        self.assertIn("swimsuit_bulk", assigned_tag_names)
+        self.assertIn("summer_bulk", assigned_tag_names)
 
 if __name__ == "__main__":
     unittest.main()

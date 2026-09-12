@@ -1,7 +1,7 @@
 ## Admin: Backup & Import
 
 > [!NOTE]
-> Last updated: `August 16, 2026`
+> Last updated: `September 8, 2026`
 
 **Base path:** `/api/admin`
 
@@ -70,6 +70,7 @@ The `backup.json` contains:
       "share_uuid": null,
       "share_ai_metadata": false,
       "share_language": null,
+      "transcoded_path": "media/transcoded/img.webp",
       "tags": ["fox", "landscape"],
       "archive_path": "media/img.jpg",
       "parent_hash": null
@@ -152,7 +153,7 @@ The `backup.json` contains:
 
 ### Import a full backup
 
-Requires `require_admin_mode`. Accepts the ZIP file produced by the full backup endpoint.
+Requires `require_admin_mode`. Accepts the ZIP file produced by the full backup endpoint. Media files requiring transcoding are automatically transcoded upon import, and thumbnails are generated accordingly.
 
 ```
 POST /api/admin/import/full

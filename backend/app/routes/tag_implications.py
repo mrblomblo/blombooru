@@ -278,6 +278,7 @@ class ExpandImplicationsRequest(BaseModel):
 @router.post("/expand")
 async def expand_tag_implications(
     data: ExpandImplicationsRequest,
+    current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db),
 ):
     """Return additional tags implied by the active implication rules that are not already present in the input set."""

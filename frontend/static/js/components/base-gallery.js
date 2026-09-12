@@ -1516,7 +1516,7 @@ class BaseGallery {
 
             // Custom visual indicator (the clickable circle)
             indicator = document.createElement('div');
-            indicator.className = 'select-indicator';
+            indicator.className = 'select-indicator primary-text';
             indicator.innerHTML = window.Icons.check({ size: 24 });
 
             if (this.selectedItems.has(media.id)) {

@@ -1,8 +1,3 @@
-/**
- * Centralized SVG Icon Helper Library
- * Depends on the SVG symbol sprite defined in frontend/templates/components/icons.html
- */
-
 (function () {
     'use strict';
 

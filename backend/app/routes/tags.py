@@ -8,7 +8,9 @@ from ..auth import require_admin_mode
 from ..config import settings
 from ..database import get_db
 from ..models import Media, RatingEnum, Tag, TagAlias, TagRating, User, blombooru_media_tags
-from ..schemas import BatchTagValidateRequest, TagCategoryEnum, TagCreate, TagResponse, TagImpliedRatings
+from ..schemas import (BatchResolveCombinedRequest,
+                       BatchResolveCombinedResponse, BatchTagValidateRequest,
+                       TagCategoryEnum, TagCreate, TagResponse, TagImpliedRatings)
 from ..utils.cache import cache_response, invalidate_tag_cache
 from ..utils.search_parser import (apply_custom_filters_or,
                                    apply_search_criteria, parse_search_query)
@@ -65,6 +67,170 @@ async def batch_validate_tags(
             results[name] = None
 
     return {"resolved": results}
+
+@router.post("/batch-resolve-combined", response_model=BatchResolveCombinedResponse)
+async def batch_resolve_combined_tags(
+    payload: BatchResolveCombinedRequest,
+    db: Session = Depends(get_db)
+):
+    """Resolve aliases and expand implications on the combined set of current + new tags for each item."""
+    from ..utils.tag_utils import resolve_aliases, resolve_implications
+
+    if not payload.items:
+        return {"results": {}, "alias_resolutions": {}}
+
+    # 1. Collect all raw tag names across all items to resolve aliases in batch
+    all_raw_tags = set()
+    for item in payload.items:
+        for t in item.current_tags:
+            clean = t.strip()
+            if clean:
+                all_raw_tags.add(clean.lower())
+                all_raw_tags.add(clean.replace(" ", "_").lower())
+        for t in item.new_tags:
+            clean = t.strip()
+            if clean:
+                all_raw_tags.add(clean.lower())
+                all_raw_tags.add(clean.replace(" ", "_").lower())
+
+    alias_map = resolve_aliases(db, list(all_raw_tags))
+
+    # 2. Collect canonical names to query existing tags for correct database casing
+    all_canonical_names = set()
+    for raw in all_raw_tags:
+        if raw in alias_map:
+            all_canonical_names.add(alias_map[raw][0].lower())
+        else:
+            all_canonical_names.add(raw)
+
+    existing_tags_by_name = {}
+    # Alias targets are known Tag instances in the database
+    for target_name, _ in alias_map.values():
+        existing_tags_by_name[target_name.lower()] = target_name
+
+    CHUNK_SIZE = 500
+    chk_list = list(all_canonical_names)
+    for i in range(0, len(chk_list), CHUNK_SIZE):
+        chunk = chk_list[i:i + CHUNK_SIZE]
+        tags = db.query(Tag.name).filter(or_(Tag.name.in_(chunk), func.lower(Tag.name).in_(chunk))).all()
+        for t in tags:
+            existing_tags_by_name[t.name.lower()] = t.name
+
+    # 3. Process each item
+    results = {}
+    for item in payload.items:
+        item_key = str(item.id)
+
+        # Canonicalize current tags preserving order
+        resolved_current = []
+        seen_current_lower = set()
+        for t in item.current_tags:
+            clean = t.strip().replace(" ", "_")
+            if not clean:
+                continue
+            norm = clean.lower()
+            raw_lower = t.strip().lower()
+
+            canonical = None
+            if norm in alias_map:
+                target_name = alias_map[norm][0]
+                canonical = existing_tags_by_name.get(target_name.lower(), target_name)
+            elif raw_lower in alias_map:
+                target_name = alias_map[raw_lower][0]
+                canonical = existing_tags_by_name.get(target_name.lower(), target_name)
+            elif norm in existing_tags_by_name:
+                canonical = existing_tags_by_name[norm]
+            elif raw_lower in existing_tags_by_name:
+                canonical = existing_tags_by_name[raw_lower]
+            else:
+                canonical = clean
+
+            canonical_norm = canonical.lower()
+            if canonical_norm not in seen_current_lower:
+                seen_current_lower.add(canonical_norm)
+                resolved_current.append(canonical)
+
+        # Canonicalize new tags preserving order, strictly verifying that the tag exists or resolves to an existing tag
+        resolved_new = []
+        seen_new_lower = set()
+        for t in item.new_tags:
+            clean = t.strip().replace(" ", "_")
+            if not clean:
+                continue
+            norm = clean.lower()
+            raw_lower = t.strip().lower()
+
+            canonical = None
+            if norm in alias_map:
+                target_name = alias_map[norm][0]
+                canonical = existing_tags_by_name.get(target_name.lower())
+            elif raw_lower in alias_map:
+                target_name = alias_map[raw_lower][0]
+                canonical = existing_tags_by_name.get(target_name.lower())
+            elif norm in existing_tags_by_name:
+                canonical = existing_tags_by_name[norm]
+            elif raw_lower in existing_tags_by_name:
+                canonical = existing_tags_by_name[raw_lower]
+
+            # If the tag does NOT exist in the database (as a tag or alias to an existing tag), SKIP IT
+            if not canonical:
+                continue
+
+            canonical_norm = canonical.lower()
+            if canonical_norm not in seen_current_lower and canonical_norm not in seen_new_lower:
+                seen_new_lower.add(canonical_norm)
+                resolved_new.append(canonical)
+
+        # Combined tag list for implication expansion (only real tags!)
+        combined_for_implications = resolved_current + resolved_new
+        implied_names = resolve_implications(db, combined_for_implications)
+
+        # Query database casing for any implied tags not yet in map
+        missing_implied = [imp.lower() for imp in implied_names if imp.lower() not in existing_tags_by_name]
+        if missing_implied:
+            for t in db.query(Tag.name).filter(or_(Tag.name.in_(missing_implied), func.lower(Tag.name).in_(missing_implied))).all():
+                existing_tags_by_name[t.name.lower()] = t.name
+
+        # Process implied tags (must exist in database)
+        resolved_implied = []
+        seen_all_lower = set(seen_current_lower | seen_new_lower)
+        for imp in implied_names:
+            clean = imp.strip().replace(" ", "_")
+            if not clean:
+                continue
+            norm = clean.lower()
+
+            canonical = None
+            if norm in alias_map:
+                target_name = alias_map[norm][0]
+                canonical = existing_tags_by_name.get(target_name.lower())
+            elif norm in existing_tags_by_name:
+                canonical = existing_tags_by_name[norm]
+
+            if not canonical:
+                continue
+
+            canonical_norm = canonical.lower()
+            if canonical_norm not in seen_all_lower:
+                seen_all_lower.add(canonical_norm)
+                resolved_implied.append(canonical)
+
+        final_tags = resolved_current + resolved_new + resolved_implied
+
+        # Determine newly added tags compared to original initial tags
+        initial_lower_set = {t.strip().lower().replace(" ", "_") for t in item.current_tags if t.strip()}
+        initial_lower_set.update({t.strip().lower() for t in item.current_tags if t.strip()})
+        initial_lower_set.update(seen_current_lower)
+        added_tags = [t for t in final_tags if t.lower() not in initial_lower_set]
+
+        results[item_key] = {
+            "current_tags": resolved_current,
+            "new_tags": final_tags,
+            "added_tags": added_tags
+        }
+
+    alias_resolutions = {k: v[0] for k, v in alias_map.items()}
+    return {"results": results, "alias_resolutions": alias_resolutions}
 
 @router.get("/", response_model=List[TagResponse])
 @router.get("", response_model=List[TagResponse])

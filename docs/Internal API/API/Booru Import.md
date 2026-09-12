@@ -1,13 +1,13 @@
 ## Booru Import
 
 > [!NOTE]
-> Last updated: `May 31, 2026`
+> Last updated: `September 8, 2026`
 
 **Base path:** `/api/booru-import`
 
 All endpoints require `require_admin_mode`.
 
-Used to fetch metadata from and download media from external booru sites. Credentials for specific domains can be configured via the [Booru Config](/docs/Internal%20API/API/Booru%20Config.md) endpoints.
+Used to fetch metadata from and download media from external booru sites. Credentials for specific domains can be configured via the [Booru Config](/docs/Internal%20API/API/Booru%20Config.md) endpoints. For a unified endpoint that handles both boorus and direct media URLs, see [URL Import](/docs/Internal%20API/API/URL%20Import.md).
 
 ### Fetch post metadata
 
@@ -37,7 +37,8 @@ Content-Type: application/json
   "height": 1080,
   "file_size": 2048576,
   "score": 42,
-  "booru_url": "https://danbooru.donmai.us/posts/12345"
+  "booru_url": "https://danbooru.donmai.us/posts/12345",
+  "description": "Artist commentary or translation notes"
 }
 ```
 
@@ -45,7 +46,7 @@ Content-Type: application/json
 
 ### Download and import post
 
-Fetches metadata, downloads the media file, and imports it through the standard upload pipeline (hash deduplication, thumbnail generation, tagging).
+Fetches metadata, downloads the media file, and imports it through the standard upload pipeline (hash deduplication, automatic transcoding if required, thumbnail generation, tagging).
 
 ```
 POST /api/booru-import/download
@@ -56,13 +57,14 @@ Content-Type: application/json
   "rating": "safe",
   "tags": ["fox", "landscape"],
   "source": "https://example.com",
+  "description": "Optional description override",
   "album_ids": [1, 2],
   "auto_create_tags": false,
   "category_hints": { "fox": "general" }
 }
 ```
 
-All fields except `url` are optional. When `tags` is omitted, the tag list from the fetched post is used. When `auto_create_tags` is `true`, tags missing from the local database are created automatically using the category from the remote booru (or from `category_hints`).
+All fields except `url` are optional. When `tags` is omitted, the tag list from the fetched post is used. When `description` is omitted, the post description is used. When `auto_create_tags` is `true`, tags missing from the local database are created automatically using the category from the remote booru (or from `category_hints`).
 
 **Response:** `MediaResponse`. Returns `409` if the file already exists (duplicate SHA-256 hash).
 

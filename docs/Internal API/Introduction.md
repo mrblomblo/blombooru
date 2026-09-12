@@ -4,7 +4,7 @@
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling. The docs are also not guaranteed to be up to date with the latest changes in the API.
 
 > [!NOTE]
-> Last updated: `June 1, 2026`  
+> Last updated: `September 8, 2026`  
 > Update date for the docs can be found in the individual doc files.
 
 
@@ -26,7 +26,9 @@ GET /api/instance-info
   "app_version": "1.40.0",
   "auth_required": false,
   "theme": { /* ThemeMetadata with backup theme */ },
-  "language": { "id": "en", "name": "English", "native_name": "English" }
+  "language": { "id": "en", "name": "English", "native_name": "English" },
+  "keybindings": { /* Action keybinding specifications */ },
+  "supported_formats": { /* FormatRegistry mapping extensions to metadata */ }
 }
 ```
 
@@ -142,6 +144,20 @@ The login endpoint also sets `admin_token=<jwt>` (HttpOnly) and `admin_mode=true
 | **Tag Category** | `"general"` \| `"artist"` \| `"character"` \| `"copyright"` \| `"meta"` |
 | **File Type** | `"image"` \| `"video"` \| `"gif"` |
 
+### Supported Formats and Transcoding
+
+Blombooru maintains a centralized format registry. Supported media containers and codecs are handled either natively or through automated transcoding:
+
+- **Native images:** `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.avif`, `.bmp`, `.tiff`, `.tif`
+- **Transcoded images:** `.heic`, `.heif`, `.jxl` (automatically transcoded to `.webp`)
+- **Native videos:** `.mp4`, `.webm`, `.mov`, `.m4v`
+- **Transcoded videos:** `.mkv`, `.avi` (automatically transcoded to H.264/AAC `.mp4`)
+- **Archives:** `.zip`, `.tar.gz`, `.tgz`, `.tar`
+- **Themes:** `.blombooru-theme`, `.css`
+- **Data & documents:** `.csv`, `.json`, `.txt`
+
+When media requiring transcoding is uploaded or imported, the transcoded version is saved to `media/transcoded/` and served by default for in-browser playback and preview, while original files remain preserved for download.
+
 ---
 
 ## Error Responses
@@ -181,8 +197,10 @@ All error responses follow the FastAPI default format:
 | **Search** | Tag-based search and random media | [Search](/docs/Internal%20API/API/Search.md) |
 | **Shared Media** | Public endpoints for shared media links | [Shared Media](/docs/Internal%20API/API/Shared%20Media.md) |
 | **Tag Implications** | Tag implication rules | [Tag Implications](/docs/Internal%20API/API/Tag%20Implications.md) |
-| **Tags** | Tag listing, related tags, autocomplete | [Tags](/docs/Internal%20API/API/Tags.md) |
+| **Tags** | Tag listing, related tags, autocomplete, suggestions | [Tags](/docs/Internal%20API/API/Tags.md) |
 | **Updates** | System update and release checking | [Updates](/docs/Internal%20API/API/Updates.md) |
+| **Upload Sessions** | Staging sessions, file review, and atomic upload commit | [Upload Sessions](/docs/Internal%20API/API/Upload%20Sessions.md) |
+| **URL Import** | Probe, proxy, and import media from direct URLs or boorus | [URL Import](/docs/Internal%20API/API/URL%20Import.md) |
 | **Admin: API Keys** | API key generation and management | [Admin/API Management](/docs/Internal%20API/API/Admin/API%20Management.md) |
 | **Admin: Auth & Account** | Admin login, admin mode, credentials | [Admin/Auth and Account](/docs/Internal%20API/API/Admin/Auth%20and%20Account.md) |
 | **Admin: Backup & Import** | Tag/media export and full backup import | [Admin/Backup](/docs/Internal%20API/API/Admin/Backup.md) |
