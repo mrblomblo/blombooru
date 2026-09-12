@@ -64,7 +64,7 @@ class BulkAITagsModal extends BulkTagModalBase {
             const aiPrompt = AITagUtils.extractAIPrompt(metadata);
             if (!aiPrompt) continue;
 
-            const promptTags = AITagUtils.parsePromptTags(aiPrompt);
+            const promptTags = AITagUtils.extractPromptTags(metadata);
             if (promptTags.length === 0) continue;
 
             itemsWithPrompts.push({
@@ -141,7 +141,7 @@ class BulkAITagsModal extends BulkTagModalBase {
             if (!aiPrompt) return null;
 
             const mediaData = mediaRes.ok ? await mediaRes.json() : { tags: [] };
-            const promptTags = AITagUtils.parsePromptTags(aiPrompt);
+            const promptTags = AITagUtils.extractPromptTags(metadata);
             const currentTags = (mediaData.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t));
 
             const resolvedResults = await this.resolveCombinedTagsBatch([{

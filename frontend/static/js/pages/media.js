@@ -1511,7 +1511,7 @@ class MediaViewer extends MediaViewerBase {
                 return;
             }
 
-            const promptTags = AITagUtils.parsePromptTags(aiPrompt);
+            const promptTags = AITagUtils.extractPromptTags(metadata);
 
             const validTags = [];
             for (const tag of promptTags) {
