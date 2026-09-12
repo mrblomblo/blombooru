@@ -362,8 +362,9 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         const validNewTags = [];
         const seen = new Set();
         for (const tag of predictedTags) {
-            const resolved = this.getResolvedTag(tag);
-            if (resolved && !seen.has(resolved.toLowerCase()) && !currentTagsSet.has(resolved.toLowerCase())) {
+            const rawResolved = this.getResolvedTag(tag);
+            const resolved = typeof rawResolved === 'object' && rawResolved !== null ? rawResolved.name : rawResolved;
+            if (resolved && typeof resolved === 'string' && !seen.has(resolved.toLowerCase()) && !currentTagsSet.has(resolved.toLowerCase())) {
                 validNewTags.push(resolved);
                 seen.add(resolved.toLowerCase());
             }
@@ -521,7 +522,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                     const resolved = this.getResolvedTag(tag);
                     return resolved !== null && resolved !== undefined;
                 }).map(tag => {
-                    const resolved = this.getResolvedTag(tag);
+                    const rawResolved = this.getResolvedTag(tag);
+                    const resolved = typeof rawResolved === 'object' && rawResolved !== null ? rawResolved.name : rawResolved;
                     return resolved || tag;
                 });
 

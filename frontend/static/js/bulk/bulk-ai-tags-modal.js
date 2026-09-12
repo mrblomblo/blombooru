@@ -102,9 +102,11 @@ class BulkAITagsModal extends BulkTagModalBase {
             const seenTags = new Set();
 
             for (const tag of promptTags) {
-                const resolvedTag = this.getResolvedTag(tag);
+                const resolved = this.getResolvedTag(tag);
+                const resolvedTag = typeof resolved === 'object' && resolved !== null ? resolved.name : resolved;
 
                 if (resolvedTag &&
+                    typeof resolvedTag === 'string' &&
                     !currentTagsSet.has(resolvedTag.toLowerCase()) &&
                     !seenTags.has(resolvedTag.toLowerCase())) {
                     validTags.push(resolvedTag);
@@ -168,9 +170,11 @@ class BulkAITagsModal extends BulkTagModalBase {
                     await this.validateAndCacheTag(tag);
                 }
 
-                const resolvedTag = this.getResolvedTag(tag);
+                const resolved = this.getResolvedTag(tag);
+                const resolvedTag = typeof resolved === 'object' && resolved !== null ? resolved.name : resolved;
 
                 if (resolvedTag &&
+                    typeof resolvedTag === 'string' &&
                     !currentTagsSet.has(resolvedTag.toLowerCase()) &&
                     !seenTags.has(resolvedTag.toLowerCase())) {
                     validTags.push(resolvedTag);

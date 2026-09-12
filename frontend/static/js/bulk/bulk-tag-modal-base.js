@@ -727,7 +727,17 @@ class BulkTagModalBase {
 
     getResolvedTag(tag) {
         if (!tag) return null;
-        return this.tagResolutionCache.get(tag.toLowerCase().trim());
+        const entry = this.tagResolutionCache.get(tag.toLowerCase().trim());
+        if (!entry) return null;
+        if (typeof entry === 'object') {
+            return entry.name || null;
+        }
+        return entry;
+    }
+
+    getResolvedTagInfo(tag) {
+        if (!tag) return null;
+        return this.tagResolutionCache.get(tag.toLowerCase().trim()) || null;
     }
 
     escapeHtml(text) {
