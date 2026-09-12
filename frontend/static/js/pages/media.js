@@ -1114,6 +1114,21 @@ class MediaViewer extends MediaViewerBase {
         }
     }
 
+    isAnyModalOpen() {
+        const candidateModals = document.querySelectorAll(
+            '.modal, .age-verification-overlay, [id*="modal"], .mpicker-backdrop, dialog[open]'
+        );
+        for (const el of candidateModals) {
+            const target = el.classList.contains('mpicker-backdrop') ? el.parentElement : el;
+            if (!target) continue;
+            const style = window.getComputedStyle(target);
+            if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0' && (target.offsetWidth > 0 || target.offsetHeight > 0)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     setupKeybindings() {
         document.addEventListener('keydown', (e) => {
             const activeEl = document.activeElement;
@@ -1121,9 +1136,9 @@ class MediaViewer extends MediaViewerBase {
                 activeEl.tagName === 'INPUT' ||
                 activeEl.tagName === 'TEXTAREA' ||
                 activeEl.isContentEditable ||
-                activeEl.closest('.modal')
+                activeEl.closest('.modal, .age-verification-overlay, [id*="modal"], .mpicker-backdrop')
             );
-            if (isTyping) return;
+            if (isTyping || this.isAnyModalOpen()) return;
 
             if (window.keybindings && window.keybindings.matches(e, 'media_fullscreen')) {
                 e.preventDefault();

@@ -42,6 +42,7 @@ class MediaPickerModal {
         this._built = true;
 
         const el = document.createElement('div');
+        el.id = 'media-picker-modal';
         el.className = 'fixed inset-0 z-50 flex items-center justify-center';
         el.style.display = 'none';
 
