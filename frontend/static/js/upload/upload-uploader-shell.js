@@ -374,10 +374,14 @@ class UploadUploaderShell {
     }
 
     // Compatibility methods for untracked scanner and booru import
-    async addScannedFile(file, originalPath) {
-        if (this.isValidFile(file)) {
-            await this.session.uploadFile(file, {
-                relativePath: originalPath || file.name,
+    async addScannedFile(fileOrPath, originalPath) {
+        if (typeof fileOrPath === 'string') {
+            await this.session.addUntrackedFile(fileOrPath);
+        } else if (originalPath && typeof originalPath === 'string') {
+            await this.session.addUntrackedFile(originalPath);
+        } else if (fileOrPath && typeof fileOrPath.name === 'string' && this.isValidFile(fileOrPath)) {
+            await this.session.uploadFile(fileOrPath, {
+                relativePath: originalPath || fileOrPath.name,
             });
         }
     }
@@ -397,7 +401,11 @@ class UploadUploaderShell {
 
     isFileQueued(filePath) {
         const filename = filePath.split('/').pop().split('\\').pop();
-        return this.session.getAllItems().some(it => it.filename === filename || it.relative_path === filePath);
+        return this.session.getAllItems().some(it =>
+            it.filename === filename ||
+            it.relative_path === filePath ||
+            it.source_path === filePath
+        );
     }
 }
 

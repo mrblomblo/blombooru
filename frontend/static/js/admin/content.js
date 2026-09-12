@@ -401,26 +401,8 @@ class AdminContent {
 
                     scanBtn.textContent = window.i18n.t('admin.messages.scan_progress', { current: loadedCount + 1, total: result.new_files });
 
-                    // Fetch the file metadata from the server
-                    const infoResponse = await fetch(`/api/admin/get-untracked-file-info?path=${encodeURIComponent(filePath)}`);
-
-                    if (!infoResponse.ok) {
-                        console.error(`Failed to fetch file info: ${filePath}`);
-                        skippedCount++;
-                        continue;
-                    }
-
-                    const info = await infoResponse.json();
-
-                    const file = new File([], info.name, {
-                        type: info.mime_type,
-                        lastModified: Date.now(),
-                    });
-
-                    file._scannedSize = info.size;
-
                     // Add to uploader
-                    await uploader.addScannedFile(file, filePath);
+                    await uploader.addScannedFile(filePath);
                     loadedCount++;
 
                 } catch (error) {

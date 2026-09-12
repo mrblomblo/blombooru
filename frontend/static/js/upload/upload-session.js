@@ -107,6 +107,38 @@ class UploadSession {
         return item;
     }
 
+    async addUntrackedFile(filePath, options = {}) {
+        await this.ensureSession();
+
+        const payload = {
+            file_path: filePath,
+            relative_path: options.relativePath || null,
+            base_rating: options.baseRating || null,
+            base_source: options.baseSource || null,
+            base_tags: options.baseTags || null,
+            base_album_ids: options.baseAlbumIds ? options.baseAlbumIds.join(',') : null,
+            base_description: options.baseDescription || null,
+            category_hints: options.categoryHints ? JSON.stringify(options.categoryHints) : null,
+            user_assigned_tags: options.userAssignedTags ? JSON.stringify(options.userAssignedTags) : null,
+        };
+
+        const response = await fetch(`/api/uploads/sessions/${this.sessionId}/untracked-files`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || `Failed to add untracked file ${filePath}`);
+        }
+
+        const item = await response.json();
+        this.items.set(item.item_id, item);
+        this.emit('itemAdded', item);
+        return item;
+    }
+
     async analyzeItem(itemId, categoryHints = null) {
         if (!this.sessionId) return null;
 
