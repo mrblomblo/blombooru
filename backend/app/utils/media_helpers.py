@@ -7,138 +7,280 @@ from typing import Any, Dict, Optional
 import cv2
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from PIL import Image
+from PIL import Image, ExifTags
 
+from .ai_metadata import decode_exif_user_comment, normalize_ai_metadata, parse_xmp_packet
+from .format_registry import format_registry
 from .logger import logger
 
 def extract_image_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from media files (EXIF, PNG chunks, XMP, etc.)"""
-    metadata = {}
-    mime_type, _ = mimetypes.guess_type(str(file_path))
-    
-    if not mime_type or not mime_type.startswith('image/'):
-        return metadata
-    
+    metadata: Dict[str, Any] = {}
+
+    # Verify file is an image using format_registry or mimetypes
+    if not format_registry.is_image(file_path):
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if not mime_type or not mime_type.startswith('image/'):
+            return metadata
+
+    # Record file-level stats
     try:
+        stat = file_path.stat()
+        metadata['file_size'] = stat.st_size
+        metadata['file_type'] = 'image'
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if mime_type:
+            metadata['mime_type'] = mime_type
+    except Exception as e:
+        logger.debug(f"Error getting file stat for {file_path}: {e}")
+
+    try:
+        container_parameters = None
+        sub_ifd_user_comment = None
+        ifd0_user_comment = None
+        image_description = None
+        xmp_comment = None
+        xp_comment_val = None
+        legacy_user_comment = None
+        raw_prompt_graph = None
+        raw_text_prompt = None
+
         with Image.open(file_path) as img:
-            # Get PNG text chunks (ComfyUI, A1111, SwarmUI often use these)
+            try:
+                metadata['width'], metadata['height'] = img.size
+            except Exception:
+                pass
+
+            # Get PNG text chunks
             if hasattr(img, 'info') and img.info:
+                ignored_binary_keys = {'icc_profile', 'photoshop', 'exif', 'adobe', 'adobe_transform'}
+
                 for key, value in img.info.items():
+                    if key in ignored_binary_keys:
+                        continue
+
                     if isinstance(value, str):
                         try:
-                            metadata[key] = json.loads(value)
+                            parsed_val = json.loads(value)
                         except (json.JSONDecodeError, ValueError):
-                            metadata[key] = value
+                            parsed_val = value
                     elif isinstance(value, bytes):
+                        # If XMP chunk, parse XML packet
+                        if key.lower() in ('xmp', 'xml:com.adobe.xmp'):
+                            try:
+                                parsed_xmp = parse_xmp_packet(value)
+                                if parsed_xmp:
+                                    metadata['xmp'] = parsed_xmp
+                            except Exception as e:
+                                logger.debug(f"Error parsing XMP chunk in {file_path}: {e}")
+                            continue
+
                         try:
-                            decoded = value.decode('utf-8', errors='ignore')
+                            decoded = value.decode('utf-8', errors='replace').replace('\x00', '').strip()
                             try:
-                                metadata[key] = json.loads(decoded)
+                                parsed_val = json.loads(decoded)
                             except (json.JSONDecodeError, ValueError):
-                                metadata[key] = decoded
+                                parsed_val = decoded
                         except Exception:
-                            pass
+                            continue
                     else:
-                        metadata[key] = value
-            
+                        parsed_val = value
+
+                    # Quarantine prompt chunk to avoid collisions with the canonical human prompt field
+                    if key.lower() == 'prompt':
+                        if isinstance(parsed_val, (dict, list)):
+                            raw_prompt_graph = parsed_val
+                        elif isinstance(parsed_val, str) and parsed_val.strip():
+                            raw_text_prompt = parsed_val.strip()
+                        continue
+
+                    metadata[key] = parsed_val
+
+                if 'parameters' in metadata and metadata['parameters']:
+                    container_parameters = metadata['parameters']
+
+            # Extract potential parameter candidates from parsed XMP
+            if 'xmp' in metadata and isinstance(metadata['xmp'], dict):
+                xmp_dict = metadata['xmp']
+                for xmp_k in ('UserComment', 'parameters', 'prompt', 'Description', 'description'):
+                    if xmp_k in xmp_dict and xmp_dict[xmp_k]:
+                        xmp_comment = xmp_dict[xmp_k]
+                        break
+
+            # Extract EXIF tags
             if hasattr(img, 'getexif'):
-                exif = img.getexif()
-                if exif:
-                    # UserComment tag (0x9286) - often contains AI parameters
-                    if 0x9286 in exif:
-                        user_comment = exif[0x9286]
-                        if isinstance(user_comment, bytes):
-                            try:
-                                user_comment = user_comment.decode('utf-8', errors='ignore')
-                                user_comment = user_comment.replace('\x00', '').strip()
-                            except Exception:
-                                pass
-                        
-                        # Try to parse as JSON
-                        if isinstance(user_comment, str) and user_comment:
-                            try:
-                                metadata['parameters'] = json.loads(user_comment)
-                            except (json.JSONDecodeError, ValueError):
-                                metadata['parameters'] = user_comment
-                    
-                    # ImageDescription tag (0x010E) - sometimes used for metadata
-                    if 0x010E in exif:
-                        description = exif[0x010E]
-                        if isinstance(description, bytes):
-                            try:
-                                description = description.decode('utf-8', errors='ignore').replace('\x00', '').strip()
-                            except Exception:
-                                pass
-                        
-                        if isinstance(description, str) and description:
-                            try:
-                                parsed = json.loads(description)
-                                if isinstance(parsed, dict):
-                                    metadata.update(parsed)
-                                else:
-                                    metadata['description'] = parsed
-                            except (json.JSONDecodeError, ValueError):
-                                metadata['description'] = description
-                    
-                    # XPComment tag (0x9C9C) - Windows comment field
-                    if 0x9C9C in exif:
-                        xp_comment = exif[0x9C9C]
-                        if isinstance(xp_comment, bytes):
-                            try:
-                                # XPComment is UTF-16LE encoded
-                                decoded = xp_comment.decode('utf-16le', errors='ignore').replace('\x00', '').strip()
-                                if decoded:
-                                    try:
-                                        metadata['parameters'] = json.loads(decoded)
-                                    except (json.JSONDecodeError, ValueError):
-                                        metadata['parameters'] = decoded
-                            except Exception:
-                                pass
-                    
-                    # XPKeywords tag (0x9C9E)
-                    if 0x9C9E in exif:
-                        xp_keywords = exif[0x9C9E]
-                        if isinstance(xp_keywords, bytes):
-                            try:
-                                decoded = xp_keywords.decode('utf-16le', errors='ignore').replace('\x00', '').strip()
-                                if decoded:
-                                    try:
-                                        metadata['keywords'] = json.loads(decoded)
-                                    except (json.JSONDecodeError, ValueError):
-                                        metadata['keywords'] = decoded
-                            except Exception:
-                                pass
-            
-            # For WebP specifically, try to get XMP data
-            if img.format == 'WEBP' and hasattr(img, 'getxmp'):
                 try:
-                    xmp_data = img.getxmp()
-                    if xmp_data:
-                        metadata['xmp'] = xmp_data
-                except Exception:
-                    pass
+                    exif = img.getexif()
+                except Exception as e:
+                    logger.debug(f"Error calling getexif on {file_path}: {e}")
+                    exif = None
+
+                if exif:
+                    # ComfyUI WebP often stores 'workflow:{...}' in Make and 'prompt:{...}' in Model
+                    try:
+                        for tag_id, key_name in ((271, 'workflow'), (272, 'prompt')):
+                            if tag_id in exif:
+                                val = exif[tag_id]
+                                if isinstance(val, str) and val.startswith(f"{key_name}:"):
+                                    raw_json = val[len(key_name) + 1:]
+                                    try:
+                                        parsed_exif = json.loads(raw_json)
+                                    except Exception:
+                                        parsed_exif = raw_json
+
+                                    if key_name == 'prompt':
+                                        if isinstance(parsed_exif, (dict, list)):
+                                            if raw_prompt_graph is None:
+                                                raw_prompt_graph = parsed_exif
+                                        elif isinstance(parsed_exif, str) and parsed_exif.strip():
+                                            if raw_text_prompt is None:
+                                                raw_text_prompt = parsed_exif.strip()
+                                    else:
+                                        metadata[key_name] = parsed_exif
+                    except Exception:
+                        pass
+
+                    # ImageDescription tag (0x010E / 270)
+                    try:
+                        if 0x010E in exif:
+                            desc_raw = exif[0x010E]
+                            desc_str = decode_exif_user_comment(desc_raw) if isinstance(desc_raw, bytes) else str(desc_raw).strip()
+                            if desc_str:
+                                try:
+                                    image_description = json.loads(desc_str)
+                                except (json.JSONDecodeError, ValueError):
+                                    image_description = desc_str
+                                metadata['description'] = image_description
+                    except Exception:
+                        pass
+
+                    # UserComment tag in IFD0 (0x9286 / 37510)
+                    try:
+                        if 0x9286 in exif:
+                            uc_text = decode_exif_user_comment(exif[0x9286])
+                            if uc_text:
+                                try:
+                                    ifd0_user_comment = json.loads(uc_text)
+                                except (json.JSONDecodeError, ValueError):
+                                    ifd0_user_comment = uc_text
+                                metadata['user_comment'] = uc_text
+                    except Exception:
+                        pass
+
+                    # XPComment tag (0x9C9C / 40092) - Windows comment field
+                    try:
+                        if 0x9C9C in exif:
+                            raw_xp = exif[0x9C9C]
+                            if isinstance(raw_xp, bytes):
+                                decoded_xp = raw_xp.decode('utf-16le', errors='replace').replace('\x00', '').strip()
+                                if decoded_xp:
+                                    try:
+                                        xp_comment_val = json.loads(decoded_xp)
+                                    except (json.JSONDecodeError, ValueError):
+                                        xp_comment_val = decoded_xp
+                                    metadata['xp_comment'] = decoded_xp
+                    except Exception:
+                        pass
+
+                    # XPKeywords tag (0x9C9E / 40094)
+                    try:
+                        if 0x9C9E in exif:
+                            raw_kw = exif[0x9C9E]
+                            if isinstance(raw_kw, bytes):
+                                decoded_kw = raw_kw.decode('utf-16le', errors='replace').replace('\x00', '').strip()
+                                if decoded_kw:
+                                    try:
+                                        metadata['keywords'] = json.loads(decoded_kw)
+                                    except (json.JSONDecodeError, ValueError):
+                                        metadata['keywords'] = decoded_kw
+                    except Exception:
+                        pass
+
+                    # Exif Sub-IFD (0x8769 / ExifTags.IFD.Exif)
+                    # This is where UserComment (0x9286) standardly resides!
+                    try:
+                        exif_sub_ifd = exif.get_ifd(ExifTags.IFD.Exif)
+                        if exif_sub_ifd and 0x9286 in exif_sub_ifd:
+                            uc_sub = decode_exif_user_comment(exif_sub_ifd[0x9286])
+                            if uc_sub:
+                                try:
+                                    sub_ifd_user_comment = json.loads(uc_sub)
+                                except (json.JSONDecodeError, ValueError):
+                                    sub_ifd_user_comment = uc_sub
+                                metadata['user_comment'] = uc_sub
+                    except Exception:
+                        pass
             
-            # Legacy EXIF method (for older PIL versions)
+            # Legacy EXIF method
             if hasattr(img, '_getexif') and callable(img._getexif):
                 try:
                     legacy_exif = img._getexif()
                     if legacy_exif and 0x9286 in legacy_exif:
-                        user_comment = legacy_exif[0x9286]
-                        if isinstance(user_comment, bytes):
-                            user_comment = user_comment.decode('utf-8', errors='ignore').replace('\x00', '').strip()
-                        if isinstance(user_comment, str) and user_comment and 'parameters' not in metadata:
+                        legacy_text = decode_exif_user_comment(legacy_exif[0x9286])
+                        if legacy_text:
                             try:
-                                metadata['parameters'] = json.loads(user_comment)
+                                legacy_user_comment = json.loads(legacy_text)
                             except (json.JSONDecodeError, ValueError):
-                                metadata['parameters'] = user_comment
+                                legacy_user_comment = legacy_text
                 except Exception:
                     pass
-        
+
+        # Strict priority order for metadata['parameters']:
+        # 1. Native container text chunk (parameters from img.info)
+        # 2. EXIF Sub-IFD UserComment (0x8769 -> 0x9286)
+        # 3. EXIF IFD0 UserComment (0x9286)
+        # 4. EXIF IFD0 ImageDescription (0x010E)
+        # 5. XMP packet (UserComment, parameters, Description, etc.)
+        # 6. EXIF Windows XPComment (0x9C9C)
+        # 7. Legacy _getexif fallback
+        selected_params = (
+            container_parameters
+            or sub_ifd_user_comment
+            or ifd0_user_comment
+            or image_description
+            or xmp_comment
+            or xp_comment_val
+            or legacy_user_comment
+        )
+        if selected_params is not None:
+            metadata['parameters'] = selected_params
+
+        # Prepare dictionary for normalizer with quarantined graph if available
+        meta_to_normalize = dict(metadata)
+        if raw_prompt_graph is not None and 'prompt' not in meta_to_normalize:
+            meta_to_normalize['prompt'] = raw_prompt_graph
+        elif raw_text_prompt is not None and 'prompt' not in meta_to_normalize:
+            meta_to_normalize['prompt'] = raw_text_prompt
+
+        # Normalize AI metadata using the dedicated ai_metadata normalizer
+        normalized = normalize_ai_metadata(meta_to_normalize)
+        if normalized:
+            # Extended dedup check: avoid duplicating workflow/prompt graph
+            if 'workflow' in normalized:
+                norm_wf = normalized['workflow']
+                if ('workflow' in metadata and (metadata['workflow'] == norm_wf or metadata['workflow'] is norm_wf or 'workflow' in metadata)) or \
+                   ('prompt' in metadata and (metadata['prompt'] == norm_wf or metadata['prompt'] is norm_wf)):
+                    normalized.pop('workflow', None)
+
+            metadata['ai'] = normalized
+
+            # Set metadata['prompt'] only to the extracted human prompt text string
+            if normalized.get('prompt') and isinstance(normalized['prompt'], str):
+                metadata['prompt'] = normalized['prompt']
+            elif raw_text_prompt and isinstance(raw_text_prompt, str):
+                metadata['prompt'] = raw_text_prompt
+        elif raw_text_prompt and isinstance(raw_text_prompt, str):
+            metadata['prompt'] = raw_text_prompt
+
+        # Ensure metadata['prompt'] is never a dict or list
+        if isinstance(metadata.get('prompt'), (dict, list)):
+            metadata.pop('prompt', None)
+
         return metadata
         
     except Exception as e:
         logger.error(f"Error reading metadata from {file_path}: {e}", exc_info=True)
-        return {}
+        return metadata
 
 def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from video files."""
@@ -179,14 +321,23 @@ def extract_video_metadata(file_path: Path) -> Dict[str, Any]:
 
 def extract_media_metadata(file_path: Path) -> Dict[str, Any]:
     """Extract metadata from any media file (image or video)."""
+    if format_registry.is_video(file_path):
+        return extract_video_metadata(file_path)
+    if format_registry.is_image(file_path):
+        return extract_image_metadata(file_path)
+
     mime_type, _ = mimetypes.guess_type(str(file_path))
     if mime_type:
-        if mime_type.startswith('image/'):
-            return extract_image_metadata(file_path)
-        elif mime_type.startswith('video/'):
+        if mime_type.startswith('video/'):
             return extract_video_metadata(file_path)
+        elif mime_type.startswith('image/'):
+            return extract_image_metadata(file_path)
     
-    return {}
+    # Final fallback: try image first, then video
+    res = extract_image_metadata(file_path)
+    if res:
+        return res
+    return extract_video_metadata(file_path)
 
 async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Optional[Path]:
     """
@@ -218,7 +369,6 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
     try:
         # Run image processing in threadpool to avoid blocking event loop
         def process_image():
-            import io
             with Image.open(file_path) as img:
                 # Check if image is animated
                 is_animated = getattr(img, 'is_animated', False)
@@ -231,7 +381,6 @@ async def create_stripped_media_cache(file_path: Path, mime_type: str) -> Option
                         if img.format == 'WEBP':                                
                             # Try different metadata fields
                             timestamp = img.info.get('timestamp', None)
-                            duration_info = img.info.get('duration', None)
                             
                             if timestamp:
                                 # Calculate average frame duration from total timestamp
