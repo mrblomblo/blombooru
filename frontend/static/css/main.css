@@ -560,6 +560,24 @@ video:focus-visible {
     outline: 2px solid var(--primary-color);
 }
 
+.nav-prev-gradient {
+    background: linear-gradient(to right,
+            color-mix(in srgb, var(--surface) 90%, transparent) 0%,
+            color-mix(in srgb, var(--surface) 50%, transparent) 55%,
+            transparent 100%);
+}
+
+.nav-next-gradient {
+    background: linear-gradient(to left,
+            color-mix(in srgb, var(--surface) 90%, transparent) 0%,
+            color-mix(in srgb, var(--surface) 50%, transparent) 55%,
+            transparent 100%);
+}
+
+.nav-btn-hover-overlay {
+    background-color: var(--surface);
+}
+
 .info-row {
     display: flex;
     justify-content: space-between;
