@@ -387,6 +387,59 @@ class BulkTagModalBase {
         return metadataMap;
     }
 
+    async resolveCombinedTagsBatch(items) {
+        if (!items || items.length === 0) return {};
+
+        try {
+            const response = await this.fetchWithAbort('/api/tags/batch-resolve-combined', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: Failed to batch resolve combined tags`);
+            }
+
+            const data = await response.json();
+            const results = data.results || {};
+
+            // Cache tag validity and resolution
+            for (const itemRes of Object.values(results)) {
+                if (itemRes.new_tags && Array.isArray(itemRes.new_tags)) {
+                    for (const tag of itemRes.new_tags) {
+                        const tagLower = (typeof tag === 'string' ? tag : '').toLowerCase().trim();
+                        if (tagLower) {
+                            this.tagResolutionCache.set(tagLower, tag);
+                            if (this.tagInputHelper) {
+                                this.tagInputHelper.tagValidationCache.set(tagLower, true);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Cache alias resolutions
+            if (data.alias_resolutions) {
+                for (const [alias, target] of Object.entries(data.alias_resolutions)) {
+                    const aliasLower = alias.toLowerCase().trim();
+                    if (aliasLower) {
+                        this.tagResolutionCache.set(aliasLower, target);
+                        if (this.tagInputHelper) {
+                            this.tagInputHelper.tagValidationCache.set(aliasLower, true);
+                        }
+                    }
+                }
+            }
+
+            return results;
+        } catch (err) {
+            if (err.name === 'AbortError' || this.isCancelled) throw err;
+            console.error('Error in resolveCombinedTagsBatch:', err);
+            return {};
+        }
+    }
+
     // ==================== Event Listeners ====================
 
     setupEventListeners() {
@@ -945,17 +998,33 @@ class BulkTagModalBase {
             saveBtn.textContent = window.i18n.t('modal.buttons.saving');
         }
 
+        // Flush all inputs to itemsData first
+        const container = this.modalElement?.querySelector(`.${prefix}-items`);
+        if (container) {
+            const inputs = container.querySelectorAll(`.${prefix}-input`);
+            inputs.forEach(input => {
+                const index = parseInt(input.dataset.index, 10);
+                if (!isNaN(index)) {
+                    this.flushInputState(input, index);
+                }
+            });
+        }
+
         const updateItems = [];
         for (const item of this.itemsData) {
-            const newTags = item.newTags || [];
-            const existingSet = new Set(item.currentTags.map(t => t.toLowerCase()));
-            const uniqueNewTags = newTags.filter(t => !existingSet.has(t.toLowerCase()));
+            const tags = item.newTags || [];
+            const currentTags = item.currentTags || [];
+            const currentSet = new Set(currentTags.map(t => (typeof t === 'string' ? t : '').toLowerCase()));
+            const newSet = new Set(tags.map(t => (typeof t === 'string' ? t : '').toLowerCase()));
 
-            if (uniqueNewTags.length > 0) {
-                const allTags = [...item.currentTags, ...uniqueNewTags];
+            const hasChanges = currentSet.size !== newSet.size ||
+                [...newSet].some(t => !currentSet.has(t)) ||
+                [...currentSet].some(t => !newSet.has(t));
+
+            if (hasChanges) {
                 updateItems.push({
                     id: item.mediaId,
-                    tags: allTags
+                    tags: tags
                 });
             }
         }

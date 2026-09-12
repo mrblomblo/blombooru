@@ -94,10 +94,12 @@ def resolve_implications(db: Session, tags: list[str], max_depth: int = 10) -> l
 
     start_time = time.perf_counter()
 
-    initial_names = {t.strip().lower() for t in tags if t.strip()}
-    if not initial_names:
+    initial_raw = {t.strip().lower() for t in tags if t and t.strip()}
+    if not initial_raw:
         return []
 
+    alias_map = resolve_aliases(db, list(initial_raw))
+    initial_names = {alias_map[t][0].lower() if t in alias_map else t for t in initial_raw}
     active_names = set(initial_names)
 
     # Resolve database IDs for any known tags in the initial set

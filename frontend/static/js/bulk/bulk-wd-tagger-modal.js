@@ -336,47 +336,32 @@ class BulkWDTaggerModal extends BulkTagModalBase {
     async processAndDisplayScannedItem(mediaId, rawTags, mediaData) {
         if (this.isCancelled) return;
 
-        const currentTags = (mediaData?.tags || []).map(t => (t.name || t).toLowerCase());
-        const currentTagsSet = new Set(currentTags);
+        const currentTags = (mediaData?.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t));
+        const predictedTags = (rawTags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t).replace(/ /g, '_'));
 
-        const predictedTags = (rawTags || [])
-            .map(t => (t.name || t).replace(/ /g, '_'))
-            .filter(t => !currentTagsSet.has(t.toLowerCase()));
-
-        if (predictedTags.length === 0) return;
-
-        // Validate any un-cached tags immediately
-        const unvalidatedTags = predictedTags.filter(t => !this.tagResolutionCache.has(t.toLowerCase().trim()));
-        if (unvalidatedTags.length > 0) {
-            try {
-                await this.validateTags(unvalidatedTags, 2, false);
-            } catch (e) {
-                if (e.name === 'AbortError' || this.isCancelled) return;
-                console.error('Error validating tags for item:', e);
-            }
+        let resolvedResults = {};
+        try {
+            resolvedResults = await this.resolveCombinedTagsBatch([{
+                id: mediaId,
+                current_tags: currentTags,
+                new_tags: predictedTags
+            }]);
+        } catch (e) {
+            if (e.name === 'AbortError' || this.isCancelled) return;
+            console.error('Error resolving combined tags for item:', e);
         }
 
         if (this.isCancelled) return;
 
-        // Filter and map to resolved tags
-        const validNewTags = [];
-        const seen = new Set();
-        for (const tag of predictedTags) {
-            const rawResolved = this.getResolvedTag(tag);
-            const resolved = typeof rawResolved === 'object' && rawResolved !== null ? rawResolved.name : rawResolved;
-            if (resolved && typeof resolved === 'string' && !seen.has(resolved.toLowerCase()) && !currentTagsSet.has(resolved.toLowerCase())) {
-                validNewTags.push(resolved);
-                seen.add(resolved.toLowerCase());
-            }
-        }
-
-        if (validNewTags.length === 0) return;
+        const res = resolvedResults[mediaId] || resolvedResults[String(mediaId)];
+        if (!res || !res.added_tags || res.added_tags.length === 0) return;
 
         const item = {
             mediaId,
-            currentTags: (mediaData?.tags || []).map(t => t.name || t),
+            currentTags: res.current_tags || [],
             predictedTags,
-            newTags: validNewTags,
+            newTags: res.new_tags || [],
+            prefilledTags: res.added_tags || [],
             filename: mediaData?.filename || window.i18n.t('bulk_modal.ai_tags.default_media_name', { id: mediaId })
         };
 
@@ -505,48 +490,35 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             }
 
             const result = await response.json();
-            const currentTagsSet = new Set((mediaData?.tags || []).map(t => (t.name || t).toLowerCase()));
+            const currentTags = (mediaData?.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t));
+            const predictedTags = (result.tags || []).map(t => (typeof t === 'object' && t !== null ? t.name : t).replace(/ /g, '_'));
 
-            const newPredictions = (result.tags || [])
-                .map(t => (t.name || t).replace(/ /g, '_'))
-                .filter(t => !currentTagsSet.has(t.toLowerCase()));
+            const resolvedResults = await this.resolveCombinedTagsBatch([{
+                id: item.mediaId,
+                current_tags: currentTags,
+                new_tags: predictedTags
+            }]);
 
-            if (newPredictions.length > 0) {
-                // Validate new tags
-                const unvalidated = newPredictions.filter(t => !this.tagResolutionCache.has(t.toLowerCase().trim()));
-                if (unvalidated.length > 0) {
-                    await this.validateTags(unvalidated, 20, false);
-                }
+            const res = resolvedResults[item.mediaId] || resolvedResults[String(item.mediaId)];
+            if (res && res.added_tags && res.added_tags.length > 0) {
+                item.currentTags = res.current_tags || [];
+                item.newTags = res.new_tags || [];
+                item.prefilledTags = res.added_tags || [];
 
-                const validTags = newPredictions.filter(tag => {
-                    const resolved = this.getResolvedTag(tag);
-                    return resolved !== null && resolved !== undefined;
-                }).map(tag => {
-                    const rawResolved = this.getResolvedTag(tag);
-                    const resolved = typeof rawResolved === 'object' && rawResolved !== null ? rawResolved.name : rawResolved;
-                    return resolved || tag;
-                });
-
-                if (validTags.length > 0) {
-                    const existingTags = this.tagInputHelper
-                        ? this.tagInputHelper.getValidTagsFromInput(inputElement)
-                        : inputElement.textContent.trim().split(/\s+/).filter(t => t);
-
-                    const existingSet = new Set(existingTags.map(t => t.toLowerCase()));
-                    const toAdd = validTags.filter(t => !existingSet.has(t.toLowerCase()));
-
-                    if (toAdd.length > 0) {
-                        const newValue = [...existingTags, ...toAdd].join(' ');
-                        inputElement.textContent = newValue;
-                        this.triggerValidation(inputElement);
-                    } else {
-                        this.flashButton(index, 'var(--warning)');
+                const prefilledSet = new Set(item.prefilledTags.map(t => t.toLowerCase()));
+                const renderedContent = item.newTags.map(tag => {
+                    const escaped = this.escapeHtml(tag);
+                    if (prefilledSet.has(tag.toLowerCase())) {
+                        return `<span class="new-tag">${escaped}</span>`;
                     }
-                } else {
-                    this.flashButton(index, 'var(--danger)');
-                }
+                    return escaped;
+                }).join(' ');
+
+                inputElement.innerHTML = renderedContent;
+                this.triggerValidation(inputElement);
+                this.flashButton(index, 'var(--success)');
             } else {
-                this.flashButton(index, 'var(--danger)');
+                this.flashButton(index, 'var(--warning)');
             }
         } catch (e) {
             if (e.name === 'AbortError') return;

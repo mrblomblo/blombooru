@@ -958,7 +958,7 @@ async def bulk_update_tags(
     affected_tag_ids = set(old_tag_ids)
 
     for item in payload.items:
-        item_tag_ids = set()
+        item_tag_set = {}
         for raw_tag in item.tags:
             norm = raw_tag.strip().lower()
             if not norm:
@@ -966,10 +966,12 @@ async def bulk_update_tags(
             resolved_name = alias_map[norm][0].lower() if norm in alias_map else norm
             tag_obj = existing_tags_map.get(resolved_name)
             if tag_obj:
-                item_tag_ids.add(tag_obj.id)
-                affected_tag_ids.add(tag_obj.id)
+                item_tag_set[tag_obj.id] = tag_obj
 
-        for tid in item_tag_ids:
+        expand_implications(db, item_tag_set)
+
+        for tid in item_tag_set.keys():
+            affected_tag_ids.add(tid)
             new_associations.append({"media_id": item.id, "tag_id": tid})
 
     if new_associations:
