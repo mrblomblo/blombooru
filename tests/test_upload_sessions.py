@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+from pathlib import Path
 import time
 from fastapi import HTTPException
 from starlette.datastructures import UploadFile
@@ -11,11 +12,14 @@ from backend.app.models import Album, Media, Tag, TagAlias, User
 from backend.app.routes.media import preview_or_create_tags
 from backend.app.routes.uploads import (
     BulkUpdateRequest,
+    add_untracked_file_to_session,
     bulk_update_staged_items,
     cleanup_upload_sessions,
     commit_upload_session,
     create_upload_session,
     get_pending_entities,
+    get_staged_item_file,
+    get_staged_item_thumbnail,
     get_upload_session,
     update_pending_tag,
     update_staged_item,
@@ -23,6 +27,7 @@ from backend.app.routes.uploads import (
 )
 from backend.app.schemas import (
     PendingTagUpdate,
+    UploadSessionAddUntrackedRequest,
     UploadSessionItemUpdate,
 )
 from tests.backup_test_base import BackupTestBase, make_dummy_jpeg
@@ -387,3 +392,90 @@ class TestUploadSessions(BackupTestBase):
         unwanted_tag = self.db.query(Tag).filter(Tag.name == "unwanted_duplicate_tag").first()
         self.assertIsNotNone(fresh_tag)
         self.assertIsNone(unwanted_tag)
+
+    def test_add_untracked_file_to_session_and_commit(self):
+        """Test staging and committing an untracked file residing on server disk in ORIGINAL_DIR."""
+        # Create an untracked file in settings.ORIGINAL_DIR
+        untracked_file = settings.ORIGINAL_DIR / "untracked_sample.jpg"
+        jpeg_data = make_dummy_jpeg()
+        untracked_file.write_bytes(jpeg_data)
+
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        session_id = session_res["session_id"]
+
+        req = UploadSessionAddUntrackedRequest(
+            file_path=str(untracked_file),
+            base_tags="scanned_tag nature",
+            base_rating="safe",
+            base_source="camera_local",
+        )
+
+        item = asyncio.run(add_untracked_file_to_session(
+            session_id=session_id,
+            request=req,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        self.assertEqual(item["filename"], "untracked_sample.jpg")
+        self.assertTrue(item["is_untracked"])
+        self.assertEqual(item["source_path"], str(untracked_file))
+        self.assertIsNone(item["staged_filename"])
+        self.assertEqual(item["file_size"], len(jpeg_data))
+
+        # Check thumbnail and file endpoints serve correctly
+        thumb_res = asyncio.run(get_staged_item_thumbnail(session_id=session_id, item_id=item["item_id"]))
+        self.assertTrue(Path(thumb_res.path).exists())
+
+        file_res = asyncio.run(get_staged_item_file(session_id=session_id, item_id=item["item_id"]))
+        self.assertEqual(Path(file_res.path).resolve(), untracked_file.resolve())
+
+        # Commit session
+        commit_res = asyncio.run(commit_upload_session(
+            session_id=session_id,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        self.assertEqual(commit_res.total_created, 1)
+        self.assertEqual(commit_res.total_duplicates, 0)
+        self.assertEqual(commit_res.total_failed, 0)
+
+        media = self.db.query(Media).filter(Media.filename == "untracked_sample.jpg").first()
+        self.assertIsNotNone(media)
+        self.assertTrue(untracked_file.exists())  # File kept in place
+        self.assertEqual(media.source, "camera_local")
+        tag_names = {t.name for t in media.tags}
+        self.assertIn("scanned_tag", tag_names)
+        self.assertIn("nature", tag_names)
+
+    def test_untracked_file_security_and_missing_paths(self):
+        """Test access denied for paths outside ORIGINAL_DIR and 404 for nonexistent files."""
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        session_id = session_res["session_id"]
+
+        # Path outside ORIGINAL_DIR
+        outside_path = self.tmp_path / "outside.jpg"
+        outside_path.write_bytes(make_dummy_jpeg())
+
+        req_outside = UploadSessionAddUntrackedRequest(file_path=str(outside_path))
+        with self.assertRaises(HTTPException) as cm:
+            asyncio.run(add_untracked_file_to_session(
+                session_id=session_id,
+                request=req_outside,
+                current_user=self.admin_user,
+                db=self.db,
+            ))
+        self.assertEqual(cm.exception.status_code, 403)
+
+        # Nonexistent path inside ORIGINAL_DIR
+        nonexistent = settings.ORIGINAL_DIR / "does_not_exist.jpg"
+        req_nonexistent = UploadSessionAddUntrackedRequest(file_path=str(nonexistent))
+        with self.assertRaises(HTTPException) as cm:
+            asyncio.run(add_untracked_file_to_session(
+                session_id=session_id,
+                request=req_nonexistent,
+                current_user=self.admin_user,
+                db=self.db,
+            ))
+        self.assertEqual(cm.exception.status_code, 404)

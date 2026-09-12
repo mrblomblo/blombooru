@@ -19,6 +19,7 @@ from ..enums import FileTypeEnum, RatingEnum, TagCategoryEnum
 from ..models import (Album, Media, Tag, User)
 from ..schemas import (PendingAlbumEntity, PendingEntitiesResponse,
                        PendingTagEntity, PendingTagUpdate, ProposedTag,
+                       UploadSessionAddUntrackedRequest,
                        UploadSessionCommitItemResult,
                        UploadSessionCommitResponse,
                        UploadSessionItemUpdate)
@@ -169,46 +170,35 @@ async def cancel_upload_session(
         _session_locks.pop(Path(session_id).name, None)
         return {"status": "deleted", "session_id": session_id}
 
-@router.post("/sessions/{session_id}/files")
-async def upload_files_to_session(
-    session_id: str,
-    file: UploadFile = File(...),
-    relative_path: Optional[str] = Form(None),
-    base_rating: Optional[str] = Form(None),
-    base_source: Optional[str] = Form(None),
-    base_tags: Optional[str] = Form(None),
-    base_album_ids: Optional[str] = Form(None),
-    category_hints: Optional[str] = Form(None),
-    user_assigned_tags: Optional[str] = Form(None),
-    base_description: Optional[str] = Form(None),
-    current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db),
-):
-    """Upload and stage a single file in the session, hash it, and perform initial analysis."""
-    async with _get_session_lock(session_id):
-        session_dir = _get_session_dir(session_id)
-        raw_dir = session_dir / "raw"
-        thumbs_dir = session_dir / "thumbs"
-        meta = _load_session_meta(session_dir)
+def _process_and_stage_item(
+    session_dir: Path,
+    meta: dict,
+    item_id: str,
+    file_path: Path,
+    clean_filename: str,
+    staged_filename: Optional[str],
+    is_untracked: bool,
+    relative_path: Optional[str],
+    base_rating: Optional[str],
+    base_source: Optional[str],
+    base_tags: Optional[str],
+    base_album_ids: Optional[str],
+    category_hints: Optional[str],
+    user_assigned_tags: Optional[str],
+    base_description: Optional[str],
+    db: Session,
+) -> dict:
+    thumbs_dir = session_dir / "thumbs"
+    thumbs_dir.mkdir(parents=True, exist_ok=True)
 
-        item_id = str(uuid.uuid4())[:12]
-        clean_filename = Path(file.filename).name
-        staged_filename = f"{item_id}_{clean_filename}"
-        staged_path = raw_dir / staged_filename
-
-    # Save uploaded bytes to staging
-    await file.seek(0)
-    with open(staged_path, "wb") as f:
-        while chunk := await file.read(1024 * 1024):
-            f.write(chunk)
-
-    file_size = staged_path.stat().st_size
-    file_hash = calculate_file_hash(staged_path)
+    file_size = file_path.stat().st_size
+    file_hash = calculate_file_hash(file_path)
 
     # Check for exact duplicate in DB
     existing = db.query(Media).filter(Media.hash == file_hash).first()
     if existing:
-        staged_path.unlink(missing_ok=True)
+        if not is_untracked and staged_filename:
+            file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=409,
             detail=f"admin.media_management.booru_import.error_duplicate:::{existing.filename}"
@@ -217,7 +207,8 @@ async def upload_files_to_session(
     # Check if duplicate within this session
     for it in meta.get("items", {}).values():
         if it.get("hash") == file_hash and it.get("item_id") != item_id:
-            staged_path.unlink(missing_ok=True)
+            if not is_untracked and staged_filename:
+                file_path.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=409,
                 detail=f"admin.media_management.booru_import.error_duplicate_session:::{it.get('filename')}"
@@ -225,7 +216,7 @@ async def upload_files_to_session(
 
     # Analyze media dimensions and type
     try:
-        media_info = process_media_file(staged_path, precalculated_hash=file_hash, transcode=False)
+        media_info = process_media_file(file_path, precalculated_hash=file_hash, transcode=False)
         width = media_info.get("width")
         height = media_info.get("height")
         file_type = media_info.get("file_type")
@@ -242,11 +233,11 @@ async def upload_files_to_session(
     # Generate preview thumbnail in session thumbs dir
     thumb_path = thumbs_dir / f"{item_id}.jpg"
     try:
-        generate_thumbnail(staged_path, thumb_path, file_type)
+        generate_thumbnail(file_path, thumb_path, file_type)
     except Exception as e:
         logger.warning(f"Failed to generate preview thumbnail for {clean_filename}: {e}")
 
-    # Sanitize Form parameter defaults if invoked directly in tests
+    # Sanitize parameter defaults if invoked directly in tests
     relative_path_str = relative_path if isinstance(relative_path, str) else None
     base_rating_str = base_rating if isinstance(base_rating, str) else None
     base_source_str = base_source if isinstance(base_source, str) else None
@@ -318,9 +309,18 @@ async def upload_files_to_session(
 
         tags_list.append(td)
 
+    # Compute default relative path for untracked files
+    if is_untracked and not relative_path_str:
+        try:
+            relative_path_str = str(file_path.resolve().relative_to(settings.ORIGINAL_DIR.resolve()))
+        except Exception:
+            relative_path_str = clean_filename
+
     item_data = {
         "item_id": item_id,
         "filename": clean_filename,
+        "source_path": str(file_path) if is_untracked else None,
+        "is_untracked": is_untracked,
         "staged_filename": staged_filename,
         "relative_path": relative_path_str or clean_filename,
         "file_size": file_size,
@@ -343,6 +343,103 @@ async def upload_files_to_session(
 
     return item_data
 
+@router.post("/sessions/{session_id}/files")
+async def upload_files_to_session(
+    session_id: str,
+    file: UploadFile = File(...),
+    relative_path: Optional[str] = Form(None),
+    base_rating: Optional[str] = Form(None),
+    base_source: Optional[str] = Form(None),
+    base_tags: Optional[str] = Form(None),
+    base_album_ids: Optional[str] = Form(None),
+    category_hints: Optional[str] = Form(None),
+    user_assigned_tags: Optional[str] = Form(None),
+    base_description: Optional[str] = Form(None),
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Upload and stage a single file in the session, hash it, and perform initial analysis."""
+    async with _get_session_lock(session_id):
+        session_dir = _get_session_dir(session_id)
+        raw_dir = session_dir / "raw"
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        meta = _load_session_meta(session_dir)
+
+        item_id = str(uuid.uuid4())[:12]
+        clean_filename = Path(file.filename).name
+        staged_filename = f"{item_id}_{clean_filename}"
+        staged_path = raw_dir / staged_filename
+
+        await file.seek(0)
+        with open(staged_path, "wb") as f:
+            while chunk := await file.read(1024 * 1024):
+                f.write(chunk)
+
+        return _process_and_stage_item(
+            session_dir=session_dir,
+            meta=meta,
+            item_id=item_id,
+            file_path=staged_path,
+            clean_filename=clean_filename,
+            staged_filename=staged_filename,
+            is_untracked=False,
+            relative_path=relative_path,
+            base_rating=base_rating,
+            base_source=base_source,
+            base_tags=base_tags,
+            base_album_ids=base_album_ids,
+            category_hints=category_hints,
+            user_assigned_tags=user_assigned_tags,
+            base_description=base_description,
+            db=db,
+        )
+
+@router.post("/sessions/{session_id}/untracked-files")
+async def add_untracked_file_to_session(
+    session_id: str,
+    request: UploadSessionAddUntrackedRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Stage an existing untracked file from disk into the upload session without re-uploading bytes."""
+    file_path = Path(request.file_path)
+    if not file_path.is_absolute():
+        raise HTTPException(status_code=400, detail="Invalid file path")
+
+    try:
+        resolved_path = file_path.resolve()
+        if not resolved_path.is_relative_to(settings.ORIGINAL_DIR.resolve()):
+            raise ValueError()
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if not resolved_path.exists() or not resolved_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    async with _get_session_lock(session_id):
+        session_dir = _get_session_dir(session_id)
+        meta = _load_session_meta(session_dir)
+        item_id = str(uuid.uuid4())[:12]
+
+        return _process_and_stage_item(
+            session_dir=session_dir,
+            meta=meta,
+            item_id=item_id,
+            file_path=resolved_path,
+            clean_filename=resolved_path.name,
+            staged_filename=None,
+            is_untracked=True,
+            relative_path=request.relative_path,
+            base_rating=request.base_rating,
+            base_source=request.base_source,
+            base_tags=request.base_tags,
+            base_album_ids=request.base_album_ids,
+            category_hints=request.category_hints,
+            user_assigned_tags=request.user_assigned_tags,
+            base_description=request.base_description,
+            db=db,
+        )
+
 @router.get("/sessions/{session_id}/items/{item_id}/thumbnail")
 async def get_staged_item_thumbnail(
     session_id: str,
@@ -354,10 +451,14 @@ async def get_staged_item_thumbnail(
     if thumb_path.exists():
         return FileResponse(str(thumb_path), media_type="image/jpeg")
 
-    # Fallback to raw file if thumbnail wasn't generated
+    # Fallback to source or raw file if thumbnail wasn't generated
     meta = _load_session_meta(session_dir)
     item = meta.get("items", {}).get(item_id)
     if item:
+        if item.get("source_path"):
+            src_path = Path(item["source_path"])
+            if src_path.exists():
+                return FileResponse(str(src_path))
         staged_path = session_dir / "raw" / item.get("staged_filename", "")
         if staged_path.exists():
             return FileResponse(str(staged_path))
@@ -375,6 +476,11 @@ async def get_staged_item_file(
     item = meta.get("items", {}).get(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    if item.get("source_path"):
+        src_path = Path(item["source_path"])
+        if src_path.exists():
+            return FileResponse(str(src_path), media_type=item.get("mime_type") or "application/octet-stream")
 
     staged_path = session_dir / "raw" / item.get("staged_filename", "")
     if not staged_path.exists():
@@ -398,12 +504,15 @@ async def analyze_staged_item(
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
-        staged_path = session_dir / "raw" / item.get("staged_filename", "")
-        if not staged_path.exists():
-            raise HTTPException(status_code=404, detail="Staged file not found")
+        if item.get("source_path"):
+            media_path = Path(item["source_path"])
+        else:
+            media_path = session_dir / "raw" / item.get("staged_filename", "")
+        if not media_path.exists():
+            raise HTTPException(status_code=404, detail="Media file not found")
 
-        file_hash = item.get("hash") or calculate_file_hash(staged_path)
-        media_info = process_media_file(staged_path, precalculated_hash=file_hash)
+        file_hash = item.get("hash") or calculate_file_hash(media_path)
+        media_info = process_media_file(media_path, precalculated_hash=file_hash)
         item["width"] = media_info.get("width")
         item["height"] = media_info.get("height")
         item["file_type"] = media_info.get("file_type")
@@ -411,7 +520,7 @@ async def analyze_staged_item(
         item["duration"] = media_info.get("duration")
 
         thumb_path = session_dir / "thumbs" / f"{item_id}.jpg"
-        generate_thumbnail(staged_path, thumb_path, item["file_type"])
+        generate_thumbnail(media_path, thumb_path, item["file_type"])
 
         # Re-evaluate current tags with DB
         current_tag_names = [t["name"] for t in item.get("tags", []) if t.get("name")]
@@ -779,8 +888,11 @@ async def commit_upload_session(
                 if item.get("is_duplicate"):
                     duplicate_item_ids.add(i_id)
                     continue
-                staged_path = session_dir / "raw" / item.get("staged_filename", "")
-                f_hash = item.get("hash") or (calculate_file_hash(staged_path) if staged_path.exists() else None)
+                if item.get("source_path"):
+                    file_to_check = Path(item["source_path"])
+                else:
+                    file_to_check = session_dir / "raw" / item.get("staged_filename", "")
+                f_hash = item.get("hash") or (calculate_file_hash(file_to_check) if file_to_check.exists() else None)
                 if f_hash and db.query(Media.id).filter(Media.hash == f_hash).first():
                     duplicate_item_ids.add(i_id)
 
@@ -843,18 +955,35 @@ async def commit_upload_session(
             # Step 3: Commit each media item
             for item_id, item in items.items():
                 clean_filename = item.get("filename", "media")
-                staged_path = session_dir / "raw" / item.get("staged_filename", "")
-                if not staged_path.exists():
-                    total_failed += 1
-                    results.append(UploadSessionCommitItemResult(
-                        item_id=item_id,
-                        filename=clean_filename,
-                        status="failed",
-                        error="Staged file not found",
-                    ))
-                    continue
+                is_untracked = bool(item.get("is_untracked") or item.get("source_path"))
 
-                file_hash = item.get("hash") or calculate_file_hash(staged_path)
+                if is_untracked:
+                    source_path_str = item.get("source_path")
+                    source_path = Path(source_path_str) if source_path_str else None
+                    if not source_path or not source_path.exists():
+                        total_failed += 1
+                        results.append(UploadSessionCommitItemResult(
+                            item_id=item_id,
+                            filename=clean_filename,
+                            status="failed",
+                            error="Source file not found",
+                        ))
+                        continue
+                    file_to_process = source_path
+                else:
+                    staged_path = session_dir / "raw" / item.get("staged_filename", "")
+                    if not staged_path.exists():
+                        total_failed += 1
+                        results.append(UploadSessionCommitItemResult(
+                            item_id=item_id,
+                            filename=clean_filename,
+                            status="failed",
+                            error="Staged file not found",
+                        ))
+                        continue
+                    file_to_process = staged_path
+
+                file_hash = item.get("hash") or calculate_file_hash(file_to_process)
 
                 # Check duplicate in DB or marked duplicate
                 if item_id in duplicate_item_ids:
@@ -870,10 +999,14 @@ async def commit_upload_session(
                     ))
                     continue
 
-                # Move staged file to original destination
-                unique_filename = get_unique_filename(settings.ORIGINAL_DIR, clean_filename)
-                dest_path = settings.ORIGINAL_DIR / unique_filename
-                shutil.move(str(staged_path), str(dest_path))
+                if is_untracked:
+                    dest_path = file_to_process
+                    unique_filename = dest_path.name
+                else:
+                    # Move staged file to original destination
+                    unique_filename = get_unique_filename(settings.ORIGINAL_DIR, clean_filename)
+                    dest_path = settings.ORIGINAL_DIR / unique_filename
+                    shutil.move(str(staged_path), str(dest_path))
 
                 # Transcode if container/codec requires it
                 transcoded_file_path = transcode_media_if_needed(dest_path)
