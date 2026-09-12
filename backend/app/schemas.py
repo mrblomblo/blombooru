@@ -297,9 +297,22 @@ class UploadSessionItemUpdate(BaseModel):
     album_ids: Optional[List[int]] = None
     suggested_album_path: Optional[str] = None
 
+class UploadSessionAddUntrackedRequest(BaseModel):
+    file_path: str
+    relative_path: Optional[str] = None
+    base_rating: Optional[str] = None
+    base_source: Optional[str] = None
+    base_tags: Optional[str] = None
+    base_album_ids: Optional[str] = None
+    category_hints: Optional[str] = None
+    user_assigned_tags: Optional[str] = None
+    base_description: Optional[str] = None
+
 class UploadSessionItem(BaseModel):
     item_id: str
     filename: str
+    source_path: Optional[str] = None
+    is_untracked: bool = False
     relative_path: Optional[str] = None
     file_size: int = 0
     width: Optional[int] = None
