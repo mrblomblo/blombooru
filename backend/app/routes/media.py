@@ -28,7 +28,7 @@ from ..utils.cache import (cache_response, invalidate_album_cache,
 from ..utils.format_registry import format_registry
 from ..utils.logger import logger
 from ..utils.media_helpers import (create_stripped_media_cache,
-                                   delete_media_cache, extract_image_metadata,
+                                   delete_media_cache, extract_media_metadata,
                                    get_unique_filename, sanitize_filename,
                                    serve_media_file)
 from ..utils.media_processor import calculate_file_hash, process_media_file
@@ -751,7 +751,7 @@ def _fetch_media_batch_tags_only(db: Session, media_ids: List[int], include_meta
                         fpath = settings.BASE_DIR / rel_path
                         if fpath.exists():
                             try:
-                                meta = extract_image_metadata(fpath)
+                                meta = extract_media_metadata(fpath)
                             except Exception:
                                 pass
                     item_dict["metadata"] = meta
@@ -846,7 +846,7 @@ async def post_media_batch_metadata(
                     file_path = settings.BASE_DIR / rel_path
                     if file_path.exists():
                         try:
-                            meta = extract_image_metadata(file_path)
+                            meta = extract_media_metadata(file_path)
                             if meta:
                                 results[str(mid)] = meta
                         except Exception:
@@ -1249,7 +1249,7 @@ async def get_media_metadata(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Media file not found")
     
-    return extract_image_metadata(file_path)
+    return extract_media_metadata(file_path)
 
 @router.post("/", response_model=MediaResponse)
 async def upload_media(
