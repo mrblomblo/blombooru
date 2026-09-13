@@ -479,3 +479,117 @@ class TestUploadSessions(BackupTestBase):
                 db=self.db,
             ))
         self.assertEqual(cm.exception.status_code, 404)
+
+    def test_upload_session_auto_apply_ai_tags(self):
+        """Test that AI metadata prompt tags are automatically applied when auto_apply_ai_tags is enabled."""
+        from PIL import Image, PngImagePlugin
+        from backend.app.models import TagImplication
+
+        # Create tag implication: cat_ears -> animal_ears
+        cat_tag = Tag(name="cat_ears", category="general", post_count=0)
+        animal_tag = Tag(name="animal_ears", category="general", post_count=0)
+        self.db.add_all([cat_tag, animal_tag])
+        self.db.commit()
+
+        implication = TagImplication(
+            target_tags=[cat_tag],
+            target_tag_patterns=[],
+            implied_tags=[animal_tag],
+        )
+        self.db.add(implication)
+        self.db.commit()
+
+        # Create PNG with AI generation metadata
+        info = PngImagePlugin.PngInfo()
+        ai_parameters = "1girl, solo, cat_ears, blue_hair\nNegative prompt: worst quality, low quality\nSteps: 20, Sampler: Euler a, CFG scale: 7"
+        info.add_text("parameters", ai_parameters)
+
+        png_io = io.BytesIO()
+        img = Image.new("RGB", (64, 64), color="blue")
+        img.save(png_io, format="PNG", pnginfo=info)
+        png_bytes = png_io.getvalue()
+
+        # Case A: auto_apply_ai_tags = False (default)
+        settings.file_settings["auto_apply_ai_tags"] = False
+        session_res1 = asyncio.run(create_upload_session(current_user=self.admin_user))
+        s_id1 = session_res1["session_id"]
+
+        upload_file1 = UploadFile(
+            file=io.BytesIO(png_bytes),
+            filename="ai_sample_disabled.png",
+            headers={"content-type": "image/png"},
+        )
+        item1 = asyncio.run(upload_files_to_session(
+            session_id=s_id1,
+            file=upload_file1,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        item1_tag_names = {t["name"] for t in item1.get("tags", [])}
+        self.assertEqual(len(item1_tag_names), 0)
+
+        # Case B: auto_apply_ai_tags = True
+        settings.file_settings["auto_apply_ai_tags"] = True
+        session_res2 = asyncio.run(create_upload_session(current_user=self.admin_user))
+        s_id2 = session_res2["session_id"]
+
+        upload_file2 = UploadFile(
+            file=io.BytesIO(png_bytes),
+            filename="ai_sample_enabled.png",
+            headers={"content-type": "image/png"},
+        )
+        item2 = asyncio.run(upload_files_to_session(
+            session_id=s_id2,
+            file=upload_file2,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        item2_tag_names = {t["name"] for t in item2.get("tags", [])}
+        self.assertIn("1girl", item2_tag_names)
+        self.assertIn("solo", item2_tag_names)
+        self.assertIn("cat_ears", item2_tag_names)
+        self.assertIn("animal_ears", item2_tag_names)
+        self.assertIn("blue_hair", item2_tag_names)
+
+        # Commit and verify DB media tags
+        commit_res = asyncio.run(commit_upload_session(
+            session_id=s_id2,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertEqual(commit_res.total_created, 1)
+
+        media = self.db.query(Media).filter(Media.filename.like("%ai_sample_enabled%")).first()
+        self.assertIsNotNone(media)
+        db_tag_names = {t.name for t in media.tags}
+        self.assertIn("1girl", db_tag_names)
+        self.assertIn("solo", db_tag_names)
+        self.assertIn("cat_ears", db_tag_names)
+        self.assertIn("animal_ears", db_tag_names)
+        self.assertIn("blue_hair", db_tag_names)
+
+    def test_upload_session_media_type_tags(self):
+        """Test that media_type_tags are automatically applied during staging."""
+        settings.file_settings["media_type_tags"] = {
+            "image": ["photo", "still_image"],
+            "gif": ["animation"],
+            "video": ["movie_clip"],
+        }
+
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        s_id = session_res["session_id"]
+
+        upload_file = UploadFile(
+            file=io.BytesIO(make_dummy_jpeg()),
+            filename="test_type_tags.jpg",
+            headers={"content-type": "image/jpeg"},
+        )
+        item = asyncio.run(upload_files_to_session(
+            session_id=s_id,
+            file=upload_file,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        staged_tags = {t["name"] for t in item.get("tags", [])}
+        self.assertIn("photo", staged_tags)
+        self.assertIn("still_image", staged_tags)
