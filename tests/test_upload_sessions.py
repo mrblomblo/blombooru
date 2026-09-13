@@ -593,3 +593,68 @@ class TestUploadSessions(BackupTestBase):
         staged_tags = {t["name"] for t in item.get("tags", [])}
         self.assertIn("photo", staged_tags)
         self.assertIn("still_image", staged_tags)
+
+    def test_clear_suggested_album_path_single_and_bulk(self):
+        """Test that passing suggested_album_path=None explicitly clears folder album assignment in single and bulk update."""
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        s_id = session_res["session_id"]
+
+        f1 = UploadFile(filename="item1.jpg", file=io.BytesIO(make_dummy_jpeg()))
+        f2 = UploadFile(filename="item2.jpg", file=io.BytesIO(make_dummy_jpeg() + b"extra"))
+
+        item1 = asyncio.run(upload_files_to_session(
+            session_id=s_id,
+            file=f1,
+            relative_path="FolderA/Sub/item1.jpg",
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        item2 = asyncio.run(upload_files_to_session(
+            session_id=s_id,
+            file=f2,
+            relative_path="FolderA/Sub/item2.jpg",
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        self.assertEqual(item1.get("suggested_album_path"), "FolderA/Sub")
+        self.assertEqual(item2.get("suggested_album_path"), "FolderA/Sub")
+
+        # 1. Clear item1 suggested_album_path via update_staged_item
+        updated1 = asyncio.run(update_staged_item(
+            session_id=s_id,
+            item_id=item1["item_id"],
+            update=UploadSessionItemUpdate.model_validate({"suggested_album_path": None}),
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertIsNone(updated1.get("suggested_album_path"))
+        self.assertIsNone(updated1.get("suggested_album_segments"))
+
+        # Verify persisted in session meta
+        sess = asyncio.run(get_upload_session(session_id=s_id, current_user=self.admin_user))
+        items_map = {it["item_id"]: it for it in sess["items"]}
+        self.assertIsNone(items_map[item1["item_id"]].get("suggested_album_path"))
+        self.assertEqual(items_map[item2["item_id"]].get("suggested_album_path"), "FolderA/Sub")
+
+        # 2. Re-assign suggested_album_path to item1, then clear both in bulk update
+        asyncio.run(update_staged_item(
+            session_id=s_id,
+            item_id=item1["item_id"],
+            update=UploadSessionItemUpdate.model_validate({"suggested_album_path": "FolderB"}),
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        bulk_res = asyncio.run(bulk_update_staged_items(
+            session_id=s_id,
+            req=BulkUpdateRequest.model_validate({
+                "item_ids": [item1["item_id"], item2["item_id"]],
+                "suggested_album_path": None,
+            }),
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        for it in bulk_res["items"]:
+            self.assertIsNone(it.get("suggested_album_path"))
+            self.assertIsNone(it.get("suggested_album_segments"))

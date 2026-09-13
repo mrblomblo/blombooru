@@ -10,19 +10,23 @@ from typing import Dict, List, Optional, Union
 from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile)
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin_mode
 from ..config import settings
 from ..database import get_db
 from ..enums import FileTypeEnum, RatingEnum, TagCategoryEnum
-from ..models import (Album, Media, Tag, User)
-from ..schemas import (PendingAlbumEntity, PendingEntitiesResponse,
-                       PendingTagEntity, PendingTagUpdate, ProposedTag,
-                       UploadSessionAddUntrackedRequest,
-                       UploadSessionCommitItemResult,
-                       UploadSessionCommitResponse,
+from ..models import Album, Media, Tag, User, blombooru_album_hierarchy
+from ..schemas import (FolderMappingRequest, PendingAlbumEntity, PendingAlbumUpdate,
+                       PendingEntitiesResponse, PendingTagEntity, PendingTagUpdate,
+                       ProposedTag, UploadSessionAddUntrackedRequest,
+                       UploadSessionCommitItemResult, UploadSessionCommitResponse,
                        UploadSessionItemUpdate)
+from ..utils.album_path_resolver import (apply_folder_mapping_to_path,
+                                         build_pending_album_tree,
+                                         derive_item_suggested_album_path,
+                                         resolve_album_path)
 from ..utils.album_utils import update_album_last_modified
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
@@ -187,6 +191,7 @@ def _process_and_stage_item(
     user_assigned_tags: Optional[str],
     base_description: Optional[str],
     db: Session,
+    folder_mapping_mode: Optional[str] = "use_root",
 ) -> dict:
     thumbs_dir = session_dir / "thumbs"
     thumbs_dir.mkdir(parents=True, exist_ok=True)
@@ -245,6 +250,7 @@ def _process_and_stage_item(
     base_album_ids_str = base_album_ids if isinstance(base_album_ids, str) else None
     category_hints_str = category_hints if isinstance(category_hints, str) else None
     base_description_str = base_description if isinstance(base_description, str) else None
+    folder_mapping_mode_str = folder_mapping_mode if isinstance(folder_mapping_mode, str) else "use_root"
 
     # Parse initial candidate tags
     candidate_tag_names: List[str] = []
@@ -340,6 +346,22 @@ def _process_and_stage_item(
         except Exception:
             relative_path_str = clean_filename
 
+    # Compute suggested album path from folder mapping
+    suggested_album_path = None
+    suggested_album_segments = None
+    if relative_path_str:
+        fm_enabled = meta.get("folder_mapping_enabled", True)
+        fm_root_mode = meta.get("folder_mapping_root_mode", folder_mapping_mode_str or "use_root")
+        dummy_item = {"relative_path": relative_path_str}
+        suggested_album_path = derive_item_suggested_album_path(
+            dummy_item,
+            meta=meta,
+            enabled=fm_enabled,
+            root_mode=fm_root_mode,
+        )
+        if suggested_album_path:
+            suggested_album_segments = resolve_album_path(db, suggested_album_path)
+
     item_data = {
         "item_id": item_id,
         "filename": clean_filename,
@@ -359,7 +381,10 @@ def _process_and_stage_item(
         "description": base_description_str or "",
         "tags": tags_list,
         "album_ids": album_ids,
-        "suggested_album_path": None,
+        "suggested_album_path": suggested_album_path,
+        "suggested_album_segments": suggested_album_segments,
+        "folder_album_removed": False,
+        "folder_album_custom_path": None,
     }
 
     meta.setdefault("items", {})[item_id] = item_data
@@ -372,6 +397,7 @@ async def upload_files_to_session(
     session_id: str,
     file: UploadFile = File(...),
     relative_path: Optional[str] = Form(None),
+    folder_mapping_mode: Optional[str] = Form(None),
     base_rating: Optional[str] = Form(None),
     base_source: Optional[str] = Form(None),
     base_tags: Optional[str] = Form(None),
@@ -408,6 +434,7 @@ async def upload_files_to_session(
             staged_filename=staged_filename,
             is_untracked=False,
             relative_path=relative_path,
+            folder_mapping_mode=folder_mapping_mode,
             base_rating=base_rating,
             base_source=base_source,
             base_tags=base_tags,
@@ -454,6 +481,7 @@ async def add_untracked_file_to_session(
             staged_filename=None,
             is_untracked=True,
             relative_path=request.relative_path,
+            folder_mapping_mode="use_root",
             base_rating=request.base_rating,
             base_source=request.base_source,
             base_tags=request.base_tags,
@@ -585,6 +613,7 @@ async def update_staged_item(
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
+        fields_set = update.model_fields_set if hasattr(update, "model_fields_set") else getattr(update, "__fields_set__", set())
         if update.rating is not None:
             item["rating"] = update.rating.value
         if update.source is not None:
@@ -593,8 +622,17 @@ async def update_staged_item(
             item["description"] = update.description
         if update.album_ids is not None:
             item["album_ids"] = update.album_ids
-        if update.suggested_album_path is not None:
-            item["suggested_album_path"] = update.suggested_album_path
+        if "suggested_album_path" in fields_set:
+            if update.suggested_album_path is None or update.suggested_album_path == "":
+                item["folder_album_removed"] = True
+                item["folder_album_custom_path"] = None
+                item["suggested_album_path"] = None
+                item["suggested_album_segments"] = None
+            else:
+                item["folder_album_removed"] = False
+                item["folder_album_custom_path"] = update.suggested_album_path
+                item["suggested_album_path"] = update.suggested_album_path
+                item["suggested_album_segments"] = resolve_album_path(db, update.suggested_album_path)
 
     if update.tags is not None:
         other_items = {k: v for k, v in meta.get("items", {}).items() if k != item_id}
@@ -647,6 +685,7 @@ async def bulk_update_staged_items(
 
         updated_items = []
         target_ids = set(req.item_ids)
+        bulk_fields_set = req.model_fields_set if hasattr(req, "model_fields_set") else getattr(req, "__fields_set__", set())
 
         for item_id, item in items.items():
             if item_id not in target_ids:
@@ -668,8 +707,17 @@ async def bulk_update_staged_items(
                 cur_aids = set(item.get("album_ids", []))
                 cur_aids.difference_update(req.remove_album_ids)
                 item["album_ids"] = list(cur_aids)
-            if req.suggested_album_path is not None:
-                item["suggested_album_path"] = req.suggested_album_path
+            if "suggested_album_path" in bulk_fields_set:
+                if req.suggested_album_path is None or req.suggested_album_path == "":
+                    item["folder_album_removed"] = True
+                    item["folder_album_custom_path"] = None
+                    item["suggested_album_path"] = None
+                    item["suggested_album_segments"] = None
+                else:
+                    item["folder_album_removed"] = False
+                    item["folder_album_custom_path"] = req.suggested_album_path
+                    item["suggested_album_path"] = req.suggested_album_path
+                    item["suggested_album_segments"] = resolve_album_path(db, req.suggested_album_path)
 
             # Tags update
             current_tags_dict = {t["name"].lower(): t for t in item.get("tags", []) if t.get("name")}
@@ -768,6 +816,7 @@ async def delete_staged_item(
 async def get_pending_entities(
     session_id: str,
     current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
 ):
     """Aggregate and deduplicate all pending new tags and albums across the session."""
     session_dir = _get_session_dir(session_id)
@@ -775,7 +824,6 @@ async def get_pending_entities(
     items = meta.get("items", {})
 
     pending_tags_map: Dict[str, dict] = {}
-    pending_albums_map: Dict[str, List[str]] = {}
 
     for item_id, item in items.items():
         if item.get("is_duplicate", False):
@@ -801,17 +849,9 @@ async def get_pending_entities(
                 if item_id not in pending_tags_map[name]["used_by"]:
                     pending_tags_map[name]["used_by"].append(item_id)
 
-        suggested_path = item.get("suggested_album_path")
-        if suggested_path:
-            norm_path = suggested_path.strip().strip("/")
-            if norm_path:
-                if norm_path not in pending_albums_map:
-                    pending_albums_map[norm_path] = []
-                if item_id not in pending_albums_map[norm_path]:
-                    pending_albums_map[norm_path].append(item_id)
-
     pending_tags = [PendingTagEntity(**v) for v in pending_tags_map.values()]
-    pending_albums = [PendingAlbumEntity(path=k, used_by=v) for k, v in pending_albums_map.items()]
+    pending_albums_list = build_pending_album_tree(items, db)
+    pending_albums = [PendingAlbumEntity(**v) for v in pending_albums_list]
 
     return PendingEntitiesResponse(
         pending_tags=pending_tags,
@@ -882,6 +922,127 @@ async def update_pending_tag(
         _save_session_meta(session_dir, meta)
         return {"status": "updated", "affected_items": affected_count}
 
+@router.patch("/sessions/{session_id}/pending/albums")
+async def update_pending_album(
+    session_id: str,
+    update: PendingAlbumUpdate,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Globally update a pending album path across all referencing items in the session."""
+    async with _get_session_lock(session_id):
+        session_dir = _get_session_dir(session_id)
+        meta = _load_session_meta(session_dir)
+        items = meta.get("items", {})
+
+        target_path = update.path.replace("\\", "/").strip().strip("/")
+        if not target_path:
+            raise HTTPException(status_code=400, detail="Invalid album path")
+
+        target_segments = [s.strip() for s in target_path.split("/") if s.strip()]
+        affected_count = 0
+
+        if update.remove:
+            removed_paths = meta.setdefault("removed_album_paths", [])
+            if target_path.lower() not in removed_paths:
+                removed_paths.append(target_path.lower())
+
+        elif update.new_name or update.merge_into_id is not None:
+            new_name = None
+            if update.new_name:
+                new_name = update.new_name.strip()
+            elif update.merge_into_id is not None:
+                existing_alb = db.query(Album).filter(Album.id == update.merge_into_id).first()
+                if existing_alb:
+                    new_name = existing_alb.name
+
+            if new_name:
+                old_seg = target_segments[-1]
+                meta.setdefault("album_renames", {})[old_seg.lower()] = new_name
+                for k, v in list(meta.get("album_renames", {}).items()):
+                    if v.lower() == old_seg.lower():
+                        meta["album_renames"][k] = new_name
+                meta.setdefault("album_path_renames", {})[target_path.lower()] = new_name
+
+        for item_id, item in items.items():
+            suggested_path = item.get("suggested_album_path")
+            if not suggested_path:
+                continue
+
+            item_path = suggested_path.replace("\\", "/").strip().strip("/")
+            item_segments = [s.strip() for s in item_path.split("/") if s.strip()]
+
+            if len(item_segments) >= len(target_segments):
+                matches = all(item_segments[i].lower() == target_segments[i].lower() for i in range(len(target_segments)))
+                if matches:
+                    if update.remove:
+                        item["folder_album_removed"] = True
+                        item["folder_album_custom_path"] = None
+                        item["suggested_album_path"] = None
+                        item["suggested_album_segments"] = None
+                        affected_count += 1
+                    elif update.promote_to_parent:
+                        new_segs = item_segments[: len(target_segments) - 1] + item_segments[len(target_segments) :]
+                        new_path = "/".join(new_segs) if new_segs else None
+                        item["suggested_album_path"] = new_path
+                        item["folder_album_custom_path"] = new_path
+                        item["suggested_album_segments"] = resolve_album_path(db, new_path) if new_path else None
+                        affected_count += 1
+                    elif update.new_name:
+                        new_name = update.new_name.strip()
+                        if new_name:
+                            item_segments[len(target_segments) - 1] = new_name
+                            new_path = "/".join(item_segments)
+                            item["suggested_album_path"] = new_path
+                            if item.get("folder_album_custom_path"):
+                                item["folder_album_custom_path"] = new_path
+                            item["suggested_album_segments"] = resolve_album_path(db, new_path)
+                            affected_count += 1
+                    elif update.merge_into_id is not None:
+                        existing_alb = db.query(Album).filter(Album.id == update.merge_into_id).first()
+                        if existing_alb:
+                            item_segments[len(target_segments) - 1] = existing_alb.name
+                            new_path = "/".join(item_segments)
+                            item["suggested_album_path"] = new_path
+                            if item.get("folder_album_custom_path"):
+                                item["folder_album_custom_path"] = new_path
+                            item["suggested_album_segments"] = resolve_album_path(db, new_path)
+                            affected_count += 1
+
+        _save_session_meta(session_dir, meta)
+        return {"status": "updated", "affected_items": affected_count}
+
+@router.post("/sessions/{session_id}/folder-mapping")
+async def update_folder_mapping(
+    session_id: str,
+    req: FolderMappingRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Recompute folder to album mappings for all staged items based on their stored relative_path while preserving user customizations."""
+    async with _get_session_lock(session_id):
+        session_dir = _get_session_dir(session_id)
+        meta = _load_session_meta(session_dir)
+        items = meta.get("items", {})
+
+        meta["folder_mapping_enabled"] = req.enabled
+        meta["folder_mapping_root_mode"] = req.root_mode
+
+        affected_count = 0
+        for item_id, item in items.items():
+            new_path = derive_item_suggested_album_path(
+                item=item,
+                meta=meta,
+                enabled=req.enabled,
+                root_mode=req.root_mode,
+            )
+            item["suggested_album_path"] = new_path
+            item["suggested_album_segments"] = resolve_album_path(db, new_path) if new_path else None
+            affected_count += 1
+
+        _save_session_meta(session_dir, meta)
+        return {"status": "success", "affected_items": affected_count}
+
 @router.post("/sessions/{session_id}/commit", response_model=UploadSessionCommitResponse)
 async def commit_upload_session(
     session_id: str,
@@ -950,16 +1111,38 @@ async def commit_upload_session(
                     continue
                 suggested_path = item.get("suggested_album_path")
                 if suggested_path:
-                    segments = [s.strip() for s in suggested_path.strip("/").split("/") if s.strip()]
+                    segments = [s.strip() for s in suggested_path.replace("\\", "/").strip("/").split("/") if s.strip()]
                     if segments:
                         current_parent_album = None
                         path_key = ""
-                        for seg in segments:
+                        for depth, seg in enumerate(segments):
                             path_key = f"{path_key}/{seg}" if path_key else seg
                             if path_key in album_path_cache:
-                                current_parent_album = album_path_cache[path_key]
+                                alb = album_path_cache[path_key]
                             else:
-                                alb = db.query(Album).filter(Album.name == seg).first()
+                                if depth == 0:
+                                    alb = (
+                                        db.query(Album)
+                                        .filter(
+                                            func.lower(Album.name) == seg.lower(),
+                                            ~Album.id.in_(db.query(blombooru_album_hierarchy.c.child_album_id)),
+                                        )
+                                        .first()
+                                    )
+                                else:
+                                    alb = (
+                                        db.query(Album)
+                                        .join(
+                                            blombooru_album_hierarchy,
+                                            Album.id == blombooru_album_hierarchy.c.child_album_id,
+                                        )
+                                        .filter(
+                                            blombooru_album_hierarchy.c.parent_album_id == current_parent_album.id,
+                                            func.lower(Album.name) == seg.lower(),
+                                        )
+                                        .first()
+                                    ) if current_parent_album else None
+
                                 if not alb:
                                     alb = Album(name=seg)
                                     db.add(alb)
@@ -968,7 +1151,8 @@ async def commit_upload_session(
                                     current_parent_album.children.append(alb)
                                     db.flush()
                                 album_path_cache[path_key] = alb
-                                current_parent_album = alb
+                            all_affected_album_ids.add(alb.id)
+                            current_parent_album = alb
 
                         # Assign leaf album to item's album_ids
                         leaf_album = album_path_cache[path_key]
