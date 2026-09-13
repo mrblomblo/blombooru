@@ -23,9 +23,65 @@ class UploadUploaderShell {
         this.setupComponents();
         this.setupDragAndDrop();
         this.setupFileInput();
+        this.setupFolderMappingControls();
         this.setupSubmitControls();
         this.loadAlbums();
         this.loadMediaTypeTags();
+    }
+
+    setupFolderMappingControls() {
+        this.folderMappingBar = document.getElementById('folder-mapping-bar');
+        this.folderMappingToggle = document.getElementById('folder-mapping-toggle');
+        this.folderRootOptions = document.getElementById('folder-mapping-root-options');
+        this.folderRootModeButtons = document.querySelectorAll('.folder-root-mode-btn');
+        this.folderRootModeLabelRoot = document.getElementById('folder-root-mode-label-root');
+        this.currentFolderRootMode = 'use_root';
+
+        if (this.folderMappingToggle) {
+            this.folderMappingToggle.addEventListener('change', async () => {
+                const enabled = this.folderMappingToggle.checked;
+                if (this.folderRootOptions) {
+                    this.folderRootOptions.style.display = enabled ? '' : 'none';
+                }
+                const rootMode = this.getFolderMappingMode();
+                await this.session.setFolderMapping(enabled, rootMode);
+            });
+        }
+
+        if (this.folderRootModeButtons) {
+            this.folderRootModeButtons.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const mode = btn.dataset.mode;
+                    if (this.currentFolderRootMode === mode) return;
+                    this.setFolderRootModeButtonState(mode);
+                    const enabled = this.folderMappingToggle ? this.folderMappingToggle.checked : true;
+                    await this.session.setFolderMapping(enabled, mode);
+                });
+            });
+            this.setFolderRootModeButtonState(this.currentFolderRootMode);
+        }
+    }
+
+    setFolderRootModeButtonState(activeMode) {
+        this.currentFolderRootMode = activeMode;
+        if (!this.folderRootModeButtons) return;
+        this.folderRootModeButtons.forEach(btn => {
+            const isActive = btn.dataset.mode === activeMode;
+            if (isActive) {
+                btn.classList.remove('bg', 'hover:border-primary');
+                btn.classList.add('bg-primary', 'border-primary', 'primary-text', 'hover:bg-primary');
+            } else {
+                btn.classList.remove('bg-primary', 'border-primary', 'primary-text', 'hover:bg-primary');
+                btn.classList.add('bg', 'hover:border-primary');
+            }
+        });
+    }
+
+    getFolderMappingMode() {
+        if (this.folderMappingToggle && !this.folderMappingToggle.checked) {
+            return 'flatten';
+        }
+        return this.currentFolderRootMode || 'use_root';
     }
 
     async loadMediaTypeTags() {
@@ -109,9 +165,23 @@ class UploadUploaderShell {
         if (count > 0) {
             if (queueSection) queueSection.style.display = 'block';
             if (submitControls) submitControls.style.display = 'flex';
+
+            // Check if folder mapping controls should be displayed
+            const items = this.session.getAllItems();
+            const hasFolders = items.some(it => it.relative_path && it.relative_path.includes('/'));
+            if (this.folderMappingBar) {
+                this.folderMappingBar.style.display = hasFolders ? 'block' : 'none';
+            }
+
+            if (hasFolders && this.folderRootModeLabelRoot) {
+                const sampleItem = items.find(it => it.relative_path && it.relative_path.includes('/'));
+                const rootName = sampleItem ? sampleItem.relative_path.split('/')[0] : 'root';
+                this.folderRootModeLabelRoot.textContent = window.i18n.t('upload.folder.root_mode_root', { root: rootName });
+            }
         } else {
             if (queueSection) queueSection.style.display = 'none';
             if (submitControls) submitControls.style.display = 'none';
+            if (this.folderMappingBar) this.folderMappingBar.style.display = 'none';
         }
     }
 
@@ -170,15 +240,22 @@ class UploadUploaderShell {
         const scanEntry = async (entry, path = '') => {
             if (entry.isFile) {
                 const file = await new Promise((resolve) => entry.file(resolve));
-                file._relativePath = path ? `${path}/${file.name}` : file.name;
+                const fullPath = (path ? `${path}/${file.name}` : file.name).replace(/^\/+/, '');
+                file._relativePath = fullPath;
                 fileEntries.push(file);
             } else if (entry.isDirectory) {
                 const reader = entry.createReader();
                 const readEntries = async () => {
-                    const entries = await new Promise((resolve) => reader.readEntries(resolve));
-                    if (entries.length > 0) {
+                    const entries = await new Promise((resolve) => {
+                        reader.readEntries(resolve, (err) => {
+                            console.warn('Error reading directory entries:', err);
+                            resolve([]);
+                        });
+                    });
+                    if (entries && entries.length > 0) {
                         for (const child of entries) {
-                            await scanEntry(child, path ? `${path}/${entry.name}` : entry.name);
+                            const childPath = (path ? `${path}/${entry.name}` : entry.name).replace(/^\/+/, '');
+                            await scanEntry(child, childPath);
                         }
                         await readEntries();
                     }
@@ -213,6 +290,7 @@ class UploadUploaderShell {
         this.uploadArea?.classList.add('opacity-50', 'pointer-events-none');
 
         try {
+            const folderMappingMode = this.getFolderMappingMode();
             for (const file of files) {
                 // Check if archive
                 if (window.FormatRegistry.isArchive(file.name)) {
@@ -223,6 +301,7 @@ class UploadUploaderShell {
                 if (this.isValidFile(file)) {
                     await this.session.uploadFile(file, {
                         relativePath: file._relativePath || file.webkitRelativePath || file.name,
+                        folderMappingMode: folderMappingMode,
                     });
                 }
             }

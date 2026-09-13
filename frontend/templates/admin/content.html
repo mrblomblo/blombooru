@@ -39,6 +39,48 @@
 
             <!-- Upload Review Queue & Pending Entities Section -->
             <div id="upload-review-section" class="my-4" style="display: none;">
+                <!-- Folder to Album Mapping Controls Section -->
+                <div id="folder-mapping-bar" class="mb-4" style="display: none;">
+                    <label class="block text-xs font-bold mb-2">
+                        {{ t('upload.folder.mapping_title') }}
+                    </label>
+                    <div class="surface p-4 border">
+                        <div>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="folder-mapping-toggle" class="w-4 h-4 accent-primary"
+                                    checked>
+                                <span class="text-xs font-bold">
+                                    {{ t('upload.folder.create_albums') }}
+                                </span>
+                            </label>
+                            <p class="text-xs text-secondary opacity-70 ml-6">
+                                {{ t('upload.folder.create_albums_hint') }}
+                            </p>
+                        </div>
+
+                        <div id="folder-mapping-root-options" class="mt-4">
+                            <label class="block text-xs font-bold mb-2">
+                                {{ t('upload.folder.root_mode_title') }}
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {% set root_modes = [
+                                ('use_root', 'upload.folder.root_mode_root'),
+                                ('skip_root', 'upload.folder.root_mode_subfolders'),
+                                ] %}
+                                {% for mode, label_key in root_modes %}
+                                <button type="button"
+                                    class="folder-root-mode-btn w-full px-3 py-2 bg border text-xs text-center cursor-pointer hover:border-primary transition-colors select-none"
+                                    data-mode="{{ mode }}">
+                                    <span {% if mode=='use_root' %}id="folder-root-mode-label-root" {% endif %}>
+                                        {{ t(label_key) }}
+                                    </span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="upload-pending-container"></div>
 
                 <div class="mb-3">

@@ -69,6 +69,9 @@ class UploadSession {
         if (options.relativePath) {
             formData.append('relative_path', options.relativePath);
         }
+        if (options.folderMappingMode) {
+            formData.append('folder_mapping_mode', options.folderMappingMode);
+        }
         if (options.baseRating) {
             formData.append('base_rating', options.baseRating);
         }
@@ -195,10 +198,12 @@ class UploadSession {
             album_ids: updateData.album_ids || null,
             add_album_ids: updateData.add_album_ids || null,
             remove_album_ids: updateData.remove_album_ids || null,
-            suggested_album_path: updateData.suggested_album_path || null,
             add_tags: updateData.add_tags || null,
             remove_tag_names: updateData.remove_tag_names || null,
         };
+        if (updateData.suggested_album_path !== undefined) {
+            payload.suggested_album_path = updateData.suggested_album_path;
+        }
 
         const response = await fetch(`/api/uploads/sessions/${this.sessionId}/items/bulk-update`, {
             method: 'POST',
@@ -274,6 +279,48 @@ class UploadSession {
         }
 
         // Refresh session items state
+        await this.refreshSession();
+        return await this.fetchPendingEntities();
+    }
+
+    async updatePendingAlbum(path, updateData) {
+        if (!this.sessionId) return;
+
+        const response = await fetch(`/api/uploads/sessions/${this.sessionId}/pending/albums`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: path,
+                ...updateData
+            }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Failed to update pending album');
+        }
+
+        await this.refreshSession();
+        return await this.fetchPendingEntities();
+    }
+
+    async setFolderMapping(enabled, rootMode = 'use_root') {
+        if (!this.sessionId) return;
+
+        const response = await fetch(`/api/uploads/sessions/${this.sessionId}/folder-mapping`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                enabled: !!enabled,
+                root_mode: rootMode
+            }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Failed to update folder mapping');
+        }
+
         await this.refreshSession();
         return await this.fetchPendingEntities();
     }

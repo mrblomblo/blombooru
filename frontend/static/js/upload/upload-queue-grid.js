@@ -162,6 +162,8 @@ class UploadQueueGrid {
             selectClasses = 'border-primary/80 ring-1 ring-primary/80';
         }
 
+        const leafAlbum = item.suggested_album_path ? item.suggested_album_path.split('/').pop() : null;
+
         return `
             <div class="upload-thumb-card surface relative group flex flex-col cursor-pointer ${selectClasses}"
                 data-item-id="${item.item_id}">
@@ -186,8 +188,14 @@ class UploadQueueGrid {
                 </div>
 
                 <!-- Filename Bar -->
-                <div class="p-1 border-t text-[10px] truncate font-mono text-secondary" title="${this.escapeHtml(item.filename)}">
-                    ${this.escapeHtml(item.filename)}
+                <div class="p-1 border-t text-[10px] truncate font-mono text-secondary flex items-center justify-between gap-1" title="${this.escapeHtml(item.filename)}${leafAlbum ? ` [${this.escapeHtml(item.suggested_album_path)}]` : ''}">
+                    <span class="truncate flex-1 min-w-0">${this.escapeHtml(item.filename)}</span>
+                    ${leafAlbum ? `
+                        <span class="shrink-0 text-secondary flex items-center gap-0.5 max-w-[45%]" title="${this.escapeHtml(item.suggested_album_path)}">
+                            ${window.Icons.folder({ size: 10 })}
+                            <span class="truncate">${this.escapeHtml(leafAlbum)}</span>
+                        </span>
+                    ` : ''}
                 </div>
             </div>
         `;
