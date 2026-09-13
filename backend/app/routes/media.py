@@ -1774,6 +1774,7 @@ async def extract_archive(
                         mime_type = fmt.mime_type
                     # Rename to a predictable indexed name for serving
                     original_name = extracted_file.name
+                    rel_path = str(extracted_file.relative_to(extract_dir)).replace("\\", "/")
                     ext = extracted_file.suffix
                     indexed_name = f"{file_index}{ext}"
                     target = extract_dir / indexed_name
@@ -1783,6 +1784,7 @@ async def extract_archive(
                     file_list.append({
                         'file_id': file_index,
                         'filename': original_name,
+                        'path': rel_path,
                         'mime_type': mime_type,
                         'url': f"/api/media/archive-file/{upload_id}/{file_index}",
                     })

@@ -309,6 +309,11 @@ class UploadSessionAddUntrackedRequest(BaseModel):
     user_assigned_tags: Optional[str] = None
     base_description: Optional[str] = None
 
+class AlbumPathSegment(BaseModel):
+    name: str
+    existing_id: Optional[int] = None
+    depth: int = 0
+
 class UploadSessionItem(BaseModel):
     item_id: str
     filename: str
@@ -328,6 +333,9 @@ class UploadSessionItem(BaseModel):
     tags: List[ProposedTag] = []
     album_ids: List[int] = []
     suggested_album_path: Optional[str] = None
+    suggested_album_segments: Optional[List[AlbumPathSegment]] = None
+    folder_album_removed: Optional[bool] = False
+    folder_album_custom_path: Optional[str] = None
     is_duplicate: bool = False
     duplicate_of: Optional[str] = None
 
@@ -340,7 +348,13 @@ class PendingTagEntity(BaseModel):
 
 class PendingAlbumEntity(BaseModel):
     path: str
+    name: Optional[str] = None
+    parent_path: Optional[str] = None
+    depth: int = 0
+    existing_id: Optional[int] = None
     used_by: List[str] = []
+    item_count: int = 0
+    single_item_warning: bool = False
 
 class PendingEntitiesResponse(BaseModel):
     pending_tags: List[PendingTagEntity] = []
@@ -351,6 +365,17 @@ class PendingTagUpdate(BaseModel):
     category: Optional[TagCategoryEnum] = None
     merge_into: Optional[str] = None
     remove: Optional[bool] = False
+
+class PendingAlbumUpdate(BaseModel):
+    path: str
+    new_name: Optional[str] = None
+    merge_into_id: Optional[int] = None
+    remove: Optional[bool] = False
+    promote_to_parent: Optional[bool] = False
+
+class FolderMappingRequest(BaseModel):
+    enabled: bool = True
+    root_mode: str = "use_root"
 
 class UploadSessionCommitItemResult(BaseModel):
     item_id: str
@@ -364,3 +389,4 @@ class UploadSessionCommitResponse(BaseModel):
     total_created: int
     total_duplicates: int
     total_failed: int
+
