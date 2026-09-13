@@ -653,6 +653,9 @@ class AdminContent {
 
         // Setup Media Type Tags
         this.setupMediaTypeTags();
+
+        // Setup Automatic AI Metadata Tags
+        this.setupAutoApplyAITags();
     }
 
     setupMediaTypeTags() {
@@ -672,6 +675,32 @@ class AdminContent {
                 e.preventDefault();
                 this.saveMediaTypeTags();
             });
+        }
+    }
+
+    setupAutoApplyAITags() {
+        const autoApplyAITagsForm = document.getElementById('auto-apply-ai-tags-form');
+        if (autoApplyAITagsForm) {
+            autoApplyAITagsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveAutoApplyAITags();
+            });
+        }
+    }
+
+    async saveAutoApplyAITags() {
+        const el = document.getElementById('auto-apply-ai-tags');
+        const enabled = el ? el.checked : false;
+
+        try {
+            await app.apiCall('/api/admin/settings', {
+                method: 'PATCH',
+                body: JSON.stringify({ auto_apply_ai_tags: enabled })
+            });
+
+            app.showNotification(window.i18n.t('notifications.admin.auto_apply_ai_tags_saved') || window.i18n.t('notifications.admin.settings_updated'), 'success');
+        } catch (error) {
+            app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_saving_settings'));
         }
     }
 

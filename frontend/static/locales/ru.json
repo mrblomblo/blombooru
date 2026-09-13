@@ -286,6 +286,10 @@
             "media_type_tags_gifs": "Теги GIF",
             "media_type_tags_videos": "Теги видео",
             "save_media_type_tags": "Сохранить автоматические теги",
+            "auto_apply_ai_tags": "",
+            "auto_apply_ai_tags_enable": "",
+            "auto_apply_ai_tags_hint": "",
+            "save_auto_apply_ai_tags": "",
             "custom_background": {
                 "title": "Пользовательский фон",
                 "enable": "Включить пользовательский фон",
@@ -1025,6 +1029,7 @@
             "backend_saved": "Настройки бэкенда успешно сохранены",
             "theming_saved": "Настройки темы успешно сохранены",
             "media_type_tags_saved": "Автоматические теги для типов медиафайлов успешно сохранены",
+            "auto_apply_ai_tags_saved": "",
             "settings_updated": "Настройки успешно обновлены",
             "tag_deleted": "Тег {tag_name} успешно удален",
             "tag_merged": "Тег {source_tag} успешно объединен с {target_tag}",

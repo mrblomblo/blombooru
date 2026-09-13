@@ -285,6 +285,10 @@
             "media_type_tags_gifs": "",
             "media_type_tags_videos": "",
             "save_media_type_tags": "",
+            "auto_apply_ai_tags": "",
+            "auto_apply_ai_tags_enable": "",
+            "auto_apply_ai_tags_hint": "",
+            "save_auto_apply_ai_tags": "",
             "custom_background": {
                 "title": "",
                 "enable": "",
@@ -1024,6 +1028,7 @@
             "backend_saved": "",
             "theming_saved": "",
             "media_type_tags_saved": "",
+            "auto_apply_ai_tags_saved": "",
             "settings_updated": "设置更新成功",
             "tag_deleted": "标签 '{tag_name}' 已成功删除",
             "tag_merged": "",

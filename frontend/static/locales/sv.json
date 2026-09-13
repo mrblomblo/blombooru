@@ -285,6 +285,10 @@
             "media_type_tags_gifs": "GIF-taggar",
             "media_type_tags_videos": "Videotaggar",
             "save_media_type_tags": "Spara Automatiska Taggar",
+            "auto_apply_ai_tags": "Automatiska Taggar från AI-metadata",
+            "auto_apply_ai_tags_enable": "Tillämpa automatiskt taggar tolkade från AI-metadata",
+            "auto_apply_ai_tags_hint": "När detta är aktiverat tillämpas taggar som tolkas från AI-metadata automatiskt på uppladdad media.",
+            "save_auto_apply_ai_tags": "Spara Inställningar för AI-metadatataggar",
             "custom_background": {
                 "title": "Anpassad Bakgrund",
                 "enable": "Aktivera Anpassad Bakgrund",
@@ -1024,6 +1028,7 @@
             "backend_saved": "Backend-inställningar har sparats",
             "theming_saved": "Bakgrundsinställningar har sparats",
             "media_type_tags_saved": "Automatiska taggar har sparats",
+            "auto_apply_ai_tags_saved": "Inställningar för AI-metadatataggar har sparats",
             "settings_updated": "Inställningar uppdaterade",
             "tag_deleted": "Tagg '{tag_name}' raderad",
             "tag_merged": "Tagg '{source_tag}' slogs ihop med '{target_tag}'",

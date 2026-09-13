@@ -335,6 +335,32 @@
         </form>
     </div>
 
+    <!-- Automatic Tags from AI Metadata -->
+    <div class="mb-4">
+        <h3 class="text-sm font-bold mb-3">
+            {{ t('admin.settings.auto_apply_ai_tags') }}
+        </h3>
+        <form id="auto-apply-ai-tags-form">
+            <div class="bg p-4 border">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="auto-apply-ai-tags" name="auto_apply_ai_tags"
+                        class="w-4 h-4 accent-primary">
+                    <span class="text-xs font-bold">
+                        {{ t('admin.settings.auto_apply_ai_tags_enable') }}
+                    </span>
+                </label>
+                <p class="text-xs text-secondary opacity-70 ml-6 mt-1">
+                    {{ t('admin.settings.auto_apply_ai_tags_hint') }}
+                </p>
+                <div class="mt-4">
+                    <button type="submit" class="btn-primary cursor-pointer">
+                        {{ t('admin.settings.save_auto_apply_ai_tags') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <!-- Tags Maintenance -->
     <div id="tags-maintenance-section" class="mb-4">
         <h3 class="text-sm font-bold mb-3">{{ t('admin.tags_management.maintenance.title') }}</h3>

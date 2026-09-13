@@ -750,6 +750,14 @@ class AdminSystem {
                 });
             }
 
+            // Load auto_apply_ai_tags settings
+            if (settings.auto_apply_ai_tags !== undefined) {
+                const autoApplyAiTagsCheckbox = document.getElementById('auto-apply-ai-tags');
+                if (autoApplyAiTagsCheckbox) {
+                    autoApplyAiTagsCheckbox.checked = !!settings.auto_apply_ai_tags;
+                }
+            }
+
             // Load custom background settings
             if (settings.custom_background) {
                 const bg = settings.custom_background;

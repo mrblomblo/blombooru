@@ -285,6 +285,10 @@
             "media_type_tags_gifs": "GIF Tags",
             "media_type_tags_videos": "Video Tags",
             "save_media_type_tags": "Save Automatic Tags",
+            "auto_apply_ai_tags": "Automatic Tags from AI Metadata",
+            "auto_apply_ai_tags_enable": "Automatically apply tags parsed from AI metadata",
+            "auto_apply_ai_tags_hint": "When enabled, tags parsed from AI metadata are automatically applied to uploaded media.",
+            "save_auto_apply_ai_tags": "Save AI Metadata Tag Settings",
             "custom_background": {
                 "title": "Custom Background",
                 "enable": "Enable Custom Background",
@@ -1024,6 +1028,7 @@
             "backend_saved": "Backend settings saved successfully",
             "theming_saved": "Background settings saved successfully",
             "media_type_tags_saved": "Automatic tags saved successfully",
+            "auto_apply_ai_tags_saved": "AI metadata tag settings saved successfully",
             "settings_updated": "Settings updated successfully",
             "tag_deleted": "Tag '{tag_name}' deleted successfully",
             "tag_merged": "Tag '{source_tag}' successfully merged into '{target_tag}'",
