@@ -286,7 +286,7 @@
             "media_type_tags_videos": "Video Tags",
             "save_media_type_tags": "Save Automatic Tags",
             "auto_apply_ai_tags": "Automatic Tags from AI Metadata",
-            "auto_apply_ai_tags_enable": "Automatically apply tags parsed from AI metadata",
+            "auto_apply_ai_tags_enable": "Automatically Apply Tags Parsed From AI Metadata",
             "auto_apply_ai_tags_hint": "When enabled, tags parsed from AI metadata are automatically applied to uploaded media.",
             "save_auto_apply_ai_tags": "Save AI Metadata Tag Settings",
             "custom_background": {

@@ -285,7 +285,7 @@
             "media_type_tags_gifs": "GIF-taggar",
             "media_type_tags_videos": "Videotaggar",
             "save_media_type_tags": "Spara Automatiska Taggar",
-            "auto_apply_ai_tags": "Automatiska Taggar från AI-metadata",
+            "auto_apply_ai_tags": "Automatiska Taggar Från AI-Metadata",
             "auto_apply_ai_tags_enable": "Tillämpa automatiskt taggar tolkade från AI-metadata",
             "auto_apply_ai_tags_hint": "När detta är aktiverat tillämpas taggar som tolkas från AI-metadata automatiskt på uppladdad media.",
             "save_auto_apply_ai_tags": "Spara Inställningar för AI-metadatataggar",
