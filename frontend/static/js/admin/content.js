@@ -1596,6 +1596,54 @@ class AdminContent {
             }
         });
 
+        // Setup Album Tree for search
+        const resultsDiv = document.getElementById('album-search-results');
+        if (resultsDiv && typeof window.AlbumTree !== 'undefined') {
+            this.albumTree = new window.AlbumTree({
+                container: resultsDiv,
+                isSelectable: false,
+                expandOnRowClick: true,
+                renderExtraActions: (album) => {
+                    let dateStr = '';
+                    const dateVal = album.created_at || album.last_modified;
+                    if (dateVal) {
+                        const d = new Date(dateVal);
+                        if (!isNaN(d.getTime())) {
+                            dateStr = `${new Intl.DateTimeFormat(undefined, { dateStyle: "short" }).format(d)} ${new Intl.DateTimeFormat(undefined, { timeStyle: "short", hour12: false }).format(d)}`;
+                        }
+                    }
+                    const parentId = album.parents && album.parents.length > 0 ? album.parents[album.parents.length - 1].id : '';
+                    
+                    return `
+                        <div class="flex items-center gap-2">
+                            ${dateStr ? `<span class="text-xs text-secondary text-center hidden sm:block">${dateStr}</span>` : ''}
+                            <button class="manage-album-btn flex-shrink-0 flex items-center justify-center w-7 h-7 bg-primary primary-text hover:bg-primary border-primary hover:border-primary transition-colors cursor-pointer"
+                                data-album-id="${album.id}"
+                                data-album-name="${this.app.escapeHtml(album.name)}"
+                                data-parent-id="${parentId}"
+                                title="${window.i18n.t('admin.albums_management.manage_album')}">
+                                ${window.Icons.tagMenu({ size: 14 })}
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+            
+            // Event delegation for manage buttons
+            resultsDiv.addEventListener('click', (e) => {
+                const btn = e.target.closest('.manage-album-btn');
+                if (btn) {
+                    const albumId = btn.dataset.albumId;
+                    const albumName = btn.dataset.albumName;
+                    const parentId = btn.dataset.parentId || null;
+                    this.showAlbumManageModal(albumId, albumName, parentId);
+                }
+            });
+
+            // Initial load
+            this.albumTree.loadAlbums().then(() => this.albumTree.render());
+        }
+
         // Setup parent album select
         const parentAlbumSelectElement = document.getElementById('parent-album-select');
         if (parentAlbumSelectElement) {
@@ -1711,117 +1759,8 @@ class AdminContent {
     async searchAlbums() {
         const searchInput = document.getElementById('album-search-input');
         const query = searchInput ? searchInput.value.trim() : '';
-        const resultsDiv = document.getElementById('album-search-results');
-
-        if (this._albumSearchAbortController) {
-            this._albumSearchAbortController.abort();
-            this._albumSearchAbortController = null;
-        }
-
-        if (!query) {
-            if (resultsDiv) resultsDiv.innerHTML = '';
-            return;
-        }
-
-        const abortController = new AbortController();
-        this._albumSearchAbortController = abortController;
-
-        try {
-            const response = await fetch('/api/albums?limit=100&sort=name&order=asc', {
-                signal: abortController.signal
-            });
-            if (!response.ok) return;
-            const data = await response.json();
-
-            // Guard against stale response if query changed in the meantime
-            const currentQuery = document.getElementById('album-search-input')?.value.trim();
-            if (!currentQuery) {
-                if (resultsDiv) resultsDiv.innerHTML = '';
-                return;
-            }
-
-            // Filter albums by name
-            const filtered = (data.items || []).filter(album =>
-                album.name.toLowerCase().includes(query.toLowerCase())
-            );
-
-            if (filtered.length === 0) {
-                resultsDiv.innerHTML = '<p class="bg text-xs text-secondary p-3">' + window.i18n.t('album_picker.no_albums') + '</p>';
-                resultsDiv.scrollTop = 0;
-                return;
-            }
-
-            // Fetch parent chains in parallel with abort signal
-            const albumItems = await Promise.all(
-                filtered.map(async (album) => {
-                    try {
-                        const parentsResponse = await fetch(`/api/albums/${album.id}/parents`, {
-                            signal: abortController.signal
-                        });
-                        if (parentsResponse.ok) {
-                            const parentsData = await parentsResponse.json();
-                            const parentChain = (parentsData.parents || []).map(p => p.name).join(' > ');
-                            const immediateParentId = parentsData.parents && parentsData.parents.length > 0
-                                ? parentsData.parents[parentsData.parents.length - 1].id
-                                : null;
-                            return { album, parentChain, immediateParentId };
-                        }
-                    } catch (e) {
-                        if (e.name === 'AbortError') throw e;
-                    }
-                    return { album, parentChain: '', immediateParentId: null };
-                })
-            );
-
-            resultsDiv.innerHTML = albumItems.map((item, i, arr) => {
-                const { album, parentChain, immediateParentId } = item;
-                let dateStr = '';
-                const dateVal = album.created_at || album.last_modified;
-                if (dateVal) {
-                    const d = new Date(dateVal);
-                    if (!isNaN(d.getTime())) {
-                        dateStr = `${new Intl.DateTimeFormat(undefined, { dateStyle: "short" }).format(d)} ${new Intl.DateTimeFormat(undefined, { timeStyle: "short", hour12: false }).format(d)}`;
-                    }
-                }
-
-                const pathDisplay = parentChain || window.i18n.t('albums.root_album');
-
-                return `
-                <div class="bg px-2 py-1.5 ${i === arr.length - 1 ? '' : 'border-b'} flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <button class="manage-album-btn flex-shrink-0 flex items-center justify-center w-7 h-7 bg-primary primary-text hover:bg-primary border-primary hover:border-primary transition-colors cursor-pointer"
-                            data-album-id="${album.id}"
-                            data-album-name="${this.app.escapeHtml(album.name)}"
-                            data-parent-id="${immediateParentId || ''}"
-                            title="${window.i18n.t('admin.albums_management.manage_album')}">
-                            ${window.Icons.tagMenu({ size: 14 })}
-                        </button>
-                        <a href="/album/${album.id}" class="tag general tag-text overflow-hidden whitespace-nowrap text-ellipsis">${this.app.escapeHtml(album.name)}</a>
-                    </div>
-                    <div class="flex justify-between items-center gap-2 flex-1">
-                        <span class="text-xs text-secondary">(${album.media_count || 0})</span>
-                        ${dateStr ? `<span class="text-xs text-secondary text-center">${dateStr}</span>` : ''}
-                        <span class="text-xs text-secondary uppercase flex-1 text-right truncate" title="${this.app.escapeHtml(pathDisplay)}">${this.app.escapeHtml(pathDisplay)}</span>
-                    </div>
-                </div>
-                `;
-            }).join('');
-            resultsDiv.scrollTop = 0;
-
-            // Add event listeners for Manage buttons
-            resultsDiv.querySelectorAll('.manage-album-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const albumId = btn.dataset.albumId;
-                    const albumName = btn.dataset.albumName;
-                    const parentId = btn.dataset.parentId || null;
-                    this.showAlbumManageModal(albumId, albumName, parentId);
-                });
-            });
-
-        } catch (error) {
-            if (error.name === 'AbortError') return;
-            console.error('Error searching albums:', error);
-            resultsDiv.innerHTML = '<p class="text-xs text-danger p-3">Error searching albums</p>';
+        if (this.albumTree) {
+            this.albumTree.handleSearch(query);
         }
     }
 
