@@ -163,6 +163,7 @@ class SettingsUpdate(BaseModel):
     sidebar_filter_mode: Optional[Literal["rating", "custom", "both", "off"]] = None
     sidebar_custom_buttons: Optional[List[dict]] = None
     media_type_tags: Optional[dict] = None
+    auto_apply_ai_tags: Optional[bool] = None
     custom_background: Optional[CustomBackgroundSettings] = None
     similarity_weights: Optional[SimilarityWeights] = None
 

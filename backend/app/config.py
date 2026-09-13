@@ -93,6 +93,7 @@ class Settings:
             "sidebar_filter_mode": "rating",
             "sidebar_custom_buttons": [],
             "media_type_tags": {"image": [], "gif": [], "video": []},
+            "auto_apply_ai_tags": False,
             "wd_tagger": {
                 "general_threshold": 0.35,
                 "character_threshold": 0.85,
@@ -319,6 +320,14 @@ class Settings:
         if val is not None:
             return val
         return self.settings.get("media_type_tags", {"image": [], "gif": [], "video": []})
+
+    @property
+    def AUTO_APPLY_AI_TAGS(self) -> bool:
+        """Whether to automatically apply tags parsed from AI metadata on upload."""
+        val = self.file_settings.get("auto_apply_ai_tags")
+        if val is not None:
+            return bool(val)
+        return bool(self.settings.get("auto_apply_ai_tags", False))
 
     @property
     def CUSTOM_BACKGROUND(self) -> dict:
