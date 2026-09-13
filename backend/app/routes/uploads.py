@@ -27,7 +27,7 @@ from ..utils.album_utils import update_album_last_modified
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
 from ..utils.logger import logger
-from ..utils.media_helpers import get_unique_filename
+from ..utils.media_helpers import extract_media_metadata, get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.request_helpers import safe_error_detail
 from ..utils.thumbnail_generator import generate_thumbnail
@@ -250,6 +250,30 @@ def _process_and_stage_item(
     candidate_tag_names: List[str] = []
     if base_tags_str:
         candidate_tag_names.extend([t.strip() for t in base_tags_str.split() if t.strip()])
+
+    # Apply automatic tags based on media type if configured
+    media_type_tags = settings.MEDIA_TYPE_TAGS
+    if isinstance(media_type_tags, dict):
+        ft_key = file_type.value if hasattr(file_type, "value") else str(file_type)
+        type_tags = media_type_tags.get(ft_key, [])
+        if isinstance(type_tags, list):
+            for tag in type_tags:
+                if tag and isinstance(tag, str) and tag.strip():
+                    candidate_tag_names.append(tag.strip())
+
+    # Apply automatic tags from AI metadata if configured
+    if settings.AUTO_APPLY_AI_TAGS:
+        try:
+            extracted_meta = extract_media_metadata(file_path)
+            ai_meta = extracted_meta.get("ai") if isinstance(extracted_meta, dict) else None
+            if isinstance(ai_meta, dict):
+                prompt_tags = ai_meta.get("prompt_tags")
+                if isinstance(prompt_tags, list):
+                    for tag in prompt_tags:
+                        if tag and isinstance(tag, str) and tag.strip():
+                            candidate_tag_names.append(tag.strip())
+        except Exception as e:
+            logger.warning(f"Failed to extract AI metadata tags for {clean_filename}: {e}")
 
     parsed_hints: Optional[dict] = None
     if category_hints_str:
