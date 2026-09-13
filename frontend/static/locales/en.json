@@ -1181,6 +1181,16 @@
         "no_visible_tags": "No visible tags found"
     },
     "upload": {
+        "folder": {
+            "mapping_title": "Folder to Album Mapping",
+            "create_albums": "Create albums from folder structure",
+            "create_albums_hint": "Automatically create albums matching your folder hierarchy",
+            "root_mode_title": "Root Folder Behavior",
+            "root_mode_root": "Use \"{root}\" as top-level album",
+            "root_mode_subfolders": "Only use subfolders, skip root",
+            "album_path": "Album Path",
+            "remove_album_path": "Remove from folder album"
+        },
         "base_settings": {
             "select_album": "Select album to add..."
         },
@@ -1191,6 +1201,10 @@
             "no_new_tags": "No new tags pending.",
             "new_albums": "Pending New Albums",
             "no_new_albums": "No new albums pending.",
+            "already_exists": "Already exists, will link",
+            "new_album": "New album",
+            "skip_album": "Skip album creation",
+            "rename_album": "Rename album",
             "used_in_media": "Used in {count} media item(s). Click to select them.",
             "media_count": "{count} media"
         },
@@ -1198,6 +1212,7 @@
             "select_hint": "Select a media item above to edit details, or select multiple items to edit in bulk.",
             "additional_tags": "Additional Tags",
             "editing": "Editing:",
+            "folder_album": "Folder Album",
             "final_tags": "Final Tags",
             "title": "Staged Media",
             "remove_confirm": "Are you sure you want to remove this item from the upload queue?",
@@ -1211,6 +1226,7 @@
             "source_applied": "Source URL applied to selected items",
             "description_applied": "Description applied to selected items",
             "album_added": "Album added to selected items",
+            "common_folder_album": "Common Folder Album",
             "common_tags": "Common Tags"
         },
         "progress": {

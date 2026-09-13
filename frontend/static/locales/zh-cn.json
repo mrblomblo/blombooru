@@ -1181,6 +1181,16 @@
         "no_visible_tags": ""
     },
     "upload": {
+        "folder": {
+            "mapping_title": "",
+            "create_albums": "",
+            "create_albums_hint": "",
+            "root_mode_title": "",
+            "root_mode_root": "",
+            "root_mode_subfolders": "",
+            "album_path": "",
+            "remove_album_path": ""
+        },
         "base_settings": {
             "select_album": "选择要添加的相册..."
         },
@@ -1191,6 +1201,10 @@
             "no_new_tags": "",
             "new_albums": "",
             "no_new_albums": "",
+            "already_exists": "",
+            "new_album": "",
+            "skip_album": "",
+            "rename_album": "",
             "used_in_media": "",
             "media_count": ""
         },
@@ -1198,6 +1212,7 @@
             "select_hint": "",
             "additional_tags": "额外标签 (基础标签会自动前置)",
             "editing": "正在编辑:",
+            "folder_album": "",
             "final_tags": "最终标签",
             "title": "已上传媒体 (点击以编辑单个媒体的分级、来源和标签)",
             "remove_confirm": "",
@@ -1211,6 +1226,7 @@
             "source_applied": "",
             "description_applied": "",
             "album_added": "",
+            "common_folder_album": "",
             "common_tags": ""
         },
         "progress": {

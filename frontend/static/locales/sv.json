@@ -1181,6 +1181,16 @@
         "no_visible_tags": "Inga synliga taggar hittades"
     },
     "upload": {
+        "folder": {
+            "mapping_title": "Mapp till album-mappning",
+            "create_albums": "Skapa album från mappstruktur",
+            "create_albums_hint": "Skapa album automatiskt baserat på mappstrukturen",
+            "root_mode_title": "Beteende för rotmapp",
+            "root_mode_root": "Använd \"{root}\" som toppalbum",
+            "root_mode_subfolders": "Använd endast undermappar, hoppa över rot",
+            "album_path": "Albumsökväg",
+            "remove_album_path": "Ta bort från mappalbum"
+        },
         "base_settings": {
             "select_album": "Välj album att lägga till..."
         },
@@ -1191,6 +1201,10 @@
             "no_new_tags": "Inga nya taggar väntar.",
             "new_albums": "Väntande nya album",
             "no_new_albums": "Inga nya album väntar.",
+            "already_exists": "Finns redan, länkas",
+            "new_album": "Nytt album",
+            "skip_album": "Hoppa över att skapa album",
+            "rename_album": "Byt namn på album",
             "used_in_media": "Använt i {count} medieobjekt. Klicka för att välja dem.",
             "media_count": "{count} medieobjekt"
         },
@@ -1198,6 +1212,7 @@
             "select_hint": "Välj ett medieobjekt ovan för att redigera detaljer, eller välj flera för massredigering.",
             "additional_tags": "Ytterligare taggar",
             "editing": "Redigerar:",
+            "folder_album": "Mappalbum",
             "final_tags": "Slutliga taggar",
             "title": "Förberedd media",
             "remove_confirm": "Är du säker på att du vill ta bort det här medieobjektet från uppladdningskön?",
@@ -1211,6 +1226,7 @@
             "source_applied": "Käll-URL applicerad på valda objekt",
             "description_applied": "Beskrivning applicerad på valda objekt",
             "album_added": "Album lades till för valda objekt",
+            "common_folder_album": "Gemensamt mappalbum",
             "common_tags": "Gemensamma taggar"
         },
         "progress": {

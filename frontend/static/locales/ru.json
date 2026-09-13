@@ -1182,6 +1182,16 @@
         "no_visible_tags": "Нет видимых тегов"
     },
     "upload": {
+        "folder": {
+            "mapping_title": "",
+            "create_albums": "",
+            "create_albums_hint": "",
+            "root_mode_title": "",
+            "root_mode_root": "",
+            "root_mode_subfolders": "",
+            "album_path": "",
+            "remove_album_path": ""
+        },
         "base_settings": {
             "select_album": "Выберите альбом для добавления..."
         },
@@ -1192,6 +1202,10 @@
             "no_new_tags": "Нет новых тегов",
             "new_albums": "Ожидающие новые альбомы",
             "no_new_albums": "Нет новых альбомов",
+            "already_exists": "",
+            "new_album": "",
+            "skip_album": "",
+            "rename_album": "",
             "used_in_media": "Используется в {count} медиафайле(-ах). Кликните для их выбора.",
             "media_count": "{count} медиафайл(-а/ов)"
         },
@@ -1199,6 +1213,7 @@
             "select_hint": "Выберите медиафайл для его редактирования либо выберите несколько медиафайлов для массового редактирования",
             "additional_tags": "Дополнительные теги",
             "editing": "Редактирование:",
+            "folder_album": "",
             "final_tags": "Финальные теги",
             "title": "Загруженные медиафайлы",
             "remove_confirm": "Вы действительно хотите удалить этот элемент из очереди загрузки?",
@@ -1212,6 +1227,7 @@
             "source_applied": "URL источника добавлен ко всем выбранным элементам",
             "description_applied": "Описание добавлено ко всем выбранным элементам",
             "album_added": "Альбом добавлен ко всем выбранным элементам",
+            "common_folder_album": "",
             "common_tags": "Общие теги"
         },
         "progress": {
