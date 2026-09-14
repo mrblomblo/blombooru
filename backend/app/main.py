@@ -50,7 +50,7 @@ from .auth_middleware import AuthMiddleware
 from .config import APP_VERSION, settings
 from .database import get_db, init_db, init_engine
 from .models import Media, Album
-from .routes import (admin, ai_tagger, albums, booru_config, booru_import,
+from .routes import (acknowledgements, admin, ai_tagger, albums, booru_config, booru_import,
                      changelog, danbooru, media, search, sharing, system,
                      tag_implications, tags, instance_info, uploads, url_import)
 from .translations import language_registry, translation_helper
@@ -309,6 +309,7 @@ app.include_router(url_import.router)
 app.include_router(booru_config.router)
 app.include_router(tag_implications.router)
 app.include_router(changelog.router)
+app.include_router(acknowledgements.router)
 app.include_router(uploads.router)
 
 def _get_theme_for_context(is_admin: bool = False):
