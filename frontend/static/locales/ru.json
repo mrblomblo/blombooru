@@ -692,7 +692,7 @@
         "error_403": "Доступ запрещен (403). Возможно, вам нужен API ключ или логин для выполнения этого действия."
     },
     "footer": {
-        "back_to_top": "К началу страницы"
+        "acknowledgements": ""
     },
     "gallery": {
         "add_items_to_albums_title": "Добавить {count} элемент(а/ов) в альбомы",
@@ -1255,5 +1255,12 @@
     "changelog": {
         "modal_title": "Что нового",
         "english_only_notice": "Примечания к выпуску доступны только на английском языке."
+    },
+    "acknowledgements": {
+        "modal_title": "",
+        "search_placeholder": "",
+        "english_only_notice": "",
+        "not_found": "",
+        "failed_to_load": ""
     }
 }

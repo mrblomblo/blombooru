@@ -691,7 +691,7 @@
         "error_403": "拒绝访问 (403)。执行此操作可能需要 API 密钥或登录。"
     },
     "footer": {
-        "back_to_top": "回到顶部"
+        "acknowledgements": ""
     },
     "gallery": {
         "add_items_to_albums_title": "将 {count} 个项目添加到相册",
@@ -1254,5 +1254,12 @@
     "changelog": {
         "modal_title": "",
         "english_only_notice": ""
+    },
+    "acknowledgements": {
+        "modal_title": "",
+        "search_placeholder": "",
+        "english_only_notice": "",
+        "not_found": "",
+        "failed_to_load": ""
     }
 }

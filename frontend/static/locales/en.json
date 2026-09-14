@@ -691,7 +691,7 @@
         "error_403": "Access denied (403). You likely need an API key/login for this action."
     },
     "footer": {
-        "back_to_top": "Back to Top"
+        "acknowledgements": "Acknowledgements"
     },
     "gallery": {
         "add_items_to_albums_title": "Add {count} Item(s) to Albums",
@@ -1254,5 +1254,12 @@
     "changelog": {
         "modal_title": "What's Changed",
         "english_only_notice": "Release notes are only available in English."
+    },
+    "acknowledgements": {
+        "modal_title": "Acknowledgements & Licenses",
+        "search_placeholder": "Filter dependencies...",
+        "english_only_notice": "Acknowledgements and licenses are only available in English.",
+        "not_found": "No acknowledgements found.",
+        "failed_to_load": "Failed to load acknowledgements."
     }
 }

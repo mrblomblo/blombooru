@@ -691,7 +691,7 @@
         "error_403": "Åtkomst nekad (403). Du behöver troligtvis en API-nyckel eller ett login för detta."
     },
     "footer": {
-        "back_to_top": "Tillbaka till toppen"
+        "acknowledgements": "Erkännanden"
     },
     "gallery": {
         "add_items_to_albums_title": "Lägg till {count} objekt till album",
@@ -1254,5 +1254,12 @@
     "changelog": {
         "modal_title": "Vad som är Nytt",
         "english_only_notice": "Versionsinformation är endast tillgänglig på engelska."
+    },
+    "acknowledgements": {
+        "modal_title": "Erkännanden och licenser",
+        "search_placeholder": "Filtrera beroenden...",
+        "english_only_notice": "Erkännanden och licenser från tredje part är endast tillgängliga på engelska.",
+        "not_found": "Inga erkännanden hittades.",
+        "failed_to_load": "Kunde inte ladda erkännanden."
     }
 }

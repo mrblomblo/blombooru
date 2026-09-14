@@ -950,11 +950,15 @@ video:focus-visible {
     }
 }
 
-/* Changelog modal markdown content */
+/* Changelog & Acknowledgements modal markdown content */
 .changelog-content h1,
 .changelog-content h2,
 .changelog-content h3,
-.changelog-content h4 {
+.changelog-content h4,
+.acknowledgements-content h1,
+.acknowledgements-content h2,
+.acknowledgements-content h3,
+.acknowledgements-content h4 {
     font-weight: bold;
     color: var(--primary-color);
     margin-top: 1rem;
@@ -964,94 +968,136 @@ video:focus-visible {
 .changelog-content h1:first-child,
 .changelog-content h2:first-child,
 .changelog-content h3:first-child,
-.changelog-content h4:first-child {
+.changelog-content h4:first-child,
+.acknowledgements-content h1:first-child,
+.acknowledgements-content h2:first-child,
+.acknowledgements-content h3:first-child,
+.acknowledgements-content h4:first-child {
     margin-top: 0;
 }
 
-.changelog-content h2 {
+.changelog-content h2,
+.acknowledgements-content h2 {
     font-size: 1rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.25rem;
 }
 
-.changelog-content h3 {
+.changelog-content h3,
+.acknowledgements-content h3 {
     font-size: 0.875rem;
 }
 
 .changelog-content h1 a,
 .changelog-content h2 a,
 .changelog-content h3 a,
-.changelog-content h4 a {
+.changelog-content h4 a,
+.acknowledgements-content h1 a,
+.acknowledgements-content h2 a,
+.acknowledgements-content h3 a,
+.acknowledgements-content h4 a {
     color: var(--primary-color);
     text-decoration: none;
-    transition: color .15s cubic-bezier(.4, 0, .2, 1);
+    transition: color var(--default-transition-duration) var(--default-transition-timing-function);
 }
 
 .changelog-content h1 a:hover,
 .changelog-content h2 a:hover,
 .changelog-content h3 a:hover,
-.changelog-content h4 a:hover {
+.changelog-content h4 a:hover,
+.acknowledgements-content h1 a:hover,
+.acknowledgements-content h2 a:hover,
+.acknowledgements-content h3 a:hover,
+.acknowledgements-content h4 a:hover {
     color: var(--primary-hover);
     text-decoration: none;
     opacity: 1;
 }
 
-.changelog-content p {
+.changelog-content p,
+.acknowledgements-content p {
     margin-bottom: 0.75rem;
     line-height: 1.5;
 }
 
-.changelog-content p:last-child {
+.changelog-content p:last-child,
+.acknowledgements-content p:last-child {
     margin-bottom: 0;
 }
 
 .changelog-content ul,
-.changelog-content ol {
+.changelog-content ol,
+.acknowledgements-content ul,
+.acknowledgements-content ol {
     margin-left: 1.25rem;
     margin-bottom: 0.75rem;
     list-style-type: disc;
 }
 
-.changelog-content ol {
+.changelog-content ol,
+.acknowledgements-content ol {
     list-style-type: decimal;
 }
 
-.changelog-content li {
+.changelog-content li,
+.acknowledgements-content li {
     margin-bottom: 0.25rem;
     line-height: 1.4;
 }
 
-.changelog-content code {
+.changelog-content code,
+.acknowledgements-content code {
     background-color: var(--surface);
     padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
     font-family: monospace;
     font-size: 0.85em;
 }
 
-.changelog-content pre {
+.changelog-content pre,
+.acknowledgements-content pre {
     background-color: var(--surface);
     padding: 0.5rem;
-    border-radius: 0.25rem;
     overflow-x: auto;
     margin-bottom: 0.75rem;
 }
 
-.changelog-content pre code {
+.changelog-content pre:last-child,
+.acknowledgements-content pre:last-child,
+.acknowledgement-card > :last-child,
+.acknowledgement-preamble > :last-child {
+    margin-bottom: 0;
+}
+
+.acknowledgements-content pre {
+    max-height: 240px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.changelog-content pre code,
+.acknowledgements-content pre code {
     background: none;
     padding: 0;
 }
 
-.changelog-content a {
+.changelog-content a,
+.acknowledgements-content a {
     color: var(--primary-color);
-    text-decoration: underline;
+    text-decoration: none;
+    transition: color var(--default-transition-duration) var(--default-transition-timing-function);
 }
 
-.changelog-content a:hover {
-    opacity: 0.8;
+.changelog-content a:hover,
+.acknowledgements-content a:hover {
+    color: var(--primary-hover);
+    text-decoration: none;
 }
 
-.changelog-content blockquote {
+.changelog-content blockquote,
+.acknowledgements-content blockquote {
     border-left: 3px solid var(--primary-color);
     padding-left: 0.75rem;
     margin-left: 0;
