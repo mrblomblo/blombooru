@@ -10,17 +10,14 @@ MAX_RANDOM_SEED_LENGTH = 32
 DEFAULT_RANDOM_SEED = "0"
 _RANDOM_SEED_PATTERN = re.compile(rf"^\d{{1,{MAX_RANDOM_SEED_LENGTH}}}$")
 
-
 def normalize_random_seed(seed: Optional[str]) -> Optional[str]:
     """Accept only Date.now()-style numeric seeds (digits, max 32 chars)."""
     if not seed or not _RANDOM_SEED_PATTERN.match(seed):
         return None
     return seed
 
-
 def _effective_random_seed(seed: Optional[str]) -> str:
     return normalize_random_seed(seed) or DEFAULT_RANDOM_SEED
-
 
 def apply_media_sort(
     query: Query,
@@ -66,7 +63,6 @@ def apply_media_sort(
         return query.order_by(sort_column.asc(), Media.id.asc())
     return query.order_by(sort_column.desc(), Media.id.desc())
 
-
 def apply_album_sort(
     query: Query,
     sort_by: str,
@@ -85,6 +81,8 @@ def apply_album_sort(
         sort_column = Album.name
     elif sort_by == "last_modified":
         sort_column = Album.last_modified
+    elif sort_by == "media_count":
+        sort_column = Album.cached_media_count
     else:
         # uploaded_at, created_at, and unknown values default to created_at
         sort_column = Album.created_at

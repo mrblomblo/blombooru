@@ -2,20 +2,20 @@ import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from sqlalchemy import (Date, Float, and_, asc, case, cast, desc, exists, func,
-                        literal, not_, or_, text)
+from sqlalchemy import (Float, and_, case, cast, exists, false, func,
+                        literal, not_, or_)
 from sqlalchemy.orm import Query, Session, aliased
 
 from ..enums import FileTypeEnum
 from ..models import (Album, Media, RatingEnum, Tag, TagCategoryEnum,
-                      blombooru_album_media, blombooru_media_tags)
+                      blombooru_media_tags)
 
 TOKEN_PATTERN = re.compile(r'(-?)(?:([a-zA-Z0-9_]+):)?("[^"]*"|[^\s"]+)')
 
 COMBINABLE_KEYS: Set[str] = {
     'rating', 'tagcount', 'gentags', 'arttags', 'chartags', 'copytags', 'metatags',
     'id', 'width', 'height', 'duration', 'filesize', 'date', 'age', 'filetype',
-    'source', 'md5', 'album', 'pool', 'parent', 'child'
+    'source', 'md5', 'album', 'pool', 'album_tree', 'pool_tree', 'parent', 'child'
 }
 
 SINGULAR_KEYS: Set[str] = {'order', 'sort'}
@@ -1087,6 +1087,44 @@ def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) 
                 else:
                     name_clean = v.replace('_', ' ')
                     conds.append(Media.albums.any(Album.name.ilike(name_clean)))
+
+            if conds:
+                combined_cond = or_(*conds) if len(conds) > 1 else conds[0]
+                if item['negated']:
+                    conditions.append(not_(combined_cond))
+                else:
+                    conditions.append(combined_cond)
+
+    if 'pool_tree' in meta or 'album_tree' in meta:
+        from .album_utils import get_descendant_ids
+        items = meta.get('pool_tree', []) + meta.get('album_tree', [])
+        for item in items:
+            vals = [v.strip() for v in item['value'].split(',') if v.strip()]
+            conds = []
+            for v in vals:
+                v_lower = v.lower()
+                if v_lower == 'any':
+                    conds.append(Media.albums.any())
+                elif v_lower == 'none':
+                    conds.append(~Media.albums.any())
+                elif v.isdigit():
+                    target_id = int(v)
+                    desc_map = get_descendant_ids(db, [target_id])
+                    tree_ids = list(desc_map.get(target_id, {target_id}))
+                    conds.append(Media.albums.any(Album.id.in_(tree_ids)))
+                else:
+                    name_clean = v.replace('_', ' ')
+                    matching_ids = [
+                        r[0] for r in db.query(Album.id).filter(Album.name.ilike(name_clean)).all()
+                    ]
+                    if matching_ids:
+                        desc_map = get_descendant_ids(db, matching_ids)
+                        all_tree_ids = set()
+                        for aids in desc_map.values():
+                            all_tree_ids.update(aids)
+                        conds.append(Media.albums.any(Album.id.in_(list(all_tree_ids))))
+                    else:
+                        conds.append(false())
 
             if conds:
                 combined_cond = or_(*conds) if len(conds) > 1 else conds[0]
