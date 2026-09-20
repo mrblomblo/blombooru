@@ -20,11 +20,11 @@ from ..models import (Album, Media, Tag, User, blombooru_album_media,
 from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataRequest,
                        BulkTagUpdateRequest, BulkTagUpdateResponse, MediaCreate,
                        MediaResponse, MediaUpdate, RatingEnum, ShareSettingsUpdate)
-from ..utils.album_utils import (get_bulk_album_metrics, get_flattened_media_ids,
-                                update_album_last_modified)
-from ..utils.cache import (cache_response, invalidate_album_cache,
-                           invalidate_media_cache, invalidate_media_item_cache,
-                           invalidate_tag_cache)
+from ..utils.album_utils import (get_bulk_album_thumbnails, get_flattened_media_ids,
+                                handle_media_deleted, handle_media_rating_changed,
+                                set_media_albums)
+from ..utils.cache import (cache_response, invalidate_media_cache, 
+                            invalidate_media_item_cache, invalidate_tag_cache)
 from ..utils.format_registry import format_registry
 from ..utils.logger import logger
 from ..utils.media_helpers import (create_stripped_media_cache,
@@ -99,8 +99,11 @@ async def update_from_source(
         new_tag_ids = [tag.id for tag in media.tags]
         affected_tag_ids = list(set(old_tag_ids + new_tag_ids))
 
+    rating_changed = False
     if req.update_rating and req.rating:
-        media.rating = req.rating
+        if media.rating != req.rating:
+            media.rating = req.rating
+            rating_changed = True
 
     if req.update_source:
         media.source = req.source or None
@@ -232,6 +235,9 @@ async def update_from_source(
             raise HTTPException(status_code=500, detail=safe_error_detail("File replacement failed", e))
 
     db.commit()
+
+    if rating_changed:
+        handle_media_rating_changed(db, media_id, req.rating)
 
     if affected_tag_ids:
         update_tag_counts(db, affected_tag_ids)
@@ -603,7 +609,7 @@ def process_and_save_media(
         tag_ids_to_update = [tag.id for tag in media.tags]
         logger.debug(f"Tags added: {tag_list}")
 
-    affected_album_ids = []
+    a_ids = []
     if album_ids:
         try:
             a_ids = [
@@ -611,11 +617,6 @@ def process_and_save_media(
                 for id_str in album_ids.split(",")
                 if id_str.strip().isdigit()
             ]
-            if a_ids:
-                albums = db.query(Album).filter(Album.id.in_(a_ids)).all()
-                media.albums = albums
-                affected_album_ids = [album.id for album in albums]
-                logger.debug(f"Added to albums: {affected_album_ids}")
         except Exception as e:
             logger.error(f"Error parsing album_ids: {e}")
 
@@ -627,11 +628,8 @@ def process_and_save_media(
         update_tag_counts(db, tag_ids_to_update)
         db.commit()
 
-    if affected_album_ids:
-        for a_id in affected_album_ids:
-            update_album_last_modified(a_id, db)
-        db.commit()
-        invalidate_album_cache()
+    if a_ids:
+        set_media_albums(db, media.id, a_ids)
 
     db.refresh(media)
 
@@ -1347,8 +1345,11 @@ async def update_media(
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
     
+    rating_changed = False
     if updates.rating:
-        media.rating = updates.rating
+        if media.rating != updates.rating:
+            media.rating = updates.rating
+            rating_changed = True
     
     if 'source' in updates.model_fields_set:
         media.source = updates.source if updates.source else None
@@ -1390,7 +1391,10 @@ async def update_media(
             media.parent_id = None
     
     db.commit()
-    
+
+    if rating_changed:
+        handle_media_rating_changed(db, media_id, updates.rating)
+
     if affected_tag_ids:
         update_tag_counts(db, affected_tag_ids)
         db.commit()
@@ -1438,6 +1442,7 @@ async def delete_media(
         thumb_path = settings.BASE_DIR / media.thumbnail_path
         thumb_path.unlink(missing_ok=True)
     
+    handle_media_deleted(db, [media_id])
     db.delete(media)
     db.commit()
     
@@ -1563,45 +1568,19 @@ async def get_media_albums(
         return {"albums": []}
     
     album_ids = [a.id for a in albums]
+    thumbnails_map = get_bulk_album_thumbnails(album_ids, db, count=4)
     
-    metrics = get_bulk_album_metrics(album_ids, db)
-    
-    rn_col = func.row_number().over(
-        partition_by=blombooru_album_media.c.album_id,
-        order_by=func.random()
-    ).label("rn")
-
-    subq = db.query(
-        blombooru_album_media.c.album_id,
-        Media.id.label("media_id"),
-        rn_col
-    ).join(
-        Media, Media.id == blombooru_album_media.c.media_id
-    ).filter(
-        blombooru_album_media.c.album_id.in_(album_ids),
-        Media.thumbnail_path.isnot(None)
-    ).subquery()
-
-    thumbnail_rows = db.query(
-        subq.c.album_id,
-        subq.c.media_id
-    ).filter(subq.c.rn <= 4).all()
-
-    thumbnails_map: dict = {aid: [] for aid in album_ids}
-    for aid, mid in thumbnail_rows:
-        thumbnails_map[aid].append(f"/api/media/{mid}/thumbnail")
-    
-    result = []
-    for album in albums:
-        m = metrics.get(album.id, {"rating": "safe", "count": 0})
-        result.append(AlbumListResponse(
+    result = [
+        AlbumListResponse(
             id=album.id,
             name=album.name,
             last_modified=album.last_modified,
             thumbnail_paths=thumbnails_map.get(album.id, []),
-            rating=m["rating"],
-            media_count=m["count"]
-        ))
+            rating=album.cached_rating or RatingEnum.safe,
+            media_count=album.cached_media_count or 0
+        )
+        for album in albums
+    ]
     
     return {"albums": result}
 

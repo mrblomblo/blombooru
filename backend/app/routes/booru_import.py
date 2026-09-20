@@ -1,4 +1,3 @@
-import hashlib
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -13,11 +12,10 @@ from ..auth import require_admin_mode
 from ..config import settings
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
-from ..models import Album, Media, Tag, User
+from ..models import Media, Tag, User
 from ..services.booru import BooruPost, BooruTag, get_client_for_url
-from ..utils.album_utils import update_album_last_modified
-from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
-                           invalidate_tag_cache)
+from ..utils.album_utils import set_media_albums
+from ..utils.cache import (invalidate_media_cache, invalidate_tag_cache)
 from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
@@ -300,13 +298,6 @@ async def download_and_import(
             media.tags = get_or_create_tags(db, tag_list, category_hints=category_hints)
             tag_ids_to_update = [tag.id for tag in media.tags]
 
-        # Handle albums
-        affected_album_ids = []
-        if req.album_ids:
-            albums = db.query(Album).filter(Album.id.in_(req.album_ids)).all()
-            media.albums = albums
-            affected_album_ids = [album.id for album in albums]
-
         db.add(media)
         db.commit()
         db.refresh(media)
@@ -315,11 +306,8 @@ async def download_and_import(
             update_tag_counts(db, tag_ids_to_update)
             db.commit()
 
-        if affected_album_ids:
-            for a_id in affected_album_ids:
-                update_album_last_modified(a_id, db)
-            db.commit()
-            invalidate_album_cache()
+        if req.album_ids:
+            set_media_albums(db, media.id, req.album_ids)
 
         db.refresh(media)
 
