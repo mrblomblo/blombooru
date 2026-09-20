@@ -189,6 +189,8 @@ def check_and_migrate_schema(engine):
         migrate_remove_duplicate_tag_aliases,
         migrate_add_api_key_permission,
         migrate_add_transcoded_path,
+        migrate_add_album_indexes,
+        migrate_add_album_cached_columns,
     ]
     
     for migration in migrations:
@@ -384,3 +386,78 @@ def migrate_add_transcoded_path(engine, inspector):
             "ALTER TABLE blombooru_media ADD COLUMN transcoded_path VARCHAR(500)"
         ))
         conn.commit()
+
+def migrate_add_album_indexes(engine, inspector):
+    """Add indexes to blombooru_album_hierarchy(child_album_id) and blombooru_album_media(media_id)"""
+    from sqlalchemy import text
+    
+    tables = inspector.get_table_names()
+    if 'blombooru_album_hierarchy' in tables:
+        indexes = [idx['name'] for idx in inspector.get_indexes('blombooru_album_hierarchy')]
+        if 'ix_blombooru_album_hierarchy_child_album_id' not in indexes:
+            logger.info("Adding index ix_blombooru_album_hierarchy_child_album_id...")
+            with engine.connect() as conn:
+                conn.execute(text(
+                    "CREATE INDEX ix_blombooru_album_hierarchy_child_album_id ON blombooru_album_hierarchy(child_album_id)"
+                ))
+                conn.commit()
+
+    if 'blombooru_album_media' in tables:
+        indexes = [idx['name'] for idx in inspector.get_indexes('blombooru_album_media')]
+        if 'ix_blombooru_album_media_media_id' not in indexes:
+            logger.info("Adding index ix_blombooru_album_media_media_id...")
+            with engine.connect() as conn:
+                conn.execute(text(
+                    "CREATE INDEX ix_blombooru_album_media_media_id ON blombooru_album_media(media_id)"
+                ))
+                conn.commit()
+
+def migrate_add_album_cached_columns(engine, inspector):
+    """Add cached_rating, cached_media_count, cached_direct_media_count to blombooru_albums and backfill."""
+    from sqlalchemy import text
+    from sqlalchemy.orm import sessionmaker
+    
+    tables = inspector.get_table_names()
+    if 'blombooru_albums' not in tables:
+        return
+        
+    columns = [c['name'] for c in inspector.get_columns('blombooru_albums')]
+    newly_added = False
+
+    with engine.connect() as conn:
+        if 'cached_rating' not in columns:
+            logger.info("Adding cached_rating column to blombooru_albums...")
+            if engine.dialect.name == 'postgresql':
+                conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN cached_rating ratingenum DEFAULT 'safe'"))
+            else:
+                conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN cached_rating VARCHAR(20) DEFAULT 'safe'"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_blombooru_albums_cached_rating ON blombooru_albums(cached_rating)"))
+            newly_added = True
+
+        if 'cached_media_count' not in columns:
+            logger.info("Adding cached_media_count column to blombooru_albums...")
+            conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN cached_media_count INTEGER DEFAULT 0"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_blombooru_albums_cached_media_count ON blombooru_albums(cached_media_count)"))
+            newly_added = True
+
+        if 'cached_direct_media_count' not in columns:
+            logger.info("Adding cached_direct_media_count column to blombooru_albums...")
+            conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN cached_direct_media_count INTEGER DEFAULT 0"))
+            newly_added = True
+
+        conn.commit()
+
+    logger.info("Synchronizing and ensuring cached metrics for blombooru_albums...")
+    try:
+        from .utils.album_utils import recalculate_all_album_metrics
+        from .utils.cache import invalidate_album_cache
+        Session = sessionmaker(bind=engine)
+        db = Session()
+        try:
+            recalculate_all_album_metrics(db)
+        finally:
+            db.close()
+        invalidate_album_cache()
+        logger.info("Album metrics synchronization completed successfully.")
+    except Exception as e:
+        logger.error(f"Error synchronizing album metrics during migration: {e}")

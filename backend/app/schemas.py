@@ -202,6 +202,32 @@ class AlbumListResponse(AlbumBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+class AlbumTreeNode(AlbumBase):
+    id: int
+    parent_id: Optional[int] = None
+    depth: int = 0
+    media_count: int = 0
+    direct_media_count: int = 0
+    children_count: int = 0
+    rating: RatingEnum = RatingEnum.safe
+
+    model_config = ConfigDict(from_attributes=True)
+
+class AlbumHierarchyResponse(BaseModel):
+    items: List[AlbumTreeNode]
+
+class AlbumStatsResponse(BaseModel):
+    total_albums: int
+    root_albums: int
+    total_media_in_albums: int
+
+class AlbumAutocompleteItem(BaseModel):
+    id: int
+    name: str
+    parent_path: Optional[str] = None
+    media_count: int = 0
+    rating: RatingEnum = RatingEnum.safe
+
 class MediaIds(BaseModel):
     media_ids: List[int]
 

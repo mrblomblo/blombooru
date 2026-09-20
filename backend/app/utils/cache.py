@@ -1,6 +1,5 @@
 import asyncio
 import hashlib
-import json
 from functools import wraps
 from typing import Callable, Optional
 
@@ -102,7 +101,7 @@ def invalidate_tag_cache(rebuild_similarity: bool = True):
 
 def invalidate_album_cache():
     """Invalidate all album-related caches"""
-    invalidate_cache("album_list", "album_contents", "danbooru", "related_media")
+    invalidate_cache("album_list", "album_contents", "album_tree", "album_autocomplete", "danbooru", "related_media")
 
 def invalidate_media_item_cache(media_id: int):
     """

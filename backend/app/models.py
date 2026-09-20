@@ -117,7 +117,7 @@ blombooru_album_media = Table(
     'blombooru_album_media',
     Base.metadata,
     Column('album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
-    Column('media_id', Integer, ForeignKey('blombooru_media.id', ondelete='CASCADE'), primary_key=True),
+    Column('media_id', Integer, ForeignKey('blombooru_media.id', ondelete='CASCADE'), primary_key=True, index=True),
     Column('added_at', DateTime(timezone=True), server_default=func.now(), index=True)
 )
 
@@ -126,7 +126,7 @@ blombooru_album_hierarchy = Table(
     'blombooru_album_hierarchy',
     Base.metadata,
     Column('parent_album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True),
-    Column('child_album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True)
+    Column('child_album_id', Integer, ForeignKey('blombooru_albums.id', ondelete='CASCADE'), primary_key=True, index=True)
 )
 
 class Album(Base):
@@ -137,6 +137,9 @@ class Album(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     last_modified = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    cached_rating = Column(Enum(RatingEnum), default=RatingEnum.safe, server_default='safe', index=True)
+    cached_media_count = Column(Integer, default=0, server_default='0', index=True)
+    cached_direct_media_count = Column(Integer, default=0, server_default='0')
     
     # Relationships
     media = relationship('Media', secondary=blombooru_album_media, back_populates='albums')
