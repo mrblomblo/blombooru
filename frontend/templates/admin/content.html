@@ -521,6 +521,17 @@
                     <div id="album-search-results" class="border max-h-72 overflow-y-auto empty:hidden"></div>
                 </div>
             </div>
+
+            <div class="pt-3 border-t">
+                <h4 class="text-xs font-bold mb-1">{{ t('admin.albums_management.maintenance.recalculate_metrics') }}
+                </h4>
+                <p class="text-xs text-secondary mb-3">
+                    {{ t('admin.albums_management.maintenance.recalculate_metrics_description') }}
+                </p>
+                <button type="button" id="recalculate-album-metrics-btn" class="btn-primary cursor-pointer">
+                    {{ t('admin.albums_management.maintenance.recalculate_metrics_btn') }}
+                </button>
+            </div>
         </div>
     </div>
 </div>

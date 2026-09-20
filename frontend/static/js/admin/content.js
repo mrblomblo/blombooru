@@ -1613,7 +1613,7 @@ class AdminContent {
                         }
                     }
                     const parentId = album.parents && album.parents.length > 0 ? album.parents[album.parents.length - 1].id : '';
-                    
+
                     return `
                         <div class="flex items-center gap-2">
                             ${dateStr ? `<span class="text-xs text-secondary text-center hidden sm:block">${dateStr}</span>` : ''}
@@ -1628,7 +1628,7 @@ class AdminContent {
                     `;
                 }
             });
-            
+
             // Event delegation for manage buttons
             resultsDiv.addEventListener('click', (e) => {
                 const btn = e.target.closest('.manage-album-btn');
@@ -1650,32 +1650,48 @@ class AdminContent {
             this.parentAlbumSelect = new CustomSelect(parentAlbumSelectElement);
         }
 
+        // Recalculate album metrics button
+        const recalculateBtn = document.getElementById('recalculate-album-metrics-btn');
+        recalculateBtn?.addEventListener('click', () => this.recalculateAlbumMetrics());
+
         // Load albums for parent select
         this.loadAlbums();
     }
 
+    async recalculateAlbumMetrics() {
+        const btn = document.getElementById('recalculate-album-metrics-btn');
+        if (!btn) return;
+
+        btn.disabled = true;
+
+        try {
+            await app.apiCall('/api/albums/recalculate', { method: 'POST' });
+            app.showNotification(
+                window.i18n.t('admin.albums_management.maintenance.metrics_recalculated'),
+                'success'
+            );
+            await this.loadAlbumStats();
+            if (this.albumTree) {
+                await this.albumTree.loadAlbums();
+                this.albumTree.render();
+            }
+        } catch (error) {
+            app.showNotification(error.message, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
     async loadAlbumStats() {
         try {
-            const response = await fetch('/api/albums?limit=1000');
+            const response = await fetch('/api/albums/stats');
             const data = await response.json();
 
             const totalAlbumsEl = document.getElementById('total-albums');
             const rootAlbumsEl = document.getElementById('root-albums');
 
-            if (totalAlbumsEl) totalAlbumsEl.textContent = data.total || 0;
-
-            // Count root albums (albums with no parents)
-            let rootCount = 0;
-            if (data.items) {
-                for (const album of data.items) {
-                    const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
-                    const parentsData = await parentsResponse.json();
-                    if (!parentsData.parents || parentsData.parents.length === 0) {
-                        rootCount++;
-                    }
-                }
-            }
-            if (rootAlbumsEl) rootAlbumsEl.textContent = rootCount;
+            if (totalAlbumsEl) totalAlbumsEl.textContent = data.total_albums || 0;
+            if (rootAlbumsEl) rootAlbumsEl.textContent = data.root_albums || 0;
         } catch (error) {
             console.error('Error loading album stats:', error);
         }
@@ -1683,7 +1699,7 @@ class AdminContent {
 
     async loadAlbums() {
         try {
-            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const response = await fetch('/api/albums/tree');
             const data = await response.json();
 
             // Update parent album select dropdown
@@ -1951,25 +1967,41 @@ class AdminContent {
         document.addEventListener('keydown', handleEscape);
     }
 
-    async getAlbumDescendantIds(albumId) {
-        const descendantIds = new Set();
-
-        const fetchChildren = async (parentId) => {
+    async getAlbumDescendantIds(albumId, allAlbums = null) {
+        if (!allAlbums) {
             try {
-                const response = await fetch(`/api/albums/${parentId}/children`);
-                if (!response.ok) return;
-                const children = await response.json();
-
-                for (const child of children) {
-                    descendantIds.add(child.id.toString());
-                    await fetchChildren(child.id);
+                const response = await fetch('/api/albums/tree');
+                if (response.ok) {
+                    const data = await response.json();
+                    allAlbums = data.items || [];
                 }
-            } catch (error) {
-                console.error('Error fetching children:', error);
+            } catch (e) {
+                console.error('Error fetching albums tree:', e);
+                allAlbums = [];
             }
-        };
+        }
 
-        await fetchChildren(albumId);
+        const childMap = new Map();
+        for (const a of (allAlbums || [])) {
+            if (a.parent_id) {
+                const pid = a.parent_id.toString();
+                if (!childMap.has(pid)) childMap.set(pid, []);
+                childMap.get(pid).push(a.id.toString());
+            }
+        }
+
+        const descendantIds = new Set();
+        const stack = [albumId.toString()];
+        while (stack.length > 0) {
+            const curr = stack.pop();
+            const children = childMap.get(curr) || [];
+            for (const cid of children) {
+                if (!descendantIds.has(cid)) {
+                    descendantIds.add(cid);
+                    stack.push(cid);
+                }
+            }
+        }
         return descendantIds;
     }
 
@@ -1983,7 +2015,7 @@ class AdminContent {
         // Load all albums for the dropdown
         let albums = [];
         try {
-            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const response = await fetch('/api/albums/tree');
             const data = await response.json();
             albums = data.items || [];
         } catch (error) {
@@ -1994,7 +2026,7 @@ class AdminContent {
         }
 
         // Get all descendant IDs to prevent circular references
-        const descendantIds = await this.getAlbumDescendantIds(albumId);
+        const descendantIds = await this.getAlbumDescendantIds(albumId, albums);
 
         // Filter out the current album and all its descendants
         const validAlbums = albums.filter(a => {
