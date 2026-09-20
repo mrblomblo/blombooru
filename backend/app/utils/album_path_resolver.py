@@ -188,15 +188,68 @@ def build_pending_album_tree(items: dict, db: Session) -> List[Dict[str, Any]]:
     if not nodes_map:
         return []
 
-    # Resolve existing IDs for all path keys
-    resolved_paths_cache: Dict[str, List[Dict[str, Any]]] = {}
+    # Resolve existing IDs for all path keys in bulk
+    all_seg_names = set()
     for path_key in nodes_map.keys():
-        if path_key not in resolved_paths_cache:
-            resolved_paths_cache[path_key] = resolve_album_path(db, path_key)
+        for seg in path_key.split("/"):
+            s_clean = seg.strip().lower()
+            if s_clean:
+                all_seg_names.add(s_clean)
+
+    root_map: Dict[str, tuple[int, str]] = {}
+    parent_child_map: Dict[tuple[int, str], tuple[int, str]] = {}
+
+    if all_seg_names:
+        matching_albums = db.query(Album.id, Album.name).filter(
+            func.lower(Album.name).in_(list(all_seg_names))
+        ).all()
+        matching_album_ids = {a[0] for a in matching_albums}
+        album_name_by_id = {a[0]: a[1] for a in matching_albums}
+
+        if matching_album_ids:
+            child_album_ids_set = {
+                r[0] for r in db.query(blombooru_album_hierarchy.c.child_album_id).filter(
+                    blombooru_album_hierarchy.c.child_album_id.in_(matching_album_ids)
+                ).all()
+            }
+
+            hierarchies = db.query(
+                blombooru_album_hierarchy.c.parent_album_id,
+                blombooru_album_hierarchy.c.child_album_id
+            ).filter(
+                blombooru_album_hierarchy.c.child_album_id.in_(matching_album_ids)
+            ).all()
+
+            for p_id, c_id in hierarchies:
+                if c_id in album_name_by_id:
+                    c_name = album_name_by_id[c_id]
+                    parent_child_map[(p_id, c_name.lower())] = (c_id, c_name)
+
+            for a_id, a_name in matching_albums:
+                if a_id not in child_album_ids_set:
+                    root_map[a_name.lower()] = (a_id, a_name)
+
+    def resolve_cached(path_k: str) -> List[Dict[str, Any]]:
+        segs = [s.strip() for s in path_k.split("/") if s.strip()]
+        res = []
+        prev_id = None
+        for d, s in enumerate(segs):
+            s_lower = s.lower()
+            c_name = s
+            e_id = None
+            if d == 0:
+                if s_lower in root_map:
+                    e_id, c_name = root_map[s_lower]
+            else:
+                if prev_id is not None and (prev_id, s_lower) in parent_child_map:
+                    e_id, c_name = parent_child_map[(prev_id, s_lower)]
+            res.append({"name": c_name, "existing_id": e_id, "depth": d})
+            prev_id = e_id
+        return res
 
     # Populate resolved existing_id and canonical name
     for path_key, node in nodes_map.items():
-        resolved_segs = resolved_paths_cache.get(path_key, [])
+        resolved_segs = resolve_cached(path_key)
         if resolved_segs:
             last_seg = resolved_segs[-1]
             node["existing_id"] = last_seg.get("existing_id")
