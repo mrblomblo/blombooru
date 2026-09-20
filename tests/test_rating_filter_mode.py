@@ -4,13 +4,14 @@ from fastapi import Request
 
 from backend.app.config import settings
 from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
-from backend.app.models import Album, Media, Tag, blombooru_album_hierarchy, blombooru_album_media, blombooru_media_tags
+from backend.app.models import Album, Media, Tag, blombooru_album_media, blombooru_media_tags
 from backend.app.redis_client import redis_cache
 from backend.app.routes.albums import get_album_contents, get_albums
 from backend.app.routes.media import (get_adjacent_media, get_media_list,
                                       get_related_media)
 from backend.app.routes.search import get_random_media, search_media
 from backend.app.routes.tags import search_related_tags
+from backend.app.utils.album_utils import recalculate_all_album_metrics
 from backend.app.schemas import SettingsUpdate
 from tests.backup_test_base import BackupTestBase
 
@@ -183,6 +184,7 @@ class TestRatingFilterMode(BackupTestBase):
             {"album_id": 3, "media_id": 3},
         ]))
         self.db.commit()
+        recalculate_all_album_metrics(self.db)
 
         # 1. get_albums with multi-rating safe,questionable
         albums_quest = asyncio.run(get_albums(request=req, rating="safe,questionable", db=self.db))
