@@ -76,26 +76,28 @@ class AlbumsOverview extends BaseGallery {
 
         if (thumbnails.length >= 4) {
             collageHTML = `
-                <div class="grid grid-cols-2 gap-0.5 aspect-square overflow-hidden">
-                    ${thumbnails.slice(0, 4).map(thumb => `
-                        <div class="relative overflow-hidden">
-                            <img src="${thumb}" class="w-full h-full object-cover" loading="lazy"
-                                 onerror="this.src='/static/images/no-thumbnail.png'">
-                        </div>
-                    `).join('')}
+                <div class="relative aspect-square overflow-hidden w-full">
+                    <div class="grid grid-cols-2 gap-0.5 w-full h-full">
+                        ${thumbnails.slice(0, 4).map(thumb => `
+                            <div class="relative overflow-hidden w-full h-full aspect-square">
+                                <img src="${thumb}" class="absolute inset-0 w-full h-full object-cover" loading="lazy"
+                                    onerror="this.src='/static/images/no-thumbnail.png'">
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         } else if (thumbnails.length > 0) {
             collageHTML = `
-                <div class="aspect-square overflow-hidden">
-                    <img src="${thumbnails[0]}" class="w-full h-full object-cover" loading="lazy"
-                         onerror="this.src='/static/images/no-thumbnail.png'">
+                <div class="relative aspect-square overflow-hidden w-full">
+                    <img src="${thumbnails[0]}" class="absolute inset-0 w-full h-full object-cover" loading="lazy"
+                        onerror="this.src='/static/images/no-thumbnail.png'">
                 </div>
             `;
         } else {
             collageHTML = `
-                <div class="aspect-square surface-light flex items-center justify-center">
-                    <img src="/static/images/no-thumbnail.png" class="w-full h-full object-cover" loading="lazy">
+                <div class="relative aspect-square surface-light flex items-center justify-center overflow-hidden w-full">
+                    <img src="/static/images/no-thumbnail.png" class="absolute inset-0 w-full h-full object-cover" loading="lazy">
                 </div>
             `;
         }

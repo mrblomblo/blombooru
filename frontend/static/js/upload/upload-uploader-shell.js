@@ -104,7 +104,7 @@ class UploadUploaderShell {
 
     async loadAlbums() {
         try {
-            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const response = await fetch('/api/albums/tree');
             const data = await response.json();
             this.allAlbums = data.items || [];
             if (this.queueGrid) {

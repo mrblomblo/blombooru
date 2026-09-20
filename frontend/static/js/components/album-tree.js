@@ -24,37 +24,38 @@ class AlbumTree {
             `;
         }
         try {
-            const response = await fetch('/api/albums?limit=1000&sort=name&order=asc');
+            const response = await fetch('/api/albums/tree');
             if (!response.ok) throw new Error(window.i18n.t('album_picker.load_error'));
 
             const data = await response.json();
-            this.albums = data.items || [];
+            const rawAlbums = data.items || [];
 
-            // Build hierarchy information for each album
             const albumMap = new Map();
-            for (const album of this.albums) {
-                try {
-                    const parentsResponse = await fetch(`/api/albums/${album.id}/parents`);
-                    const parentsData = await parentsResponse.json();
-                    album.parents = parentsData.parents || [];
-                    album.depth = album.parents.length;
-                } catch (error) {
-                    console.error(`Error loading parents for album ${album.id}:`, error);
-                    album.parents = [];
-                    album.depth = 0;
-                }
+            for (const album of rawAlbums) {
                 album.children = [];
-                album.parentId = album.parents.length > 0 ? album.parents[album.parents.length - 1].id : null;
+                album.parents = [];
+                album.parentId = album.parent_id || null;
                 album.isCollapsed = false;
                 albumMap.set(album.id, album);
             }
 
-            // Organize into tree
-            const roots = [];
-            for (const album of this.albums) {
+            for (const album of rawAlbums) {
                 if (album.parentId && albumMap.has(album.parentId)) {
                     albumMap.get(album.parentId).children.push(album);
-                } else {
+                    let curr = albumMap.get(album.parentId);
+                    const chain = [];
+                    while (curr) {
+                        chain.unshift({ id: curr.id, name: curr.name });
+                        curr = curr.parentId ? albumMap.get(curr.parentId) : null;
+                    }
+                    album.parents = chain;
+                }
+                album.depth = album.parents.length;
+            }
+
+            const roots = [];
+            for (const album of rawAlbums) {
+                if (!album.parentId || !albumMap.has(album.parentId)) {
                     roots.push(album);
                 }
             }
