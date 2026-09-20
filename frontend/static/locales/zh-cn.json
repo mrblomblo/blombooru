@@ -79,7 +79,11 @@
             "maintenance": {
                 "title": "相册维护",
                 "search_manage": "搜索并管理相册",
-                "search_manage_description": ""
+                "search_manage_description": "",
+                "recalculate_metrics": "",
+                "recalculate_metrics_description": "",
+                "recalculate_metrics_btn": "",
+                "metrics_recalculated": ""
             },
             "none_root": "无（根相册）",
             "parent_album": "父级相册（可选）",

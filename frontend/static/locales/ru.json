@@ -79,7 +79,11 @@
             "maintenance": {
                 "title": "Обслуживание альбомов",
                 "search_manage": "Поиск и управление альбомами",
-                "search_manage_description": "Используйте для быстрого поиска, переименования, удаления альбомов и изменения их родительских альбомов."
+                "search_manage_description": "Используйте для быстрого поиска, переименования, удаления альбомов и изменения их родительских альбомов.",
+                "recalculate_metrics": "",
+                "recalculate_metrics_description": "",
+                "recalculate_metrics_btn": "",
+                "metrics_recalculated": ""
             },
             "none_root": "Пусто (Корневой альбом)",
             "parent_album": "Родительский альбом (опционально)",

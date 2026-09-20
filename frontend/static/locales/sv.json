@@ -79,7 +79,11 @@
             "maintenance": {
                 "title": "Albumunderhåll",
                 "search_manage": "Sök & Hantera Album",
-                "search_manage_description": "Använd detta för att snabbt hitta, byta namn på, ändra överordnad hierarki eller ta bort album."
+                "search_manage_description": "Använd detta för att snabbt hitta, byta namn på, ändra överordnad hierarki eller ta bort album.",
+                "recalculate_metrics": "Omberäkna Albumstatistik",
+                "recalculate_metrics_description": "Omberäkna mediaräkningar och maxbetyg för alla album i hierarkin.",
+                "recalculate_metrics_btn": "Omberäkna Alla Mätvärden",
+                "metrics_recalculated": "Alla albummätvärden har omberäknats."
             },
             "none_root": "Inget (Rotalbum)",
             "parent_album": "Överordnat album (Valfritt)",

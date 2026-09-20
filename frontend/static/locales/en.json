@@ -79,7 +79,11 @@
             "maintenance": {
                 "title": "Album Maintenance",
                 "search_manage": "Search & Manage Albums",
-                "search_manage_description": "Use this to quickly find, rename, change parent hierarchy, or delete albums."
+                "search_manage_description": "Use this to quickly find, rename, change parent hierarchy, or delete albums.",
+                "recalculate_metrics": "Recalculate Album Metrics",
+                "recalculate_metrics_description": "Recalculate media counts and maximum ratings for all albums across the hierarchy.",
+                "recalculate_metrics_btn": "Recalculate All Metrics",
+                "metrics_recalculated": "All album metrics successfully recalculated."
             },
             "none_root": "None (Root Album)",
             "parent_album": "Parent Album (Optional)",
