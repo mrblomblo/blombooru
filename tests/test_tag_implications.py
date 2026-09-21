@@ -583,6 +583,8 @@ class TestTagImplications(BackupTestBase):
         """Verify standalone pattern-based implications match wildcards and imply tags."""
         clothing = self._create_tag("clothing")
         female = self._create_tag("female")
+        self._create_tag("summer_dress")
+        self._create_tag("1maid")
 
         self.db.add(TagImplication(target_tag_patterns=["*_dress"], implied_tags=[clothing]))
         self.db.add(TagImplication(target_tag_patterns=["?maid"], implied_tags=[female]))
@@ -644,6 +646,8 @@ class TestTagImplications(BackupTestBase):
         """Verify rules requiring both explicit target tags and pattern matches."""
         sword = self._create_tag("sword")
         knight = self._create_tag("knight")
+        self._create_tag("steel_armor")
+        self._create_tag("steel_shield")
 
         self.db.add(TagImplication(target_tags=[sword], target_tag_patterns=["*_armor"], implied_tags=[knight]))
         self.db.commit()
