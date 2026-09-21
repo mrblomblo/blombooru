@@ -81,7 +81,7 @@ def _expand_implications(db: Session, tags: Iterable["Tag"], *, max_depth: int) 
                     selectinload(TagImplication.target_tags),
                     selectinload(TagImplication.implied_tags),
                 )
-                .distinct(TagImplication.id)
+                .distinct()
             )
             if applied_implications:
                 stmt = stmt.where(~TagImplication.id.in_(applied_implications))
