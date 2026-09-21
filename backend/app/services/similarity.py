@@ -84,7 +84,11 @@ class SimilarityIndex:
     @property
     def rebuild_pending(self) -> bool:
         """True when a rebuild is queued (debounce sleep) or actively running."""
-        return self._rebuild_pending or self._is_building
+        global _pending_rebuild_task
+        task_pending = _pending_rebuild_task is not None and not _pending_rebuild_task.done()
+        if not task_pending and not self._is_building:
+            self._rebuild_pending = False
+        return (self._rebuild_pending and task_pending) or self._is_building
 
     async def wait_for_build(self, timeout: float = 10.0) -> bool:
         """
@@ -100,6 +104,7 @@ class SimilarityIndex:
         # Execute rebuild immediately since a request needs it now
         if _pending_rebuild_task is not None and not _pending_rebuild_task.done() and not self._is_building:
             _pending_rebuild_task.cancel()
+            _pending_rebuild_task = None
             self._rebuild_pending = True
             try:
                 from ..database import SessionLocal
@@ -108,6 +113,10 @@ class SimilarityIndex:
                 )
             finally:
                 self._rebuild_pending = False
+            return True
+
+        if not self._is_building:
+            self._rebuild_pending = False
             return True
 
         loop = asyncio.get_running_loop() if hasattr(asyncio, "get_running_loop") else asyncio.get_event_loop()
@@ -288,6 +297,7 @@ class SimilarityIndex:
         finally:
             with self._lock:
                 self._is_building = False
+                self._rebuild_pending = False
 
     def get_similar_media(
         self,
