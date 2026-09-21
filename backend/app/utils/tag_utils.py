@@ -128,7 +128,7 @@ def expand_implications(db: Session, tag_set: dict[int, "Tag"]) -> None:
     implied_tags = _expand_implications(db, tag_set.values(), max_depth=1_000)
     tag_set |= {t.id: t for t in implied_tags}
 
-def resolve_implications(db: Session, tags: list[str], max_depth: int = 10) -> list["Tag"]:
+def resolve_implications(db: Session, tags: list[str], max_depth: int = 10) -> list[str]:
     """
     Recursively resolve all tag implications for a given list of tag names.
     Returns the names of all implied tags that were not in the original input.
@@ -146,10 +146,10 @@ def resolve_implications(db: Session, tags: list[str], max_depth: int = 10) -> l
     initial_names = {alias_map[t][0].lower() if t in alias_map else t for t in initial_raw}
 
     # Resolve database IDs for any known tags in the initial set
-    inital_tags: set[Tag] = set(db.scalars(
+    initial_tags: set[Tag] = set(db.scalars(
         select(Tag).where(Tag.name.in_(initial_names))
     ).all())
 
-    implied_tags = _expand_implications(db, inital_tags, max_depth=max_depth)
+    implied_tags = _expand_implications(db, initial_tags, max_depth=max_depth)
 
     return sorted(tag.name for tag in implied_tags)
