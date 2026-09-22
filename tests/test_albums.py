@@ -15,7 +15,7 @@ from backend.app.utils.album_utils import (add_media_to_album, delete_album_casc
                                           recalculate_all_album_metrics,
                                           reparent_album)
 from backend.app.utils.search_parser import apply_search_criteria, parse_search_query
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class DummyRequest:
     pass

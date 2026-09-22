@@ -11,7 +11,7 @@ from backend.app.models import ApiKey, User
 from backend.app.routes.admin.api_keys import (create_api_key, list_api_keys,
                                                revoke_api_key, update_api_key)
 from backend.app.schemas import ApiKeyCreate, ApiKeyUpdate
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class DummyURL:
     def __init__(self, path: str):

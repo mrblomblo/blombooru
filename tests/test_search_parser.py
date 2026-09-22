@@ -325,6 +325,7 @@ class TestSearchParserDBIntegration(unittest.TestCase):
     def tearDown(self):
         self.db.close()
         Base.metadata.drop_all(self.engine)
+        self.engine.dispose()
 
     def test_multi_gentags_filter(self):
         # m1 has 1 general tag, m2 has 3 general tags, m3 has 0 general tags

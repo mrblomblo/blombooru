@@ -5,7 +5,7 @@ import zipfile
 
 from backend.app.models import Media
 from backend.app.utils.backup import _safe_extract_media_file, import_full_backup
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class TestBackupSecurity(BackupTestBase):
     def test_zip_slip_security_protection(self):

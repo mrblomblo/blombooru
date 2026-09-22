@@ -30,30 +30,12 @@ from backend.app.schemas import (
     UploadSessionAddUntrackedRequest,
     UploadSessionItemUpdate,
 )
-from tests.backup_test_base import BackupTestBase, make_dummy_jpeg
+from tests.test_base import BackupTestBase, make_dummy_jpeg
 
 class TestUploadSessions(BackupTestBase):
     def setUp(self):
         super().setUp()
         self.admin_user = User(id=1, username="admin", password_hash="hash")
-        self.cache_dir = self.tmp_path / "media" / "cache"
-        self.upload_sessions_dir = self.cache_dir / "upload-sessions"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.upload_sessions_dir.mkdir(parents=True, exist_ok=True)
-
-        self.old_cache = settings.CACHE_DIR
-        settings.CACHE_DIR = self.cache_dir
-
-        # Point UPLOAD_SESSIONS_DIR to the isolated test directory
-        import backend.app.routes.uploads as uploads_module
-        self.old_module_sessions_dir = uploads_module.UPLOAD_SESSIONS_DIR
-        uploads_module.UPLOAD_SESSIONS_DIR = self.upload_sessions_dir
-
-    def tearDown(self):
-        import backend.app.routes.uploads as uploads_module
-        uploads_module.UPLOAD_SESSIONS_DIR = self.old_module_sessions_dir
-        settings.CACHE_DIR = self.old_cache
-        super().tearDown()
 
     def test_preview_or_create_tags_dry_run(self):
         """Test preview_or_create_tags returns proposed tags without creating DB rows in dry_run mode."""

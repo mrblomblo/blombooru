@@ -1,4 +1,3 @@
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -6,30 +5,16 @@ from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from PIL import Image
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import sessionmaker
 
 from backend.app.config import settings
-from backend.app.database import Base, migrate_add_transcoded_path
+from backend.app.database import migrate_add_transcoded_path
 from backend.app.enums import FileTypeEnum, RatingEnum
 from backend.app.models import Media
 from backend.app.routes.media import get_media_file
 from backend.app.utils.media_helpers import serve_media_file
+from tests.test_base import AsyncBackupTestBase
 
-class TestMediaServingAndTranscoding(unittest.IsolatedAsyncioTestCase):
-    def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.base_path = Path(self.temp_dir.name)
-
-        # In-memory SQLite engine for tests
-        self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(bind=self.engine)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.db = self.SessionLocal()
-
-    def tearDown(self):
-        self.db.close()
-        self.engine.dispose()
-        self.temp_dir.cleanup()
+class TestMediaServingAndTranscoding(AsyncBackupTestBase):
 
     def test_migration_adds_transcoded_path_column(self):
         # Create table without transcoded_path using raw SQL to test migration

@@ -1,4 +1,3 @@
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -16,14 +15,9 @@ from backend.app.utils.transcoder import (
     transcode_media_if_needed,
     transcode_video,
 )
+from tests.test_base import BackupTestBase
 
-class TestTranscoderComprehensive(unittest.TestCase):
-    def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.base_path = Path(self.temp_dir.name)
-
-    def tearDown(self):
-        self.temp_dir.cleanup()
+class TestTranscoderComprehensive(BackupTestBase):
 
     # --- Path Resolution & Hierarchy Preservation Tests ---
 

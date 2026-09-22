@@ -9,7 +9,7 @@ from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
 from backend.app.models import (Album, BooruConfig, Media, Tag, TagAlias,
                                 TagImplication, blombooru_album_media)
 from backend.app.utils.backup import import_full_backup
-from tests.backup_test_base import BackupTestBase, make_dummy_jpeg
+from tests.test_base import BackupTestBase, make_dummy_jpeg
 
 class TestBackupFullRoundtrip(BackupTestBase):
     def test_full_backup_roundtrip(self):

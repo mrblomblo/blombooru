@@ -27,7 +27,7 @@ from backend.app.routes.tag_implications import (
     TagImplicationCreate,
 )
 from backend.app.utils.tag_utils import expand_implications, resolve_implications
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class TestTagImplications(BackupTestBase):
     """

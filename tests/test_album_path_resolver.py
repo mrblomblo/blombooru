@@ -20,29 +20,12 @@ from backend.app.utils.album_path_resolver import (
     build_pending_album_tree,
     resolve_album_path,
 )
-from tests.backup_test_base import BackupTestBase, make_dummy_jpeg
+from tests.test_base import BackupTestBase, make_dummy_jpeg
 
 class TestAlbumPathResolver(BackupTestBase):
     def setUp(self):
         super().setUp()
         self.admin_user = User(id=1, username="admin", password_hash="hash")
-        self.cache_dir = self.tmp_path / "media" / "cache"
-        self.upload_sessions_dir = self.cache_dir / "upload-sessions"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.upload_sessions_dir.mkdir(parents=True, exist_ok=True)
-
-        self.old_cache = settings.CACHE_DIR
-        settings.CACHE_DIR = self.cache_dir
-
-        import backend.app.routes.uploads as uploads_module
-        self.old_module_sessions_dir = uploads_module.UPLOAD_SESSIONS_DIR
-        uploads_module.UPLOAD_SESSIONS_DIR = self.upload_sessions_dir
-
-    def tearDown(self):
-        import backend.app.routes.uploads as uploads_module
-        uploads_module.UPLOAD_SESSIONS_DIR = self.old_module_sessions_dir
-        settings.CACHE_DIR = self.old_cache
-        super().tearDown()
 
     def test_apply_folder_mapping_to_path(self):
         # Flatten mode

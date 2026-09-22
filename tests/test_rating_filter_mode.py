@@ -13,7 +13,7 @@ from backend.app.routes.search import get_random_media, search_media
 from backend.app.routes.tags import search_related_tags
 from backend.app.utils.album_utils import recalculate_all_album_metrics
 from backend.app.schemas import SettingsUpdate
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 def make_dummy_request(path: str = "/api/test", query_params: dict = None) -> Request:
     query_str = urllib.parse.urlencode(query_params or {}).encode()

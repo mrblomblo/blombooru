@@ -4,7 +4,7 @@ from backend.app.enums import TagCategoryEnum
 from backend.app.models import Tag, TagAlias
 from backend.app.routes.admin.tags import import_tags_csv_logic
 from backend.app.utils.backup import generate_tags_csv_stream, generate_tags_dump
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class TestBackupTags(BackupTestBase):
     def test_generate_tags_csv_stream_and_import(self):

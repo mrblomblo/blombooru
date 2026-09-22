@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from backend.app.enums import FileTypeEnum, RatingEnum
 from backend.app.models import Album, BooruConfig, Media, TagImplication
 from backend.app.utils.backup import import_full_backup
-from tests.backup_test_base import BackupTestBase, make_dummy_jpeg
+from tests.test_base import BackupTestBase, make_dummy_jpeg
 
 class TestBackupImportEdgeCases(BackupTestBase):
     def test_duplicate_media_hash_skipped(self):

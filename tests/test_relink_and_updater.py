@@ -1,68 +1,47 @@
 import shutil
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from PIL import Image
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from backend.app.config import settings
-from backend.app.database import Base
 from backend.app.enums import FileTypeEnum, RatingEnum
 from backend.app.models import Media, User
 from backend.app.routes.media import PostUpdateRequest, update_from_source, update_file_finalize
 from backend.app.utils.file_scanner import relink_media_files
 from backend.app.utils.media_processor import calculate_file_hash
+from tests.test_base import AsyncBackupTestBase
 
-class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
+class TestRelinkAndUpdater(AsyncBackupTestBase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.base_path = Path(self.temp_dir.name)
-
-        # Setup standard directory hierarchy
-        self.orig_dir = self.base_path / "media" / "original"
-        self.trans_dir = self.base_path / "media" / "transcoded"
-        self.thumb_dir = self.base_path / "media" / "thumbnails"
-        self.chunks_dir = self.base_path / "cache" / "media-chunks"
-        self.orig_dir.mkdir(parents=True, exist_ok=True)
-        self.trans_dir.mkdir(parents=True, exist_ok=True)
-        self.thumb_dir.mkdir(parents=True, exist_ok=True)
-        self.chunks_dir.mkdir(parents=True, exist_ok=True)
-
-        # In-memory SQLite engine
-        self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(bind=self.engine)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.db = self.SessionLocal()
-
+        super().setUp()
         self.mock_user = User(id=1, username="admin", password_hash="hashed_secret")
-
-    def tearDown(self):
-        self.db.close()
-        self.engine.dispose()
-        self.temp_dir.cleanup()
 
     def test_relink_media_files_moves_transcoded_file_without_reprocessing(self):
         """When an original file is moved/renamed, relink_media_files must move/rename
         the existing transcoded file instead of re-transcoding it."""
         # 1. Setup original file in old location
-        old_orig_file = self.orig_dir / "old_subfolder" / "sample.mkv"
+        old_orig_file = self.original_dir / "old_subfolder" / "sample.mkv"
         old_orig_file.parent.mkdir(parents=True, exist_ok=True)
         old_orig_file.write_bytes(b"VIDEO_CONTENT_MKV_123")
         file_hash = calculate_file_hash(old_orig_file)
 
         # Setup existing transcoded file in old location
-        old_trans_file = self.trans_dir / "old_subfolder" / "sample.mp4"
+        old_trans_file = self.transcoded_dir / "old_subfolder" / "sample.mp4"
         old_trans_file.parent.mkdir(parents=True, exist_ok=True)
         old_trans_file.write_bytes(b"TRANSCODED_MP4_ALREADY_DONE")
+
+        old_thumb_file = self.thumbnail_dir / "old_subfolder" / "sample.jpg"
+        old_thumb_file.parent.mkdir(parents=True, exist_ok=True)
+        old_thumb_file.write_bytes(b"THUMB_CONTENT")
 
         media = Media(
             id=1,
             filename="sample.mkv",
             path=str(old_orig_file.relative_to(self.base_path)),
             transcoded_path=str(old_trans_file.relative_to(self.base_path)),
+            thumbnail_path=str(old_thumb_file.relative_to(self.base_path)),
             hash=file_hash,
             file_type=FileTypeEnum.video,
             mime_type="video/x-matroska",
@@ -73,15 +52,15 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         self.db.commit()
 
         # 2. Simulate user moving the original file to a new folder
-        new_orig_file = self.orig_dir / "new_folder" / "renamed_sample.mkv"
+        new_orig_file = self.original_dir / "new_folder" / "renamed_sample.mkv"
         new_orig_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(old_orig_file), str(new_orig_file))
 
         # 3. Run relink_media_files with transcode_media_if_needed patched to ensure it is NOT called
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.utils.file_scanner.get_mime_type", return_value="video/x-matroska"), \
              patch("backend.app.utils.file_scanner.transcode_media_if_needed") as mock_transcode:
 
@@ -97,7 +76,7 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(media.filename, "renamed_sample.mkv")
             self.assertEqual(media.path, str(new_orig_file.relative_to(self.base_path)))
 
-            expected_new_trans = self.trans_dir / "new_folder" / "renamed_sample.mp4"
+            expected_new_trans = self.transcoded_dir / "new_folder" / "renamed_sample.mp4"
             self.assertEqual(media.transcoded_path, str(expected_new_trans.relative_to(self.base_path)))
 
             # Verify files on disk
@@ -107,14 +86,14 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_from_source_renaming_moves_transcoded_file(self):
         """When updating filename via update_from_source, the transcoded file must be moved/renamed."""
-        orig_file = self.orig_dir / "original_name.mkv"
+        orig_file = self.original_dir / "original_name.mkv"
         orig_file.write_bytes(b"VIDEO_ORIG_BYTES")
         file_hash = calculate_file_hash(orig_file)
 
-        trans_file = self.trans_dir / "original_name.mp4"
+        trans_file = self.transcoded_dir / "original_name.mp4"
         trans_file.write_bytes(b"TRANSCODED_CONTENT")
 
-        thumb_file = self.thumb_dir / "original_name.jpg"
+        thumb_file = self.thumbnail_dir / "original_name.jpg"
         thumb_file.write_bytes(b"THUMB_CONTENT")
 
         media = Media(
@@ -138,9 +117,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir):
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir):
 
             resp = await update_from_source(
                 media_id=2,
@@ -152,9 +131,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp.filename, "renamed_target.mkv")
             self.db.refresh(media)
 
-            expected_new_orig = self.orig_dir / "renamed_target.mkv"
-            expected_new_trans = self.trans_dir / "renamed_target.mp4"
-            expected_new_thumb = self.thumb_dir / "renamed_target.jpg"
+            expected_new_orig = self.original_dir / "renamed_target.mkv"
+            expected_new_trans = self.transcoded_dir / "renamed_target.mp4"
+            expected_new_thumb = self.thumbnail_dir / "renamed_target.jpg"
 
             self.assertEqual(media.path, str(expected_new_orig.relative_to(self.base_path)))
             self.assertEqual(media.transcoded_path, str(expected_new_trans.relative_to(self.base_path)))
@@ -167,18 +146,18 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_from_source_replace_file_updates_transcode(self):
         """When replacing a media file via update_from_source, old transcode is cleaned and new one is generated."""
-        orig_file = self.orig_dir / "photo.heic"
+        orig_file = self.original_dir / "photo.heic"
         orig_file.write_bytes(b"OLD_HEIC_BYTES")
         file_hash = calculate_file_hash(orig_file)
 
-        old_trans = self.trans_dir / "photo.webp"
-        old_trans.write_bytes(b"OLD_TRANSCODED_WEBP")
+        old_trans_file = self.transcoded_dir / "photo.webp"
+        old_trans_file.write_bytes(b"OLD_TRANSCODED_WEBP")
 
         media = Media(
             id=3,
             filename="photo.heic",
             path=str(orig_file.relative_to(self.base_path)),
-            transcoded_path=str(old_trans.relative_to(self.base_path)),
+            transcoded_path=str(old_trans_file.relative_to(self.base_path)),
             hash=file_hash,
             file_type=FileTypeEnum.image,
             mime_type="image/heic",
@@ -201,9 +180,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("requests.get", return_value=mock_resp), \
              patch("backend.app.routes.media.process_media_file") as mock_process, \
              patch("backend.app.routes.media.generate_thumbnail", return_value=True):
@@ -260,13 +239,13 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         zip_buffer.seek(0)
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.utils.backup.transcode_media_if_needed") as mock_transcode, \
              patch("backend.app.utils.backup.generate_thumbnail", return_value=True):
 
-            expected_trans = self.trans_dir / "test.mp4"
+            expected_trans = self.transcoded_dir / "test.mp4"
             mock_transcode.return_value = expected_trans
 
             res = import_full_backup(zip_buffer, self.db)
@@ -280,7 +259,7 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
     async def test_update_file_finalize_keep_filename(self):
         """Finalizing an update with update_filename=False retains original filename."""
         import json as _json
-        orig_file = self.orig_dir / "sample_orig.png"
+        orig_file = self.original_dir / "sample_orig.png"
         orig_file.write_bytes(b"INITIAL_ORIG_BYTES")
         old_hash = calculate_file_hash(orig_file)
 
@@ -304,9 +283,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         (chunk_dir / "chunk_0").write_bytes(b"NEW_DEVICE_BYTES_CONTENT")
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
              patch("backend.app.routes.media.process_media_file") as mock_process, \
              patch("backend.app.routes.media.generate_thumbnail", return_value=True):
@@ -339,7 +318,7 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
     async def test_update_file_finalize_update_filename(self):
         """Finalizing an update with update_filename=True updates filename and storage path."""
         import json as _json
-        orig_file = self.orig_dir / "sample_orig2.png"
+        orig_file = self.original_dir / "sample_orig2.png"
         orig_file.write_bytes(b"INITIAL_ORIG_BYTES_2")
         old_hash = calculate_file_hash(orig_file)
 
@@ -363,9 +342,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         (chunk_dir / "chunk_0").write_bytes(b"BRAND_NEW_CONTENT_BYTES")
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
              patch("backend.app.routes.media.process_media_file") as mock_process, \
              patch("backend.app.routes.media.generate_thumbnail", return_value=True):
@@ -392,14 +371,14 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(media.filename, "brand_new_name.png")
             self.assertEqual(media.path, "media/original/brand_new_name.png")
             self.assertFalse(orig_file.exists())
-            new_file = self.orig_dir / "brand_new_name.png"
+            new_file = self.original_dir / "brand_new_name.png"
             self.assertTrue(new_file.exists())
             self.assertEqual(new_file.read_bytes(), b"BRAND_NEW_CONTENT_BYTES")
 
     async def test_update_file_finalize_extension_change_when_keep_filename(self):
         """When keeping filename but replacing with different format, stem is preserved with updated extension."""
         import json as _json
-        orig_file = self.orig_dir / "keep_my_name.png"
+        orig_file = self.original_dir / "keep_my_name.png"
         orig_file.write_bytes(b"INITIAL_PNG_BYTES")
         old_hash = calculate_file_hash(orig_file)
 
@@ -423,9 +402,9 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         (chunk_dir / "chunk_0").write_bytes(b"NEW_VIDEO_CONTENT")
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
              patch("backend.app.routes.media.process_media_file") as mock_process, \
              patch("backend.app.routes.media.generate_thumbnail", return_value=True):
@@ -452,14 +431,14 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(media.filename, "keep_my_name.mp4")
             self.assertEqual(media.path, "media/original/keep_my_name.mp4")
             self.assertFalse(orig_file.exists())
-            new_file = self.orig_dir / "keep_my_name.mp4"
+            new_file = self.original_dir / "keep_my_name.mp4"
             self.assertTrue(new_file.exists())
             self.assertEqual(new_file.read_bytes(), b"NEW_VIDEO_CONTENT")
 
     async def test_update_file_finalize_transcodes_if_needed(self):
         """Finalizing with a format requiring transcoding properly updates transcoded_path."""
         import json as _json
-        orig_file = self.orig_dir / "photo.jpg"
+        orig_file = self.original_dir / "photo.jpg"
         orig_file.write_bytes(b"INITIAL_JPG_BYTES")
         old_hash = calculate_file_hash(orig_file)
 
@@ -482,13 +461,13 @@ class TestRelinkAndUpdater(unittest.IsolatedAsyncioTestCase):
         (chunk_dir / "meta.json").write_text(_json.dumps({"filename": "video.mkv", "total_chunks": 1}))
         (chunk_dir / "chunk_0").write_bytes(b"MKV_RAW_BYTES")
 
-        transcoded_target = self.trans_dir / "photo.mp4"
+        transcoded_target = self.transcoded_dir / "photo.mp4"
         transcoded_target.write_bytes(b"TRANSCODED_MP4_BYTES")
 
         with patch.object(settings, "BASE_DIR", self.base_path), \
-             patch.object(settings, "ORIGINAL_DIR", self.orig_dir), \
-             patch.object(settings, "TRANSCODED_DIR", self.trans_dir), \
-             patch.object(settings, "THUMBNAIL_DIR", self.thumb_dir), \
+             patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
+             patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
+             patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
              patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
              patch("backend.app.routes.media.process_media_file") as mock_process, \
              patch("backend.app.routes.media.generate_thumbnail", return_value=True):

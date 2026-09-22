@@ -1,27 +1,14 @@
-import tempfile
 import unittest
-from pathlib import Path
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from backend.app.database import Base
 from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
 from backend.app.models import Media, Tag
 from backend.app.services.similarity import SimilarityIndex
+from tests.test_base import BackupTestBase
 
-class TestSimilarityIndex(unittest.TestCase):
+class TestSimilarityIndex(BackupTestBase):
     def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        db_file = Path(self.temp_dir) / "test_sim.db"
-        self.engine = create_engine(f"sqlite:///{db_file}")
-        Base.metadata.create_all(bind=self.engine)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.db = self.SessionLocal()
+        super().setUp()
         self.index = SimilarityIndex()
-
-    def tearDown(self):
-        self.db.close()
 
     def _create_media(self, media_id: int, filename: str) -> Media:
         media = Media(

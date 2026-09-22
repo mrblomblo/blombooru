@@ -3,7 +3,7 @@ import unittest
 import zipfile
 
 from backend.app.utils.backup import stream_zip_generator
-from tests.backup_test_base import BackupTestBase
+from tests.test_base import BackupTestBase
 
 class TestBackupStreaming(BackupTestBase):
     def test_stream_zip_generator_large_file(self):
