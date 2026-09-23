@@ -36,6 +36,7 @@ from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.request_helpers import safe_error_detail
 from ..utils.thumbnail_generator import generate_thumbnail
 from ..utils.transcoder import transcode_media_if_needed
+from ..services.metadata_parsers import get_parser_for_file
 from .media import preview_or_create_tags, update_tag_counts
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
@@ -252,10 +253,30 @@ def _process_and_stage_item(
     base_description_str = base_description if isinstance(base_description, str) else None
     folder_mapping_mode_str = folder_mapping_mode if isinstance(folder_mapping_mode, str) else "use_root"
 
+    # Detect sibling files for metadata parsing
+    sibling_files: List[Path] = []
+    if is_untracked:
+        if file_path.parent.exists():
+            sibling_files = [p for p in file_path.parent.iterdir() if p != file_path and p.is_file()]
+    else:
+        raw_dir = session_dir / "raw"
+        if raw_dir.exists():
+            prefix = f"{item_id}_"
+            sibling_files = [p for p in raw_dir.iterdir() if p != file_path and p.is_file() and p.name.startswith(prefix)]
+
+    parser = get_parser_for_file(file_path, sibling_files)
+    parsed = parser.parse(file_path, sibling_files) if parser else None
+    metadata_source = parser.name if parser else None
+
     # Parse initial candidate tags
     candidate_tag_names: List[str] = []
     if base_tags_str:
         candidate_tag_names.extend([t.strip() for t in base_tags_str.split() if t.strip()])
+
+    if parsed and parsed.tags:
+        for pt in parsed.tags:
+            if pt.name and pt.name.strip():
+                candidate_tag_names.append(pt.name.strip())
 
     # Apply automatic tags based on media type if configured
     media_type_tags = settings.MEDIA_TYPE_TAGS
@@ -287,6 +308,15 @@ def _process_and_stage_item(
             parsed_hints = json.loads(category_hints_str)
         except Exception:
             pass
+
+    if parsed and parsed.tags:
+        if parsed_hints is None:
+            parsed_hints = {}
+        for pt in parsed.tags:
+            if pt.name and pt.category and pt.category != "general":
+                pt_lower = pt.name.strip().lower()
+                if pt_lower not in parsed_hints:
+                    parsed_hints[pt_lower] = pt.category
             
     user_assigned_tags_str = user_assigned_tags if isinstance(user_assigned_tags, str) else None
     user_assigned_list = []
@@ -307,9 +337,19 @@ def _process_and_stage_item(
     )
 
     # Resolve initial rating
+    if not base_rating_str and parsed and parsed.rating:
+        if parsed.rating in RatingEnum._value2member_map_:
+            base_rating_str = parsed.rating
+
     rating = RatingEnum.safe
     if base_rating_str and base_rating_str in RatingEnum._value2member_map_:
         rating = RatingEnum(base_rating_str)
+
+    if not base_source_str and parsed and parsed.source:
+        base_source_str = parsed.source
+
+    if not base_description_str and parsed and parsed.description:
+        base_description_str = parsed.description
 
     # Resolve initial albums
     album_ids: List[int] = []
@@ -346,7 +386,7 @@ def _process_and_stage_item(
         except Exception:
             relative_path_str = clean_filename
 
-    # Compute suggested album path from folder mapping
+    # Compute suggested album path from folder mapping or parser pool names
     suggested_album_path = None
     suggested_album_segments = None
     if relative_path_str:
@@ -359,8 +399,12 @@ def _process_and_stage_item(
             enabled=fm_enabled,
             root_mode=fm_root_mode,
         )
-        if suggested_album_path:
-            suggested_album_segments = resolve_album_path(db, suggested_album_path)
+
+    if not suggested_album_path and parsed and parsed.pool_names:
+        suggested_album_path = parsed.pool_names[0]
+
+    if suggested_album_path:
+        suggested_album_segments = resolve_album_path(db, suggested_album_path)
 
     item_data = {
         "item_id": item_id,
@@ -385,6 +429,7 @@ def _process_and_stage_item(
         "suggested_album_segments": suggested_album_segments,
         "folder_album_removed": False,
         "folder_album_custom_path": None,
+        "metadata_source": metadata_source,
     }
 
     meta.setdefault("items", {})[item_id] = item_data
@@ -396,6 +441,7 @@ def _process_and_stage_item(
 async def upload_files_to_session(
     session_id: str,
     file: UploadFile = File(...),
+    sidecar: Optional[UploadFile] = File(None),
     relative_path: Optional[str] = Form(None),
     folder_mapping_mode: Optional[str] = Form(None),
     base_rating: Optional[str] = Form(None),
@@ -424,6 +470,15 @@ async def upload_files_to_session(
         with open(staged_path, "wb") as f:
             while chunk := await file.read(1024 * 1024):
                 f.write(chunk)
+
+        if hasattr(sidecar, "filename") and bool(sidecar.filename) and hasattr(sidecar, "read"):
+            clean_sidecar_name = Path(sidecar.filename).name
+            staged_sidecar_name = f"{item_id}_{clean_sidecar_name}"
+            staged_sidecar_path = raw_dir / staged_sidecar_name
+            await sidecar.seek(0)
+            with open(staged_sidecar_path, "wb") as f:
+                while chunk := await sidecar.read(1024 * 1024):
+                    f.write(chunk)
 
         return _process_and_stage_item(
             session_dir=session_dir,

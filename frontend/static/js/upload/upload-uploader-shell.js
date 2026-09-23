@@ -280,6 +280,33 @@ class UploadUploaderShell {
         }
     }
 
+    isSidecarFile(file) {
+        if (!file || !file.name) return false;
+        const lower = file.name.toLowerCase();
+        return lower.endsWith('.json') || lower.endsWith('.xmp');
+    }
+
+    findMatchingSidecar(file, relPath, sidecarFiles) {
+        const lowerRel = relPath.toLowerCase();
+        const lowerName = file.name.toLowerCase();
+        const stemRel = lowerRel.includes('.') ? lowerRel.substring(0, lowerRel.lastIndexOf('.')) : lowerRel;
+        const stemName = lowerName.includes('.') ? lowerName.substring(0, lowerName.lastIndexOf('.')) : lowerName;
+
+        // Exact media filename with extension: file.png.json or file.png.xmp
+        if (sidecarFiles.has(`${lowerRel}.json`)) return sidecarFiles.get(`${lowerRel}.json`);
+        if (sidecarFiles.has(`${lowerName}.json`)) return sidecarFiles.get(`${lowerName}.json`);
+        if (sidecarFiles.has(`${lowerRel}.xmp`)) return sidecarFiles.get(`${lowerRel}.xmp`);
+        if (sidecarFiles.has(`${lowerName}.xmp`)) return sidecarFiles.get(`${lowerName}.xmp`);
+
+        // Media stem without extension: file.json or file.xmp
+        if (sidecarFiles.has(`${stemRel}.json`)) return sidecarFiles.get(`${stemRel}.json`);
+        if (sidecarFiles.has(`${stemName}.json`)) return sidecarFiles.get(`${stemName}.json`);
+        if (sidecarFiles.has(`${stemRel}.xmp`)) return sidecarFiles.get(`${stemRel}.xmp`);
+        if (sidecarFiles.has(`${stemName}.xmp`)) return sidecarFiles.get(`${stemName}.xmp`);
+
+        return null;
+    }
+
     async handleFiles(files) {
         if (this.isProcessingFiles) return;
         this.isProcessingFiles = true;
@@ -291,19 +318,35 @@ class UploadUploaderShell {
 
         try {
             const folderMappingMode = this.getFolderMappingMode();
-            for (const file of files) {
-                // Check if archive
-                if (window.FormatRegistry.isArchive(file.name)) {
-                    await this.handleArchive(file);
-                    continue;
-                }
+            const mediaFiles = [];
+            const sidecarFiles = new Map();
+            const archiveFiles = [];
 
-                if (this.isValidFile(file)) {
-                    await this.session.uploadFile(file, {
-                        relativePath: file._relativePath || file.webkitRelativePath || file.name,
-                        folderMappingMode: folderMappingMode,
-                    });
+            for (const file of files) {
+                if (window.FormatRegistry.isArchive(file.name)) {
+                    archiveFiles.push(file);
+                } else if (this.isValidFile(file)) {
+                    mediaFiles.push(file);
+                } else if (this.isSidecarFile(file)) {
+                    const relPath = (file._relativePath || file.webkitRelativePath || file.name).replace(/\\/g, '/');
+                    sidecarFiles.set(relPath.toLowerCase(), file);
+                    sidecarFiles.set(file.name.toLowerCase(), file);
                 }
+            }
+
+            for (const archiveFile of archiveFiles) {
+                await this.handleArchive(archiveFile);
+            }
+
+            for (const file of mediaFiles) {
+                const relPath = (file._relativePath || file.webkitRelativePath || file.name).replace(/\\/g, '/');
+                const matchedSidecar = this.findMatchingSidecar(file, relPath, sidecarFiles);
+
+                await this.session.uploadFile(file, {
+                    relativePath: relPath,
+                    folderMappingMode: folderMappingMode,
+                    sidecar: matchedSidecar,
+                });
             }
         } catch (e) {
             console.error('Error staging files:', e);
@@ -378,8 +421,24 @@ class UploadUploaderShell {
             const file = new File([blob], fData.filename, { type: fData.mime_type || blob.type });
             file._relativePath = fData.path || fData.filename;
 
+            let sidecarFile = null;
+            if (fData.sidecar_url) {
+                try {
+                    const sidecarResp = await fetch(fData.sidecar_url);
+                    if (sidecarResp.ok) {
+                        const sidecarBlob = await sidecarResp.blob();
+                        sidecarFile = new File([sidecarBlob], fData.sidecar_filename || `${fData.filename}.json`, {
+                            type: 'application/octet-stream'
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`Failed to fetch archive sidecar for ${fData.filename}:`, e);
+                }
+            }
+
             await this.session.uploadFile(file, {
                 relativePath: file._relativePath,
+                sidecar: sidecarFile,
             });
         }
     }

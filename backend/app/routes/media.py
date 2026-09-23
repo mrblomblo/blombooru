@@ -1741,33 +1741,73 @@ async def extract_archive(
             + format_registry.get_supported_mime_types(FormatCategory.VIDEO)
         )
         file_index = 0
-        for extracted_file in extract_dir.rglob('*'):
-            if extracted_file.is_symlink():
+        raw_extracted_files = [p for p in extract_dir.rglob('*') if p.is_file() and not p.is_symlink()]
+
+        for extracted_file in raw_extracted_files:
+            if not extracted_file.exists():
                 continue
 
-            if extracted_file.is_file():
-                mime_type, _ = mimetypes.guess_type(extracted_file.name)
-                fmt = format_registry.get_format(extracted_file.name)
-                if mime_type in valid_types or (fmt and fmt.category in (FormatCategory.IMAGE, FormatCategory.VIDEO)):
-                    if not mime_type and fmt:
-                        mime_type = fmt.mime_type
-                    # Rename to a predictable indexed name for serving
-                    original_name = extracted_file.name
-                    rel_path = str(extracted_file.relative_to(extract_dir)).replace("\\", "/")
-                    ext = extracted_file.suffix
-                    indexed_name = f"{file_index}{ext}"
-                    target = extract_dir / indexed_name
-                    if extracted_file != target:
-                        extracted_file.rename(target)
+            mime_type, _ = mimetypes.guess_type(extracted_file.name)
+            fmt = format_registry.get_format(extracted_file.name)
+            if mime_type in valid_types or (fmt and fmt.category in (FormatCategory.IMAGE, FormatCategory.VIDEO)):
+                if not mime_type and fmt:
+                    mime_type = fmt.mime_type
+                original_name = extracted_file.name
+                rel_path = str(extracted_file.relative_to(extract_dir)).replace("\\", "/")
+                ext = extracted_file.suffix
+                media_name_lower = extracted_file.name.lower()
+                media_stem_lower = extracted_file.stem.lower()
 
-                    file_list.append({
-                        'file_id': file_index,
-                        'filename': original_name,
-                        'path': rel_path,
-                        'mime_type': mime_type,
-                        'url': f"/api/media/archive-file/{upload_id}/{file_index}",
-                    })
-                    file_index += 1
+                # Check for sibling sidecar in the nested directory BEFORE moving/renaming
+                sidecar_file_id = None
+                sidecar_filename = None
+
+                parent_dir = extracted_file.parent
+                found_sidecar: Optional[Path] = None
+                siblings = [s for s in parent_dir.iterdir() if s.is_file() and s != extracted_file]
+
+                # Exact match with extension (e.g. image.png.json, image.png.xmp)
+                for s in siblings:
+                    s_name = s.name.lower()
+                    if s_name == f"{media_name_lower}.json" or s_name == f"{media_name_lower}.xmp":
+                        found_sidecar = s
+                        break
+
+                # Stem match without extension (e.g. image.json, image.xmp)
+                if not found_sidecar:
+                    for s in siblings:
+                        s_name = s.name.lower()
+                        if s_name == f"{media_stem_lower}.json" or s_name == f"{media_stem_lower}.xmp":
+                            found_sidecar = s
+                            break
+
+                if found_sidecar and found_sidecar.exists():
+                    sidecar_ext = found_sidecar.suffix
+                    sidecar_target = extract_dir / f"{file_index}_sidecar{sidecar_ext}"
+                    sidecar_filename = found_sidecar.name
+                    sidecar_file_id = f"{file_index}_sidecar"
+                    found_sidecar.rename(sidecar_target)
+
+                # Rename to a predictable indexed name for serving
+                indexed_name = f"{file_index}{ext}"
+                target = extract_dir / indexed_name
+                if extracted_file != target:
+                    extracted_file.rename(target)
+
+                file_info = {
+                    'file_id': file_index,
+                    'filename': original_name,
+                    'path': rel_path,
+                    'mime_type': mime_type,
+                    'url': f"/api/media/archive-file/{upload_id}/{file_index}",
+                }
+                if sidecar_file_id:
+                    file_info['sidecar_file_id'] = sidecar_file_id
+                    file_info['sidecar_filename'] = sidecar_filename
+                    file_info['sidecar_url'] = f"/api/media/archive-file/{upload_id}/{sidecar_file_id}"
+
+                file_list.append(file_info)
+                file_index += 1
 
         # Update metadata so cleanup knows this is an extracted session
         with open(meta_path, 'w') as f:
@@ -1796,21 +1836,28 @@ async def extract_archive(
 @router.get("/archive-file/{upload_id}/{file_id}")
 async def get_archive_file(
     upload_id: str,
-    file_id: int,
+    file_id: str,
     current_user: User = Depends(require_admin_mode)
 ):
-    """Serve an individual extracted file from an archive session."""
+    """Serve an individual extracted file or sidecar from an archive session."""
     import re
 
     if not re.match(r'^[0-9a-f\-]{36}$', upload_id):
         raise HTTPException(status_code=400, detail="Invalid upload_id")
 
+    if not re.match(r'^\d+(_sidecar)?$', file_id):
+        raise HTTPException(status_code=400, detail="Invalid file_id")
+
     extract_dir = ARCHIVE_CHUNKS_DIR / upload_id / "extracted"
     if not extract_dir.exists():
         raise HTTPException(status_code=404, detail="No extracted files found")
 
-    # Find the file by index (could have various extensions)
-    matches = list(extract_dir.glob(f"{file_id}.*"))
+    # Find the file by index/id (could have various extensions)
+    if file_id.endswith("_sidecar"):
+        matches = list(extract_dir.glob(f"{file_id}.*"))
+    else:
+        matches = [p for p in extract_dir.glob(f"{file_id}.*") if "_sidecar" not in p.stem]
+
     if not matches:
         raise HTTPException(status_code=404, detail="File not found")
 

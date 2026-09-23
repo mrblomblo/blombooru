@@ -190,6 +190,10 @@ class UploadMediaEditor {
                         <span class="text-[11px] text-secondary shrink-0 whitespace-nowrap">
                             (${item.width && item.height ? `${item.width}x${item.height}, ` : ''}${this.formatFileSize(item.file_size)})
                         </span>
+                        ${item.metadata_source ? `
+                        <span class="badge bg-primary primary-text border border-primary text-[10px] px-1.5 py-0.5 shrink-0" title="${this.escapeHtml(item.metadata_source)}">
+                            ${this.escapeHtml(item.metadata_source)}
+                        </span>` : ''}
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0">

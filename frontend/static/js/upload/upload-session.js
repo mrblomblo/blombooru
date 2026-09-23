@@ -87,6 +87,9 @@ class UploadSession {
         if (options.baseDescription) {
             formData.append('base_description', options.baseDescription);
         }
+        if (options.sidecar) {
+            formData.append('sidecar', options.sidecar, options.sidecar.name);
+        }
         if (options.categoryHints) {
             formData.append('category_hints', JSON.stringify(options.categoryHints));
         }
