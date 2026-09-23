@@ -9,6 +9,7 @@ import requests
 from .base import BooruClient
 from .types import BooruPost, BooruTag
 from ...utils.logger import logger
+from ...utils.tag_utils import dtext_to_plain
 
 DANBOORU_CATEGORY_MAP: Dict[int, str] = {
     0: "general",
@@ -140,47 +141,8 @@ class DanbooruClient(BooruClient):
         return f"booru_{data.get('id', 'unknown')}"
 
     def _dtext_to_plain(self, text: str) -> str:
-        """
-        Convert Danbooru DText markup to plain readable text.
-
-        Handles the subset of DText used in artist commentaries:
-        - [b]...[/b]             - bold; kept as plain text
-        - "label":[url]          - named link; rendered as "label (url)"
-        - \<url\>                - bare URL angle-bracket link; rendered as the URL
-        - [i]...[/i]             - italic; kept as plain text
-        - [s]...[/s]             - strikethrough; kept as plain text
-        - [u]...[/u]             - underline; kept as plain text
-        - [tn]...[/tn]           - translator's note; kept as plain text
-        - [spoiler]...[/spoiler] - kept as plain text
-        - [[wiki_link]]          - double-bracket wiki links; kept as plain text
-        - [expand]...[/expand]   - kept as plain text
-        """
-        # Named links: "label":[url]  ->  label (url)
-        # The label may itself contain quoted text so match non-greedily.
-        text = re.sub(
-            r'"([^"]+?)":\[([^\]]+?)\]',
-            lambda m: f'{m.group(1)} ({m.group(2)})',
-            text,
-        )
-        # Named links with plain URL (no brackets): "label":https://...
-        text = re.sub(
-            r'"([^"]+?)":(https?://\S+)',
-            lambda m: f'{m.group(1)} ({m.group(2)})',
-            text,
-        )
-        # Bare angle-bracket URLs: <https://...>  ->  https://...
-        text = re.sub(r'<(https?://[^>]+)>', r'\1', text)
-        # Strip block/section tags (keep content between them)
-        text = re.sub(r'\[section(?:=[^\]]+)?\]|\[/section\]', '', text, flags=re.IGNORECASE)
-        # Strip inline formatting tags (keep content)
-        text = re.sub(r'\[/?(?:b|i|u|s|tn|spoiler|expand|quote)\]', '', text, flags=re.IGNORECASE)
-        # Wiki double-bracket links: [[page_name]] or [[page_name|display]]
-        text = re.sub(r'\[\[(?:[^|\]]+\|)?([^\]]+)\]\]', r'\1', text)
-        # Decode HTML entities (Danbooru API may return &amp; etc.)
-        text = html.unescape(text)
-        # Normalise Windows-style line endings
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
-        return text.strip()
+        """Convert Danbooru DText markup to plain readable text."""
+        return dtext_to_plain(text)
 
     def _fetch_artist_commentary(self, post_id: int) -> Optional[str]:
         """

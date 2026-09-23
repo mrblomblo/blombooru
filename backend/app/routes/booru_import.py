@@ -39,83 +39,15 @@ class ImportRequest(BaseModel):
     category_hints: Optional[dict[str, str]] = None
 
 def _enrich_post_tags_with_db_categories(post: BooruPost, db: Session):
-    """Enrich, deduplicate, resolve aliases, and apply implications on a fetched post's tag list.
-
-    This mutates post.tags so that what the caller (and ultimately the UI) sees is already normalised:
-    - Duplicate tag names (case-insensitive) are removed.
-    - Tags whose name is a registered alias are replaced with the canonical tag name and category, and marked as not-new.
-    - Remaining tags that exist in the local DB are enriched with their local category and marked as not-new.
-    - Tag implications are recursively expanded so that all implied tags are added to the final list.
-    - Deduplication is enforced after all steps so that e.g. ["1girl", "1girls"] collapses to just ["1girl"].
+    """
+    Enrich, deduplicate, resolve aliases, and apply implications on a fetched post's tag list.
+    This mutates post.tags so that what the caller sees is already normalised.
     """
     if not post.tags:
         return
 
-    from sqlalchemy import func
-    from ..models import Tag
-    from ..utils.tag_utils import expand_implications, resolve_aliases
-
-    # Build a fast alias lookup: alias_name -> (canonical_name, canonical_category)
-    raw_names = [t.name.strip().lower() for t in post.tags]
-    alias_map = resolve_aliases(db, raw_names)
-
-    # Rebuild names with aliases resolved
-    canonical_names = set()
-    for raw in raw_names:
-        if raw in alias_map:
-            canonical_names.add(alias_map[raw][0])
-        else:
-            canonical_names.add(raw)
-
-    existing_tags = (
-        db.query(Tag)
-        .filter(func.lower(Tag.name).in_(canonical_names))
-        .all()
-    )
-
-    tag_set: dict[int, Tag] = {t.id: t for t in existing_tags}
-
-    expand_implications(db, tag_set)
-
-    seen_canonical: set[str] = set()
-    enriched: list[BooruTag] = []
-    
-    # Add original tags (with aliases resolved)
-    for t in post.tags:
-        raw = t.name.strip().lower()
-        if not raw:
-            continue
-            
-        canonical_name = alias_map[raw][0] if raw in alias_map else raw
-        if canonical_name in seen_canonical:
-            continue
-            
-        seen_canonical.add(canonical_name)
-        existing_match = next((t_obj for t_obj in tag_set.values() if t_obj.name == canonical_name), None)
-        
-        if existing_match:
-            enriched.append(BooruTag(
-                name=existing_match.name,
-                category=existing_match.category,
-                is_new=False
-            ))
-        else:
-            enriched.append(BooruTag(
-                name=canonical_name,
-                category=t.category,
-                is_new=True
-            ))
-
-    for implied in tag_set.values():
-        if implied.name not in seen_canonical:
-            seen_canonical.add(implied.name)
-            enriched.append(BooruTag(
-                name=implied.name,
-                category=implied.category,
-                is_new=False
-            ))
-
-    post.tags = enriched
+    from ..utils.tag_utils import enrich_and_resolve_tags
+    post.tags = enrich_and_resolve_tags(db, post.tags, dry_run=True)
 
 @router.post("/fetch")
 async def fetch_booru_post(

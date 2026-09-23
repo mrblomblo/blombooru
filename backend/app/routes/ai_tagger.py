@@ -81,64 +81,29 @@ def enrich_predicted_tags(tags: List[dict], db: Session) -> List[dict]:
     if not tags:
         return []
 
-    from sqlalchemy import func
-    from ..models import Tag
-    from ..utils.tag_utils import expand_implications, resolve_aliases
+    from ..utils.tag_utils import enrich_and_resolve_tags, resolve_aliases
 
-    raw_names = [t["name"].strip().lower() for t in tags]
-    
-    # Resolve aliases
-    alias_map = resolve_aliases(db, raw_names)
+    conf_map = {t["name"].strip().lower(): t.get("confidence", 1.0) for t in tags if "name" in t}
+    alias_map = resolve_aliases(db, list(conf_map.keys()))
 
-    canonical_names = set()
-    for raw in raw_names:
-        if raw in alias_map:
-            canonical_names.add(alias_map[raw][0])
-        else:
-            canonical_names.add(raw)
-            
-    # Fetch local existing tags
-    existing_tags = db.query(Tag).filter(func.lower(Tag.name).in_(canonical_names)).all()
-    tag_set: dict[int, Tag] = {t.id: t for t in existing_tags}
-    
-    # Expand implications
-    expand_implications(db, tag_set)
+    resolved_conf_map = dict(conf_map)
+    for raw_name, conf in conf_map.items():
+        if raw_name in alias_map:
+            target_name = alias_map[raw_name][0].lower()
+            resolved_conf_map[target_name] = max(resolved_conf_map.get(target_name, 0.0), conf)
 
-    # Deduplicate and rebuild final list
-    seen = set()
-    enriched = []
-    
-    # Add the original requested tags first (resolved aliases, updated categories)
-    for t in tags:
-        raw = t["name"].strip().lower()
-        if not raw:
-            continue
-            
-        canonical_name = alias_map[raw][0] if raw in alias_map else raw
-        if canonical_name in seen:
-            continue
-        seen.add(canonical_name)
-        
-        existing_match = next((t_obj for t_obj in tag_set.values() if t_obj.name == canonical_name), None)
-        if existing_match:
-            t["name"] = existing_match.name
-            t["category"] = existing_match.category
-        else:
-            t["name"] = canonical_name
-            # keep the AI tagger's original predicted category if it doesn't exist locally
-            
-        enriched.append(t)
-        
-    for implied in tag_set.values():
-        if implied.name not in seen:
-            seen.add(implied.name)
-            enriched.append({
-                "name": implied.name,
-                "category": implied.category,
-                "confidence": 1.0
-            })
-            
-    return enriched
+    enriched_booru_tags = enrich_and_resolve_tags(db, tags, dry_run=True)
+
+    result = []
+    for bt in enriched_booru_tags:
+        conf = resolved_conf_map.get(bt.name.lower(), 1.0)
+        result.append({
+            "name": bt.name,
+            "category": bt.category,
+            "confidence": conf
+        })
+
+    return result
 
 class PredictTagsRequest(BaseModel):
     general_threshold: float = 0.35
