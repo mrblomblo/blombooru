@@ -122,6 +122,16 @@ class Settings:
                 "general": 1.0,
                 "copyright": 0.5,
                 "meta": 0.05
+            },
+            "metadata_parsers": {
+                "enabled": ["GalleryDlParser", "LoliSnatcherParser", "ExifXmpParser"],
+                "priority": ["GalleryDlParser", "LoliSnatcherParser", "ExifXmpParser"],
+                "exif_metadata_field_map": {
+                    "tags": ["XPKeywords", "dc:subject", "Keywords", "tags"],
+                    "rating": ["Rating", "xmp:Rating", "rating"],
+                    "source": ["dc:description", "ImageDescription", "source"],
+                    "description": ["UserComment", "Description", "description"]
+                }
             }
         }
     
@@ -415,5 +425,21 @@ class Settings:
         merged = {**defaults, **saved}
         # Ensure all values are floats and positive, up to 99.99
         return {k: max(0.0, min(99.99, round(float(v), 2))) for k, v in merged.items()}
+
+    @property
+    def METADATA_PARSERS(self) -> dict:
+        """Get modular metadata parser settings (enabled, priority, field mapping)."""
+        defaults = {
+            "enabled": ["GalleryDlParser", "LoliSnatcherParser", "ExifXmpParser"],
+            "priority": ["GalleryDlParser", "LoliSnatcherParser", "ExifXmpParser"],
+            "exif_metadata_field_map": {
+                "tags": ["XPKeywords", "dc:subject", "Keywords", "tags"],
+                "rating": ["Rating", "xmp:Rating", "rating"],
+                "source": ["dc:description", "ImageDescription", "source"],
+                "description": ["UserComment", "Description", "description"]
+            }
+        }
+        saved = self.file_settings.get("metadata_parsers") or self.settings.get("metadata_parsers", {})
+        return {**defaults, **saved}
 
 settings = Settings()
