@@ -6,6 +6,8 @@ from typing import Optional, Tuple
 from urllib.parse import unquote, urlparse
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from ..enums import FileTypeEnum
 from .format_registry import format_registry, FormatCategory
@@ -18,6 +20,15 @@ SUPPORTED_MIME_TYPES = set(
 )
 
 DEFAULT_TIMEOUT = 60
+
+_session = requests.Session()
+_adapter = HTTPAdapter(
+    pool_connections=10,
+    pool_maxsize=20,
+    max_retries=Retry(total=0, raise_on_status=False),
+)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
 
 class UrlFetchError(Exception):
     def __init__(self, message: str, status_code: int = 400):
@@ -137,7 +148,7 @@ def probe_media_url(url: str) -> dict:
 
     try:
         try:
-            response = requests.head(
+            response = _session.head(
                 url,
                 timeout=DEFAULT_TIMEOUT,
                 allow_redirects=True,
@@ -145,7 +156,7 @@ def probe_media_url(url: str) -> dict:
             )
             if response.status_code == 405 or response.status_code >= 500:
                 response.close()
-                response = requests.get(
+                response = _session.get(
                     url,
                     timeout=DEFAULT_TIMEOUT,
                     allow_redirects=True,
@@ -172,7 +183,7 @@ def fetch_media_stream(url: str) -> Tuple[requests.Response, str]:
     url = validate_media_url(url)
 
     try:
-        response = requests.get(
+        response = _session.get(
             url,
             timeout=DEFAULT_TIMEOUT,
             allow_redirects=True,
