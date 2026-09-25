@@ -5,6 +5,7 @@ class UploadQueueGrid {
         this.options = options;
         this.selectedIds = new Set();
         this.activeItemId = null;
+        this.lastSelectedId = null;
         this.editor = null;
 
         this.init();
@@ -29,7 +30,7 @@ class UploadQueueGrid {
                 </div>
 
                 <!-- Thumbnail Gallery Grid -->
-                <div id="upload-thumbnail-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 max-h-90 overflow-y-auto gap-2 p-1 mb-4"></div>
+                <div id="upload-thumbnail-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 max-h-90 overflow-y-auto gap-2 mb-4"></div>
 
                 <!-- Unified Media Editor Container -->
                 <div id="upload-media-editor-container" class="mt-3"></div>
@@ -55,10 +56,13 @@ class UploadQueueGrid {
                 if (this.selectedIds.size === 0 && remaining.length > 0) {
                     this.selectedIds.add(remaining[0].item_id);
                     this.activeItemId = remaining[0].item_id;
+                    this.lastSelectedId = remaining[0].item_id;
                 } else if (this.selectedIds.size > 0) {
                     this.activeItemId = Array.from(this.selectedIds)[0];
+                    this.lastSelectedId = this.activeItemId;
                 } else {
                     this.activeItemId = null;
+                    this.lastSelectedId = null;
                 }
                 this.renderGrid();
                 this.syncEditor();
@@ -75,6 +79,7 @@ class UploadQueueGrid {
             if (this.selectedIds.size === 0) {
                 this.selectedIds.add(item.item_id);
                 this.activeItemId = item.item_id;
+                this.lastSelectedId = item.item_id;
             }
             this.renderGrid();
             this.syncEditor();
@@ -108,6 +113,9 @@ class UploadQueueGrid {
                     this.activeItemId = null;
                 }
             }
+            if (this.lastSelectedId === itemId) {
+                this.lastSelectedId = this.activeItemId;
+            }
             this.renderGrid();
             this.syncEditor();
         });
@@ -115,6 +123,7 @@ class UploadQueueGrid {
         this.session.on('sessionCleared', () => {
             this.selectedIds.clear();
             this.activeItemId = null;
+            this.lastSelectedId = null;
             this.renderGrid();
             this.syncEditor();
         });
@@ -142,6 +151,7 @@ class UploadQueueGrid {
         if (this.selectedIds.size === 0 && items.length > 0) {
             this.selectedIds.add(items[0].item_id);
             this.activeItemId = items[0].item_id;
+            this.lastSelectedId = items[0].item_id;
         }
 
         grid.innerHTML = items.map(item => this.renderThumbnailHtml(item)).join('');
@@ -153,19 +163,12 @@ class UploadQueueGrid {
         const sessionId = this.session.sessionId;
         const thumbUrl = sessionId ? `/api/uploads/sessions/${sessionId}/items/${item.item_id}/thumbnail` : '';
         const isSelected = this.selectedIds.has(item.item_id);
-        const isActive = this.selectedIds.size === 1 && this.activeItemId === item.item_id;
-
-        let selectClasses = 'border';
-        if (isActive) {
-            selectClasses = 'border-primary ring-2 ring-primary';
-        } else if (isSelected) {
-            selectClasses = 'border-primary/80 ring-1 ring-primary/80';
-        }
+        const selectClasses = isSelected ? 'border-primary' : '';
 
         const leafAlbum = item.suggested_album_path ? item.suggested_album_path.split('/').pop() : null;
 
         return `
-            <div class="upload-thumb-card surface relative group flex flex-col cursor-pointer ${selectClasses}"
+            <div class="upload-thumb-card surface border relative group flex flex-col cursor-pointer transition-colors ${selectClasses}"
                 data-item-id="${item.item_id}">
                 <!-- Thumbnail Box (Square 1:1, NO zoom animation) -->
                 <div class="relative w-full aspect-square bg overflow-hidden flex items-center justify-center">
@@ -217,19 +220,103 @@ class UploadQueueGrid {
         cards.forEach(card => this.setupCardEvents(card));
     }
 
+    getRange(idA, idB) {
+        const cards = Array.from(this.container.querySelectorAll('.upload-thumb-card'));
+        const ids = cards.map(c => c.dataset.itemId);
+        const idxA = ids.indexOf(idA);
+        const idxB = ids.indexOf(idB);
+
+        if (idxA === -1 || idxB === -1) return [idB];
+
+        const start = Math.min(idxA, idxB);
+        const end = Math.max(idxA, idxB);
+        return ids.slice(start, end + 1);
+    }
+
+    selectItems(itemIds, event = null) {
+        const ids = (itemIds || []).filter(Boolean);
+        if (ids.length === 0) return;
+
+        const isCtrl = Boolean(event && (event.ctrlKey || event.metaKey));
+        const allSelected = ids.every(id => this.selectedIds.has(id));
+
+        if (isCtrl) {
+            if (allSelected) {
+                ids.forEach(id => this.selectedIds.delete(id));
+                if (!this.selectedIds.has(this.activeItemId)) {
+                    this.activeItemId = this.selectedIds.size > 0 ? Array.from(this.selectedIds)[0] : null;
+                }
+            } else {
+                ids.forEach(id => this.selectedIds.add(id));
+                this.activeItemId = ids[0];
+                this.lastSelectedId = ids[ids.length - 1];
+            }
+        } else {
+            if (allSelected) {
+                this.selectedIds.clear();
+                this.activeItemId = null;
+                this.lastSelectedId = null;
+            } else {
+                this.selectedIds.clear();
+                ids.forEach(id => this.selectedIds.add(id));
+                this.activeItemId = ids[0];
+                this.lastSelectedId = ids[ids.length - 1];
+            }
+        }
+
+        this.updateSelectionVisuals();
+        this.syncEditor();
+    }
+
     setupCardEvents(card) {
         const itemId = card.dataset.itemId;
         const item = this.session.getItem(itemId);
         if (!item) return;
 
-        // Click card: if already the active item, open fullscreen. Otherwise make it the selected item.
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            if (e.shiftKey && this.lastSelectedId) {
+                const rangeIds = this.getRange(this.lastSelectedId, itemId);
+                const allSelected = rangeIds.every(id => this.selectedIds.has(id));
+                const targetState = !allSelected;
+
+                rangeIds.forEach(id => {
+                    if (targetState) {
+                        this.selectedIds.add(id);
+                    } else {
+                        this.selectedIds.delete(id);
+                    }
+                });
+
+                this.lastSelectedId = itemId;
+                this.activeItemId = itemId;
+                this.updateSelectionVisuals();
+                this.syncEditor();
+                return;
+            }
+
+            if (e.ctrlKey || e.metaKey) {
+                if (this.selectedIds.has(itemId)) {
+                    this.selectedIds.delete(itemId);
+                    if (this.activeItemId === itemId) {
+                        this.activeItemId = this.selectedIds.size > 0 ? Array.from(this.selectedIds)[0] : null;
+                    }
+                } else {
+                    this.selectedIds.add(itemId);
+                    this.activeItemId = itemId;
+                }
+                this.lastSelectedId = itemId;
+                this.updateSelectionVisuals();
+                this.syncEditor();
+                return;
+            }
+
             if (this.selectedIds.size === 1 && this.selectedIds.has(itemId)) {
                 this.openFullscreen(item);
             } else {
                 this.selectedIds.clear();
                 this.selectedIds.add(itemId);
                 this.activeItemId = itemId;
+                this.lastSelectedId = itemId;
                 this.updateSelectionVisuals();
                 this.syncEditor();
             }
@@ -243,15 +330,41 @@ class UploadQueueGrid {
         // Checkbox click: toggle selection
         const checkbox = card.querySelector('.thumb-checkbox');
         if (checkbox) {
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (e.shiftKey && this.lastSelectedId) {
+                    e.preventDefault();
+                    const rangeIds = this.getRange(this.lastSelectedId, itemId);
+                    const allSelected = rangeIds.every(id => this.selectedIds.has(id));
+                    const targetState = !allSelected;
+
+                    rangeIds.forEach(id => {
+                        if (targetState) {
+                            this.selectedIds.add(id);
+                        } else {
+                            this.selectedIds.delete(id);
+                        }
+                    });
+
+                    this.lastSelectedId = itemId;
+                    this.activeItemId = itemId;
+                    this.updateSelectionVisuals();
+                    this.syncEditor();
+                    return;
+                }
+            });
+
             checkbox.addEventListener('change', (e) => {
                 if (e.target.checked) {
                     this.selectedIds.add(itemId);
                     this.activeItemId = itemId;
+                    this.lastSelectedId = itemId;
                 } else {
                     this.selectedIds.delete(itemId);
                     if (this.activeItemId === itemId) {
                         this.activeItemId = this.selectedIds.size > 0 ? Array.from(this.selectedIds)[0] : null;
                     }
+                    this.lastSelectedId = itemId;
                 }
                 this.updateSelectionVisuals();
                 this.syncEditor();
@@ -277,6 +390,7 @@ class UploadQueueGrid {
                 items.forEach(it => this.selectedIds.add(it.item_id));
                 if (items.length > 0) {
                     this.activeItemId = items[0].item_id;
+                    this.lastSelectedId = items[items.length - 1].item_id;
                 }
                 this.updateSelectionVisuals();
                 this.syncEditor();
@@ -287,6 +401,7 @@ class UploadQueueGrid {
             deselectAllBtn.addEventListener('click', () => {
                 this.selectedIds.clear();
                 this.activeItemId = null;
+                this.lastSelectedId = null;
                 this.updateSelectionVisuals();
                 this.syncEditor();
             });
@@ -305,15 +420,16 @@ class UploadQueueGrid {
                 checkbox.checked = isSelected;
             }
 
-            card.classList.remove('border-primary', 'ring-2', 'ring-primary', 'border-primary/80', 'ring-1', 'ring-primary/80', 'border');
-            if (isSelected) {
-                card.classList.add('border-primary', 'ring-2', 'ring-primary');
-            } else {
-                card.classList.add('border');
-            }
+            card.classList.remove('ring-2', 'ring-primary', 'border-primary/80', 'ring-1', 'ring-primary/80');
+            card.classList.add('border');
+            card.classList.toggle('border-primary', isSelected);
         });
 
         this.updateToolbarCounts();
+
+        if (this.options.onSelectionChange) {
+            this.options.onSelectionChange(this.selectedIds);
+        }
     }
 
     updateToolbarCounts() {
