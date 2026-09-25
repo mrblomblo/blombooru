@@ -132,21 +132,20 @@ class UploadUploaderShell {
                 onTagsChange: () => {
                     if (this.pendingPanel) this.pendingPanel.refresh();
                 },
+                onSelectionChange: (selectedIds) => {
+                    if (this.pendingPanel) {
+                        this.pendingPanel.updateSelectionHighlight(selectedIds);
+                    }
+                },
             });
         }
 
         const pendingContainer = document.getElementById('upload-pending-container');
         if (pendingContainer) {
             this.pendingPanel = new PendingEntitiesPanel(pendingContainer, this.session, {
-                onHighlightItems: (itemIds) => {
+                onHighlightItems: (itemIds, event) => {
                     if (this.queueGrid) {
-                        this.queueGrid.selectedIds.clear();
-                        (itemIds || []).forEach(id => this.queueGrid.selectedIds.add(id));
-                        if (this.queueGrid.selectedIds.size > 0) {
-                            this.queueGrid.activeItemId = Array.from(this.queueGrid.selectedIds)[0];
-                        }
-                        this.queueGrid.updateSelectionVisuals();
-                        this.queueGrid.syncEditor();
+                        this.queueGrid.selectItems(itemIds, event);
                     }
                 }
             });
@@ -494,20 +493,20 @@ class UploadUploaderShell {
     }
 
     async cancelAll() {
+        const doCancel = async () => {
+            await this.session.cancelSession();
+        };
         if (typeof ModalHelper !== 'undefined') {
             new ModalHelper({
                 type: 'danger',
                 title: window.i18n.t('upload.submit.cancel_title'),
                 message: window.i18n.t('upload.submit.cancel_confirm'),
                 confirmText: window.i18n.t('common.yes'),
-                onConfirm: async () => {
-                    await this.session.cancelSession();
-                }
+                cancelText: window.i18n.t('common.cancel'),
+                onConfirm: doCancel
             }).show();
         } else {
-            if (confirm(window.i18n.t('upload.submit.cancel_confirm'))) {
-                await this.session.cancelSession();
-            }
+            await doCancel();
         }
     }
 

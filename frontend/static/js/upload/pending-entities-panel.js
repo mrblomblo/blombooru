@@ -5,6 +5,7 @@ class PendingEntitiesPanel {
         this.options = options;
         this.pendingData = { pending_tags: [], pending_albums: [] };
         this.collapsedPaths = new Set();
+        this.currentSelectedIds = new Set();
         this.isLoading = false;
 
         this.init();
@@ -12,7 +13,7 @@ class PendingEntitiesPanel {
 
     init() {
         this.container.innerHTML = `
-            <div class="pending-entities-panel surface border p-4 mb-4 text-xs" style="display: none;">
+            <div class="pending-entities-panel surface border p-4 mb-4 text-xs max-w-full" style="display: none;">
                 <div class="flex items-center justify-between border-b pb-2 mb-3">
                     <div class="flex items-center gap-3 w-full">
                         <span class="text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis">${window.i18n.t('upload.pending.title')}</span>
@@ -23,11 +24,11 @@ class PendingEntitiesPanel {
                 </p>
 
                 <!-- Tags Section -->
-                <div id="pending-tags-container" class="mb-3">
+                <div id="pending-tags-container" class="mb-3 max-w-full min-w-0">
                     <h4 class="text-[11px] font-bold text-secondary uppercase tracking-wider mb-2">
                         ${window.i18n.t('upload.pending.new_tags')} (<span id="pending-tags-count">0</span>)
                     </h4>
-                    <div id="pending-tags-list" class="flex flex-wrap gap-2 overflow-y-auto max-h-40"></div>
+                    <div id="pending-tags-list" class="flex flex-wrap gap-2 max-w-full min-w-0"></div>
                 </div>
 
                 <!-- Albums Section -->
@@ -35,7 +36,7 @@ class PendingEntitiesPanel {
                     <h4 class="text-[11px] font-bold text-secondary uppercase tracking-wider mb-2">
                         ${window.i18n.t('upload.pending.new_albums')} (<span id="pending-albums-count">0</span>)
                     </h4>
-                    <div id="pending-albums-list" class="bg border overflow-y-auto max-h-60 mb-1"></div>
+                    <div id="pending-albums-list" class="bg border mb-1"></div>
                 </div>
             </div>
         `;
@@ -50,6 +51,7 @@ class PendingEntitiesPanel {
         this.session.on('sessionCleared', () => {
             this.pendingData = { pending_tags: [], pending_albums: [] };
             this.collapsedPaths.clear();
+            this.currentSelectedIds.clear();
             this.render();
         });
     }
@@ -113,17 +115,17 @@ class PendingEntitiesPanel {
             tagsContainer.style.display = tags.length > 0 ? 'block' : 'none';
         }
         if (tagsList && tags.length > 0) {
-            tagsList.className = 'flex flex-wrap gap-2 overflow-y-auto max-h-40';
+            tagsList.className = 'flex flex-wrap gap-2 max-w-full min-w-0';
             tagsList.innerHTML = tags.map(tag => {
                 const cat = tag.category || 'general';
                 const grayscaleClass = (!tag.user_assigned) ? 'grayscale' : '';
                 return `
-                    <div class="pending-tag-item inline-flex items-center gap-1 bg border p-1" data-name="${this.escapeHtml(tag.name)}">
-                        <div class="custom-select pending-cat-select inline-block align-middle" data-value="${cat}" data-tag="${this.escapeHtml(tag.name)}">
-                            <div class="custom-select-trigger tag-text tag ${cat} ${grayscaleClass} cursor-pointer select-none" style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                <span class="text-xs">${this.escapeHtml(tag.name)}</span>
+                    <div class="pending-tag-item inline-flex items-center gap-1 bg border p-1 transition-colors max-w-full min-w-0" data-name="${this.escapeHtml(tag.name)}">
+                        <div class="custom-select pending-cat-select max-w-full min-w-0 inline-flex shrink" data-value="${cat}" data-tag="${this.escapeHtml(tag.name)}">
+                            <div class="custom-select-trigger tag-text tag ${cat} ${grayscaleClass} cursor-pointer select-none max-w-full min-w-0 !inline-flex items-center gap-1 flex-nowrap" style="white-space: nowrap; display: inline-flex;">
+                                <span class="text-xs truncate min-w-0" title="${this.escapeHtml(tag.name)}">${this.escapeHtml(tag.name)}</span>
                                 <span class="custom-select-value" style="display: none;"></span>
-                                ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200', style: 'display: block;' })}
+                                ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow shrink-0 transition-transform duration-200' })}
                             </div>
                             <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50 min-w-25">
                                 <div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs ${cat === 'general' ? 'selected' : ''}" data-value="general">${window.i18n.t('common.tag_category_general')}</div>
@@ -133,11 +135,11 @@ class PendingEntitiesPanel {
                                 <div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs ${cat === 'meta' ? 'selected' : ''}" data-value="meta">${window.i18n.t('common.tag_category_meta')}</div>
                             </div>
                         </div>
-                        <span class="pending-tag-count-badge text-[10px] text-secondary hover:text-primary cursor-pointer transition-colors"
+                        <span class="pending-tag-count-badge text-[10px] text-secondary hover:text-primary cursor-pointer transition-colors shrink-0 select-none"
                             title="${window.i18n.t('upload.pending.used_in_media', { count: tag.used_by.length })}">
                             ${window.i18n.t('upload.pending.media_count', { count: tag.used_by.length })}
                         </span>
-                        <button type="button" class="pending-remove-btn text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center" title="${window.i18n.t('common.remove')}">
+                        <button type="button" class="pending-remove-btn text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center shrink-0" title="${window.i18n.t('common.remove')}">
                             ${window.Icons.trash({ size: 12, class: 'transition-colors' })}
                         </button>
                     </div>
@@ -154,94 +156,53 @@ class PendingEntitiesPanel {
         if (albumsList && albums.length > 0) {
             this.renderAlbumTree(albumsList, albums);
         }
+
+        this.updateSelectionHighlight(this.currentSelectedIds);
     }
 
     renderAlbumTree(container, albums) {
-        // Build hierarchy map
         const albumMap = new Map();
         albums.forEach(alb => {
-            alb.children = [];
-            // Auto-collapse depth >= 4 on initial encounter
-            if (alb.depth >= 4 && !this.collapsedPaths.has(alb.path)) {
-                this.collapsedPaths.add(alb.path);
-            }
             albumMap.set(alb.path, alb);
         });
 
-        const roots = [];
-        albums.forEach(alb => {
-            if (alb.parent_path && albumMap.has(alb.parent_path)) {
-                albumMap.get(alb.parent_path).children.push(alb);
-            } else {
-                roots.push(alb);
-            }
-        });
+        const sorted = this._sortAlbumsLogically(albums, albumMap);
 
-        const ordered = [];
-        const flatten = (list, visibleDepth = 0) => {
-            list.sort((a, b) => a.name.localeCompare(b.name));
-            for (const alb of list) {
-                alb.visibleDepth = visibleDepth;
-                ordered.push(alb);
-                if (alb.children && alb.children.length > 0) {
-                    flatten(alb.children, visibleDepth + 1);
-                }
-            }
-        };
-        flatten(roots, 0);
-
-        const anyHasChildren = ordered.some(alb => alb.children && alb.children.length > 0);
-
-        container.innerHTML = ordered.map(alb => {
-            const hasChildren = alb.children && alb.children.length > 0;
-            const isCollapsed = this.collapsedPaths.has(alb.path);
-            const isHidden = this._isAlbumHidden(alb.path, albumMap);
-
-            const indentPx = (alb.visibleDepth || 0) * 20;
+        container.innerHTML = sorted.map(alb => {
+            const hasChildren = albums.some(a => a.parent_path === alb.path);
             const folderIcon = hasChildren
                 ? window.Icons.folderParent({ size: 14, class: 'flex-shrink-0' })
                 : window.Icons.folder({ size: 14, class: 'flex-shrink-0' });
 
-            let rightSideChevron = '';
-            if (hasChildren) {
-                const rotationClass = isCollapsed ? '' : '-rotate-90';
-                const chevronIcon = window.Icons.chevronLeft({
-                    size: 14,
-                    class: `flex-shrink-0 transition-transform duration-200 ${rotationClass}`
-                });
-                rightSideChevron = `<button type="button" class="pending-album-toggle-btn flex items-center justify-center w-6 h-6 text-secondary hover:text-primary transition-colors shrink-0 cursor-pointer" data-album-path="${this.escapeHtml(alb.path)}">${chevronIcon}</button>`;
-            } else if (anyHasChildren) {
-                rightSideChevron = `<span class="w-6 shrink-0"></span>`;
+            let parentPathHtml = '';
+            if (alb.parent_path) {
+                const parentAlb = albumMap.get(alb.parent_path);
+                const parentName = parentAlb ? parentAlb.name : alb.parent_path.split('/').filter(Boolean).pop();
+                if (parentName) {
+                    parentPathHtml = `<span class="text-[10px] text-secondary truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(parentName)}</span>`;
+                }
             }
 
-            const hiddenClass = isHidden ? ' hidden' : '';
-
             return `
-                <div class="pending-album-item flex items-center gap-2 border-b py-2 pr-2.5 transition-colors cursor-pointer hover:surface${hiddenClass}"
-                    data-album-path="${this.escapeHtml(alb.path)}"
-                    style="padding-left: ${10 + indentPx}px;">
+                <div class="pending-album-item flex items-center gap-2 border-b py-2 px-2.5 transition-colors cursor-pointer hover:surface"
+                    data-album-path="${this.escapeHtml(alb.path)}">
                     <span class="pending-album-icon shrink-0 text-secondary">${folderIcon}</span>
-                    <div class="flex-1 min-w-0 flex items-center gap-2">
-                        <div class="pending-album-name-wrapper flex-1 min-w-0">
-                            <span class="pending-album-name-text text-xs font-medium truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(alb.name)}</span>
-                        </div>
-                        <span class="pending-album-count-badge text-[10px] text-secondary hover:text-primary cursor-pointer transition-colors shrink-0 select-none"
+                    <div class="pending-album-name-wrapper flex-1 min-w-0">
+                        <span class="pending-album-name-text text-xs font-medium truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(alb.name)}</span>
+                        ${parentPathHtml}
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <span class="pending-album-count-badge text-[10px] text-secondary hover:text-primary cursor-pointer transition-colors select-none"
                             title="${window.i18n.t('upload.pending.used_in_media', { count: alb.used_by.length })}">
                             ${window.i18n.t('upload.pending.media_count', { count: alb.used_by.length })}
                         </span>
-                    </div>
-
-                    <!-- Inline Actions -->
-                    <div class="flex items-center gap-1 shrink-0">
                         <button type="button" class="pending-rename-album-btn text-primary hover:text-primary transition-colors cursor-pointer p-1 flex items-center justify-center" title="${window.i18n.t('upload.pending.rename_album')}">
                             ${window.Icons.edit({ size: 14 })}
                         </button>
-                        <button type="button" class="pending-remove-album-btn text-danger hover:text-danger transition-colors cursor-pointer p-1 flex items-center justify-center" title="${window.i18n.t('upload.pending.skip_album')}">
+                        <button type="button" class="pending-remove-album-btn text-danger hover:text-danger transition-colors cursor-pointer p-1 flex items-center justify-center" title="${window.i18n.t('common.remove')}">
                             ${window.Icons.trash({ size: 14 })}
                         </button>
                     </div>
-
-                    ${rightSideChevron}
                 </div>
             `;
         }).join('');
@@ -249,60 +210,87 @@ class PendingEntitiesPanel {
         this.setupAlbumRowEvents(container, albumMap);
     }
 
-    _isAlbumHidden(path, albumMap) {
-        let current = albumMap.get(path);
-        while (current && current.parent_path) {
-            if (this.collapsedPaths.has(current.parent_path)) {
-                return true;
-            }
-            current = albumMap.get(current.parent_path);
+    _sortAlbumsLogically(albums, albumMap) {
+        if (!albums || albums.length <= 1) return albums || [];
+
+        if (!albumMap) {
+            albumMap = new Map();
+            albums.forEach(alb => albumMap.set(alb.path, alb));
         }
-        return false;
+
+        const childrenMap = new Map();
+        const roots = [];
+
+        albums.forEach(alb => {
+            if (alb.parent_path && albumMap.has(alb.parent_path)) {
+                if (!childrenMap.has(alb.parent_path)) {
+                    childrenMap.set(alb.parent_path, []);
+                }
+                childrenMap.get(alb.parent_path).push(alb);
+            } else {
+                roots.push(alb);
+            }
+        });
+
+        const compareByName = (a, b) => {
+            const nameA = a.name || a.path || '';
+            const nameB = b.name || b.path || '';
+            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true });
+        };
+
+        const compareRoots = (a, b) => {
+            const pathA = a.path || a.name || '';
+            const pathB = b.path || b.name || '';
+            return pathA.localeCompare(pathB, undefined, { sensitivity: 'base', numeric: true });
+        };
+
+        roots.sort(compareRoots);
+
+        for (const children of childrenMap.values()) {
+            children.sort(compareByName);
+        }
+
+        const result = [];
+        const visited = new Set();
+
+        const traverse = (alb) => {
+            if (visited.has(alb.path)) return;
+            visited.add(alb.path);
+            result.push(alb);
+
+            const children = childrenMap.get(alb.path) || [];
+            for (const child of children) {
+                traverse(child);
+            }
+        };
+
+        for (const root of roots) {
+            traverse(root);
+        }
+
+        // Fallback for any disconnected albums
+        for (const alb of albums) {
+            if (!visited.has(alb.path)) {
+                result.push(alb);
+            }
+        }
+
+        return result;
     }
 
     setupAlbumRowEvents(container, albumMap) {
-        // Toggle collapse/expand chevron
-        container.querySelectorAll('.pending-album-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const path = btn.dataset.albumPath;
-                if (!path) return;
-
-                if (this.collapsedPaths.has(path)) {
-                    this.collapsedPaths.delete(path);
-                } else {
-                    this.collapsedPaths.add(path);
-                }
-
-                // Update chevron rotation
-                const svg = btn.querySelector('svg');
-                if (svg) {
-                    svg.classList.toggle('-rotate-90', !this.collapsedPaths.has(path));
-                }
-
-                // Update visibility of descendants
-                container.querySelectorAll('.pending-album-item').forEach(row => {
-                    const rowPath = row.dataset.albumPath;
-                    if (rowPath && rowPath !== path) {
-                        const isHidden = this._isAlbumHidden(rowPath, albumMap);
-                        row.classList.toggle('hidden', isHidden);
-                    }
-                });
-            });
-        });
-
         // Row click to select contained media
         container.querySelectorAll('.pending-album-item').forEach(row => {
             row.addEventListener('click', (e) => {
-                // Ignore clicks on buttons, chevrons, or input fields
-                if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.pending-rename-album-btn') || e.target.closest('.pending-remove-album-btn')) {
+                // Ignore clicks on buttons or input fields
+                if (e.target.closest('button') || e.target.closest('input')) {
                     return;
                 }
 
                 const path = row.dataset.albumPath;
                 const alb = (this.pendingData.pending_albums || []).find(a => a.path === path);
                 if (alb && alb.used_by && this.options.onHighlightItems) {
-                    this.options.onHighlightItems(alb.used_by);
+                    this.options.onHighlightItems(alb.used_by, e);
                 }
             });
         });
@@ -315,7 +303,7 @@ class PendingEntitiesPanel {
                 const path = row ? row.dataset.albumPath : null;
                 const alb = (this.pendingData.pending_albums || []).find(a => a.path === path);
                 if (alb && alb.used_by && this.options.onHighlightItems) {
-                    this.options.onHighlightItems(alb.used_by);
+                    this.options.onHighlightItems(alb.used_by, e);
                 }
             });
         });
@@ -368,12 +356,27 @@ class PendingEntitiesPanel {
 
         // Trash / skip album button
         container.querySelectorAll('.pending-remove-album-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const row = btn.closest('.pending-album-item');
                 const path = row ? row.dataset.albumPath : null;
-                if (path) {
+                if (!path) return;
+                const alb = (this.pendingData.pending_albums || []).find(a => a.path === path);
+                const displayName = alb ? (alb.name || alb.title || path) : path;
+                const doRemove = async () => {
                     await this.session.updatePendingAlbum(path, { remove: true });
+                };
+                if (typeof ModalHelper !== 'undefined') {
+                    new ModalHelper({
+                        type: 'danger',
+                        title: window.i18n.t('common.confirm'),
+                        message: window.i18n.t('upload.pending.remove_album_confirm', { album: displayName }),
+                        confirmText: window.i18n.t('common.yes_remove'),
+                        cancelText: window.i18n.t('common.cancel'),
+                        onConfirm: doRemove
+                    }).show();
+                } else {
+                    doRemove();
                 }
             });
         });
@@ -391,6 +394,14 @@ class PendingEntitiesPanel {
                 new CustomSelect(catSelectEl);
                 catSelectEl.addEventListener('change', async (e) => {
                     const newCat = e.detail.value;
+                    const trigger = catSelectEl.querySelector('.custom-select-trigger');
+                    if (trigger) {
+                        ['general', 'artist', 'character', 'copyright', 'meta'].forEach(c => trigger.classList.remove(c));
+                        trigger.classList.add(newCat);
+                    }
+                    if (tagObj) {
+                        tagObj.category = newCat;
+                    }
                     await this.session.updatePendingTag(tagName, { category: newCat });
                 });
             }
@@ -398,9 +409,9 @@ class PendingEntitiesPanel {
             // Click badge to highlight referencing cards
             const countBadge = chip.querySelector('.pending-tag-count-badge');
             if (countBadge && tagObj) {
-                countBadge.addEventListener('click', () => {
+                countBadge.addEventListener('click', (e) => {
                     if (this.options.onHighlightItems) {
-                        this.options.onHighlightItems(tagObj.used_by);
+                        this.options.onHighlightItems(tagObj.used_by, e);
                     }
                 });
             }
@@ -408,9 +419,61 @@ class PendingEntitiesPanel {
             // Remove tag from all items
             const removeBtn = chip.querySelector('.pending-remove-btn');
             if (removeBtn) {
-                removeBtn.addEventListener('click', async () => {
-                    await this.session.updatePendingTag(tagName, { remove: true });
+                removeBtn.addEventListener('click', () => {
+                    const doRemove = async () => {
+                        await this.session.updatePendingTag(tagName, { remove: true });
+                    };
+                    if (typeof ModalHelper !== 'undefined') {
+                        new ModalHelper({
+                            type: 'danger',
+                            title: window.i18n.t('common.confirm'),
+                            message: window.i18n.t('upload.pending.remove_tag_confirm', { tag: tagName }),
+                            confirmText: window.i18n.t('common.yes_remove'),
+                            cancelText: window.i18n.t('common.cancel'),
+                            onConfirm: doRemove
+                        }).show();
+                    } else {
+                        doRemove();
+                    }
                 });
+            }
+        });
+    }
+
+    updateSelectionHighlight(selectedIds) {
+        this.currentSelectedIds = new Set(selectedIds || []);
+
+        const chips = this.container.querySelectorAll('.pending-tag-item');
+        chips.forEach(chip => {
+            const tagName = chip.dataset.name;
+            const tagObj = (this.pendingData.pending_tags || []).find(t => t.name.toLowerCase() === (tagName || '').toLowerCase());
+            const allSelected = Boolean(tagObj && tagObj.used_by && tagObj.used_by.length > 0 && tagObj.used_by.every(id => this.currentSelectedIds.has(id)));
+
+            chip.classList.toggle('border-primary', allSelected);
+            chip.classList.toggle('bg-primary/5', allSelected);
+            chip.classList.remove('ring-1', 'ring-primary');
+
+            const countBadge = chip.querySelector('.pending-tag-count-badge');
+            if (countBadge) {
+                countBadge.classList.toggle('text-primary', allSelected);
+                countBadge.classList.toggle('text-secondary', !allSelected);
+            }
+        });
+
+        const rows = this.container.querySelectorAll('.pending-album-item');
+        rows.forEach(row => {
+            const path = row.dataset.albumPath;
+            const alb = (this.pendingData.pending_albums || []).find(a => a.path === path);
+            const allSelected = Boolean(alb && alb.used_by && alb.used_by.length > 0 && alb.used_by.every(id => this.currentSelectedIds.has(id)));
+
+            row.classList.toggle('is-all-selected', allSelected);
+            row.classList.toggle('bg-primary/5', allSelected);
+            row.classList.remove('border-primary', 'border-l-4', 'border-l-primary');
+
+            const countBadge = row.querySelector('.pending-album-count-badge');
+            if (countBadge) {
+                countBadge.classList.toggle('text-primary', allSelected);
+                countBadge.classList.toggle('text-secondary', !allSelected);
             }
         });
     }
