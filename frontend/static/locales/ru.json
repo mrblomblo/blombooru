@@ -230,7 +230,8 @@
                 "error_fetch_failed": "Не удалось получить файл: {error}",
                 "error_proxy_failed": "Не удалось получить изображение: {error}",
                 "error_empty_file": "Получен пустой файл",
-                "error_import_failed": "Ошибка импорта: {error}"
+                "error_import_failed": "Ошибка импорта: {error}",
+                "batch_failed": ""
             }
         },
         "messages": {

@@ -210,7 +210,7 @@
                 "error_proxy_failed": "Kunde inte hämta bilden: {error}"
             },
             "url_import": {
-                "hint": "Klistra in en URL till ett booru-inlägg eller en direktlänk till en bild eller video. Booru-länkar importerar taggar, betyg, källa osv. automatiskt.",
+                "hint": "Klistra in en URL till ett booru-inlägg eller en direktlänk till en bild eller video. Booru-länkar importerar taggar, betyg, källa osv. automatiskt. Du kan också ladda upp en textfil ovan som har en URL per rad för batchnedladdning.",
                 "fetch": "Hämta",
                 "fetching": "Hämtar...",
                 "added_to_queue": "Lagt till i uppladdningskö",
@@ -229,7 +229,8 @@
                 "error_fetch_failed": "Kunde inte kontrollera URL: {error}",
                 "error_proxy_failed": "Kunde inte ladda ned filen: {error}",
                 "error_empty_file": "Fjärrfilen är tom",
-                "error_import_failed": "Importen misslyckades: {error}"
+                "error_import_failed": "Importen misslyckades: {error}",
+                "batch_failed": "Kunde inte ladda ned {count} URL:er"
             }
         },
         "messages": {

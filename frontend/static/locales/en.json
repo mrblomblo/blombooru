@@ -210,7 +210,7 @@
                 "error_proxy_failed": "Failed to fetch image: {error}"
             },
             "url_import": {
-                "hint": "Paste a booru post URL or a direct link to an image or video. Booru links will import tags, rating, source, etc. automatically.",
+                "hint": "Paste a booru post URL or a direct link to an image or video. Booru links will import tags, rating, source, etc. automatically. You can also upload a text file above, containing one URL per line for batch downloading.",
                 "fetch": "Fetch",
                 "fetching": "Fetching...",
                 "added_to_queue": "Added to upload queue",
@@ -229,7 +229,8 @@
                 "error_fetch_failed": "Failed to check URL: {error}",
                 "error_proxy_failed": "Failed to download file: {error}",
                 "error_empty_file": "The remote file is empty",
-                "error_import_failed": "Import failed: {error}"
+                "error_import_failed": "Import failed: {error}",
+                "batch_failed": "Failed to download {count} URL(s)"
             }
         },
         "messages": {

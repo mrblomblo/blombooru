@@ -229,7 +229,8 @@
                 "error_fetch_failed": "",
                 "error_proxy_failed": "",
                 "error_empty_file": "",
-                "error_import_failed": ""
+                "error_import_failed": "",
+                "batch_failed": ""
             }
         },
         "messages": {
