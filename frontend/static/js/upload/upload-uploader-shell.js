@@ -320,10 +320,13 @@ class UploadUploaderShell {
             const mediaFiles = [];
             const sidecarFiles = new Map();
             const archiveFiles = [];
+            const textFiles = [];
 
             for (const file of files) {
                 if (window.FormatRegistry.isArchive(file.name)) {
                     archiveFiles.push(file);
+                } else if (this.isTextUrlListFile(file)) {
+                    textFiles.push(file);
                 } else if (this.isValidFile(file)) {
                     mediaFiles.push(file);
                 } else if (this.isSidecarFile(file)) {
@@ -335,6 +338,15 @@ class UploadUploaderShell {
 
             for (const archiveFile of archiveFiles) {
                 await this.handleArchive(archiveFile);
+            }
+
+            for (const textFile of textFiles) {
+                if (!window.urlImporter && typeof UrlImporter !== 'undefined') {
+                    window.urlImporter = new UrlImporter(this);
+                }
+                if (window.urlImporter && typeof window.urlImporter.importFromTextFile === 'function') {
+                    await window.urlImporter.importFromTextFile(textFile);
+                }
             }
 
             for (const file of mediaFiles) {
@@ -359,6 +371,12 @@ class UploadUploaderShell {
             if (this.fileInput) this.fileInput.value = '';
             if (this.pendingPanel) this.pendingPanel.refresh();
         }
+    }
+
+    isTextUrlListFile(file) {
+        if (!file || !file.name) return false;
+        const lower = file.name.toLowerCase();
+        return lower.endsWith('.txt') || file.type === 'text/plain';
     }
 
     isValidFile(file) {

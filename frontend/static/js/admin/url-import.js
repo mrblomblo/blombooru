@@ -45,6 +45,25 @@ class UrlImporter {
         this.statusArea.innerHTML = '';
     }
 
+    async importSingleUrl(url) {
+        const response = await fetch('/api/media/url-import/fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            if (response.status === 403 || (error.detail && error.detail.includes('403'))) {
+                throw new Error('errors.error_403');
+            }
+            throw new Error(error.detail || 'admin.media_management.url_import.fetch_error');
+        }
+
+        const media = await response.json();
+        await this.addToQueue(media);
+    }
+
     async fetchMedia() {
         const url = this.urlInput?.value?.trim();
         if (!url) return;
@@ -57,22 +76,7 @@ class UrlImporter {
         this.fetchBtn.disabled = true;
 
         try {
-            const response = await fetch('/api/media/url-import/fetch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                if (response.status === 403 || (error.detail && error.detail.includes('403'))) {
-                    throw new Error('errors.error_403');
-                }
-                throw new Error(error.detail || 'admin.media_management.url_import.fetch_error');
-            }
-
-            const media = await response.json();
-            await this.addToQueue(media);
+            await this.importSingleUrl(url);
             this.showStatus(window.i18n.t('admin.media_management.url_import.added_to_queue'), 'success');
             if (this.urlInput) this.urlInput.value = '';
 
@@ -87,6 +91,67 @@ class UrlImporter {
                 errorMsg = window.i18n.t(errorMsg) === errorMsg ? errorMsg : window.i18n.t(errorMsg);
             }
             this.showStatus(errorMsg, 'error');
+        } finally {
+            this.isFetching = false;
+            if (this.fetchBtn) this.fetchBtn.disabled = false;
+        }
+    }
+
+    async importFromTextFile(file) {
+        if (!file) return;
+        if (this.isFetching) return;
+        this.isFetching = true;
+        this.clearStatus();
+        if (this.fetchBtn) this.fetchBtn.disabled = true;
+
+        try {
+            const content = await file.text();
+            const lines = content.split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('#'));
+
+            if (lines.length === 0) {
+                return;
+            }
+
+            let successCount = 0;
+            let failedCount = 0;
+            const total = lines.length;
+
+            for (let i = 0; i < total; i++) {
+                const url = lines[i];
+                this.showStatus(`${window.i18n.t('admin.media_management.url_import.fetching')} (${i + 1}/${total})`, 'info');
+                try {
+                    await this.importSingleUrl(url);
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed to import URL from batch: ${url}`, e);
+                    failedCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                this.showStatus(window.i18n.t('admin.media_management.url_import.added_to_queue'), 'success');
+            } else {
+                this.clearStatus();
+            }
+
+            if (failedCount > 0) {
+                if (window.app && window.app.showNotification) {
+                    window.app.showNotification(
+                        window.i18n.t('admin.media_management.url_import.batch_failed', { count: failedCount }),
+                        'error'
+                    );
+                }
+            }
+        } catch (e) {
+            console.error('Error processing batch URL file:', e);
+            if (window.app && window.app.showNotification) {
+                window.app.showNotification(
+                    window.i18n.t('admin.media_management.url_import.batch_failed', { count: 1 }),
+                    'error'
+                );
+            }
         } finally {
             this.isFetching = false;
             this.fetchBtn.disabled = false;

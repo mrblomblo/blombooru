@@ -73,7 +73,13 @@ async def fetch_media_url(
                 "description": post.description,
             }
         except Exception as e:
-            logger.error(f"Booru fetch failed for {req.url}, falling back to direct probe: {e}")
+            logger.warning(f"Booru fetch failed for {req.url}, falling back to direct probe: {e}")
+            try:
+                data = probe_media_url(req.url)
+                data["is_booru_post"] = False
+                return data
+            except Exception:
+                pass
             if isinstance(e, requests.HTTPError):
                 if e.response.status_code == 403:
                     raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_access_denied_403")
