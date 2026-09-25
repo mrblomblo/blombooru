@@ -18,7 +18,7 @@ class AcknowledgementsModal {
 
     async open() {
         if (!this.cachedHtml) {
-            const t = (key, params) => (window.i18n ? window.i18n.t(key, params) : key);
+            const t = (key, params) => (window.i18n.t(key, params));
             try {
                 const response = await fetch('/api/acknowledgements');
                 if (!response.ok) {
@@ -45,7 +45,7 @@ class AcknowledgementsModal {
         overlay.id = 'acknowledgements-modal-overlay';
         overlay.className = 'age-verification-overlay';
 
-        const t = (key, params) => (window.i18n ? window.i18n.t(key, params) : key);
+        const t = (key, params) => (window.i18n.t(key, params));
         const currentLang = window.CURRENT_LANGUAGE || 'en';
         const showNotice = currentLang !== 'en';
 

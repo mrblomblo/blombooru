@@ -1382,7 +1382,7 @@ class AdminSystem {
                 if (status.notices && status.notices.length > 0) {
                     noticesDiv.classList.remove('hidden');
                     noticesDiv.innerHTML = status.notices.map(n => {
-                        const translated = window.i18n ? window.i18n.t(n) : n;
+                        const translated = window.i18n.t(n);
                         return `<div class="bg text-xs p-2 mb-1 border-l-4 border-warning text-warning font-bold">${this.app.escapeHtml(translated)}</div>`;
                     }).join('');
                 } else {
@@ -1414,7 +1414,7 @@ class AdminSystem {
             if (configNotice && status.config_files_changed && status.update_available) {
                 configNotice.classList.remove('hidden');
                 const fileNames = (status.changed_config_files || []).join(', ');
-                const msg = window.i18n ? window.i18n.t('admin.update.config_files_changed', { files: fileNames }) : `Configuration files changed: ${fileNames}`;
+                const msg = window.i18n.t('admin.update.config_files_changed', { files: fileNames });
                 if (configMessage) configMessage.textContent = msg;
                 if (configLinks) {
                     configLinks.innerHTML = Object.entries(status.asset_urls || {}).map(([name, url]) =>
@@ -1434,7 +1434,7 @@ class AdminSystem {
                 } else if (!status.update_available && status.deployment_type === 'local') {
                     updateBtn.style.display = 'block';
                     updateBtn.disabled = true;
-                    updateBtn.textContent = window.i18n ? window.i18n.t('admin.messages.already_latest') : 'Already up to date';
+                    updateBtn.textContent = window.i18n.t('admin.messages.already_latest');
                 } else {
                     updateBtn.style.display = 'none';
                 }
@@ -1452,7 +1452,7 @@ class AdminSystem {
                 const noticesDiv2 = document.getElementById('update-notices');
                 if (noticesDiv2) {
                     noticesDiv2.classList.remove('hidden');
-                    const msg = window.i18n ? window.i18n.t('admin.update.up_to_date') : 'You are running the latest version.';
+                    const msg = window.i18n.t('admin.update.up_to_date');
                     noticesDiv2.innerHTML = `<div class="text-xs tag-text p-2 border border-success bg-success bg-opacity-10">${this.app.escapeHtml(msg)}</div>`;
                 }
             }
@@ -1464,7 +1464,7 @@ class AdminSystem {
                 if (hasContent && status.update_available) {
                     changelogBtn.style.display = 'block';
                     const count = (status.commits || []).length;
-                    changelogBtn.textContent = window.i18n ? window.i18n.t('admin.messages.view_changelog', { count }) : `View Changelog (${count})`;
+                    changelogBtn.textContent = window.i18n.t('admin.messages.view_changelog', { count });
                 } else {
                     changelogBtn.style.display = 'none';
                 }
@@ -1473,7 +1473,7 @@ class AdminSystem {
         } catch (e) {
             console.error(e);
             if (loading) {
-                loading.textContent = window.i18n ? window.i18n.t('admin.messages.update_error', { error: e.message }) : `Error: ${e.message}`;
+                loading.textContent = window.i18n.t('admin.messages.update_error', { error: e.message });
                 loading.classList.remove('hidden');
                 loading.classList.add('text-danger');
             }
@@ -1490,7 +1490,7 @@ class AdminSystem {
             return;
         }
 
-        const t = (key, params) => window.i18n ? window.i18n.t(key, params) : key;
+        const t = (key, params) => window.i18n.t(key, params);
 
         const extractWhatsChanged = (body) => {
             if (!body) return '';
@@ -1573,9 +1573,9 @@ class AdminSystem {
             id: 'changelog-modal',
             type: 'info',
             confirmId: 'changelog-confirm-btn',
-            title: window.i18n ? window.i18n.t('modal.changelog.title') : 'Changelog',
+            title: window.i18n.t('modal.changelog.title'),
             message: tabsHtml,
-            confirmText: window.i18n ? window.i18n.t('common.got_it') : 'Got it',
+            confirmText: window.i18n.t('common.got_it'),
             cancelText: '',
             onConfirm: () => {
                 modal.destroy();
@@ -1608,7 +1608,7 @@ class AdminSystem {
     async performUpdate() {
         if (typeof ModalHelper === 'undefined') {
             console.error('ModalHelper not available');
-            if (!confirm(window.i18n ? window.i18n.t('notifications.admin.update_confirm', { target: 'latest' }) : 'Update now?')) return;
+            if (!confirm(window.i18n.t('notifications.admin.update_confirm', { target: 'latest' }))) return;
             this._execute_update();
             return;
         }
@@ -1618,10 +1618,10 @@ class AdminSystem {
             type: 'warning',
             confirmId: 'update-confirm-yes',
             cancelId: 'update-confirm-no',
-            title: window.i18n ? window.i18n.t('common.system_update') : 'System Update',
-            message: window.i18n ? window.i18n.t('modal.system_update.message', { target: 'latest' }) : 'Are you sure you want to update?',
-            confirmText: window.i18n ? window.i18n.t('modal.system_update.confirm') : 'Update Now',
-            cancelText: window.i18n ? window.i18n.t('common.cancel') : 'Cancel',
+            title: window.i18n.t('common.system_update'),
+            message: window.i18n.t('modal.system_update.message', { target: 'latest' }),
+            confirmText: window.i18n.t('modal.system_update.confirm'),
+            cancelText: window.i18n.t('common.cancel'),
             onConfirm: () => {
                 this._execute_update();
                 modal.destroy();
@@ -1638,7 +1638,7 @@ class AdminSystem {
         const resultDiv = document.getElementById('update-result');
         const resultLog = document.getElementById('update-result-log');
         if (resultDiv) resultDiv.classList.remove('hidden');
-        if (resultLog) resultLog.textContent = window.i18n ? window.i18n.t('admin.messages.update_started') : 'Starting update...';
+        if (resultLog) resultLog.textContent = window.i18n.t('admin.messages.update_started');
 
         try {
             const response = await app.apiCall('/api/system/update/perform', {
@@ -1652,14 +1652,14 @@ class AdminSystem {
 
             if (response.success) {
                 app.showNotification(
-                    window.i18n ? window.i18n.t('notifications.admin.update_initiated') : 'Update initiated',
+                    window.i18n.t('notifications.admin.update_initiated'),
                     'success'
                 );
             }
         } catch (e) {
             if (resultLog) resultLog.textContent += `\nError: ${e.message}`;
             app.showNotification(
-                window.i18n ? window.i18n.t('notifications.admin.update_failed', { error: e.message }) : `Update failed: ${e.message}`,
+                window.i18n.t('notifications.admin.update_failed', { error: e.message }),
                 'error'
             );
         }
