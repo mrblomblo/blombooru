@@ -1208,8 +1208,9 @@
             "no_new_albums": "Нет новых альбомов",
             "already_exists": "",
             "new_album": "",
-            "skip_album": "",
             "rename_album": "",
+            "remove_tag_confirm": "",
+            "remove_album_confirm": "",
             "used_in_media": "Используется в {count} медиафайле(-ах). Кликните для их выбора.",
             "media_count": "{count} медиафайл(-а/ов)"
         },

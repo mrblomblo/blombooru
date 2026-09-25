@@ -1207,8 +1207,9 @@
             "no_new_albums": "No new albums pending.",
             "already_exists": "Already exists, will link",
             "new_album": "New album",
-            "skip_album": "Skip album creation",
             "rename_album": "Rename album",
+            "remove_tag_confirm": "Remove pending tag \"{tag}\"?",
+            "remove_album_confirm": "Remove pending album \"{album}\"?",
             "used_in_media": "Used in {count} media item(s). Click to select them.",
             "media_count": "{count} media"
         },

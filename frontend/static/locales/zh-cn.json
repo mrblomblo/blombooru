@@ -1207,8 +1207,9 @@
             "no_new_albums": "",
             "already_exists": "",
             "new_album": "",
-            "skip_album": "",
             "rename_album": "",
+            "remove_tag_confirm": "",
+            "remove_album_confirm": "",
             "used_in_media": "",
             "media_count": ""
         },

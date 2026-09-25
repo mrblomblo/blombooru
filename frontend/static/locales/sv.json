@@ -1207,8 +1207,9 @@
             "no_new_albums": "Inga nya album väntar.",
             "already_exists": "Finns redan, länkas",
             "new_album": "Nytt album",
-            "skip_album": "Hoppa över att skapa album",
             "rename_album": "Byt namn på album",
+            "remove_tag_confirm": "Ta bort väntande tagg \"{tag}\"?",
+            "remove_album_confirm": "Ta bort väntande album \"{album}\"?",
             "used_in_media": "Använt i {count} medieobjekt. Klicka för att välja dem.",
             "media_count": "{count} medieobjekt"
         },
