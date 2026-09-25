@@ -119,6 +119,24 @@ class UploadMediaEditor {
         return html;
     }
 
+    getAlbumFullPath(album, albumMap) {
+        if (!album) return '';
+        const parts = [album.name];
+        let curr = album.parent_id;
+        const visited = new Set([album.id]);
+        while (curr && albumMap.has(curr) && !visited.has(curr)) {
+            visited.add(curr);
+            const parent = albumMap.get(curr);
+            if (parent && parent.name) {
+                parts.unshift(parent.name);
+                curr = parent.parent_id;
+            } else {
+                break;
+            }
+        }
+        return parts.join('/');
+    }
+
     getFolderAlbumExcludedIds(item) {
         const ids = new Set();
         if (!item) return ids;
@@ -132,9 +150,12 @@ class UploadMediaEditor {
         }
 
         if (item.suggested_album_path && this.allAlbums && this.allAlbums.length > 0) {
-            const leafName = item.suggested_album_path.split('/').pop().toLowerCase();
+            const albumMap = new Map(this.allAlbums.map(a => [a.id, a]));
+            const normPath = item.suggested_album_path.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase();
+
             this.allAlbums.forEach(alb => {
-                if (alb.name && alb.name.toLowerCase() === leafName) {
+                const fullPath = this.getAlbumFullPath(alb, albumMap).toLowerCase();
+                if (fullPath && fullPath === normPath) {
                     ids.add(alb.id);
                 }
             });
@@ -215,7 +236,7 @@ class UploadMediaEditor {
                         <div id="editor-single-rating" class="custom-select w-full" data-value="${item.rating || 'safe'}">
                             <div class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors">
                                 <span class="custom-select-value text capitalize">${item.rating || 'safe'}</span>
-                                ${window.Icons.selectArrow({ size: 10, class: 'custom-select-arrow flex-shrink-0 text-secondary' })}
+                                ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary', style: 'display: block;' })}
                             </div>
                             <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50">
                                 <div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs ${item.rating === 'safe' ? 'selected' : ''}" data-value="safe">${window.i18n.t('common.safe')}</div>
@@ -243,7 +264,7 @@ class UploadMediaEditor {
                         ${window.i18n.t('common.description')}
                     </label>
                     <textarea id="editor-single-description" rows="2"
-                        class="w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
+                        class="auto-expand-textarea w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
                         placeholder="${this.escapeHtml(descPlaceholder)}">${this.escapeHtml(item.description || '')}</textarea>
                 </div>
 
@@ -276,7 +297,7 @@ class UploadMediaEditor {
                     <div id="editor-single-album-select" class="custom-select w-full" data-value="">
                         <div class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors">
                             <span class="custom-select-value text text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
-                            ${window.Icons.selectArrow({ size: 10, class: 'custom-select-arrow flex-shrink-0 text-secondary' })}
+                            ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary', style: 'display: block;' })}
                         </div>
                         <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50">
                             ${this.renderAlbumOptionsHtml(singleExcludedIds)}
@@ -301,7 +322,7 @@ class UploadMediaEditor {
                     <label class="block text-xs font-bold mb-1">
                         ${window.i18n.t('upload.preview.final_tags')}
                     </label>
-                    <div id="editor-single-final-tags-chips" class="p-2 bg border min-h-8.5 flex flex-wrap gap-1 text-xs items-center"></div>
+                    <div id="editor-single-final-tags-chips" class="p-2 bg border min-h-8.5 flex flex-wrap gap-1 text-xs items-center max-w-full min-w-0"></div>
                 </div>
             </div>
         `;
@@ -417,7 +438,7 @@ class UploadMediaEditor {
                         <div id="editor-bulk-rating" class="custom-select w-full" data-value="${shared.rating || ''}">
                             <div class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors">
                                 <span class="custom-select-value text ${shared.rating ? 'capitalize' : 'text-secondary'}">${shared.rating ? shared.rating : (window.i18n.t('upload.bulk.choose_rating'))}</span>
-                                ${window.Icons.selectArrow({ size: 10, class: 'custom-select-arrow flex-shrink-0 text-secondary' })}
+                                ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary', style: 'display: block;' })}
                             </div>
                             <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50">
                                 <div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs ${!shared.rating ? 'selected' : ''}" data-value="">${window.i18n.t('upload.bulk.choose_rating')}</div>
@@ -452,7 +473,7 @@ class UploadMediaEditor {
                     </label>
                     <div class="flex flex-col gap-1.5">
                         <textarea id="editor-bulk-description" rows="2"
-                            class="w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
+                            class="auto-expand-textarea w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
                             placeholder="${this.escapeHtml(descPlaceholder)}">${this.escapeHtml(shared.description || '')}</textarea>
                         <div class="flex justify-end">
                             <button type="button" id="editor-bulk-apply-desc-btn" class="btn-primary text-xs px-2.5 py-1 cursor-pointer">
@@ -492,7 +513,7 @@ class UploadMediaEditor {
                         <div id="editor-bulk-album-select" class="custom-select flex-1" data-value="">
                             <div class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors">
                                 <span class="custom-select-value text text-secondary">${window.i18n.t('upload.base_settings.select_album')}</span>
-                                ${window.Icons.selectArrow({ size: 10, class: 'custom-select-arrow flex-shrink-0 text-secondary' })}
+                                ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200 text-secondary', style: 'display: block;' })}
                             </div>
                             <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50">
                                 ${this.renderAlbumOptionsHtml(bulkExcludedIds)}
@@ -518,7 +539,7 @@ class UploadMediaEditor {
                     <label class="block text-xs font-bold mb-1">
                         ${window.i18n.t('upload.bulk.common_tags')}
                     </label>
-                    <div id="editor-bulk-common-tags-chips" class="p-2 bg border min-h-8.5 flex flex-wrap gap-1 text-xs items-center"></div>
+                    <div id="editor-bulk-common-tags-chips" class="p-2 bg border min-h-8.5 flex flex-wrap gap-1 text-xs items-center max-w-full min-w-0"></div>
                 </div>
             </div>
         `;
@@ -540,26 +561,23 @@ class UploadMediaEditor {
         if (removeBulkBtn) {
             removeBulkBtn.addEventListener('click', () => {
                 if (itemIds.length === 0) return;
+                const doDelete = () => {
+                    itemIds.forEach(id => this.session.deleteItem(id));
+                    if (this.options.onItemsDeleted) {
+                        this.options.onItemsDeleted(itemIds);
+                    }
+                };
                 if (typeof ModalHelper !== 'undefined') {
                     new ModalHelper({
                         type: 'danger',
                         title: window.i18n.t('modal.bulk_delete.title_single'),
                         message: window.i18n.t('upload.bulk.delete_confirm', { count: itemIds.length }),
                         confirmText: window.i18n.t('common.yes_remove'),
-                        onConfirm: () => {
-                            itemIds.forEach(id => this.session.deleteItem(id));
-                            if (this.options.onItemsDeleted) {
-                                this.options.onItemsDeleted(itemIds);
-                            }
-                        }
+                        cancelText: window.i18n.t('common.cancel'),
+                        onConfirm: doDelete
                     }).show();
                 } else {
-                    if (confirm(window.i18n.t('upload.bulk.delete_confirm', { count: itemIds.length }))) {
-                        itemIds.forEach(id => this.session.deleteItem(id));
-                        if (this.options.onItemsDeleted) {
-                            this.options.onItemsDeleted(itemIds);
-                        }
-                    }
+                    doDelete();
                 }
             });
         }
@@ -602,6 +620,12 @@ class UploadMediaEditor {
 
         // Bulk Description
         const descInput = this.container.querySelector('#editor-bulk-description');
+        if (descInput) {
+            this.autoResizeTextarea(descInput);
+            descInput.addEventListener('input', (e) => {
+                this.autoResizeTextarea(e.target);
+            });
+        }
         const descApplyBtn = this.container.querySelector('#editor-bulk-description-apply-btn');
         const applyBulkDescription = async () => {
             const description = descInput?.value.trim();
@@ -810,26 +834,23 @@ class UploadMediaEditor {
         if (removeBtn) {
             removeBtn.addEventListener('click', () => {
                 const id = item.item_id;
+                const doDelete = () => {
+                    this.session.deleteItem(id);
+                    if (this.options.onItemsDeleted) {
+                        this.options.onItemsDeleted([id]);
+                    }
+                };
                 if (typeof ModalHelper !== 'undefined') {
                     new ModalHelper({
                         type: 'danger',
                         title: window.i18n.t('upload.preview.remove_item_title'),
                         message: window.i18n.t('upload.preview.remove_confirm'),
                         confirmText: window.i18n.t('common.yes'),
-                        onConfirm: () => {
-                            this.session.deleteItem(id);
-                            if (this.options.onItemsDeleted) {
-                                this.options.onItemsDeleted([id]);
-                            }
-                        }
+                        cancelText: window.i18n.t('common.cancel'),
+                        onConfirm: doDelete
                     }).show();
                 } else {
-                    if (confirm(window.i18n.t('upload.preview.remove_confirm'))) {
-                        this.session.deleteItem(id);
-                        if (this.options.onItemsDeleted) {
-                            this.options.onItemsDeleted([id]);
-                        }
-                    }
+                    doDelete();
                 }
             });
         }
@@ -857,7 +878,9 @@ class UploadMediaEditor {
         // Description textarea
         const descInput = this.container.querySelector('#editor-single-description');
         if (descInput) {
+            this.autoResizeTextarea(descInput);
             descInput.addEventListener('input', (e) => {
+                this.autoResizeTextarea(e.target);
                 item.description = e.target.value.trim();
                 this.debouncedSave(item.item_id, { description: item.description });
             });
@@ -1031,6 +1054,30 @@ class UploadMediaEditor {
         this.saveTimeout = setTimeout(() => {
             this.session.updateItem(itemId, data, { silent: true });
         }, 500);
+    }
+
+    autoResizeTextarea(textarea) {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        const computed = window.getComputedStyle(textarea);
+        let lineHeight = parseFloat(computed.lineHeight);
+        if (isNaN(lineHeight)) {
+            const fontSize = parseFloat(computed.fontSize) || 12;
+            lineHeight = fontSize * 1.4;
+        }
+        const paddingTop = parseFloat(computed.paddingTop) || 0;
+        const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+        const borderTop = parseFloat(computed.borderTopWidth) || 0;
+        const borderBottom = parseFloat(computed.borderBottomWidth) || 0;
+        const verticalPadding = paddingTop + paddingBottom + borderTop + borderBottom;
+
+        const minHeight = (lineHeight * 2) + verticalPadding;
+        const maxHeight = (lineHeight * 5) + verticalPadding;
+
+        const scrollHeight = textarea.scrollHeight;
+        const targetHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+        textarea.style.height = `${targetHeight}px`;
+        textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
 }
 

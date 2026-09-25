@@ -22,16 +22,16 @@ class TagPreview {
 
         const dedupedTags = [];
         const seenNames = new Set();
-        
+
         for (const t of tags) {
             if (!t || !t.name) continue;
             const lower = t.name.toLowerCase();
             if (!seenNames.has(lower)) {
                 seenNames.add(lower);
-                dedupedTags.push({...t}); // Clone to avoid mutating caller's objects
+                dedupedTags.push({ ...t }); // Clone to avoid mutating caller's objects
             }
         }
-        
+
         if (this.options.resolveAliases) {
             try {
                 const names = dedupedTags.map(t => t.name);
@@ -40,13 +40,13 @@ class TagPreview {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ names })
                 });
-                
+
                 if (seq !== this._tagUpdateSeq) return;
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     const resolved = data.resolved || {};
-                    
+
                     for (const t of dedupedTags) {
                         const originalName = t.name.toLowerCase();
                         if (resolved[originalName] !== undefined) {
@@ -78,7 +78,7 @@ class TagPreview {
                 this.tags.push(t);
             }
         }
-        
+
         this.render();
     }
 
@@ -127,7 +127,7 @@ class TagPreview {
 
         if (unconfirmedTags.length > 0) {
             html += `
-                <div class="flex flex-wrap gap-1 w-full mb-2 pb-2 border-b">
+                <div class="flex flex-wrap gap-1 w-full mb-2 pb-2 border-b max-w-full min-w-0">
                     ${unconfirmedTags.map(t => this.renderDropdownTag(t, 'grayscale ' + (t.category || 'general'))).join('')}
                 </div>
             `;
@@ -137,10 +137,10 @@ class TagPreview {
             const catTags = tagsByCategory[cat];
             if (catTags && catTags.length > 0) {
                 html += `
-                    <div class="flex flex-wrap items-center gap-1 w-full mb-1">
+                    <div class="flex flex-wrap items-center gap-1 w-full mb-1 max-w-full min-w-0">
                         ${catTags.map(t => (t.is_new && this.options.allowCategoryChange)
                     ? this.renderDropdownTag(t, cat)
-                    : `<span class="text-xs tag-text tag ${cat}">${this.escapeHtml(t.name)}</span>`
+                    : `<span class="text-xs tag-text tag ${cat} truncate max-w-full inline-block min-w-0" title="${this.escapeHtml(t.name)}">${this.escapeHtml(t.name)}</span>`
                 ).join('')}
                     </div>
                 `;
@@ -156,11 +156,11 @@ class TagPreview {
         const actualColorClass = (typeof colorClass === 'string') ? colorClass : cat;
         const grayscaleClass = (!tag.user_assigned) ? 'grayscale' : '';
         return `
-            <div class="custom-select booru-tag-select inline-block align-middle" data-value="${cat}" data-tag="${this.escapeHtml(tag.name)}">
-                <div class="custom-select-trigger tag-text tag ${actualColorClass} ${grayscaleClass} cursor-pointer select-none" style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                    <span class="text-xs">${this.escapeHtml(tag.name)}</span>
+            <div class="custom-select booru-tag-select inline-flex max-w-full min-w-0 align-middle shrink" data-value="${cat}" data-tag="${this.escapeHtml(tag.name)}">
+                <div class="custom-select-trigger tag-text tag ${actualColorClass} ${grayscaleClass} cursor-pointer select-none max-w-full min-w-0 !inline-flex items-center gap-1 flex-nowrap" style="white-space: nowrap; display: inline-flex;">
+                    <span class="text-xs truncate min-w-0 flex-1" title="${this.escapeHtml(tag.name)}">${this.escapeHtml(tag.name)}</span>
                     <span class="custom-select-value" style="display: none;"></span>
-                    ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200', style: 'display: block;' })}
+                    ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow shrink-0 transition-transform duration-200' })}
                 </div>
                 <div class="custom-select-dropdown bg border border-primary max-h-40 overflow-y-auto shadow-lg z-50 min-w-25">
                     <div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs ${cat === 'general' ? 'selected' : ''}" data-value="general">${window.i18n.t('common.tag_category_general')}</div>
