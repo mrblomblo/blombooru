@@ -1,6 +1,22 @@
 class AdminContent {
     constructor(adminPanel) {
         this.app = adminPanel;
+        this.isScanning = false;
+        this.scanAbortController = null;
+        this._scanOriginalText = null;
+    }
+
+    cancelScan() {
+        if (this.scanAbortController) {
+            this.scanAbortController.abort();
+            this.scanAbortController = null;
+        }
+        this.isScanning = false;
+        const scanBtn = document.getElementById('scan-media-btn');
+        if (scanBtn && this._scanOriginalText) {
+            scanBtn.disabled = false;
+            scanBtn.textContent = this._scanOriginalText;
+        }
     }
 
     parseTagWithCategory(tagString) {
@@ -359,6 +375,11 @@ class AdminContent {
     async scanMedia() {
         const scanBtn = document.getElementById('scan-media-btn');
         const originalText = scanBtn.textContent;
+        this._scanOriginalText = originalText;
+        this.isScanning = true;
+        this.scanAbortController = new AbortController();
+        const signal = this.scanAbortController.signal;
+
         scanBtn.disabled = true;
         scanBtn.textContent = window.i18n.t('admin.actions.scanning');
 
@@ -366,6 +387,10 @@ class AdminContent {
             const result = await app.apiCall('/api/admin/scan-media', {
                 method: 'POST'
             });
+
+            if (signal.aborted || (window.uploaderInstance?.isAborted?.())) {
+                return;
+            }
 
             if (result.new_files === 0) {
                 app.showNotification(window.i18n.t('notifications.admin.no_untracked_media'), 'info');
@@ -392,6 +417,9 @@ class AdminContent {
             let duplicateCount = 0;
 
             for (const filePath of result.files) {
+                if (signal.aborted || uploader.isAborted?.()) {
+                    break;
+                }
                 try {
                     // Check if file is already in the upload queue
                     if (uploader.isFileQueued(filePath)) {
@@ -402,13 +430,23 @@ class AdminContent {
                     scanBtn.textContent = window.i18n.t('admin.messages.scan_progress', { current: loadedCount + 1, total: result.new_files });
 
                     // Add to uploader
-                    await uploader.addScannedFile(filePath);
+                    await uploader.addScannedFile(filePath, null, { signal });
+                    if (signal.aborted || uploader.isAborted?.()) {
+                        break;
+                    }
                     loadedCount++;
 
                 } catch (error) {
+                    if (error.name === 'AbortError' || signal.aborted || uploader.isAborted?.()) {
+                        break;
+                    }
                     console.error(`Error loading file ${filePath}:`, error);
                     skippedCount++;
                 }
+            }
+
+            if (signal.aborted || uploader.isAborted?.()) {
+                return;
             }
 
             // Show results
@@ -430,9 +468,14 @@ class AdminContent {
             app.showNotification(message, notificationType);
 
         } catch (error) {
+            if (error.name === 'AbortError' || signal.aborted || (window.uploaderInstance?.isAborted?.())) {
+                return;
+            }
             console.error('Scan error:', error);
             app.showNotification(error.message, 'error', window.i18n.t('notifications.admin.error_scanning_media'));
         } finally {
+            this.isScanning = false;
+            this.scanAbortController = null;
             scanBtn.disabled = false;
             scanBtn.textContent = originalText;
         }
