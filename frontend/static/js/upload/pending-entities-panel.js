@@ -49,6 +49,7 @@ class PendingEntitiesPanel {
         this.session.on('itemUpdated', () => this.debouncedRefresh());
         this.session.on('itemRemoved', () => this.debouncedRefresh());
         this.session.on('sessionCleared', () => {
+            clearTimeout(this.refreshTimeout);
             this.pendingData = { pending_tags: [], pending_albums: [] };
             this.collapsedPaths.clear();
             this.currentSelectedIds.clear();

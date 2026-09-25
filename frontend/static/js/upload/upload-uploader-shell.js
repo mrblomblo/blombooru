@@ -13,6 +13,9 @@ class UploadUploaderShell {
         this.queueGrid = null;
         this.pendingPanel = null;
         this.isProcessingFiles = false;
+        this.uploadAbortController = null;
+        this._currentArchiveUploadId = null;
+        this._originalUploadText = null;
 
         if (this.uploadArea) {
             this.init();
@@ -160,10 +163,14 @@ class UploadUploaderShell {
         const count = this.session.getItemCount();
         const queueSection = document.getElementById('upload-review-section');
         const submitControls = document.getElementById('submit-controls');
+        const submitBtn = document.getElementById('upload-submit-btn');
 
-        if (count > 0) {
+        if (count > 0 || this.isProcessingFiles) {
             if (queueSection) queueSection.style.display = 'block';
             if (submitControls) submitControls.style.display = 'flex';
+            if (submitBtn) {
+                submitBtn.disabled = this.session.isCommitting || count === 0;
+            }
 
             // Check if folder mapping controls should be displayed
             const items = this.session.getAllItems();
@@ -306,14 +313,62 @@ class UploadUploaderShell {
         return null;
     }
 
+    isAborted() {
+        return this.uploadAbortController ? this.uploadAbortController.signal.aborted : false;
+    }
+
+    abortAllUploads() {
+        if (this.uploadAbortController) {
+            this.uploadAbortController.abort();
+            this.uploadAbortController = null;
+        }
+        if (window.urlImporter && typeof window.urlImporter.cancel === 'function') {
+            window.urlImporter.cancel();
+        }
+        if (window.adminPanel?.content?.cancelScan) {
+            window.adminPanel.content.cancelScan();
+        }
+        if (this.session) {
+            this.session.abortPendingOperations();
+        }
+        if (this._currentArchiveUploadId) {
+            this.cleanupArchive(this._currentArchiveUploadId);
+            this._currentArchiveUploadId = null;
+        }
+        this.isProcessingFiles = false;
+        const uploadText = this.uploadArea?.querySelector('p');
+        this.uploadArea?.classList.remove('opacity-50', 'pointer-events-none');
+        if (uploadText && this._originalUploadText) {
+            uploadText.textContent = this._originalUploadText;
+        }
+        if (this.fileInput) this.fileInput.value = '';
+        this.updateUIState();
+    }
+
+    cleanupArchive(uploadId) {
+        if (!uploadId) return;
+        fetch(`/api/media/archive-cleanup/${uploadId}`, {
+            method: 'DELETE',
+            keepalive: true
+        }).catch(() => {});
+    }
+
     async handleFiles(files) {
         if (this.isProcessingFiles) return;
         this.isProcessingFiles = true;
 
+        if (this.uploadAbortController) {
+            this.uploadAbortController.abort();
+        }
+        this.uploadAbortController = new AbortController();
+        const signal = this.uploadAbortController.signal;
+
         const uploadText = this.uploadArea?.querySelector('p');
         const origText = uploadText?.textContent;
+        this._originalUploadText = origText;
         if (uploadText) uploadText.textContent = window.i18n.t('upload.progress.uploading');
         this.uploadArea?.classList.add('opacity-50', 'pointer-events-none');
+        this.updateUIState();
 
         try {
             const folderMappingMode = this.getFolderMappingMode();
@@ -337,19 +392,22 @@ class UploadUploaderShell {
             }
 
             for (const archiveFile of archiveFiles) {
-                await this.handleArchive(archiveFile);
+                if (signal.aborted) break;
+                await this.handleArchive(archiveFile, signal);
             }
 
             for (const textFile of textFiles) {
+                if (signal.aborted) break;
                 if (!window.urlImporter && typeof UrlImporter !== 'undefined') {
                     window.urlImporter = new UrlImporter(this);
                 }
                 if (window.urlImporter && typeof window.urlImporter.importFromTextFile === 'function') {
-                    await window.urlImporter.importFromTextFile(textFile);
+                    await window.urlImporter.importFromTextFile(textFile, signal);
                 }
             }
 
             for (const file of mediaFiles) {
+                if (signal.aborted) break;
                 const relPath = (file._relativePath || file.webkitRelativePath || file.name).replace(/\\/g, '/');
                 const matchedSidecar = this.findMatchingSidecar(file, relPath, sidecarFiles);
 
@@ -357,9 +415,13 @@ class UploadUploaderShell {
                     relativePath: relPath,
                     folderMappingMode: folderMappingMode,
                     sidecar: matchedSidecar,
+                    signal: signal,
                 });
             }
         } catch (e) {
+            if (e.name === 'AbortError' || signal.aborted) {
+                return;
+            }
             console.error('Error staging files:', e);
             if (window.app && window.app.showNotification) {
                 window.app.showNotification(window.i18n.t(e.message), 'error');
@@ -369,6 +431,7 @@ class UploadUploaderShell {
             this.uploadArea?.classList.remove('opacity-50', 'pointer-events-none');
             if (uploadText && origText) uploadText.textContent = origText;
             if (this.fileInput) this.fileInput.value = '';
+            this.updateUIState();
             if (this.pendingPanel) this.pendingPanel.refresh();
         }
     }
@@ -383,12 +446,16 @@ class UploadUploaderShell {
         return FormatRegistry.isValidFile(file);
     }
 
-    async handleArchive(archiveFile) {
+    async handleArchive(archiveFile, signal = null) {
         const CHUNK_SIZE = 99 * 1024 * 1024;
         const totalChunks = Math.ceil(archiveFile.size / CHUNK_SIZE);
         let uploadId = null;
 
         for (let i = 0; i < totalChunks; i++) {
+            if (signal?.aborted) {
+                if (uploadId) this.cleanupArchive(uploadId);
+                return;
+            }
             const start = i * CHUNK_SIZE;
             const end = Math.min(start + CHUNK_SIZE, archiveFile.size);
             const chunk = archiveFile.slice(start, end);
@@ -403,6 +470,7 @@ class UploadUploaderShell {
             const chunkResponse = await fetch('/api/media/archive-chunk', {
                 method: 'POST',
                 body: chunkForm,
+                signal: signal,
             });
 
             if (!chunkResponse.ok) {
@@ -410,7 +478,15 @@ class UploadUploaderShell {
             }
 
             const chunkData = await chunkResponse.json();
-            if (i === 0) uploadId = chunkData.upload_id;
+            if (i === 0) {
+                uploadId = chunkData.upload_id;
+                this._currentArchiveUploadId = uploadId;
+            }
+        }
+
+        if (signal?.aborted) {
+            if (uploadId) this.cleanupArchive(uploadId);
+            return;
         }
 
         const extractForm = new FormData();
@@ -419,6 +495,7 @@ class UploadUploaderShell {
         const response = await fetch('/api/media/extract-archive', {
             method: 'POST',
             body: extractForm,
+            signal: signal,
         });
 
         if (!response.ok) {
@@ -428,8 +505,12 @@ class UploadUploaderShell {
         const result = await response.json();
 
         for (const fData of (result.files || [])) {
+            if (signal?.aborted) {
+                if (uploadId) this.cleanupArchive(uploadId);
+                return;
+            }
             const fileUrl = fData.url || `/api/media/archive-file/${uploadId}/${fData.file_id}`;
-            const fileResp = await fetch(fileUrl);
+            const fileResp = await fetch(fileUrl, { signal: signal });
             if (!fileResp.ok) {
                 console.warn(`Failed to fetch extracted archive file ${fData.filename}`);
                 continue;
@@ -441,7 +522,7 @@ class UploadUploaderShell {
             let sidecarFile = null;
             if (fData.sidecar_url) {
                 try {
-                    const sidecarResp = await fetch(fData.sidecar_url);
+                    const sidecarResp = await fetch(fData.sidecar_url, { signal: signal });
                     if (sidecarResp.ok) {
                         const sidecarBlob = await sidecarResp.blob();
                         sidecarFile = new File([sidecarBlob], fData.sidecar_filename || `${fData.filename}.json`, {
@@ -449,14 +530,28 @@ class UploadUploaderShell {
                         });
                     }
                 } catch (e) {
+                    if (e.name === 'AbortError' || signal?.aborted) throw e;
                     console.warn(`Failed to fetch archive sidecar for ${fData.filename}:`, e);
                 }
+            }
+
+            if (signal?.aborted) {
+                if (uploadId) this.cleanupArchive(uploadId);
+                return;
             }
 
             await this.session.uploadFile(file, {
                 relativePath: file._relativePath,
                 sidecar: sidecarFile,
+                signal: signal,
             });
+        }
+
+        if (uploadId) {
+            this.cleanupArchive(uploadId);
+            if (this._currentArchiveUploadId === uploadId) {
+                this._currentArchiveUploadId = null;
+            }
         }
     }
 
@@ -511,8 +606,15 @@ class UploadUploaderShell {
     }
 
     async cancelAll() {
+        const cancelBtn = document.getElementById('upload-cancel-btn');
         const doCancel = async () => {
-            await this.session.cancelSession();
+            if (cancelBtn) cancelBtn.disabled = true;
+            try {
+                this.abortAllUploads();
+                await this.session.cancelSession();
+            } finally {
+                if (cancelBtn) cancelBtn.disabled = false;
+            }
         };
         if (typeof ModalHelper !== 'undefined') {
             new ModalHelper({
@@ -529,19 +631,29 @@ class UploadUploaderShell {
     }
 
     // Compatibility methods for untracked scanner and booru import
-    async addScannedFile(fileOrPath, originalPath) {
+    async addScannedFile(fileOrPath, originalPath, options = {}) {
+        if (this.isAborted()) {
+            return null;
+        }
+        const signal = options.signal || this.uploadAbortController?.signal;
         if (typeof fileOrPath === 'string') {
-            await this.session.addUntrackedFile(fileOrPath);
+            await this.session.addUntrackedFile(fileOrPath, { ...options, signal });
         } else if (originalPath && typeof originalPath === 'string') {
-            await this.session.addUntrackedFile(originalPath);
+            await this.session.addUntrackedFile(originalPath, { ...options, signal });
         } else if (fileOrPath && typeof fileOrPath.name === 'string' && this.isValidFile(fileOrPath)) {
             await this.session.uploadFile(fileOrPath, {
                 relativePath: originalPath || fileOrPath.name,
+                ...options,
+                signal,
             });
         }
     }
 
-    async addBooruImport(file, metadata) {
+    async addBooruImport(file, metadata, options = {}) {
+        if (this.isAborted()) {
+            return null;
+        }
+        const signal = options.signal || this.uploadAbortController?.signal;
         await this.session.uploadFile(file, {
             relativePath: file.name,
             baseRating: metadata.rating || 'safe',
@@ -551,6 +663,8 @@ class UploadUploaderShell {
             baseDescription: metadata.description || '',
             categoryHints: metadata.categoryHints || null,
             userAssignedTags: metadata.userAssignedTags || null,
+            ...options,
+            signal,
         });
     }
 

@@ -4,6 +4,8 @@ class UploadSession {
         this.items = new Map();
         this.isUploading = false;
         this.isCommitting = false;
+        this.isCancelling = false;
+        this.sessionAbortController = new AbortController();
         this.listeners = {
             itemAdded: [],
             itemUpdated: [],
@@ -24,6 +26,32 @@ class UploadSession {
         });
     }
 
+    _getSignal(options = {}) {
+        const optionSignal = options.signal;
+        const sessionSignal = this.sessionAbortController?.signal;
+
+        if (optionSignal && sessionSignal) {
+            if (typeof AbortSignal.any === 'function') {
+                return AbortSignal.any([optionSignal, sessionSignal]);
+            }
+            if (optionSignal.aborted) return optionSignal;
+            if (sessionSignal.aborted) return sessionSignal;
+            const controller = new AbortController();
+            const onAbort = () => controller.abort();
+            optionSignal.addEventListener('abort', onAbort, { once: true });
+            sessionSignal.addEventListener('abort', onAbort, { once: true });
+            return controller.signal;
+        }
+        return optionSignal || sessionSignal;
+    }
+
+    abortPendingOperations() {
+        if (this.sessionAbortController) {
+            this.sessionAbortController.abort();
+            this.sessionAbortController = new AbortController();
+        }
+    }
+
     on(event, callback) {
         if (this.listeners[event]) {
             this.listeners[event].push(callback);
@@ -42,12 +70,17 @@ class UploadSession {
         }
     }
 
-    async ensureSession() {
+    async ensureSession(options = {}) {
+        if (this.isCancelling) {
+            throw new DOMException('Upload session is being cancelled', 'AbortError');
+        }
         if (this.sessionId) return this.sessionId;
 
+        const signal = this._getSignal(options);
         const response = await fetch('/api/uploads/sessions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: signal,
         });
 
         if (!response.ok) {
@@ -61,7 +94,13 @@ class UploadSession {
     }
 
     async uploadFile(file, options = {}) {
-        await this.ensureSession();
+        if (this.isCancelling || options.signal?.aborted) {
+            throw new DOMException('Upload operation aborted', 'AbortError');
+        }
+        await this.ensureSession(options);
+        if (this.isCancelling || options.signal?.aborted) {
+            throw new DOMException('Upload operation aborted', 'AbortError');
+        }
 
         const formData = new FormData();
         formData.append('file', file, file.name);
@@ -97,9 +136,11 @@ class UploadSession {
             formData.append('user_assigned_tags', JSON.stringify(options.userAssignedTags));
         }
 
+        const signal = this._getSignal(options);
         const response = await fetch(`/api/uploads/sessions/${this.sessionId}/files`, {
             method: 'POST',
             body: formData,
+            signal: signal,
         });
 
         if (!response.ok) {
@@ -108,13 +149,22 @@ class UploadSession {
         }
 
         const item = await response.json();
+        if (this.isCancelling || options.signal?.aborted) {
+            return null;
+        }
         this.items.set(item.item_id, item);
         this.emit('itemAdded', item);
         return item;
     }
 
     async addUntrackedFile(filePath, options = {}) {
-        await this.ensureSession();
+        if (this.isCancelling || options.signal?.aborted) {
+            throw new DOMException('Upload operation aborted', 'AbortError');
+        }
+        await this.ensureSession(options);
+        if (this.isCancelling || options.signal?.aborted) {
+            throw new DOMException('Upload operation aborted', 'AbortError');
+        }
 
         const payload = {
             file_path: filePath,
@@ -128,10 +178,12 @@ class UploadSession {
             user_assigned_tags: options.userAssignedTags ? JSON.stringify(options.userAssignedTags) : null,
         };
 
+        const signal = this._getSignal(options);
         const response = await fetch(`/api/uploads/sessions/${this.sessionId}/untracked-files`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            signal: signal,
         });
 
         if (!response.ok) {
@@ -140,6 +192,9 @@ class UploadSession {
         }
 
         const item = await response.json();
+        if (this.isCancelling || options.signal?.aborted) {
+            return null;
+        }
         this.items.set(item.item_id, item);
         this.emit('itemAdded', item);
         return item;
@@ -372,23 +427,24 @@ class UploadSession {
     }
 
     async cancelSession() {
-        if (!this.sessionId) {
-            this.items.clear();
-            this.emit('sessionCleared', null);
-            return;
-        }
+        this.isCancelling = true;
+        this.abortPendingOperations();
 
-        try {
-            await fetch(`/api/uploads/sessions/${this.sessionId}`, {
-                method: 'DELETE',
-            });
-        } catch (e) {
-            console.warn('Error deleting upload session:', e);
-        } finally {
-            this.sessionId = null;
-            this.items.clear();
-            this.emit('sessionCleared', null);
+        const targetSessionId = this.sessionId;
+        this.sessionId = null;
+        this.items.clear();
+        this.emit('sessionCleared', null);
+
+        if (targetSessionId) {
+            try {
+                await fetch(`/api/uploads/sessions/${targetSessionId}`, {
+                    method: 'DELETE',
+                });
+            } catch (e) {
+                console.warn('Error deleting upload session:', e);
+            }
         }
+        this.isCancelling = false;
     }
 
     getItem(itemId) {

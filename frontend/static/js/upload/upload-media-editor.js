@@ -40,6 +40,12 @@ class UploadMediaEditor {
         this.selectedIds = newSelectedIds;
         this.activeItemId = newActiveItemId;
 
+        if (newSelectedIds.size === 0) {
+            clearTimeout(this.saveTimeout);
+            clearTimeout(this.tagSaveTimeout);
+            clearTimeout(this.bulkTagSaveTimeout);
+        }
+
         if (isSame && this.container.firstElementChild && !force) {
             return;
         }
