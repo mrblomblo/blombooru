@@ -272,6 +272,10 @@ span.checked .filter-check-icon {
     transition: opacity 0.2s;
     font-weight: 500;
     cursor: default;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
 }
 
 a.tag {
@@ -764,6 +768,53 @@ video:focus-visible {
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
 }
 
+.custom-select:not(.open) .custom-select-dropdown {
+    display: none;
+}
+
+.pending-tag-item {
+    max-width: 100%;
+}
+
+.booru-tag-select {
+    max-width: 100%;
+}
+
+.custom-select-trigger.tag,
+.custom-select-trigger.tag-text {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.custom-select-trigger.tag .custom-select-arrow,
+.custom-select-trigger.tag-text .custom-select-arrow {
+    flex-shrink: 0;
+}
+
+.pending-album-item {
+    border-left: 3px solid transparent;
+}
+
+.pending-album-item.is-all-selected {
+    border-left-color: var(--primary-color);
+}
+
+.auto-expand-textarea {
+    field-sizing: content;
+    min-height: calc(2 * 1.4em + 0.75rem);
+    max-height: calc(5 * 1.4em + 0.75rem);
+    overflow-y: auto;
+    resize: none;
+}
+
+@media (max-width: 640px) {
+    .custom-select-dropdown {
+        max-width: min(240px, calc(100vw - 32px));
+    }
+}
+
 .custom-select.open .custom-select-trigger {
     border-color: var(--primary-color);
 }
@@ -1063,8 +1114,8 @@ video:focus-visible {
 
 .changelog-content pre:last-child,
 .acknowledgements-content pre:last-child,
-.acknowledgement-card > :last-child,
-.acknowledgement-preamble > :last-child {
+.acknowledgement-card> :last-child,
+.acknowledgement-preamble> :last-child {
     margin-bottom: 0;
 }
 

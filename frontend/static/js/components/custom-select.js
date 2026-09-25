@@ -81,6 +81,22 @@ class CustomSelect {
         this.element.classList.add('open');
         this.focusedIndex = -1;
 
+        if (this.dropdown) {
+            this.dropdown.style.left = '';
+            this.dropdown.style.right = '';
+            let rect = this.dropdown.getBoundingClientRect();
+            if (rect.right > window.innerWidth - 8) {
+                this.dropdown.style.left = 'auto';
+                this.dropdown.style.right = '0';
+                rect = this.dropdown.getBoundingClientRect();
+            }
+            if (rect.left < 8) {
+                const parentRect = this.element.getBoundingClientRect();
+                this.dropdown.style.left = `${Math.max(0, 8 - parentRect.left)}px`;
+                this.dropdown.style.right = 'auto';
+            }
+        }
+
         const selected = this.dropdown.querySelector('.selected');
         if (selected) {
             selected.scrollIntoView({ block: 'nearest' });
@@ -91,6 +107,10 @@ class CustomSelect {
         this.element.classList.remove('open');
         this.focusedIndex = -1;
         this.clearFocused();
+        if (this.dropdown) {
+            this.dropdown.style.left = '';
+            this.dropdown.style.right = '';
+        }
     }
 
     selectOption(option, triggerEvent = true) {
