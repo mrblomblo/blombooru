@@ -9,6 +9,7 @@ from .enums import (ApiKeyPermissionEnum, FileTypeEnum, RatingEnum,
 class TagBase(BaseModel):
     name: str
     category: TagCategoryEnum = TagCategoryEnum.general
+    rating: str = None
 
 class TagCreate(TagBase):
     pass
