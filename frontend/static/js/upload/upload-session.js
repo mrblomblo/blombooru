@@ -145,7 +145,10 @@ class UploadSession {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.detail || `Failed to upload file ${file.name}`);
+            const error = new Error(err.detail || `Failed to upload file ${file.name}`);
+            error.status = response.status;
+            error.detail = err.detail;
+            throw error;
         }
 
         const item = await response.json();
@@ -155,6 +158,37 @@ class UploadSession {
         this.items.set(item.item_id, item);
         this.emit('itemAdded', item);
         return item;
+    }
+
+    static isDuplicateError(err) {
+        if (!err) return false;
+        if (err.status === 409) return true;
+        const msg = String(err.message || '');
+        const detail = String(err.detail || '');
+        return msg.includes('error_duplicate') || detail.includes('error_duplicate');
+    }
+
+    static isSystemicError(err) {
+        if (!err) return false;
+        const status = err.status;
+        if (status === 401) return true;
+        const msg = String(err.message || '');
+        const detail = String(err.detail || '');
+        if (status === 404) {
+            return msg.toLowerCase().includes('session') || detail.toLowerCase().includes('session');
+        }
+        if (status === 403) {
+            return !msg.includes('Access denied') && !detail.includes('Access denied');
+        }
+        return false;
+    }
+
+    isDuplicateError(err) {
+        return UploadSession.isDuplicateError(err);
+    }
+
+    isSystemicError(err) {
+        return UploadSession.isSystemicError(err);
     }
 
     async addUntrackedFile(filePath, options = {}) {
@@ -188,7 +222,10 @@ class UploadSession {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.detail || `Failed to add untracked file ${filePath}`);
+            const error = new Error(err.detail || `Failed to add untracked file ${filePath}`);
+            error.status = response.status;
+            error.detail = err.detail;
+            throw error;
         }
 
         const item = await response.json();

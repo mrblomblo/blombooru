@@ -55,6 +55,9 @@ class I18n {
      */
     t(key, params = {}) {
         if (!key) return '';
+        if (typeof key === 'object') {
+            return this.t(key.key || key.message, { ...key.params, ...params });
+        }
         if (typeof key === 'string' && key.includes(':::')) {
             const [baseKey, arg] = key.split(':::');
             const mergedParams = { error: arg, filename: arg, ...params };

@@ -350,7 +350,15 @@ class UploadUploaderShell {
         fetch(`/api/media/archive-cleanup/${uploadId}`, {
             method: 'DELETE',
             keepalive: true
-        }).catch(() => {});
+        }).catch(() => { });
+    }
+
+    isDuplicateError(err) {
+        return UploadSession.isDuplicateError(err);
+    }
+
+    isSystemicError(err) {
+        return UploadSession.isSystemicError(err);
     }
 
     async handleFiles(files) {
@@ -369,6 +377,12 @@ class UploadUploaderShell {
         if (uploadText) uploadText.textContent = window.i18n.t('upload.progress.uploading');
         this.uploadArea?.classList.add('opacity-50', 'pointer-events-none');
         this.updateUIState();
+
+        let totalStaged = 0;
+        let totalDuplicates = 0;
+        let totalFailed = 0;
+        let lastDuplicateMsg = null;
+        let lastFailedMsg = null;
 
         try {
             const folderMappingMode = this.getFolderMappingMode();
@@ -393,7 +407,46 @@ class UploadUploaderShell {
 
             for (const archiveFile of archiveFiles) {
                 if (signal.aborted) break;
-                await this.handleArchive(archiveFile, signal);
+                try {
+                    const archiveStats = await this.handleArchive(archiveFile, signal, { folderMappingMode });
+                    if (archiveStats) {
+                        totalStaged += archiveStats.staged || 0;
+                        totalDuplicates += archiveStats.duplicates || 0;
+                        totalFailed += archiveStats.failed || 0;
+                        if (archiveStats.lastDuplicateMsg) {
+                            lastDuplicateMsg = archiveStats.lastDuplicateMsg;
+                        }
+                        if (archiveStats.lastFailedMsg) {
+                            lastFailedMsg = archiveStats.lastFailedMsg;
+                        }
+                    }
+                } catch (archiveErr) {
+                    if (archiveErr.archiveStats) {
+                        totalStaged += archiveErr.archiveStats.staged || 0;
+                        totalDuplicates += archiveErr.archiveStats.duplicates || 0;
+                        totalFailed += archiveErr.archiveStats.failed || 0;
+                        if (archiveErr.archiveStats.lastDuplicateMsg) {
+                            lastDuplicateMsg = archiveErr.archiveStats.lastDuplicateMsg;
+                        }
+                        if (archiveErr.archiveStats.lastFailedMsg) {
+                            lastFailedMsg = archiveErr.archiveStats.lastFailedMsg;
+                        }
+                    }
+                    if (archiveErr.name === 'AbortError' || signal.aborted) break;
+                    console.error(`Failed to process archive ${archiveFile.name}:`, archiveErr);
+                    if (window.app && window.app.showNotification) {
+                        window.app.showNotification(
+                            window.i18n.t('upload.progress.extracted_error', {
+                                filename: archiveFile.name,
+                                error: archiveErr.message || ''
+                            }),
+                            'error'
+                        );
+                    }
+                    if (this.isSystemicError(archiveErr)) {
+                        break;
+                    }
+                }
             }
 
             for (const textFile of textFiles) {
@@ -406,17 +459,71 @@ class UploadUploaderShell {
                 }
             }
 
-            for (const file of mediaFiles) {
+            const totalMedia = mediaFiles.length;
+            for (let i = 0; i < totalMedia; i++) {
                 if (signal.aborted) break;
+                const file = mediaFiles[i];
+                if (uploadText) {
+                    uploadText.textContent = window.i18n.t('upload.progress.uploading_progress', {
+                        current: i + 1,
+                        total: totalMedia,
+                    });
+                }
                 const relPath = (file._relativePath || file.webkitRelativePath || file.name).replace(/\\/g, '/');
                 const matchedSidecar = this.findMatchingSidecar(file, relPath, sidecarFiles);
 
-                await this.session.uploadFile(file, {
-                    relativePath: relPath,
-                    folderMappingMode: folderMappingMode,
-                    sidecar: matchedSidecar,
-                    signal: signal,
-                });
+                try {
+                    const stagedItem = await this.session.uploadFile(file, {
+                        relativePath: relPath,
+                        folderMappingMode: folderMappingMode,
+                        sidecar: matchedSidecar,
+                        signal: signal,
+                    });
+                    if (stagedItem) {
+                        totalStaged++;
+                    }
+                } catch (fileErr) {
+                    if (fileErr.name === 'AbortError' || signal.aborted) break;
+                    if (this.isDuplicateError(fileErr)) {
+                        totalDuplicates++;
+                        lastDuplicateMsg = fileErr.message || fileErr.detail;
+                        console.warn(`Skipping duplicate file ${file.name}:`, fileErr);
+                    } else {
+                        totalFailed++;
+                        lastFailedMsg = fileErr.message || fileErr.detail;
+                        console.error(`Error uploading file ${file.name}:`, fileErr);
+                        if (this.isSystemicError(fileErr)) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!signal.aborted && window.app && window.app.showNotification) {
+                if (totalDuplicates > 0) {
+                    if (totalStaged === 0 && totalDuplicates === 1 && totalFailed === 0 && lastDuplicateMsg) {
+                        window.app.showNotification(window.i18n.t(lastDuplicateMsg), 'warning');
+                    } else {
+                        window.app.showNotification(
+                            window.i18n.t('upload.progress.duplicates_skipped', { count: totalDuplicates }),
+                            'warning'
+                        );
+                    }
+                }
+                if (totalFailed > 0) {
+                    if (totalFailed === 1 && lastFailedMsg) {
+                        window.app.showNotification(window.i18n.t(lastFailedMsg), 'error');
+                    } else if (lastFailedMsg) {
+                        const countMsg = window.i18n.t('upload.progress.failed', { count: totalFailed });
+                        const detailMsg = window.i18n.t(lastFailedMsg);
+                        window.app.showNotification(`${countMsg} (${detailMsg})`, 'error');
+                    } else {
+                        window.app.showNotification(
+                            window.i18n.t('upload.progress.failed', { count: totalFailed }),
+                            'error'
+                        );
+                    }
+                }
             }
         } catch (e) {
             if (e.name === 'AbortError' || signal.aborted) {
@@ -446,111 +553,197 @@ class UploadUploaderShell {
         return FormatRegistry.isValidFile(file);
     }
 
-    async handleArchive(archiveFile, signal = null) {
+    async handleArchive(archiveFile, signal = null, options = {}) {
         const CHUNK_SIZE = 99 * 1024 * 1024;
         const totalChunks = Math.ceil(archiveFile.size / CHUNK_SIZE);
         let uploadId = null;
+        let stagedCount = 0;
+        let duplicateCount = 0;
+        let failedCount = 0;
+        let lastDuplicateMsg = null;
+        let lastFailedMsg = null;
 
-        for (let i = 0; i < totalChunks; i++) {
-            if (signal?.aborted) {
-                if (uploadId) this.cleanupArchive(uploadId);
-                return;
-            }
-            const start = i * CHUNK_SIZE;
-            const end = Math.min(start + CHUNK_SIZE, archiveFile.size);
-            const chunk = archiveFile.slice(start, end);
+        const uploadText = this.uploadArea?.querySelector('p');
 
-            const chunkForm = new FormData();
-            chunkForm.append('file', chunk, archiveFile.name);
-            if (uploadId) chunkForm.append('upload_id', uploadId);
-            chunkForm.append('chunk_index', i.toString());
-            chunkForm.append('total_chunks', totalChunks.toString());
-            chunkForm.append('filename', archiveFile.name);
+        try {
+            for (let i = 0; i < totalChunks; i++) {
+                if (signal?.aborted) {
+                    return { staged: stagedCount, duplicates: duplicateCount, failed: failedCount, lastDuplicateMsg, lastFailedMsg };
+                }
+                const start = i * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, archiveFile.size);
+                const chunk = archiveFile.slice(start, end);
 
-            const chunkResponse = await fetch('/api/media/archive-chunk', {
-                method: 'POST',
-                body: chunkForm,
-                signal: signal,
-            });
+                const chunkForm = new FormData();
+                chunkForm.append('file', chunk, archiveFile.name);
+                if (uploadId) chunkForm.append('upload_id', uploadId);
+                chunkForm.append('chunk_index', i.toString());
+                chunkForm.append('total_chunks', totalChunks.toString());
+                chunkForm.append('filename', archiveFile.name);
 
-            if (!chunkResponse.ok) {
-                throw new Error(`Failed to upload archive chunk ${i + 1}/${totalChunks}`);
-            }
+                const chunkResponse = await fetch('/api/media/archive-chunk', {
+                    method: 'POST',
+                    body: chunkForm,
+                    signal: signal,
+                });
 
-            const chunkData = await chunkResponse.json();
-            if (i === 0) {
-                uploadId = chunkData.upload_id;
-                this._currentArchiveUploadId = uploadId;
-            }
-        }
+                if (!chunkResponse.ok) {
+                    throw new Error(`Failed to upload archive chunk ${i + 1}/${totalChunks}`);
+                }
 
-        if (signal?.aborted) {
-            if (uploadId) this.cleanupArchive(uploadId);
-            return;
-        }
-
-        const extractForm = new FormData();
-        extractForm.append('upload_id', uploadId);
-
-        const response = await fetch('/api/media/extract-archive', {
-            method: 'POST',
-            body: extractForm,
-            signal: signal,
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to extract archive');
-        }
-
-        const result = await response.json();
-
-        for (const fData of (result.files || [])) {
-            if (signal?.aborted) {
-                if (uploadId) this.cleanupArchive(uploadId);
-                return;
-            }
-            const fileUrl = fData.url || `/api/media/archive-file/${uploadId}/${fData.file_id}`;
-            const fileResp = await fetch(fileUrl, { signal: signal });
-            if (!fileResp.ok) {
-                console.warn(`Failed to fetch extracted archive file ${fData.filename}`);
-                continue;
-            }
-            const blob = await fileResp.blob();
-            const file = new File([blob], fData.filename, { type: fData.mime_type || blob.type });
-            file._relativePath = fData.path || fData.filename;
-
-            let sidecarFile = null;
-            if (fData.sidecar_url) {
-                try {
-                    const sidecarResp = await fetch(fData.sidecar_url, { signal: signal });
-                    if (sidecarResp.ok) {
-                        const sidecarBlob = await sidecarResp.blob();
-                        sidecarFile = new File([sidecarBlob], fData.sidecar_filename || `${fData.filename}.json`, {
-                            type: 'application/octet-stream'
-                        });
-                    }
-                } catch (e) {
-                    if (e.name === 'AbortError' || signal?.aborted) throw e;
-                    console.warn(`Failed to fetch archive sidecar for ${fData.filename}:`, e);
+                const chunkData = await chunkResponse.json();
+                if (i === 0) {
+                    uploadId = chunkData.upload_id;
+                    this._currentArchiveUploadId = uploadId;
                 }
             }
 
             if (signal?.aborted) {
-                if (uploadId) this.cleanupArchive(uploadId);
-                return;
+                return { staged: stagedCount, duplicates: duplicateCount, failed: failedCount, lastDuplicateMsg, lastFailedMsg };
             }
 
-            await this.session.uploadFile(file, {
-                relativePath: file._relativePath,
-                sidecar: sidecarFile,
+            if (uploadText) {
+                uploadText.textContent = window.i18n.t('upload.progress.extracting', { filename: archiveFile.name });
+            }
+
+            const extractForm = new FormData();
+            extractForm.append('upload_id', uploadId);
+
+            const response = await fetch('/api/media/extract-archive', {
+                method: 'POST',
+                body: extractForm,
                 signal: signal,
             });
-        }
 
-        if (uploadId) {
-            this.cleanupArchive(uploadId);
-            if (this._currentArchiveUploadId === uploadId) {
-                this._currentArchiveUploadId = null;
+            if (!response.ok) {
+                throw new Error('Failed to extract archive');
+            }
+
+            const result = await response.json();
+            const extractedFiles = result.files || [];
+            const totalExtracted = extractedFiles.length;
+
+            for (let i = 0; i < totalExtracted; i++) {
+                if (signal?.aborted) {
+                    break;
+                }
+                const fData = extractedFiles[i];
+
+                if (uploadText) {
+                    uploadText.textContent = window.i18n.t('upload.progress.uploading_progress', {
+                        current: i + 1,
+                        total: totalExtracted,
+                    });
+                }
+
+                const fileUrl = fData.url || `/api/media/archive-file/${uploadId}/${fData.file_id}`;
+                let fileResp;
+                try {
+                    fileResp = await fetch(fileUrl, { signal: signal });
+                } catch (fetchErr) {
+                    if (fetchErr.name === 'AbortError' || signal?.aborted) break;
+                    console.warn(`Failed to fetch extracted archive file ${fData.filename}:`, fetchErr);
+                    failedCount++;
+                    lastFailedMsg = {
+                        key: 'upload.progress.file_fetch_error',
+                        params: { filename: fData.filename, error: fetchErr.message || '' }
+                    };
+                    continue;
+                }
+
+                if (!fileResp.ok) {
+                    console.warn(`Failed to fetch extracted archive file ${fData.filename}: HTTP ${fileResp.status}`);
+                    failedCount++;
+                    lastFailedMsg = {
+                        key: 'upload.progress.file_fetch_error',
+                        params: { filename: fData.filename, error: `HTTP ${fileResp.status}` }
+                    };
+                    if (fileResp.status === 401 || fileResp.status === 403) {
+                        break;
+                    }
+                    continue;
+                }
+                let blob;
+                try {
+                    blob = await fileResp.blob();
+                } catch (blobErr) {
+                    if (blobErr.name === 'AbortError' || signal?.aborted) break;
+                    console.warn(`Failed to read blob for ${fData.filename}:`, blobErr);
+                    failedCount++;
+                    lastFailedMsg = {
+                        key: 'upload.progress.file_fetch_error',
+                        params: { filename: fData.filename, error: blobErr.message || '' }
+                    };
+                    continue;
+                }
+                const file = new File([blob], fData.filename, { type: fData.mime_type || blob.type });
+                file._relativePath = fData.path || fData.filename;
+
+                let sidecarFile = null;
+                if (fData.sidecar_url) {
+                    try {
+                        const sidecarResp = await fetch(fData.sidecar_url, { signal: signal });
+                        if (sidecarResp.ok) {
+                            const sidecarBlob = await sidecarResp.blob();
+                            sidecarFile = new File([sidecarBlob], fData.sidecar_filename || `${fData.filename}.json`, {
+                                type: 'application/octet-stream'
+                            });
+                        }
+                    } catch (e) {
+                        if (e.name === 'AbortError' || signal?.aborted) throw e;
+                        console.warn(`Failed to fetch archive sidecar for ${fData.filename}:`, e);
+                    }
+                }
+
+                if (signal?.aborted) {
+                    break;
+                }
+
+                try {
+                    const stagedItem = await this.session.uploadFile(file, {
+                        relativePath: file._relativePath,
+                        folderMappingMode: options.folderMappingMode || this.getFolderMappingMode(),
+                        sidecar: sidecarFile,
+                        signal: signal,
+                    });
+                    if (stagedItem) {
+                        stagedCount++;
+                    }
+                } catch (stageErr) {
+                    if (stageErr.name === 'AbortError' || signal?.aborted) {
+                        break;
+                    }
+                    if (this.isDuplicateError(stageErr)) {
+                        duplicateCount++;
+                        lastDuplicateMsg = stageErr.message || stageErr.detail;
+                        console.warn(`Skipping duplicate file in archive ${archiveFile.name}: ${fData.filename}`, stageErr);
+                    } else {
+                        failedCount++;
+                        lastFailedMsg = stageErr.message || stageErr.detail;
+                        console.error(`Error uploading file in archive ${archiveFile.name}: ${fData.filename}`, stageErr);
+                        if (this.isSystemicError(stageErr)) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return { staged: stagedCount, duplicates: duplicateCount, failed: failedCount, lastDuplicateMsg, lastFailedMsg };
+        } catch (err) {
+            err.archiveStats = {
+                staged: stagedCount,
+                duplicates: duplicateCount,
+                failed: failedCount,
+                lastDuplicateMsg,
+                lastFailedMsg,
+            };
+            throw err;
+        } finally {
+            if (uploadId) {
+                this.cleanupArchive(uploadId);
+                if (this._currentArchiveUploadId === uploadId) {
+                    this._currentArchiveUploadId = null;
+                }
             }
         }
     }
@@ -585,6 +778,12 @@ class UploadUploaderShell {
 
             if (window.app && window.app.showNotification) {
                 window.app.showNotification(window.i18n.t('upload.progress.upload_success', { count: result.total_created }), 'success');
+                if (result.total_duplicates > 0) {
+                    window.app.showNotification(
+                        window.i18n.t('upload.progress.duplicates_skipped', { count: result.total_duplicates }),
+                        'warning'
+                    );
+                }
             }
 
             // Refresh media statistics if available
