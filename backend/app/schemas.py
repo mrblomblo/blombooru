@@ -54,7 +54,7 @@ class MediaResponse(MediaBase):
     share_language: Optional[str] = None
     source: Optional[str] = None
     description: Optional[str] = None
-    description_enlarged: bool = False
+    description_enlarged: Optional[bool] = False
     parent_id: Optional[int] = None
     has_children: bool = False
     tags: List[TagResponse] = []
