@@ -40,7 +40,7 @@ from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.media_sort import apply_media_sort
 from ..utils.search_parser import (apply_custom_filters_or,
                                    apply_search_criteria, parse_search_query)
-from ..utils.thumbnail_generator import generate_thumbnail
+from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT, thumbnail_mime_type
 from ..utils.transcoder import (get_transcoded_path_for_original,
                                 transcode_media_if_needed)
 
@@ -163,7 +163,7 @@ async def update_from_source(
 
             if media.thumbnail_path:
                 old_thumb = settings.BASE_DIR / media.thumbnail_path
-                new_thumb_name = Path(new_unique).stem + ".jpg"
+                new_thumb_name = Path(new_unique).stem + old_thumb.suffix
                 new_thumb = settings.THUMBNAIL_DIR / new_thumb_name
                 if old_thumb.exists():
                     old_thumb.rename(new_thumb)
@@ -226,7 +226,7 @@ async def update_from_source(
                 old_thumb = settings.BASE_DIR / media.thumbnail_path
                 old_thumb.unlink(missing_ok=True)
 
-            thumb_name = Path(media.filename).stem + ".jpg"
+            thumb_name = Path(media.filename).stem + THUMBNAIL_EXT
             thumb_path = settings.THUMBNAIL_DIR / thumb_name
             thumb_source = (settings.BASE_DIR / new_meta["transcoded_path"]) if new_meta.get("transcoded_path") else old_file
             generate_thumbnail(thumb_source, thumb_path, new_meta["file_type"])
@@ -372,7 +372,7 @@ async def update_file_finalize(
             old_thumb = settings.BASE_DIR / media.thumbnail_path
             old_thumb.unlink(missing_ok=True)
 
-        thumb_name = Path(target_filename).stem + ".jpg"
+        thumb_name = Path(target_filename).stem + THUMBNAIL_EXT
         thumb_path = settings.THUMBNAIL_DIR / thumb_name
         thumb_source = (settings.BASE_DIR / new_meta["transcoded_path"]) if new_meta.get("transcoded_path") else target_file
         generate_thumbnail(thumb_source, thumb_path, new_meta["file_type"])
@@ -585,7 +585,7 @@ def process_and_save_media(
     metadata = process_media_file(file_path, precalculated_hash=file_hash)
     logger.debug(f"Media processed: {metadata}")
 
-    thumbnail_filename = Path(unique_filename).stem + ".jpg"
+    thumbnail_filename = Path(unique_filename).stem + THUMBNAIL_EXT
     thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
 
     logger.debug(f"Generating thumbnail: {thumbnail_filename}")
@@ -1292,7 +1292,7 @@ async def get_media_thumbnail(media_id: int):
     finally:
         db.close()
 
-    return await serve_media_file(thumb_path, "image/jpeg", "Thumbnail file not found")
+    return await serve_media_file(thumb_path, thumbnail_mime_type(thumb_path), "Thumbnail file not found")
 
 @router.get("/{media_id}/metadata")
 async def get_media_metadata(

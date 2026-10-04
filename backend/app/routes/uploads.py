@@ -34,7 +34,7 @@ from ..utils.logger import logger
 from ..utils.media_helpers import extract_media_metadata, get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.request_helpers import safe_error_detail
-from ..utils.thumbnail_generator import generate_thumbnail
+from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT, thumbnail_mime_type
 from ..utils.transcoder import transcode_media_if_needed
 from ..services.metadata_parsers import get_parser_for_file
 from .media import preview_or_create_tags, update_tag_counts
@@ -239,7 +239,7 @@ def _process_and_stage_item(
         duration = None
 
     # Generate preview thumbnail in session thumbs dir
-    thumb_path = thumbs_dir / f"{item_id}.jpg"
+    thumb_path = thumbs_dir / f"{item_id}{THUMBNAIL_EXT}"
     try:
         generate_thumbnail(file_path, thumb_path, file_type)
     except Exception as e:
@@ -556,9 +556,9 @@ async def get_staged_item_thumbnail(
 ):
     """Serve the temporary preview thumbnail of a staged item."""
     session_dir = _get_session_dir(session_id)
-    thumb_path = session_dir / "thumbs" / f"{item_id}.jpg"
+    thumb_path = session_dir / "thumbs" / f"{item_id}{THUMBNAIL_EXT}"
     if thumb_path.exists():
-        return FileResponse(str(thumb_path), media_type="image/jpeg")
+        return FileResponse(str(thumb_path), media_type=thumbnail_mime_type(thumb_path))
 
     # Fallback to source or raw file if thumbnail wasn't generated
     meta = _load_session_meta(session_dir)
@@ -628,7 +628,7 @@ async def analyze_staged_item(
         item["mime_type"] = media_info.get("mime_type")
         item["duration"] = media_info.get("duration")
 
-        thumb_path = session_dir / "thumbs" / f"{item_id}.jpg"
+        thumb_path = session_dir / "thumbs" / f"{item_id}{THUMBNAIL_EXT}"
         generate_thumbnail(media_path, thumb_path, item["file_type"])
 
         # Re-evaluate current tags with DB
@@ -858,7 +858,7 @@ async def delete_staged_item(
         staged_filename = items[item_id].get("staged_filename")
         if staged_filename:
             (session_dir / "raw" / staged_filename).unlink(missing_ok=True)
-        (session_dir / "thumbs" / f"{item_id}.jpg").unlink(missing_ok=True)
+        (session_dir / "thumbs" / f"{item_id}{THUMBNAIL_EXT}").unlink(missing_ok=True)
 
         del items[item_id]
         if len(items) == 0:
@@ -1278,7 +1278,7 @@ async def commit_upload_session(
                 rel_transcoded = str(transcoded_file_path.relative_to(settings.BASE_DIR)) if transcoded_file_path else None
 
                 # Generate final thumbnail
-                thumb_filename = Path(unique_filename).stem + ".jpg"
+                thumb_filename = Path(unique_filename).stem + THUMBNAIL_EXT
                 thumb_dest_path = settings.THUMBNAIL_DIR / thumb_filename
                 file_type_str = item.get("file_type", "image")
                 thumb_source = transcoded_file_path if transcoded_file_path else dest_path

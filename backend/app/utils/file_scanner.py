@@ -97,7 +97,7 @@ def find_untracked_media(db: Session) -> dict:
 def relink_media_files(db: Session) -> dict:
     """Scan original_dir and re-link database records for moved or renamed files based on hash."""
     from .cache import invalidate_media_cache, invalidate_media_item_cache
-    from .thumbnail_generator import generate_thumbnail
+    from .thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 
     original_dir = settings.ORIGINAL_DIR
     base_dir = settings.BASE_DIR
@@ -194,8 +194,8 @@ def relink_media_files(db: Session) -> dict:
                         thumb_missing = False
 
                 if thumb_missing:
-                    hash_thumb = thumbnail_dir / f"{media.hash}.jpg"
-                    stem_thumb = thumbnail_dir / f"{Path(new_filename).stem}.jpg"
+                    hash_thumb = thumbnail_dir / f"{media.hash}{THUMBNAIL_EXT}"
+                    stem_thumb = thumbnail_dir / f"{Path(new_filename).stem}{THUMBNAIL_EXT}"
                     if hash_thumb.exists():
                         media.thumbnail_path = str(hash_thumb.relative_to(base_dir))
                     elif stem_thumb.exists():

@@ -22,7 +22,7 @@ from ..services.booru import normalize_domain, upsert_booru_config
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
 from ..utils.logger import logger
-from ..utils.thumbnail_generator import generate_thumbnail
+from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 from ..utils.transcoder import transcode_media_if_needed
 
 # Constants for batch processing
@@ -398,7 +398,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         transcoded_rel_path = str(transcoded_file.relative_to(settings.BASE_DIR)) if transcoded_file else None
 
         # Generate thumbnail
-        thumb_filename = f"{target_path.stem}.jpg"
+        thumb_filename = f"{target_path.stem}{THUMBNAIL_EXT}"
         thumb_path = settings.THUMBNAIL_DIR / thumb_filename
         thumb_source = transcoded_file if transcoded_file else target_path
         try:

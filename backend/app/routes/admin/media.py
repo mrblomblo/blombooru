@@ -9,7 +9,7 @@ from ...database import get_db
 from ...models import Media, User
 from ...utils.file_scanner import find_untracked_media, relink_media_files
 from ...utils.logger import logger
-from ...utils.thumbnail_generator import generate_thumbnail
+from ...utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -307,7 +307,7 @@ def _do_regenerate_all_thumbnails(db: Session) -> dict:
             failed += 1
             continue
 
-        thumbnail_filename = f"{item.hash}.jpg"
+        thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
         thumbnail_path = thumbnail_dir / thumbnail_filename
 
         try:
@@ -379,7 +379,7 @@ def _do_generate_missing_thumbnails(db: Session) -> dict:
             failed += 1
             continue
 
-        thumbnail_filename = f"{item.hash}.jpg"
+        thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
         thumbnail_path = thumbnail_dir / thumbnail_filename
 
         try:

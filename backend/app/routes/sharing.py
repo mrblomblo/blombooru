@@ -12,6 +12,7 @@ from ..utils.media_helpers import (create_stripped_media_cache,
                                    get_media_cache_status,
                                    serve_media_file)
 from ..utils.rate_limiter import shared_limiter
+from ..utils.thumbnail_generator import thumbnail_mime_type
 
 router = APIRouter(prefix="/api/shared", tags=["sharing"])
 
@@ -88,7 +89,7 @@ async def get_shared_thumbnail(share_uuid: str, request: Request):
     finally:
         db.close()
 
-    return await serve_media_file(thumb_path, "image/jpeg", "Thumbnail file not found")
+    return await serve_media_file(thumb_path, thumbnail_mime_type(thumb_path), "Thumbnail file not found")
 
 @router.get("/{share_uuid}/metadata")
 async def get_shared_metadata(share_uuid: str, request: Request, db: Session = Depends(get_db)):

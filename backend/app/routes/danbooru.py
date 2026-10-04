@@ -222,7 +222,7 @@ def format_media_response(media: Media, base_url: str, auth_key: Optional[str] =
 
     # A. Thumbnail
     if has_thumb:
-        variants.append({"type": "180x180", "url": preview_url, "width": 180, "height": 180, "file_ext": "jpg"})
+        variants.append({"type": "180x180", "url": preview_url, "width": 180, "height": 180, "file_ext": "webp"})
 
     # B. Sample
     variants.append({"type": "sample", "url": file_url, "width": width, "height": height, "file_ext": file_ext})

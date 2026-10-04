@@ -20,7 +20,7 @@ from ..utils.cache import (invalidate_media_cache, invalidate_tag_cache)
 from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
-from ..utils.thumbnail_generator import generate_thumbnail
+from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 from ..utils.url_security import UrlValidationError, validate_url_not_ssrf
 from .media import get_or_create_tags, update_tag_counts
 
@@ -182,7 +182,7 @@ async def download_and_import(
         metadata = process_media_file(file_path, precalculated_hash=file_hash)
 
         thumbnail_name = Path(unique_filename).stem
-        thumbnail_filename = f"{thumbnail_name}.jpg"
+        thumbnail_filename = f"{thumbnail_name}{THUMBNAIL_EXT}"
         thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
 
         thumb_source = (settings.BASE_DIR / metadata["transcoded_path"]) if metadata.get("transcoded_path") else file_path
