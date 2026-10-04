@@ -115,6 +115,71 @@ class TestUploadSessions(BackupTestBase):
         self.assertEqual(ctx.exception.status_code, 409)
         self.assertIn("error_duplicate", ctx.exception.detail)
 
+    def test_upload_session_duplicate_within_session_and_cleanup(self):
+        """Test that uploading a file identical to an already staged item in the same session is rejected with 409 error_duplicate_session and cleans up raw files."""
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        session_id = session_res["session_id"]
+        session_dir = self.upload_sessions_dir / session_id
+
+        # 1. Upload first unique file with sidecar
+        jpeg1 = make_dummy_jpeg()
+        sidecar1 = UploadFile(filename="pic1.json", file=io.BytesIO(b'{"tags": "one"}'))
+        f1 = UploadFile(filename="pic1.jpg", file=io.BytesIO(jpeg1))
+        item1 = asyncio.run(upload_files_to_session(
+            session_id=session_id,
+            file=f1,
+            sidecar=sidecar1,
+            base_tags="first_item",
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertIsNotNone(item1)
+        item1_id = item1["item_id"]
+        self.assertTrue((session_dir / "raw" / f"{item1_id}_pic1.jpg").exists())
+        self.assertTrue((session_dir / "raw" / f"{item1_id}_pic1.json").exists())
+
+        # 2. Upload duplicate of first file with sidecar
+        sidecar2 = UploadFile(filename="pic1_dup.json", file=io.BytesIO(b'{"tags": "dup"}'))
+        f2 = UploadFile(filename="pic1_dup.jpg", file=io.BytesIO(jpeg1))
+        with self.assertRaises(HTTPException) as ctx:
+            asyncio.run(upload_files_to_session(
+                session_id=session_id,
+                file=f2,
+                sidecar=sidecar2,
+                base_tags="dup_item",
+                current_user=self.admin_user,
+                db=self.db,
+            ))
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertIn("error_duplicate_session", ctx.exception.detail)
+
+        # Verify no orphan files were left for the rejected duplicate
+        raw_files = list((session_dir / "raw").iterdir())
+        self.assertEqual(len(raw_files), 2)  # only item1's image and sidecar
+        self.assertTrue(all(p.name.startswith(f"{item1_id}_") for p in raw_files))
+
+        # 3. Upload a second unique file (different bytes)
+        jpeg2 = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.' \",#\x1c\x1c(7),01444\x1f'9=82<.342\xff\xc0\x00\x0b\x08\x00\x02\x00\x02\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xbf\x00\xff\xd9"
+        f3 = UploadFile(filename="pic3.jpg", file=io.BytesIO(jpeg2))
+        item3 = asyncio.run(upload_files_to_session(
+            session_id=session_id,
+            file=f3,
+            base_tags="third_item",
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertIsNotNone(item3)
+
+        # 4. Commit session - both unique items are committed successfully
+        commit_res = asyncio.run(commit_upload_session(
+            session_id=session_id,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertEqual(commit_res.total_created, 2)
+        self.assertEqual(commit_res.total_duplicates, 0)
+        self.assertEqual(commit_res.total_failed, 0)
+
     def test_new_tag_conflicting_assigned_category_harmonization(self):
         """Test that uploading a new media with conflicting category hints re-assigns new tags to the category in the upload queue."""
         session_res = asyncio.run(create_upload_session(current_user=self.admin_user))

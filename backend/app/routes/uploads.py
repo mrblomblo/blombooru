@@ -204,7 +204,8 @@ def _process_and_stage_item(
     existing = db.query(Media).filter(Media.hash == file_hash).first()
     if existing:
         if not is_untracked and staged_filename:
-            file_path.unlink(missing_ok=True)
+            for staged_item_file in (session_dir / "raw").glob(f"{item_id}_*"):
+                staged_item_file.unlink(missing_ok=True)
         raise HTTPException(
             status_code=409,
             detail=f"admin.media_management.booru_import.error_duplicate:::{existing.filename}"
@@ -214,7 +215,8 @@ def _process_and_stage_item(
     for it in meta.get("items", {}).values():
         if it.get("hash") == file_hash and it.get("item_id") != item_id:
             if not is_untracked and staged_filename:
-                file_path.unlink(missing_ok=True)
+                for staged_item_file in (session_dir / "raw").glob(f"{item_id}_*"):
+                    staged_item_file.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=409,
                 detail=f"admin.media_management.booru_import.error_duplicate_session:::{it.get('filename')}"
