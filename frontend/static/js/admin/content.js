@@ -413,8 +413,9 @@ class AdminContent {
 
             // Fetch and add each file to the uploader
             let loadedCount = 0;
-            let skippedCount = 0;
+            let queuedCount = 0;
             let duplicateCount = 0;
+            let skippedCount = 0;
 
             for (const filePath of result.files) {
                 if (signal.aborted || uploader.isAborted?.()) {
@@ -423,7 +424,7 @@ class AdminContent {
                 try {
                     // Check if file is already in the upload queue
                     if (uploader.isFileQueued(filePath)) {
-                        duplicateCount++;
+                        queuedCount++;
                         continue;
                     }
 
@@ -440,8 +441,16 @@ class AdminContent {
                     if (error.name === 'AbortError' || signal.aborted || uploader.isAborted?.()) {
                         break;
                     }
-                    console.error(`Error loading file ${filePath}:`, error);
-                    skippedCount++;
+                    if (uploader.isDuplicateError?.(error)) {
+                        console.warn(`File ${filePath} is a duplicate, skipping:`, error);
+                        duplicateCount++;
+                    } else {
+                        console.error(`Error loading file ${filePath}:`, error);
+                        skippedCount++;
+                        if (uploader.isSystemicError?.(error)) {
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -450,21 +459,25 @@ class AdminContent {
             }
 
             // Show results
-            let message = '';
+            const messages = [];
             if (loadedCount > 0) {
-                message = `Loaded ${loadedCount} file(s) into the editor.`;
+                messages.push(window.i18n.t('admin.messages.scan_loaded', { count: loadedCount }));
+            }
+            if (queuedCount > 0) {
+                messages.push(window.i18n.t('admin.messages.scan_queued', { count: queuedCount }));
             }
             if (duplicateCount > 0) {
-                message += `${message ? '\n' : ''}${duplicateCount} file(s) already in queue.`;
+                messages.push(window.i18n.t('upload.progress.duplicates_skipped', { count: duplicateCount }));
             }
             if (skippedCount > 0) {
-                message += `${message ? '\n' : ''}${skippedCount} file(s) skipped due to errors.`;
+                messages.push(window.i18n.t('admin.messages.scan_skipped', { count: skippedCount }));
             }
             if (loadedCount > 0) {
-                message += '\n\nYou can now edit tags and ratings before submitting.';
+                messages.push('\n' + window.i18n.t('admin.messages.scan_ready_hint'));
             }
 
-            const notificationType = loadedCount > 0 ? 'success' : (duplicateCount > 0 ? 'info' : 'warning');
+            const message = messages.join('\n');
+            const notificationType = loadedCount > 0 ? 'success' : ((duplicateCount > 0 || queuedCount > 0) ? 'info' : 'warning');
             app.showNotification(message, notificationType);
 
         } catch (error) {
