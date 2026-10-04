@@ -155,12 +155,21 @@
                                     {{ t('common.albums') }}
                                 </a>
                             </li>
+                            {% if is_admin(request) %}
                             <li>
                                 <a href="/admin"
                                     class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                                     {{ t('common.admin_panel') }}
                                 </a>
                             </li>
+                            {% else %}
+                            <li>
+                                <a href="/login"
+                                    class="block bg border px-3 py-1 hover:border-primary transition-colors {{ 'text-primary' if request.url.path.startswith('/login') else 'text' }}">
+                                    {{ t('login.login_button') }}
+                                </a>
+                            </li>
+                            {% endif %}
                             {% if is_admin(request) %}
                             <li>
                                 <a href="/admin?tab=content#media-management" title="{{ t('nav.upload') }}"
@@ -231,12 +240,21 @@
                             </a>
                         </li>
                         {% endif %}
+                        {% if is_admin(request) %}
                         <li>
                             <a href="/admin"
                                 class="btn-dark w-full justify-start px-4 py-2 cursor-pointer {{ 'text-primary' if request.url.path.startswith('/admin') else 'text' }}">
                                 {{ t('common.admin_panel') }}
                             </a>
                         </li>
+                        {% else %}
+                        <li>
+                            <a href="/login"
+                                class="btn-dark w-full justify-start px-4 py-2 cursor-pointer {{ 'text-primary' if request.url.path.startswith('/login') else 'text' }}">
+                                {{ t('login.login_button') }}
+                            </a>
+                        </li>
+                        {% endif %}
                         <li>
                             <a href="#" id="logout-btn-mobile"
                                 class="btn-dark w-full justify-start px-4 py-2 cursor-pointer">
