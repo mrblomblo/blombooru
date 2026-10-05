@@ -29,6 +29,7 @@ class Gallery extends BaseGallery {
         this.showLoading();
 
         // Clear gallery for new page
+        this.unloadAllGifs();
         this.elements.grid.innerHTML = '';
         this.tagCounts.clear();
 

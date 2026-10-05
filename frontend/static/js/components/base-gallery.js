@@ -25,6 +25,7 @@ class BaseGallery {
         this.sortBySelect = null;
         this.currentRandomSeed = null;
         this.savedRandomSeed = null;
+        this.loadedGifs = new Set();
 
         // Selection state
         this.lastSelectedId = null;
@@ -666,6 +667,7 @@ class BaseGallery {
         const pageTop = document.getElementById('main-scroll');
         if (this.isLoading || page < 1 || page > this.totalPages || page === this.currentPage) return;
 
+        this.unloadAllGifs();
         this.currentPage = page;
         this.updateUrlParams({ page });
         await this.loadContent();
@@ -1836,6 +1838,11 @@ class BaseGallery {
         const blurWrapperOrImg = window.wrapBlurThumbnail(img, media, item);
         link.appendChild(blurWrapperOrImg);
 
+        const targetContainer = (blurWrapperOrImg === img) ? link : blurWrapperOrImg;
+        if (window.setupGifPreview) {
+            window.setupGifPreview(item, media, targetContainer, img, this.loadedGifs);
+        }
+
         link.addEventListener('click', (e) => {
             if (app.isAdminMode && this.isSelectionMode) {
                 e.preventDefault();
@@ -1962,6 +1969,14 @@ class BaseGallery {
                 ${app.isAuthenticated ? `<a href="/admin" class="btn mt-4 inline-block cursor-pointer">${window.i18n.t('gallery.go_to_admin')}</a>` : ''}
             </div>
         `;
+    }
+
+    // ==================== GIF Preview Helpers ====================
+
+    unloadAllGifs() {
+        if (window.unloadAllGifs) {
+            window.unloadAllGifs(this.loadedGifs, this.elements.grid);
+        }
     }
 
     // ==================== Abstract Methods ====================

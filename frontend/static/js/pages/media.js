@@ -31,6 +31,7 @@ class MediaViewer extends MediaViewerBase {
         this._descPreviewRequestId = 0;
         this.isDescEnlarged = false;
         this._isTogglingEnlarge = false;
+        this.loadedGifs = new Set();
 
         this.init();
     }
@@ -708,6 +709,7 @@ class MediaViewer extends MediaViewerBase {
         if (relatedMediaSection) relatedMediaSection.style.display = 'block';
         if (relatedMediaLoading) relatedMediaLoading.style.display = 'none';
         if (relatedMediaEl) {
+            this.unloadAllGifs();
             relatedMediaEl.style.display = 'grid';
             relatedMediaEl.classList.add('grid');
             relatedMediaEl.innerHTML = '';
@@ -767,6 +769,12 @@ class MediaViewer extends MediaViewerBase {
 
         const blurWrapperOrImg = window.wrapBlurThumbnail(img, media, item);
         link.appendChild(blurWrapperOrImg);
+
+        const targetContainer = (blurWrapperOrImg === img) ? link : blurWrapperOrImg;
+        if (window.setupGifPreview) {
+            window.setupGifPreview(item, media, targetContainer, img, this.loadedGifs);
+        }
+
         item.appendChild(link);
 
         if (media.is_shared) {
@@ -2484,6 +2492,13 @@ class MediaViewer extends MediaViewerBase {
         }
         if (this.tagInputHelper) {
             this.tagInputHelper.destroy();
+        }
+        this.unloadAllGifs();
+    }
+
+    unloadAllGifs() {
+        if (window.unloadAllGifs) {
+            window.unloadAllGifs(this.loadedGifs, this.el('related-media'));
         }
     }
 }

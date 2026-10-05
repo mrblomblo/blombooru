@@ -81,6 +81,7 @@ class AlbumViewer extends BaseGallery {
     }
 
     async loadContent() {
+        this.unloadAllGifs();
         this.showLoading();
 
         try {
@@ -174,6 +175,7 @@ class AlbumViewer extends BaseGallery {
 
         if (!subAlbumsGrid || !this.elements.grid) return;
 
+        this.unloadAllGifs();
         subAlbumsGrid.innerHTML = '';
         this.elements.grid.innerHTML = '';
 
@@ -300,7 +302,10 @@ class AlbumViewer extends BaseGallery {
                         if (!res.ok) return null;
                         const data = await res.json();
                         const newIds = [];
-                        if (page === 1) this.elements.grid.innerHTML = '';
+                        if (page === 1) {
+                            app.clearAllGifBlobCache();
+                            this.elements.grid.innerHTML = '';
+                        }
                         if (data.media) {
                             data.media.forEach(media => {
                                 const item = this.createGalleryItem(media, {
