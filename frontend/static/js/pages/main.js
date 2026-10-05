@@ -307,12 +307,24 @@ class Blombooru {
             });
         }
 
+        // Search inputs sync
+        const searchInput = document.getElementById('search-input');
+        const searchInputMobile = document.getElementById('search-input-mobile');
+        if (searchInput && searchInputMobile) {
+            searchInput.addEventListener('input', () => {
+                searchInputMobile.value = searchInput.value;
+            });
+            searchInputMobile.addEventListener('input', () => {
+                searchInput.value = searchInputMobile.value;
+            });
+        }
+
         // Search form (desktop)
         const searchForm = document.getElementById('search-form');
         if (searchForm) {
             searchForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                this.performSearch();
+                this.performSearch(searchInput);
             });
         }
 
@@ -321,7 +333,7 @@ class Blombooru {
         if (searchFormMobile) {
             searchFormMobile.addEventListener('submit', (e) => {
                 e.preventDefault();
-                this.performSearch();
+                this.performSearch(searchInputMobile);
             });
         }
 
@@ -491,14 +503,24 @@ class Blombooru {
         });
     }
 
-    performSearch() {
+    performSearch(sourceInput = null) {
         const searchInput = document.getElementById('search-input');
         const searchInputMobile = document.getElementById('search-input-mobile');
 
-        // Get query from whichever input has a value (prioritize desktop, then mobile)
-        const rawQuery = (searchInput && searchInput.value.trim()) ||
-            (searchInputMobile && searchInputMobile.value.trim()) ||
-            '';
+        let targetInput = sourceInput;
+        if (!targetInput) {
+            if (document.activeElement === searchInputMobile) {
+                targetInput = searchInputMobile;
+            } else if (document.activeElement === searchInput) {
+                targetInput = searchInput;
+            } else if (searchInputMobile && (searchInputMobile.checkVisibility ? searchInputMobile.checkVisibility() : searchInputMobile.offsetParent !== null)) {
+                targetInput = searchInputMobile;
+            } else {
+                targetInput = searchInput || searchInputMobile;
+            }
+        }
+
+        const rawQuery = (targetInput && targetInput.value) ? targetInput.value.trim() : '';
 
         const query = canonicalizeQuery(rawQuery);
         if (searchInput) searchInput.value = query;
