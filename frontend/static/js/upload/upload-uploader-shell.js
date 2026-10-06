@@ -245,10 +245,17 @@ class UploadUploaderShell {
 
         const scanEntry = async (entry, path = '') => {
             if (entry.isFile) {
-                const file = await new Promise((resolve) => entry.file(resolve));
-                const fullPath = (path ? `${path}/${file.name}` : file.name).replace(/^\/+/, '');
-                file._relativePath = fullPath;
-                fileEntries.push(file);
+                const file = await new Promise((resolve) => {
+                    entry.file(resolve, (err) => {
+                        console.warn('Error reading file entry:', err);
+                        resolve(null);
+                    });
+                });
+                if (file) {
+                    const fullPath = (path ? `${path}/${file.name}` : file.name).replace(/^\/+/, '');
+                    file._relativePath = fullPath;
+                    fileEntries.push(file);
+                }
             } else if (entry.isDirectory) {
                 const reader = entry.createReader();
                 const readEntries = async () => {
@@ -270,15 +277,20 @@ class UploadUploaderShell {
             }
         };
 
+        const entries = [];
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
             if (entry) {
-                await scanEntry(entry);
+                entries.push(entry);
             } else if (item.kind === 'file') {
                 const f = item.getAsFile();
                 if (f) fileEntries.push(f);
             }
+        }
+
+        for (const entry of entries) {
+            await scanEntry(entry);
         }
 
         if (fileEntries.length > 0) {
