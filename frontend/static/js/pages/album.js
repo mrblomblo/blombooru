@@ -51,14 +51,14 @@ class AlbumViewer extends BaseGallery {
 
             if (data.parents && data.parents.length > 0) {
                 const crumbs = data.parents.map(p =>
-                    `<a href="/album/${p.id}" class="hover:text-primary">${p.name}</a>`
+                    `<a href="/album/${p.id}" class="hover:text-primary">${this.escapeHtml(p.name)}</a>`
                 ).join(' > ');
-                breadcrumbEl.innerHTML = `${rootLink} > ${crumbs} > ${this.album.name}`;
+                breadcrumbEl.innerHTML = `${rootLink} > ${crumbs} > ${this.escapeHtml(this.album.name)}`;
 
                 const titlePath = data.parents.map(p => p.name).join(' > ') + ' > ' + this.album.name;
                 document.title = `${titlePath} - ${window._appName || document.title.split(' - ').pop()}`;
             } else {
-                breadcrumbEl.innerHTML = `${rootLink} > ${this.album.name}`;
+                breadcrumbEl.innerHTML = `${rootLink} > ${this.escapeHtml(this.album.name)}`;
 
                 document.title = `${this.album.name} - ${window._appName || document.title.split(' - ').pop()}`;
             }

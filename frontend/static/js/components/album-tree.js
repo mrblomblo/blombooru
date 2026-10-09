@@ -205,7 +205,7 @@ class AlbumTree {
 
     renderAlbumItem(album, isFiltered, isHidden = false) {
         const isSelected = this.options.isSelectable && this.options.selectedIds.has(album.id);
-        const parentPath = album.parents.map(p => p.name).join(' > ');
+        const parentPath = album.parents.map(p => this.escapeHtml(p.name)).join(' > ');
         const hasChildren = album.children && album.children.length > 0;
         const indentPx = isFiltered ? 0 : album.depth * 0.5;
 
@@ -241,7 +241,7 @@ class AlbumTree {
                  style="padding-left: ${0.5 + indentPx}rem;">
                 <span class="album-picker-item__icon shrink-0 transition-colors ${isSelected ? 'text-primary' : 'text-secondary'}">${folderIcon}</span>
                 <div class="flex-1 min-w-0">
-                    <div class="text-xs font-medium truncate">${album.name}</div>
+                    <div class="text-xs font-medium truncate">${this.escapeHtml(album.name)}</div>
                     ${parentPath && isFiltered ? `<div class="text-xs text-secondary truncate">${window.i18n.t('album_picker.path', { path: parentPath })}</div>` : ''}
                     <div class="text-xs text-secondary">
                         ${window.i18n.t('common.items_count', { count: album.media_count || 0 })}
@@ -274,6 +274,16 @@ class AlbumTree {
 
             this.render(filtered);
         }, 300);
+    }
+
+    escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 }
 
