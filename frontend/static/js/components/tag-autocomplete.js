@@ -19,15 +19,6 @@ class TagAutocomplete {
         this.setupAutocomplete();
     }
 
-    escapeHtml(text) {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
     setupAutocomplete() {
         // Create suggestions container
         this.suggestionsEl = document.createElement('div');
@@ -212,34 +203,34 @@ class TagAutocomplete {
             html = suggestions.map((tag, index) => {
                 if (tag.is_alias) {
                     return `
-                    <div class="tag-suggestion tag-alias-info" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
+                    <div class="tag-suggestion tag-alias-info" data-index="${index}" data-name="${escapeHtml(tag.name)}">
                         <span style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="text-secondary italic">${this.escapeHtml(tag.alias_name)}</span>
+                            <span class="text-secondary italic">${escapeHtml(tag.alias_name)}</span>
                             <span class="text-secondary">&#8594;</span>
-                            <span class="tag-name">${this.escapeHtml(tag.name)}</span>
+                            <span class="tag-name">${escapeHtml(tag.name)}</span>
                         </span>
-                        ${tag.count !== undefined && tag.count !== null && tag.count !== '' ? `<span class="tag-count">${this.escapeHtml(String(tag.count))}</span>` : ''}
+                        ${tag.count !== undefined && tag.count !== null && tag.count !== '' ? `<span class="tag-count">${escapeHtml(String(tag.count))}</span>` : ''}
                     </div>
                 `;
                 }
                 if (tag.is_qualifier) {
                     const qualifierPart = tag.qualifier_prefix || (tag.name.includes(':') ? tag.name.substring(0, tag.name.indexOf(':') + 1) : tag.name);
                     const valPart = tag.val !== undefined ? tag.val : (tag.name.includes(':') ? tag.name.substring(tag.name.indexOf(':') + 1) : '');
-                    const detailPart = tag.detail ? `<span class="tag-count">${this.escapeHtml(tag.detail)}</span>` : '';
+                    const detailPart = tag.detail ? `<span class="tag-count">${escapeHtml(tag.detail)}</span>` : '';
                     return `
-                    <div class="tag-suggestion" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
-                        <span class="tag-name"><code class="bg p-0 font-mono text-xs">${this.escapeHtml(qualifierPart)}</code>${this.escapeHtml(valPart)}</span>
+                    <div class="tag-suggestion" data-index="${index}" data-name="${escapeHtml(tag.name)}">
+                        <span class="tag-name"><code class="bg p-0 font-mono text-xs">${escapeHtml(qualifierPart)}</code>${escapeHtml(valPart)}</span>
                         ${detailPart}
                     </div>
                 `;
                 }
                 return `
-                <div class="tag-suggestion" data-index="${index}" data-name="${this.escapeHtml(tag.name)}">
+                <div class="tag-suggestion" data-index="${index}" data-name="${escapeHtml(tag.name)}">
                     <span>
-                        <span class="tag-category"><span class="tag-text ${this.escapeHtml(tag.category)}">${this.escapeHtml(tag.category)}</span></span>
-                        <span class="tag-name">${this.escapeHtml(tag.name)}</span>
+                        <span class="tag-category"><span class="tag-text ${escapeHtml(tag.category)}">${escapeHtml(tag.category)}</span></span>
+                        <span class="tag-name">${escapeHtml(tag.name)}</span>
                     </span>
-                    ${tag.count !== undefined && tag.count !== null && tag.count !== '' ? `<span class="tag-count">${this.escapeHtml(String(tag.count))}</span>` : ''}
+                    ${tag.count !== undefined && tag.count !== null && tag.count !== '' ? `<span class="tag-count">${escapeHtml(String(tag.count))}</span>` : ''}
                 </div>
             `;
             }).join('');
@@ -249,12 +240,12 @@ class TagAutocomplete {
         if (hasCreate) {
             const createIndex = suggestions.length;
             const queryStr = query.replace(/ /g, '_');
-            const escapedQuery = this.escapeHtml(queryStr);
+            const escapedQuery = escapeHtml(queryStr);
             const createText = window.i18n.t('admin.tags_management.create_tag');
             html += `
                 <div class="tag-suggestion tag-create-new" data-index="${createIndex}" data-name="__create__" data-query="${escapedQuery}">
                     <span>
-                        <span class="tag-category"><span class="tag-text meta">${this.escapeHtml(createText)}</span></span>
+                        <span class="tag-category"><span class="tag-text meta">${escapeHtml(createText)}</span></span>
                         <span class="tag-name">${escapedQuery}</span>
                     </span>
                     <span class="tag-count">+</span>
@@ -367,7 +358,7 @@ class TagAutocomplete {
         ];
 
         const categoryOptions = categories.map(c =>
-            `<div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs" data-value="${c.value}">${this.escapeHtml(c.label)}</div>`
+            `<div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs" data-value="${c.value}">${escapeHtml(c.label)}</div>`
         ).join('');
 
         const titleText = window.i18n.t('admin.tags_management.create_tag');
@@ -385,21 +376,21 @@ class TagAutocomplete {
 
         modal.innerHTML = `
             <div class="surface border-2 border-primary p-8 max-w-md w-full">
-                <h2 class="text-xl font-bold mb-6 text-primary text-center">${this.escapeHtml(titleText)}</h2>
+                <h2 class="text-xl font-bold mb-6 text-primary text-center">${escapeHtml(titleText)}</h2>
 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold mb-2">${this.escapeHtml(nameLabel)}</label>
-                    <input type="text" id="tag-create-name" value="${this.escapeHtml(initialName)}"
+                    <label class="block text-xs font-bold mb-2">${escapeHtml(nameLabel)}</label>
+                    <input type="text" id="tag-create-name" value="${escapeHtml(initialName)}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                         autocomplete="off" spellcheck="false">
                     <p id="tag-create-name-error" class="text-xs text-danger mt-1" style="display:none;"></p>
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-xs font-bold mb-2">${this.escapeHtml(categoryLabel)}</label>
+                    <label class="block text-xs font-bold mb-2">${escapeHtml(categoryLabel)}</label>
                     <div id="tag-create-category-select" class="custom-select w-full" data-value="general">
                         <button class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary" type="button">
-                            <span class="custom-select-value text">${this.escapeHtml(generalLabel)}</span>
+                            <span class="custom-select-value text">${escapeHtml(generalLabel)}</span>
                             ${window.Icons.selectArrow({ size: 12 })}
                         </button>
                         <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
@@ -410,10 +401,10 @@ class TagAutocomplete {
 
                 <div class="flex gap-3 justify-center">
                     <button id="tag-create-submit" class="btn-primary px-6 py-3 font-bold text-sm flex-1 cursor-pointer">
-                        ${this.escapeHtml(createText)}
+                        ${escapeHtml(createText)}
                     </button>
                     <button id="tag-create-cancel" class="btn px-6 py-3 font-bold text-sm flex-1 cursor-pointer">
-                        ${this.escapeHtml(cancelText)}
+                        ${escapeHtml(cancelText)}
                     </button>
                 </div>
             </div>

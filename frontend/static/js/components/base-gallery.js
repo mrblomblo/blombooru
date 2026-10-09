@@ -1715,7 +1715,7 @@ class BaseGallery {
             <a href="/album/${album.id}" data-id="${album.id}" class="album-card block surface border hover:border-primary focus:border-primary focus:outline-none transition-colors">
                 ${thumbnailHTML}
                 <div class="p-2 border-t">
-                    <div class="text-xs font-bold truncate mb-1">${this.escapeHtml(album.name)}</div>
+                    <div class="text-xs font-bold truncate mb-1">${escapeHtml(album.name)}</div>
                     <div class="flex justify-between items-center text-xs text-secondary">
                         <span>${window.i18n.t('common.items_count', { count: album.media_count || 0 })}</span>
                         <span>${album.rating[0].toUpperCase()}</span>
@@ -1969,16 +1969,6 @@ class BaseGallery {
                 ${app.isAuthenticated ? `<a href="/admin" class="btn mt-4 inline-block cursor-pointer">${window.i18n.t('gallery.go_to_admin')}</a>` : ''}
             </div>
         `;
-    }
-
-    escapeHtml(text) {
-        if (text === null || text === undefined) return '';
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
     }
 
     // ==================== GIF Preview Helpers ====================

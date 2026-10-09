@@ -36,13 +36,6 @@ class UpdatePostModalBase {
         this._fullscreenViewer.open(src, isVideo);
     }
 
-    _escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-    }
-
     _checkboxRow(id, label, checked) {
         return `
             <label class="w-full cursor-pointer" for="${id}">
@@ -51,12 +44,5 @@ class UpdatePostModalBase {
                     ${label}
                 </span>
             </label>`;
-    }
-
-    _formatFileSize(bytes) {
-        if (!bytes) return '...';
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 }

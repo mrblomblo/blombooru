@@ -40,9 +40,9 @@ class MediaViewerBase {
         const { downloadUrl, isShared } = options;
 
         let infoHTML = `
-            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.filename')}</span><strong class="truncate ml-4 text-right min-w-0" title="${this.escapeHtml(media.filename)}">${this.escapeHtml(media.filename)}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.filename')}</span><strong class="truncate ml-4 text-right min-w-0" title="${escapeHtml(media.filename)}">${escapeHtml(media.filename)}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.type')}</span><strong class="text-right">${media.file_type}</strong></div>
-            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.size')}</span><strong class="text-right">${this.formatFileSize(media.file_size)}</strong></div>
+            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.size')}</span><strong class="text-right">${formatFileSize(media.file_size, 'long')}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.dimensions')}</span><strong class="text-right">${media.width}x${media.height}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.rating')}</span><strong class="text-right">${media.rating}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.uploaded')}</span><strong class="text-right">${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
@@ -55,8 +55,8 @@ class MediaViewerBase {
                     <span class="flex-shrink-0 mr-4">${window.i18n.t('media.info.source')}</span>
                     <strong class="truncate min-w-0 text-right flex-1">
                         <a href="${media.source}" target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer"
-                           class="text-primary hover:underline block truncate" title="${this.escapeHtml(media.source)}">
-                            ${this.escapeHtml(media.source)}
+                           class="text-primary hover:underline block truncate" title="${escapeHtml(media.source)}">
+                            ${escapeHtml(media.source)}
                         </a>
                     </strong>
                 </div>
@@ -164,7 +164,7 @@ class MediaViewerBase {
             if (value === null || value === undefined || value === '') continue;
             if (key === 'prompt_tags') continue;
 
-            const sectionTitle = this.escapeHtml(this.formatKey(key));
+            const sectionTitle = escapeHtml(this.formatKey(key));
 
             if (key === 'workflow') {
                 let wfVal = value;
@@ -185,7 +185,7 @@ class MediaViewerBase {
                     let rowsHtml = '';
                     for (const [subKey, subValue] of Object.entries(paramsVal)) {
                         if (subValue === null || subValue === undefined || subValue === '') continue;
-                        rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
+                        rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
                     }
                     if (rowsHtml) {
                         const chevronHtml = (typeof window !== 'undefined' && window.Icons?.chevronDown)
@@ -205,7 +205,7 @@ class MediaViewerBase {
                 let rowsHtml = '';
                 for (const [subKey, subValue] of Object.entries(value)) {
                     if (subValue === null || subValue === undefined || subValue === '') continue;
-                    rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${this.escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
+                    rowsHtml += `<div class="ai-data-row"><span class="text-secondary">${escapeHtml(this.formatKey(subKey))}:</span><div class="text">${this.formatValue(subValue, false)}</div></div>`;
                 }
                 if (rowsHtml) {
                     html += `<div class="ai-section not-last:mb-2"><h4 class="text-xs font-bold text">${sectionTitle}</h4><div>${rowsHtml}</div></div>`;
@@ -314,16 +314,6 @@ class MediaViewerBase {
         return formatted;
     }
 
-    escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
     formatValue(value, isExpandable = true) {
         if (value === null || value === undefined) {
             return '<span class="text-secondary text-xs italic">' + window.i18n.t('admin.stats.empty_albums') + '</span>';
@@ -346,23 +336,23 @@ class MediaViewerBase {
                     if (this.isPlainObject(v)) {
                         // Format object entries nicely
                         const parts = Object.entries(v)
-                            .map(([k, val]) => `${this.escapeHtml(this.formatKey(k))}: ${this.escapeHtml(String(val))}`)
+                            .map(([k, val]) => `${escapeHtml(this.formatKey(k))}: ${escapeHtml(String(val))}`)
                             .join(', ');
                         return parts;
                     }
-                    return this.escapeHtml(String(v));
+                    return escapeHtml(String(v));
                 });
                 return items.map(item => `<div class="text-xs mb-1">${item}</div>`).join('');
             }
 
             // Simple array of primitives
-            return this.escapeHtml(value.map(v => String(v)).join(', '));
+            return escapeHtml(value.map(v => String(v)).join(', '));
         }
 
         if (this.isPlainObject(value)) {
             try {
                 const jsonStr = JSON.stringify(value, null, 2);
-                const escaped = this.escapeHtml(jsonStr);
+                const escaped = escapeHtml(jsonStr);
                 const lineCount = (jsonStr.match(/\n/g) || []).length;
                 const needsExpansion = isExpandable && (jsonStr.length > 200 || lineCount > 4);
 
@@ -377,7 +367,7 @@ class MediaViewerBase {
         }
 
         const str = String(value);
-        const escaped = this.escapeHtml(str);
+        const escaped = escapeHtml(str);
         const lineCount = (str.match(/\n/g) || []).length;
         const needsExpansion = isExpandable && (str.length > 200 || lineCount > 4);
 
@@ -386,16 +376,6 @@ class MediaViewerBase {
         }
 
         return `<div class="ai-text-content">${escaped}</div>`;
-    }
-
-    formatFileSize(bytes) {
-        if (!bytes || bytes < 0) return '0 Bytes';
-        if (bytes === 0) return '0 Bytes';
-
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
-        return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
     }
 
     formatDuration(seconds) {

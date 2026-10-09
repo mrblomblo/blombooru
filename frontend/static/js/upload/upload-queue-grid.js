@@ -129,13 +129,6 @@ class UploadQueueGrid {
         });
     }
 
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     renderGrid() {
         const grid = this.container.querySelector('#upload-thumbnail-grid');
         if (!grid) return;
@@ -191,12 +184,12 @@ class UploadQueueGrid {
                 </div>
 
                 <!-- Filename Bar -->
-                <div class="p-1 border-t text-[10px] truncate font-mono text-secondary flex items-center justify-between gap-1" title="${this.escapeHtml(item.filename)}${leafAlbum ? ` [${this.escapeHtml(item.suggested_album_path)}]` : ''}">
-                    <span class="truncate flex-1 min-w-0">${this.escapeHtml(item.filename)}</span>
+                <div class="p-1 border-t text-[10px] truncate font-mono text-secondary flex items-center justify-between gap-1" title="${escapeHtml(item.filename)}${leafAlbum ? ` [${escapeHtml(item.suggested_album_path)}]` : ''}">
+                    <span class="truncate flex-1 min-w-0">${escapeHtml(item.filename)}</span>
                     ${leafAlbum ? `
-                        <span class="shrink-0 text-secondary flex items-center gap-0.5 max-w-[45%]" title="${this.escapeHtml(item.suggested_album_path)}">
+                        <span class="shrink-0 text-secondary flex items-center gap-0.5 max-w-[45%]" title="${escapeHtml(item.suggested_album_path)}">
                             ${window.Icons.folder({ size: 10 })}
-                            <span class="truncate">${this.escapeHtml(leafAlbum)}</span>
+                            <span class="truncate">${escapeHtml(leafAlbum)}</span>
                         </span>
                     ` : ''}
                 </div>

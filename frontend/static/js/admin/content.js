@@ -949,7 +949,7 @@ class AdminContent {
                     <div class="flex items-center gap-2 min-w-0">
                         <button class="manage-tag-btn flex-shrink-0 flex items-center justify-center w-7 h-7 bg-primary primary-text hover:bg-primary border-primary hover:border-primary transition-colors cursor-pointer"
                             data-tag-id="${tag.id}"
-                            data-tag-name="${this.app.escapeHtml(tag.name)}"
+                            data-tag-name="${escapeHtml(tag.name)}"
                             data-tag-category="${tag.category}"
                             title="${window.i18n.t('admin.tags_management.manage_tag')}">
                             ${window.Icons.tagMenu({ size: 14 })}
@@ -1025,7 +1025,7 @@ class AdminContent {
         modal.innerHTML = `
             <div class="surface border-2 border-primary p-8 max-w-md w-full text-center">
                 <h2 class="text-xl font-bold mb-2 text-primary">${window.i18n.t('admin.tags_management.manage_tag')}</h2>
-                <p class="text-base mb-6 text font-medium">${this.app.escapeHtml(tagName)}</p>
+                <p class="text-base mb-6 text font-medium">${escapeHtml(tagName)}</p>
                 <div class="flex flex-col gap-3">
                     <button id="tag-manage-edit" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer">
                         ${window.Icons.edit({ size: 16 })}
@@ -1201,8 +1201,8 @@ class AdminContent {
             closeModal();
 
             const tagParams = {
-                source_tag: this.app.escapeHtml(tagName),
-                target_tag: this.app.escapeHtml(targetTag)
+                source_tag: escapeHtml(tagName),
+                target_tag: escapeHtml(targetTag)
             };
 
             const subtitle = window.i18n.t('admin.tags_management.confirm_merge_subtitle', tagParams);
@@ -1301,7 +1301,7 @@ class AdminContent {
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold mb-2">${window.i18n.t('admin.tags_management.tag_name')}</label>
-                    <input type="text" id="tag-edit-name" value="${this.app.escapeHtml(tagName)}"
+                    <input type="text" id="tag-edit-name" value="${escapeHtml(tagName)}"
                         class="w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary"
                         autocomplete="off" spellcheck="false">
                     <p id="tag-edit-name-error" class="text-xs text-danger mt-1" style="display:none;"></p>
@@ -1677,7 +1677,7 @@ class AdminContent {
                             ${dateStr ? `<span class="text-xs text-secondary text-center hidden sm:block">${dateStr}</span>` : ''}
                             <button class="manage-album-btn flex-shrink-0 flex items-center justify-center w-7 h-7 bg-primary primary-text hover:bg-primary border-primary hover:border-primary transition-colors cursor-pointer"
                                 data-album-id="${album.id}"
-                                data-album-name="${this.app.escapeHtml(album.name)}"
+                                data-album-name="${escapeHtml(album.name)}"
                                 data-parent-id="${parentId}"
                                 title="${window.i18n.t('admin.albums_management.manage_album')}">
                                 ${window.Icons.tagMenu({ size: 14 })}
@@ -1898,7 +1898,7 @@ class AdminContent {
             <div class="surface border-2 border-primary p-8 max-w-md w-full text-center">
                 ${window.Icons.folder({ size: 48, class: 'mx-auto mb-4 text-primary' })}
                 <h2 class="text-xl font-bold mb-2 text-primary">${window.i18n.t('admin.albums_management.manage_album')}</h2>
-                <p class="text-base mb-6 text font-medium">${this.app.escapeHtml(albumName)}</p>
+                <p class="text-base mb-6 text font-medium">${escapeHtml(albumName)}</p>
                 <div class="flex flex-col gap-3">
                     <button id="album-manage-rename" class="btn-dark px-6 py-3 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer">
                         ${window.Icons.edit({ size: 16 })}
@@ -1975,7 +1975,7 @@ class AdminContent {
                 <h2 class="text-xl font-bold mb-4 text-primary text-center">Rename Album</h2>
                 <div class="mb-6">
                     <label class="block text-xs font-bold mb-2">New Name</label>
-                    <input type="text" id="new-album-name" value="${this.app.escapeHtml(currentName)}"
+                    <input type="text" id="new-album-name" value="${escapeHtml(currentName)}"
                         class="w-full bg px-3 py-2 border text-sm focus:outline-none focus:border-primary">
                 </div>
                 <div class="flex gap-4 justify-center">
@@ -2150,7 +2150,7 @@ class AdminContent {
             const isSelected = currentParentId && album.id.toString() === currentParentId.toString();
             optionsHtml += `
                 <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text-xs ${isSelected ? 'selected' : ''}"
-                    data-value="${album.id}">${this.app.escapeHtml(album.name)}</div>
+                    data-value="${album.id}">${escapeHtml(album.name)}</div>
             `;
         }
 
@@ -2166,14 +2166,14 @@ class AdminContent {
         modal.innerHTML = `
             <div class="surface border-2 border-primary p-8 max-w-md w-full">
                 <h2 class="text-xl font-bold mb-2 text-primary text-center">Change Parent Album</h2>
-                <p class="text-sm mb-4 text-secondary text-center">Album: <span class="text font-medium">${this.app.escapeHtml(albumName)}</span></p>
+                <p class="text-sm mb-4 text-secondary text-center">Album: <span class="text font-medium">${escapeHtml(albumName)}</span></p>
                 <div class="mb-6">
                     <label class="block text-xs font-bold mb-2">New Parent Album</label>
                     <div id="change-parent-select" class="custom-select" data-value="${currentParentId || ''}">
                         <button
                             class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none focus:border-primary"
                             type="button">
-                            <span class="custom-select-value text">${this.app.escapeHtml(initialDisplayText)}</span>
+                            <span class="custom-select-value text">${escapeHtml(initialDisplayText)}</span>
                             ${window.Icons.selectArrow({ size: 12 })}
                         </button>
                         <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg">
@@ -2266,7 +2266,7 @@ class AdminContent {
             id: 'delete-album-modal',
             type: 'danger',
             title: window.i18n.t('common.delete_album'),
-            message: window.i18n.t('modal.delete_album.message', { albumName: this.app.escapeHtml(albumName) }),
+            message: window.i18n.t('modal.delete_album.message', { albumName: escapeHtml(albumName) }),
             confirmText: window.i18n.t('common.yes_delete'),
             cancelText: window.i18n.t('common.cancel'),
             confirmId: 'delete-album-confirm-yes',

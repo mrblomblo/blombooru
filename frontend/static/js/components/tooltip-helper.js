@@ -36,16 +36,6 @@ class TooltipHelper {
         return this.tooltipElement;
     }
 
-    _escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
     show(element, content) {
         if (!content) return;
 
@@ -77,7 +67,7 @@ class TooltipHelper {
                 const name = typeof item === 'string' ? item : (item.name || String(item));
                 const category = typeof item === 'object' && item.category ? item.category.toLowerCase() : 'general';
                 const validCategory = categoryOrder.includes(category) ? category : 'general';
-                return `<span class="font-medium" style="color: var(--tag-${validCategory});">${this._escapeHtml(name)}</span>`;
+                return `<span class="font-medium" style="color: var(--tag-${validCategory});">${escapeHtml(name)}</span>`;
             }).join(' ');
 
             this.tooltipElement.innerHTML = html;

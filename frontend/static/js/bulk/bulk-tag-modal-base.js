@@ -793,13 +793,6 @@ class BulkTagModalBase {
         return this.tagResolutionCache.get(tag.toLowerCase().trim()) || null;
     }
 
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     getHighlightTagsForItem(inputElement) {
         if (!inputElement) return null;
         const rawIndex = inputElement.getAttribute('data-index');
@@ -892,7 +885,7 @@ class BulkTagModalBase {
         const prefilledSet = new Set(prefilledList.map(t => t.toLowerCase()));
 
         const renderedContent = tagsToShow.map(tag => {
-            const escaped = this.escapeHtml(tag);
+            const escaped = escapeHtml(tag);
             if (prefilledSet.has(tag.toLowerCase())) {
                 return `<span class="new-tag">${escaped}</span>`;
             }

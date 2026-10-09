@@ -184,9 +184,9 @@ class TagImplicationManager {
     // Fallback to target_tags for implications that don't have patterns.
     _buildTargetDisplay(imp) {
         if (imp.target_tag_patterns && imp.target_tag_patterns.length > 0) {
-            return imp.target_tag_patterns.map(p => this.escapeHtml(p)).join(' ');
+            return imp.target_tag_patterns.map(p => escapeHtml(p)).join(' ');
         }
-        return imp.target_tags.map(t => this.escapeHtml(t.name)).join(' ');
+        return imp.target_tags.map(t => escapeHtml(t.name)).join(' ');
     }
 
     // Build the raw (unescaped) string used to populate the edit form.
@@ -230,10 +230,10 @@ class TagImplicationManager {
         this.tableBody.innerHTML = implications.map(imp => `
             <tr class="border-b last:border-b-0" style="content-visibility: auto; contain-intrinsic-size: auto 37px;">
                 <td class="p-2 text-xs font-mono break-all">${this._buildTargetDisplay(imp)}</td>
-                <td class="p-2 text-xs font-mono break-all">${imp.implied_tags.map(t => this.escapeHtml(t.name)).join(' ')}</td>
+                <td class="p-2 text-xs font-mono break-all">${imp.implied_tags.map(t => escapeHtml(t.name)).join(' ')}</td>
                 <td class="p-2 text-xs text-right whitespace-nowrap">
                     <button class="text-primary hover:text-primary transition-colors mr-2 cursor-pointer" title="${window.i18n.t('common.edit')}"
-                        onclick="window.tagImplicationManager.editImplication(${imp.id}, '${this.escapeAttr(this._buildTargetRaw(imp))}', '${this.escapeAttr(imp.implied_tags.map(t => t.name).join(' '))}')">
+                        onclick="window.tagImplicationManager.editImplication(${imp.id}, '${escapeAttr(this._buildTargetRaw(imp))}', '${escapeAttr(imp.implied_tags.map(t => t.name).join(' '))}')">
                         ${window.Icons.edit({ size: 14 })}
                     </button>
                     <button class="text-danger hover:text-danger transition-colors cursor-pointer" title="${window.i18n.t('common.delete')}"
@@ -326,9 +326,9 @@ class TagImplicationManager {
                 type: 'warning',
                 title: window.i18n.t('admin.tags_implications.merge_confirm_title'),
                 message: window.i18n.t('admin.tags_implications.merge_confirm_msg', {
-                    target: this.escapeHtml(this._buildTargetRaw(matchingImp)),
-                    existing: this.escapeHtml(existingImpliedNames.join(' ')),
-                    new: this.escapeHtml(missingTags.join(' '))
+                    target: escapeHtml(this._buildTargetRaw(matchingImp)),
+                    existing: escapeHtml(existingImpliedNames.join(' ')),
+                    new: escapeHtml(missingTags.join(' '))
                 }),
                 confirmText: window.i18n.t('admin.tags_implications.merge_confirm_btn'),
                 cancelText: window.i18n.t('common.cancel'),
@@ -466,22 +466,6 @@ class TagImplicationManager {
                 this.applyAllBtn.disabled = false;
             }
         }
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Escape a string for use inside an HTML attribute (single-quoted context).
-    escapeAttr(text) {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/'/g, '&#039;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
     }
 }
 

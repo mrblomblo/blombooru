@@ -182,7 +182,7 @@ class BulkAITagsModal extends BulkTagModalBase {
 
                 const prefilledSet = new Set(item.prefilledTags.map(t => t.toLowerCase()));
                 const renderedContent = item.newTags.map(tag => {
-                    const escaped = this.escapeHtml(tag);
+                    const escaped = escapeHtml(tag);
                     if (prefilledSet.has(tag.toLowerCase())) {
                         return `<span class="new-tag">${escaped}</span>`;
                     }

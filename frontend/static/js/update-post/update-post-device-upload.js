@@ -29,7 +29,7 @@ class UpdatePostDeviceUpload extends UpdatePostModalBase {
         const cw = this.currentMedia?.width ?? 0;
         const ch = this.currentMedia?.height ?? 0;
         const curFilename = this.currentMedia?.filename || '';
-        const curSize = this._formatFileSize(this.currentMedia?.file_size);
+        const curSize = formatFileSize(this.currentMedia?.file_size, 'compact');
         const curThumb = `/api/media/${this.mediaId}/thumbnail${this.currentMedia?.hash ? '?v=' + this.currentMedia.hash : ''}`;
         const curFileUrl = `/api/media/${this.mediaId}/file${this.currentMedia?.hash ? '?v=' + this.currentMedia.hash : ''}`;
 
@@ -68,8 +68,8 @@ class UpdatePostDeviceUpload extends UpdatePostModalBase {
                                          onerror="this.src='${curFileUrl}';">
                                 </div>
                                 <div class="min-w-0 flex-1 text-xs">
-                                    <div class="font-bold truncate" title="${this._escapeHtml(curFilename)}">
-                                        ${this._escapeHtml(curFilename)}
+                                    <div class="font-bold truncate" title="${escapeHtml(curFilename)}">
+                                        ${escapeHtml(curFilename)}
                                     </div>
                                     <div class="text-secondary mt-0.5">
                                         ${cw && ch ? `${cw}×${ch}` : '?'} · ${curSize}
@@ -100,9 +100,9 @@ class UpdatePostDeviceUpload extends UpdatePostModalBase {
                                          onerror="this.src='${curFileUrl}';">
                                 </div>
                                 <div class="text-xs flex flex-col gap-1 mt-auto">
-                                    <div class="truncate font-medium" title="${this._escapeHtml(curFilename)}">
+                                    <div class="truncate font-medium" title="${escapeHtml(curFilename)}">
                                         <span class="text-secondary">${window.i18n.t('media.info.filename')}:</span>
-                                        <span class="font-bold ml-1">${this._escapeHtml(curFilename)}</span>
+                                        <span class="font-bold ml-1">${escapeHtml(curFilename)}</span>
                                     </div>
                                     <div>
                                         <span class="text-secondary">${window.i18n.t('media.info.dimensions')}:</span>
@@ -283,7 +283,7 @@ class UpdatePostDeviceUpload extends UpdatePostModalBase {
             fileNameEl.textContent = file.name;
             fileNameEl.title = file.name;
         }
-        if (fileSizeEl) fileSizeEl.textContent = this._formatFileSize(file.size);
+        if (fileSizeEl) fileSizeEl.textContent = formatFileSize(file.size, 'compact');
 
         this._updateFilenameHint();
 

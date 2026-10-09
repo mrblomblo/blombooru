@@ -48,8 +48,8 @@ class BooruConfigManager {
 
         this.tableBody.innerHTML = configs.map(config => `
             <tr class="border-b last:border-b-0">
-                <td class="p-2 text-xs font-mono break-all">${this.escapeHtml(config.domain)}</td>
-                <td class="p-2 text-xs break-all">${this.escapeHtml(config.username || '-')}</td>
+                <td class="p-2 text-xs font-mono break-all">${escapeHtml(config.domain)}</td>
+                <td class="p-2 text-xs break-all">${escapeHtml(config.username || '-')}</td>
                 <td class="p-2 text-xs">
                     ${config.has_api_key ? `<span class="text-success">${window.i18n.t('admin.settings.booru_config.has_key')}</span>` : `<span class="text-secondary">${window.i18n.t('common.none')}</span>`}
                 </td>
@@ -132,13 +132,6 @@ class BooruConfigManager {
                 }
             }
         }).show();
-    }
-
-    escapeHtml(text) {
-        if (!text) return text;
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 }
 

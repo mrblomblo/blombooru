@@ -1,3 +1,83 @@
+function escapeHtml(text, options = {}) {
+    if (text === null || text === undefined) {
+        if (typeof options === 'object' && options?.preserveNull) {
+            return text;
+        }
+        return '';
+    }
+    const str = String(text);
+    if (!str) {
+        if (typeof options === 'object' && options?.preserveNull) {
+            return text;
+        }
+        return '';
+    }
+
+    const mode = typeof options === 'string' ? options : (options?.mode || options?.pattern || 'all');
+
+    if (mode === 'minimal' || mode === 'no-quotes') {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function escapeAttr(text, options = {}) {
+    const opts = typeof options === 'string' ? { pattern: options } : { pattern: 'attr', ...options };
+    return escapeHtml(text, opts);
+}
+
+function formatFileSize(bytes, options = {}) {
+    if (typeof options === 'string') {
+        options = { mode: options };
+    }
+    const mode = options.mode || 'default';
+    const fallback = options.fallback !== undefined ? options.fallback : (mode === 'compact' ? '...' : undefined);
+
+    const num = Number(bytes);
+    const isLong = mode === 'long' || options.units === 'long';
+
+    if (!num || isNaN(num) || num <= 0) {
+        if (fallback !== undefined && (!bytes || isNaN(num))) {
+            return fallback;
+        }
+        return isLong ? '0 Bytes' : '0 B';
+    }
+
+    const defaultUnits = isLong
+        ? ['Bytes', 'KB', 'MB', 'GB', 'TB']
+        : ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = Array.isArray(options.units) ? options.units : defaultUnits;
+
+    const defaultDecimals = (mode === 'compact' || mode === 'approx') ? 1 : 2;
+    const decimals = typeof options.decimals === 'number' ? options.decimals : defaultDecimals;
+
+    const stripZeros = options.fixed ? false : (options.stripZeros !== undefined ? options.stripZeros : (mode !== 'fixed' && mode !== 'long'));
+
+    const k = 1024;
+    const i = Math.min(Math.floor(Math.log(num) / Math.log(k)), sizes.length - 1);
+    const value = num / Math.pow(k, i);
+    const formatted = stripZeros ? parseFloat(value.toFixed(decimals)) : value.toFixed(decimals);
+    return `${formatted} ${sizes[i]}`;
+}
+
+function formatBytes(bytes, options = {}) {
+    return formatFileSize(bytes, options);
+}
+
+window.escapeHtml = escapeHtml;
+window.escapeAttr = escapeAttr;
+window.formatFileSize = formatFileSize;
+window.formatBytes = formatBytes;
+
 class I18n {
     constructor() {
         this.currentLang = window.CURRENT_LANGUAGE || 'en';
@@ -785,10 +865,20 @@ class Blombooru {
         `;
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = String(text ?? '');
-        return div.innerHTML;
+    escapeHtml(text, options) {
+        return escapeHtml(text, options);
+    }
+
+    escapeAttr(text, options) {
+        return escapeAttr(text, options);
+    }
+
+    formatFileSize(bytes, options) {
+        return formatFileSize(bytes, options);
+    }
+
+    formatBytes(bytes, options) {
+        return formatBytes(bytes, options);
     }
 }
 
@@ -1082,3 +1172,4 @@ window.unloadAllGifs = function (trackerSet = null, container = null) {
 
 // Initialize app
 const app = new Blombooru();
+window.app = app;

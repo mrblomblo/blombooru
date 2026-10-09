@@ -90,7 +90,7 @@ class MediaViewer extends MediaViewerBase {
             // Show rendered description for non-admin viewers
             if (this.currentMedia.description && !app.isAdminMode) {
                 const html = this.currentMedia.description_html
-                    || this.escapeHtml(this.currentMedia.description);
+                    || escapeHtml(this.currentMedia.description);
                 const displayText = this.el('description-display-text');
                 if (displayText) displayText.innerHTML = html;
                 const enlargedDisplayText = this.el('enlarged-desc-display-text');

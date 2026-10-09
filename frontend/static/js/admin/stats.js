@@ -32,14 +32,6 @@ class AdminStats {
         return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     }
 
-    formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-    }
-
     async loadStats() {
         try {
             this.showLoading();
@@ -94,7 +86,7 @@ class AdminStats {
         if (totalAlbumsEl) totalAlbumsEl.textContent = data.albums.total.toLocaleString();
 
         const totalStorageEl = document.getElementById('stat-total-storage');
-        if (totalStorageEl) totalStorageEl.textContent = this.formatBytes(data.storage.total_bytes);
+        if (totalStorageEl) totalStorageEl.textContent = formatBytes(data.storage.total_bytes);
 
         const tagAliasesEl = document.getElementById('stat-tag-aliases');
         if (tagAliasesEl) tagAliasesEl.textContent = data.tags.total_aliases.toLocaleString();

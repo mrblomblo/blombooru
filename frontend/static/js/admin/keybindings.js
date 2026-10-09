@@ -57,23 +57,23 @@ class AdminKeybindings {
 
         row.innerHTML = `
             <div class="flex items-center gap-2 flex-1">
-                <span class="text-xs font-bold text">${this._escapeHtml(label)}</span>
-                ${isDirty ? `<span class="text-[10px] uppercase font-bold px-1.5 py-0.5 border border-primary">${this._escapeHtml(modifiedLabel)}</span>` : ''}
+                <span class="text-xs font-bold text">${escapeHtml(label)}</span>
+                ${isDirty ? `<span class="text-[10px] uppercase font-bold px-1.5 py-0.5 border border-primary">${escapeHtml(modifiedLabel)}</span>` : ''}
             </div>
             <div class="flex items-center gap-2">
                 <kbd class="keybinding-chip bg px-1.5 py-0.5 text-xs border font-mono ${isSingleChar ? 'uppercase' : ''}"
-                     data-action-id="${this._escapeHtml(action.id)}">${this._escapeHtml(chipText)}</kbd>
+                     data-action-id="${escapeHtml(action.id)}">${escapeHtml(chipText)}</kbd>
 
 
                 <button class="btn keybinding-edit-btn p-2 text-xs flex items-center justify-center hover:border-primary transition-colors cursor-pointer"
-                        data-action-id="${this._escapeHtml(action.id)}"
-                        title="${this._escapeHtml(editTitle)}">
+                        data-action-id="${escapeHtml(action.id)}"
+                        title="${escapeHtml(editTitle)}">
                     ${window.Icons.edit({ size: 14 })}
                 </button>
 
                 <button class="btn keybinding-reset-btn p-2 text-xs text-secondary flex items-center justify-center hover:border-primary transition-colors cursor-pointer"
-                        data-action-id="${this._escapeHtml(action.id)}"
-                        title="${this._escapeHtml(resetTitle)}">
+                        data-action-id="${escapeHtml(action.id)}"
+                        title="${escapeHtml(resetTitle)}">
                     ${window.Icons.reset({ size: 14 })}
                 </button>
             </div>
@@ -135,12 +135,12 @@ class AdminKeybindings {
         row.className = 'keybinding-row flex items-center justify-between gap-3 px-1.5 py-1.5 sm:px-3 border border-primary surface';
         row.innerHTML = `
             <div class="flex items-center gap-2 flex-1">
-                <span class="text-xs font-bold text">${this._escapeHtml(label)}</span>
-                <span class="text-xs text animate-pulse">${this._escapeHtml(promptText)}</span>
+                <span class="text-xs font-bold text">${escapeHtml(label)}</span>
+                <span class="text-xs text animate-pulse">${escapeHtml(promptText)}</span>
             </div>
             <div class="flex items-center gap-2">
                 <button class="btn keybinding-cancel-capture-btn p-2 text-xs text flex items-center justify-center hover:border-danger transition-colors cursor-pointer"
-                        title="${this._escapeHtml(cancelTitle)}">
+                        title="${escapeHtml(cancelTitle)}">
                     ${window.Icons.close({ size: 14 })}
                 </button>
             </div>
@@ -322,11 +322,5 @@ class AdminKeybindings {
         this._statusTimer = setTimeout(() => {
             el.style.display = 'none';
         }, 3500);
-    }
-
-    _escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = String(text);
-        return div.innerHTML;
     }
 }

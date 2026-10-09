@@ -60,21 +60,6 @@ class UploadMediaEditor {
         }
     }
 
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    formatFileSize(bytes) {
-        if (!bytes || bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
     render() {
         clearTimeout(this.bulkTagSaveTimeout);
 
@@ -114,7 +99,7 @@ class UploadMediaEditor {
             if (alb) {
                 html += `
                     <div class="bg px-2 py-0.5 border text-xs flex items-center gap-1.5">
-                        <span class="font-mono">${this.escapeHtml(alb.name)}</span>
+                        <span class="font-mono">${escapeHtml(alb.name)}</span>
                         <button type="button" class="editor-remove-album-btn text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center" data-id="${id}">
                             ${window.Icons.trash({ size: 12, class: 'transition-colors' })}
                         </button>
@@ -191,7 +176,7 @@ class UploadMediaEditor {
         const available = this.allAlbums.filter(a => !excludeSet.has(a.id));
         let html = `<div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs selected" data-value="">${window.i18n.t('upload.base_settings.select_album')}</div>`;
         available.forEach(alb => {
-            html += `<div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs" data-value="${alb.id}">${this.escapeHtml(alb.name)}</div>`;
+            html += `<div class="custom-select-option px-3 py-1.5 cursor-pointer hover:surface text-xs" data-value="${alb.id}">${escapeHtml(alb.name)}</div>`;
         });
         return html;
     }
@@ -212,14 +197,14 @@ class UploadMediaEditor {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 mb-3">
                     <div class="flex items-center gap-1.5 min-w-0 flex-wrap sm:flex-nowrap">
                         <span class="text-xs font-bold truncate min-w-0">
-                            ${window.i18n.t('upload.preview.editing')} ${this.escapeHtml(item.filename)}
+                            ${window.i18n.t('upload.preview.editing')} ${escapeHtml(item.filename)}
                         </span>
                         <span class="text-[11px] text-secondary shrink-0 whitespace-nowrap">
-                            (${item.width && item.height ? `${item.width}x${item.height}, ` : ''}${this.formatFileSize(item.file_size)})
+                            (${item.width && item.height ? `${item.width}x${item.height}, ` : ''}${formatFileSize(item.file_size)})
                         </span>
                         ${item.metadata_source ? `
-                        <span class="badge bg-primary primary-text border border-primary text-[10px] px-1.5 py-0.5 shrink-0" title="${this.escapeHtml(item.metadata_source)}">
-                            ${this.escapeHtml(item.metadata_source)}
+                        <span class="badge bg-primary primary-text border border-primary text-[10px] px-1.5 py-0.5 shrink-0" title="${escapeHtml(item.metadata_source)}">
+                            ${escapeHtml(item.metadata_source)}
                         </span>` : ''}
                     </div>
 
@@ -259,7 +244,7 @@ class UploadMediaEditor {
                         </label>
                         <input type="url" id="editor-single-source"
                             class="w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
-                            value="${this.escapeHtml(item.source || '')}"
+                            value="${escapeHtml(item.source || '')}"
                             placeholder="https://example.com/source">
                     </div>
                 </div>
@@ -271,7 +256,7 @@ class UploadMediaEditor {
                     </label>
                     <textarea id="editor-single-description" rows="2"
                         class="auto-expand-textarea w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
-                        placeholder="${this.escapeHtml(descPlaceholder)}">${this.escapeHtml(item.description || '')}</textarea>
+                        placeholder="${escapeHtml(descPlaceholder)}">${escapeHtml(item.description || '')}</textarea>
                 </div>
 
                 <!-- Folder Album (from folder structure) -->
@@ -283,7 +268,7 @@ class UploadMediaEditor {
                     <div class="bg px-2 py-1 border text-xs flex items-center justify-between gap-2">
                         <div class="flex items-center gap-1.5 min-w-0">
                             <span class="text-secondary shrink-0">${window.Icons.folder({ size: 12 })}</span>
-                            <span class="font-mono text-xs truncate" title="${this.escapeHtml(item.suggested_album_path)}">${this.escapeHtml(item.suggested_album_path)}</span>
+                            <span class="font-mono text-xs truncate" title="${escapeHtml(item.suggested_album_path)}">${escapeHtml(item.suggested_album_path)}</span>
                         </div>
                         <button type="button" id="editor-single-remove-folder-album-btn" class="text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center shrink-0" title="${window.i18n.t('upload.folder.remove_album_path')}">
                             ${window.Icons.trash({ size: 12, class: 'transition-colors' })}
@@ -319,7 +304,7 @@ class UploadMediaEditor {
                     <div class="relative">
                         <div id="editor-single-tags-input" contenteditable="true" data-placeholder="original highres cat_ears"
                             class="w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors min-h-7.5"
-                            style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${this.escapeHtml(tagsPlainText)}</div>
+                            style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(tagsPlainText)}</div>
                     </div>
                 </div>
 
@@ -463,7 +448,7 @@ class UploadMediaEditor {
                         <div class="flex items-center gap-1.5">
                             <input type="url" id="editor-bulk-source"
                                 class="flex-1 bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
-                                value="${this.escapeHtml(shared.source || '')}"
+                                value="${escapeHtml(shared.source || '')}"
                                 placeholder="https://example.com/source">
                             <button type="button" id="editor-bulk-apply-source-btn" class="btn-primary text-xs px-2.5 py-1.5 cursor-pointer shrink-0">
                                 ${window.i18n.t('common.apply')}
@@ -480,7 +465,7 @@ class UploadMediaEditor {
                     <div class="flex flex-col gap-1.5">
                         <textarea id="editor-bulk-description" rows="2"
                             class="auto-expand-textarea w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
-                            placeholder="${this.escapeHtml(descPlaceholder)}">${this.escapeHtml(shared.description || '')}</textarea>
+                            placeholder="${escapeHtml(descPlaceholder)}">${escapeHtml(shared.description || '')}</textarea>
                         <div class="flex justify-end">
                             <button type="button" id="editor-bulk-apply-desc-btn" class="btn-primary text-xs px-2.5 py-1 cursor-pointer">
                                 ${window.i18n.t('common.apply')}
@@ -498,7 +483,7 @@ class UploadMediaEditor {
                     <div class="bg px-2 py-1 border text-xs flex items-center justify-between gap-2">
                         <div class="flex items-center gap-1.5 min-w-0">
                             <span class="text-secondary shrink-0">${window.Icons.folder({ size: 12 })}</span>
-                            <span class="font-mono text-xs truncate" title="${this.escapeHtml(commonSuggestedPath)}">${this.escapeHtml(commonSuggestedPath)}</span>
+                            <span class="font-mono text-xs truncate" title="${escapeHtml(commonSuggestedPath)}">${escapeHtml(commonSuggestedPath)}</span>
                         </div>
                         <button type="button" id="editor-bulk-remove-folder-album-btn" class="text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center shrink-0" title="${window.i18n.t('upload.folder.remove_album_path')}">
                             ${window.Icons.trash({ size: 12, class: 'transition-colors' })}
@@ -536,7 +521,7 @@ class UploadMediaEditor {
                     <div class="relative">
                         <div id="editor-bulk-tags-input" contenteditable="true" data-placeholder="original highres cat_ears"
                             class="w-full bg px-3 py-1.5 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors min-h-7.5"
-                            style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${this.escapeHtml(tagsPlainText)}</div>
+                            style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(tagsPlainText)}</div>
                     </div>
                 </div>
 

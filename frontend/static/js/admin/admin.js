@@ -40,12 +40,6 @@ class AdminPanel {
         this.keybindings.load();
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     async checkAuth() {
         try {
             const response = await fetch('/api/admin/settings');

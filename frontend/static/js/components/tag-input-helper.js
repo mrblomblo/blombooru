@@ -11,16 +11,6 @@ class TagInputHelper {
         });
     }
 
-    // HTML escaping to prevent injection
-    escapeHtml(text) {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
     // Get plain text from contenteditable div
     getPlainTextFromDiv(div) {
         return div.textContent || '';
@@ -214,13 +204,13 @@ class TagInputHelper {
         let html = '';
         for (let tag of tags) {
             if (tag.isWhitespace) {
-                html += this.escapeHtml(tag.text);
+                html += escapeHtml(tag.text);
             } else if (tag.isInvalid) {
-                html += `<span class="invalid-tag">${this.escapeHtml(tag.text)}</span>`;
+                html += `<span class="invalid-tag">${escapeHtml(tag.text)}</span>`;
             } else if (tag.isHighlighted) {
-                html += `<span class="new-tag">${this.escapeHtml(tag.text)}</span>`;
+                html += `<span class="new-tag">${escapeHtml(tag.text)}</span>`;
             } else {
-                html += this.escapeHtml(tag.text);
+                html += escapeHtml(tag.text);
             }
         }
 

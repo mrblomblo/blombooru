@@ -80,13 +80,6 @@ class PendingEntitiesPanel {
         }
     }
 
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     render() {
         const panel = this.container.querySelector('.pending-entities-panel');
         const tags = this.pendingData.pending_tags || [];
@@ -121,10 +114,10 @@ class PendingEntitiesPanel {
                 const cat = tag.category || 'general';
                 const grayscaleClass = (!tag.user_assigned) ? 'grayscale' : '';
                 return `
-                    <div class="pending-tag-item inline-flex items-center gap-1 bg border p-1 transition-colors max-w-full min-w-0" data-name="${this.escapeHtml(tag.name)}">
-                        <div class="custom-select pending-cat-select max-w-full min-w-0 inline-flex shrink" data-value="${cat}" data-tag="${this.escapeHtml(tag.name)}">
+                    <div class="pending-tag-item inline-flex items-center gap-1 bg border p-1 transition-colors max-w-full min-w-0" data-name="${escapeHtml(tag.name)}">
+                        <div class="custom-select pending-cat-select max-w-full min-w-0 inline-flex shrink" data-value="${cat}" data-tag="${escapeHtml(tag.name)}">
                             <div class="custom-select-trigger tag-text tag ${cat} ${grayscaleClass} cursor-pointer select-none max-w-full min-w-0 !inline-flex items-center gap-1 flex-nowrap" style="white-space: nowrap; display: inline-flex;">
-                                <span class="text-xs truncate min-w-0" title="${this.escapeHtml(tag.name)}">${this.escapeHtml(tag.name)}</span>
+                                <span class="text-xs truncate min-w-0" title="${escapeHtml(tag.name)}">${escapeHtml(tag.name)}</span>
                                 <span class="custom-select-value" style="display: none;"></span>
                                 ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow shrink-0 transition-transform duration-200' })}
                             </div>
@@ -180,16 +173,16 @@ class PendingEntitiesPanel {
                 const parentAlb = albumMap.get(alb.parent_path);
                 const parentName = parentAlb ? parentAlb.name : alb.parent_path.split('/').filter(Boolean).pop();
                 if (parentName) {
-                    parentPathHtml = `<span class="text-[10px] text-secondary truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(parentName)}</span>`;
+                    parentPathHtml = `<span class="text-[10px] text-secondary truncate block" title="${escapeHtml(alb.path)}">${escapeHtml(parentName)}</span>`;
                 }
             }
 
             return `
                 <div class="pending-album-item flex items-center gap-2 border-b py-2 px-2.5 transition-colors cursor-pointer hover:surface"
-                    data-album-path="${this.escapeHtml(alb.path)}">
+                    data-album-path="${escapeHtml(alb.path)}">
                     <span class="pending-album-icon shrink-0 text-secondary">${folderIcon}</span>
                     <div class="pending-album-name-wrapper flex-1 min-w-0">
-                        <span class="pending-album-name-text text-xs font-medium truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(alb.name)}</span>
+                        <span class="pending-album-name-text text-xs font-medium truncate block" title="${escapeHtml(alb.path)}">${escapeHtml(alb.name)}</span>
                         ${parentPathHtml}
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
@@ -324,7 +317,7 @@ class PendingEntitiesPanel {
                 const currentName = alb.name;
                 wrapper.innerHTML = `
                     <input type="text" class="pending-rename-input w-full bg px-1.5 py-0.5 border text-xs focus:outline-none focus:border-primary"
-                        value="${this.escapeHtml(currentName)}">
+                        value="${escapeHtml(currentName)}">
                 `;
 
                 const input = wrapper.querySelector('.pending-rename-input');
@@ -337,7 +330,7 @@ class PendingEntitiesPanel {
                         if (newName && newName !== currentName) {
                             await this.session.updatePendingAlbum(alb.path, { new_name: newName });
                         } else {
-                            wrapper.innerHTML = `<span class="pending-album-name-text text-xs font-medium truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(currentName)}</span>`;
+                            wrapper.innerHTML = `<span class="pending-album-name-text text-xs font-medium truncate block" title="${escapeHtml(alb.path)}">${escapeHtml(currentName)}</span>`;
                         }
                     };
 
@@ -346,7 +339,7 @@ class PendingEntitiesPanel {
                             ke.preventDefault();
                             input.blur();
                         } else if (ke.key === 'Escape') {
-                            wrapper.innerHTML = `<span class="pending-album-name-text text-xs font-medium truncate block" title="${this.escapeHtml(alb.path)}">${this.escapeHtml(currentName)}</span>`;
+                            wrapper.innerHTML = `<span class="pending-album-name-text text-xs font-medium truncate block" title="${escapeHtml(alb.path)}">${escapeHtml(currentName)}</span>`;
                         }
                     });
 

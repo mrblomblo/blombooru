@@ -31,7 +31,7 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                         <input id="upm-url-input" type="url"
                             class="flex-1 bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
                             placeholder="${window.i18n.t('common.url_placeholder')}"
-                            value="${this._escapeHtml(this.currentMedia?.source || '')}">
+                            value="${escapeHtml(this.currentMedia?.source || '')}">
                         <button id="upm-url-fetch" class="btn-primary whitespace-nowrap cursor-pointer">
                             ${window.i18n.t('admin.media_management.url_import.fetch')}
                         </button>
@@ -141,9 +141,9 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
 
     _renderDropdownTag(tag, colorClass) {
         return `
-            <div class="custom-select booru-tag-select inline-block align-middle" data-value="${tag.category}" data-tag="${this._escapeHtml(tag.name)}">
+            <div class="custom-select booru-tag-select inline-block align-middle" data-value="${tag.category}" data-tag="${escapeHtml(tag.name)}">
                 <div class="custom-select-trigger tag-text tag ${colorClass} cursor-pointer select-none" style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-                    <span class="text-xs">${this._escapeHtml(tag.name)}</span>
+                    <span class="text-xs">${escapeHtml(tag.name)}</span>
                     <span class="custom-select-value" style="display: none;"></span>
                     ${window.Icons.chevronDown({ size: 10, class: 'custom-select-arrow flex-shrink-0 transition-transform duration-200', style: 'display: block;' })}
                 </div>
@@ -160,13 +160,6 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
 
     _getTagsText(tags) {
         return this._sortPostTags(tags).map(t => t.name).join(' ');
-    }
-
-    _formatFileSize(bytes) {
-        if (!bytes) return '—';
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
     _truncateUrl(url, maxLen = 30) {
@@ -244,8 +237,8 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                         <span class="text-secondary shrink-0 mr-1">${window.i18n.t('media.info.source')}</span>
                         ${post.source
                     ? `<strong class="truncate min-w-0 flex-1 font-normal text-right">
-                                <a href="${this._escapeHtml(post.source)}" target="_blank" class="text-primary hover:underline block truncate" title="${this._escapeHtml(post.source)}">
-                                    ${this._escapeHtml(post.source)}
+                                <a href="${escapeHtml(post.source)}" target="_blank" class="text-primary hover:underline block truncate" title="${escapeHtml(post.source)}">
+                                    ${escapeHtml(post.source)}
                                 </a>
                                </strong>`
                     : '<span class="text-secondary ml-1">...</span>'
@@ -259,7 +252,7 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                     ${post.file_size ? `
                     <div>
                         <span class="text-secondary">${window.i18n.t('media.info.size')}</span>
-                        <span class="font-medium ml-1">${this._formatFileSize(post.file_size)}</span>
+                        <span class="font-medium ml-1">${formatFileSize(post.file_size, { mode: 'compact', fallback: '-' })}</span>
                     </div>` : ''}
                 </div>
                 <div class="mb-3">
@@ -276,16 +269,16 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                     <div id="upm-tags-input"
                         class="bg w-full px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
                         contenteditable="true"
-                        style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${this._escapeHtml(tagsText)}</div>
+                        style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(tagsText)}</div>
                 </div>
             `;
         } else {
             infoHtml = `
                 <div class="flex-1 min-w-0 text-xs space-y-2">
-                    <div><strong>${window.i18n.t('media.info.filename')}:</strong> ${this._escapeHtml(post.filename)}</div>
-                    <div><strong>${window.i18n.t('media.info.type')}:</strong> ${this._escapeHtml(post.content_type)}</div>
-                    <div><strong>${window.i18n.t('media.info.size')}:</strong> ${this._formatFileSize(post.file_size)}</div>
-                    <div class="break-all"><strong>${window.i18n.t('media.info.source')}:</strong> ${this._escapeHtml(this._truncateUrl(post.file_url, 80))}</div>
+                    <div><strong>${window.i18n.t('media.info.filename')}:</strong> ${escapeHtml(post.filename)}</div>
+                    <div><strong>${window.i18n.t('media.info.type')}:</strong> ${escapeHtml(post.content_type)}</div>
+                    <div><strong>${window.i18n.t('media.info.size')}:</strong> ${formatFileSize(post.file_size, { mode: 'compact', fallback: '-' })}</div>
+                    <div class="break-all"><strong>${window.i18n.t('media.info.source')}:</strong> ${escapeHtml(this._truncateUrl(post.file_url, 80))}</div>
                 </div>
             `;
         }
