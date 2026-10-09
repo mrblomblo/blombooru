@@ -47,3 +47,32 @@ def validate_url_not_ssrf(url: str) -> None:
             or ip.is_unspecified
         ):
             raise UrlValidationError("ssrf_blocked")
+
+
+def is_safe_return_url(url: str | None) -> bool:
+    """
+    Validate that a return URL is a safe relative path.
+    Enforces that return_url starts with a single '/' and not '//' or '/\\',
+    and contains no ASCII control characters.
+    """
+    if not url or not isinstance(url, str):
+        return False
+
+    # Must start with a single '/' and not '//' or '/\'
+    if not url.startswith("/") or url.startswith(("//", "/\\")):
+        return False
+
+    # Reject ASCII control characters (which browsers strip or normalize)
+    if any(ord(c) < 32 or ord(c) == 127 for c in url):
+        return False
+
+    return True
+
+
+def get_safe_return_url(url: str | None, default: str = "/") -> str:
+    """
+    Return url if it is safe, otherwise return default.
+    """
+    if is_safe_return_url(url):
+        return url
+    return default

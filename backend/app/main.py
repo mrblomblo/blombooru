@@ -57,6 +57,7 @@ from .translations import language_registry, translation_helper
 from .utils.logger import logger
 from .utils.search_parser import canonicalize_query
 from .utils.format_registry import format_registry
+from .utils.url_security import get_safe_return_url
 
 def get_cache_buster():
     """Get the current git commit hash to use as a cache buster, fallback to APP_VERSION"""
@@ -398,7 +399,7 @@ async def admin_panel(request: Request):
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Login page"""
-    return_url = request.query_params.get("return", "/")
+    return_url = get_safe_return_url(request.query_params.get("return", "/"))
     return templates.TemplateResponse("login.html", {
         "request": request,
         "app_name": settings.APP_NAME,
