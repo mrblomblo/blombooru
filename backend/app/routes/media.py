@@ -43,6 +43,7 @@ from ..utils.search_parser import (apply_custom_filters_or,
 from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT, thumbnail_mime_type
 from ..utils.transcoder import (get_transcoded_path_for_original,
                                 transcode_media_if_needed)
+from ..utils.url_fetch import UrlFetchError, safe_request
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -179,9 +180,18 @@ async def update_from_source(
         import requests as _requests
         try:
             from ..services.booru import get_user_agent_for_url
-            headers = {"User-Agent": get_user_agent_for_url(req.file_url, db=db)}
-            dl = _requests.get(req.file_url, headers=headers, timeout=60, stream=True, proxies=settings.get_booru_proxies())
+            user_agent = get_user_agent_for_url(req.file_url, db=db)
+            dl = safe_request(
+                "GET",
+                req.file_url,
+                timeout=60,
+                stream=True,
+                user_agent=user_agent,
+                proxies=settings.get_booru_proxies(),
+            )
             dl.raise_for_status()
+        except UrlFetchError as e:
+            raise HTTPException(status_code=e.status_code, detail=e.message)
         except _requests.HTTPError as e:
             raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
         except _requests.RequestException as e:

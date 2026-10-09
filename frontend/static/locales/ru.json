@@ -206,7 +206,6 @@
                 "error_duplicate": "Медиафайл с таким же хэшем уже существует (дубль {filename})",
                 "error_duplicate_session": "Дубль файла {filename} в текущей сессии загрузки",
                 "error_invalid_url": "Неверный URL",
-                "error_redirect_not_followed": "Редиректы запрещены",
                 "error_ssrf_blocked": "Доступ к внутренним сетям запрещен",
                 "error_not_an_image": "URL не вернул медиафайл",
                 "error_image_403": "Доступ запрещен сайтом Booru (403)",

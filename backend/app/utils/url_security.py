@@ -39,7 +39,8 @@ def validate_url_not_ssrf(url: str) -> None:
             raise UrlValidationError("invalid_url")
 
         if (
-            ip.is_private
+            not ip.is_global
+            or ip.is_private
             or ip.is_loopback
             or ip.is_link_local
             or ip.is_multicast

@@ -206,7 +206,6 @@
                 "error_duplicate": "媒体已存在（与 {filename} 重复）",
                 "error_duplicate_session": "",
                 "error_invalid_url": "无效的 URL",
-                "error_redirect_not_followed": "",
                 "error_ssrf_blocked": "",
                 "error_not_an_image": "",
                 "error_image_403": "源站拒绝访问图片 (403)",

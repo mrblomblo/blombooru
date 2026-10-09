@@ -125,10 +125,10 @@ class TestDanbooruAccountId(unittest.TestCase, BlombooruTestSandboxMixin):
         diff_ua = get_user_agent_for_url("https://safebooru.donmai.us/data/sample.jpg", db=self.db)
         self.assertEqual(diff_ua, "Blombooru/1.0 (booru-import)")
 
+    @patch("backend.app.routes.booru_import.safe_request")
     @patch("backend.app.routes.booru_import.validate_url_not_ssrf")
     @patch("requests.Session.get")
-    @patch("requests.get")
-    def test_proxy_image_uses_shared_helper(self, mock_requests_get, mock_session_get, mock_ssrf):
+    def test_proxy_image_uses_shared_helper(self, mock_session_get, mock_ssrf, mock_safe_request):
         mock_profile_resp = MagicMock()
         mock_profile_resp.status_code = 200
         mock_profile_resp.json.return_value = {"id": 1633079, "name": "dan_user"}
@@ -146,13 +146,12 @@ class TestDanbooruAccountId(unittest.TestCase, BlombooruTestSandboxMixin):
         fake_resp.status_code = 200
         fake_resp.headers = {"content-type": "image/jpeg"}
         fake_resp.iter_content.return_value = [b"data"]
-        mock_requests_get.return_value = fake_resp
+        mock_safe_request.return_value = fake_resp
 
         asyncio.run(proxy_image("https://danbooru.donmai.us/sample.jpg", current_user=None, db=self.db))
 
-        self.assertTrue(mock_requests_get.called)
-        called_headers = mock_requests_get.call_args[1].get("headers", {})
-        self.assertEqual(called_headers.get("User-Agent"), "Blombooru/1.0 (booru-import); user #1633079")
+        self.assertTrue(mock_safe_request.called)
+        self.assertEqual(mock_safe_request.call_args[1].get("user_agent"), "Blombooru/1.0 (booru-import); user #1633079")
 
     def test_danbooru_client_init_does_not_make_network_call(self):
         with patch("requests.Session.get") as mock_get:

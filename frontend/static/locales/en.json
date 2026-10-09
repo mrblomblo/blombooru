@@ -206,7 +206,6 @@
                 "error_duplicate": "Media already exists (duplicate of {filename})",
                 "error_duplicate_session": "Exact duplicate of existing file in current session: {filename}",
                 "error_invalid_url": "Invalid URL",
-                "error_redirect_not_followed": "Redirects are not allowed",
                 "error_ssrf_blocked": "Access to internal networks is forbidden",
                 "error_not_an_image": "URL did not return an image or video",
                 "error_image_403": "Access denied by booru site (403)",

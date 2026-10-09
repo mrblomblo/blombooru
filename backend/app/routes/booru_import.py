@@ -21,6 +21,7 @@ from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
+from ..utils.url_fetch import UrlFetchError, safe_request
 from ..utils.url_security import UrlValidationError, validate_url_not_ssrf
 from .media import get_or_create_tags, update_tag_counts
 
@@ -138,12 +139,22 @@ async def download_and_import(
 
     # Download media file to temp location
     try:
-        if client and hasattr(client, "session"):
-            response = client.session.get(post.file_url, timeout=60, stream=True)
-        else:
-            response = requests.get(post.file_url, timeout=60, stream=True)
+        user_agent = get_user_agent_for_url(post.file_url, db=db)
+        proxies = settings.get_booru_proxies()
+        session = client.session if (client and hasattr(client, "session")) else None
 
+        response = safe_request(
+            "GET",
+            post.file_url,
+            timeout=60,
+            stream=True,
+            user_agent=user_agent,
+            proxies=proxies,
+            session=session,
+        )
         response.raise_for_status()
+    except UrlFetchError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except requests.HTTPError as e:
         if e.response.status_code == 403:
             raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_download_403")
@@ -290,30 +301,18 @@ async def proxy_image(
     if not url.startswith("http"):
         raise HTTPException(status_code=400, detail="admin.media_management.booru_import.error_invalid_url")
 
-    _validate_url_not_ssrf(url)
-
     try:
-        from urllib.parse import urlparse
-        parsed = urlparse(url)
-        referer = f"{parsed.scheme}://{parsed.netloc}/"
+        user_agent = get_user_agent_for_url(url, db=db)
+        proxies = settings.get_booru_proxies()
 
-        external_resp = requests.get(
+        external_resp = safe_request(
+            "GET",
             url,
-            stream=True,
             timeout=60,
-            allow_redirects=False,
-            headers={
-                "User-Agent": get_user_agent_for_url(url, db=db),
-                "Referer": referer,
-            },
+            stream=True,
+            user_agent=user_agent,
+            proxies=proxies,
         )
-        
-        if external_resp.status_code in (301, 302, 303, 307, 308):
-            # Refuse to follow redirects
-            raise HTTPException(
-                status_code=422,
-                detail="admin.media_management.booru_import.error_redirect_not_followed"
-            )
 
         if external_resp.status_code == 403:
             raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_image_403")
@@ -336,7 +335,15 @@ async def proxy_image(
             media_type=content_type,
             headers={"Cache-Control": "public, max-age=3600"}
         )
+    except UrlFetchError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except HTTPException:
         raise
+    except requests.HTTPError as e:
+        if e.response.status_code == 403:
+            raise HTTPException(status_code=403, detail="admin.media_management.booru_import.error_image_403")
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="admin.media_management.booru_import.error_image_404")
+        raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_proxy_failed:::{safe_error_detail('Proxy failed', e)}")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"admin.media_management.booru_import.error_proxy_failed:::{safe_error_detail('Proxy failed', e)}")

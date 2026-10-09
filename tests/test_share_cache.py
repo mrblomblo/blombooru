@@ -696,7 +696,7 @@ class TestShareCacheRework(AsyncBackupTestBase):
         new_img.save(buf, format="PNG")
         new_bytes = buf.getvalue()
 
-        with patch("requests.get") as mock_get:
+        with patch("backend.app.routes.media.safe_request") as mock_get:
             mock_resp = MagicMock()
             mock_resp.iter_content = lambda chunk_size: [new_bytes]
             mock_resp.raise_for_status = MagicMock()
