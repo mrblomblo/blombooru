@@ -37,6 +37,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/static/",
             "/shared/",
             "/api/shared/",
+            "/data/themes/",
         )
     
         # Danbooru API routes - these handle their own auth
