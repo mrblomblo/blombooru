@@ -168,12 +168,8 @@ def get_current_user(
 ):
     token_to_use = admin_token or token
     
-    if not token_to_use:
+    if not token_to_use or token_to_use.startswith("blom_"):
         return None
-    
-    if token_to_use.startswith("blom_"):
-        record = verify_api_key_record(db, token_to_use)
-        return record.user if record else None
     
     try:
         payload = jwt.decode(token_to_use, settings.SECRET_KEY, algorithms=[ALGORITHM])
@@ -202,20 +198,34 @@ def _enforce_api_key_permission(request: Request, api_key_user: User) -> User:
         )
     return api_key_user
 
-def get_current_admin_user(
+def _authenticate_admin_request(
     request: Request,
-    current_user: Optional[User] = Depends(get_current_user),
-    api_key_user: Optional[User] = Depends(get_current_user_from_api_key)
-):
+    current_user: Optional[User],
+    api_key_user: Optional[User]
+) -> tuple[User, bool]:
+    """Authenticate request via API key or session JWT.
+    
+    Returns (user, is_api_key).
+    Raises 401 if unauthenticated, or 403 if API key lacks required permissions.
+    """
     if api_key_user:
-        return _enforce_api_key_permission(request, api_key_user)
+        return _enforce_api_key_permission(request, api_key_user), True
 
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    return current_user
+    return current_user, False
+
+def get_current_admin_user(
+    request: Request,
+    current_user: Optional[User] = Depends(get_current_user),
+    api_key_user: Optional[User] = Depends(get_current_user_from_api_key)
+) -> User:
+    user, _ = _authenticate_admin_request(request, current_user, api_key_user)
+    return user
 
 def is_admin_mode(admin_mode: Optional[str] = Cookie(default=None)):
     """Check if the admin_mode UI toggle cookie is set.
@@ -230,18 +240,12 @@ def require_admin_mode(
     current_user: Optional[User] = Depends(get_current_user),
     admin_mode_active: bool = Depends(is_admin_mode),
     api_key_user: Optional[User] = Depends(get_current_user_from_api_key)
-):
+) -> User:
     """Require admin credentials (session JWT or API key) plus the admin_mode UI toggle for browser sessions."""
-    # API key takes priority as API clients don't have the admin_mode cookie
-    if api_key_user:
-        return _enforce_api_key_permission(request, api_key_user)
+    user, is_api_key = _authenticate_admin_request(request, current_user, api_key_user)
 
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if is_api_key:
+        return user
 
     # Only enforce the admin_mode UI toggle for browser sessions (identified by the admin_token cookie)
     has_session_cookie = bool(request.cookies.get("admin_token"))
@@ -250,4 +254,4 @@ def require_admin_mode(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You need to be logged in as the admin to perform this action"
         )
-    return current_user
+    return user

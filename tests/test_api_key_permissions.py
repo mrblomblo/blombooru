@@ -2,8 +2,10 @@ import asyncio
 import unittest
 from fastapi import HTTPException
 
-from backend.app.auth import (generate_api_key, get_current_admin_user,
-                              hash_api_key, require_admin_mode, verify_api_key,
+from backend.app.auth import (generate_api_key, get_api_key_from_request,
+                              get_current_admin_user, get_current_user,
+                              get_current_user_from_api_key, hash_api_key,
+                              require_admin_mode, verify_api_key,
                               verify_api_key_record)
 from backend.app.database import check_and_migrate_schema
 from backend.app.enums import ApiKeyPermissionEnum
@@ -338,6 +340,52 @@ class TestApiKeyPermissions(BackupTestBase):
         resolved_user4 = get_current_user_from_api_key(req_query, self.db)
         self.assertIsNotNone(resolved_user4)
         self.assertEqual(resolved_user4.id, self.user.id)
+
+    def test_cookie_based_api_key_rejection(self):
+        """Test that API keys passed in the admin_token cookie are rejected, preventing bypasses."""
+        read_raw = generate_api_key()
+        read_key = ApiKey(
+            key_hash=hash_api_key(read_raw),
+            key_prefix=read_raw[:12],
+            name="Cookie Key",
+            permission="read",
+            user_id=self.user.id
+        )
+        self.db.add(read_key)
+        self.db.commit()
+
+        # 1. get_current_user rejects blom_ tokens in admin_token cookie
+        req = DummyRequest("/api/media/upload")
+        req.cookies["admin_token"] = read_raw
+        user_from_cookie = get_current_user(admin_token=read_raw, db=self.db)
+        self.assertIsNone(user_from_cookie)
+
+        # 2. get_api_key_from_request does not inspect cookies
+        key_record = get_api_key_from_request(req, self.db)
+        self.assertIsNone(key_record)
+
+        # 3. get_current_user_from_api_key returns None
+        api_user = get_current_user_from_api_key(req, self.db)
+        self.assertIsNone(api_user)
+
+        # 4. require_admin_mode raises 401 Unauthorized (even with admin_mode toggle active)
+        with self.assertRaises(HTTPException) as ctx:
+            require_admin_mode(
+                request=req,
+                current_user=user_from_cookie,
+                admin_mode_active=True,
+                api_key_user=api_user
+            )
+        self.assertEqual(ctx.exception.status_code, 401)
+
+        # 5. get_current_admin_user raises 401 Unauthorized
+        with self.assertRaises(HTTPException) as ctx:
+            get_current_admin_user(
+                request=req,
+                current_user=user_from_cookie,
+                api_key_user=api_user
+            )
+        self.assertEqual(ctx.exception.status_code, 401)
 
     def test_browser_session_and_admin_mode_toggle(self):
         """Test browser cookie session auth and the admin_mode UI safety toggle."""

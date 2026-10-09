@@ -4,7 +4,7 @@
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling. The docs are also not guaranteed to be up to date with the latest changes in the API.
 
 > [!NOTE]
-> Last updated: `September 27, 2026`  
+> Last updated: `October 9, 2026`  
 > Update date for the docs can be found in the individual doc files.
 
 
@@ -38,13 +38,16 @@ The `auth_required` field corresponds to the `REQUIRE_AUTH` setting. When it is 
 
 ## Authentication
 
-Authentication in blombooru operates across **two independent layers**. Both must be satisfied to successfully call write endpoints from a script.
+Authentication in blombooru operates across **two complementary layers**:
+
+1. **Request Authentication (Layer 1)**: Middleware-level access gate that protects non-public routes when `REQUIRE_AUTH` is enabled.
+2. **Endpoint Authorization and Admin Mode (Layer 2)**: Route-level dependencies that authenticate identity, enforce API key permission tiers, and apply UI safety toggles.
 
 ---
 
 ### Layer 1: Request Authentication (middleware)
 
-This layer is enforced by the middleware and is **only active when `REQUIRE_AUTH` is `true`** in settings. When active, it validates every non-public request and returns `401 {"detail": "Authentication required"}` if no valid credential is found. When `REQUIRE_AUTH` is `false`, all requests pass through unchecked at this layer.
+This layer is enforced by the middleware and is **only active when `REQUIRE_AUTH` is `true`** in settings. When active, it validates every non-public request and returns `401 {"detail": "Authentication required"}` if no valid credential is found. When `REQUIRE_AUTH` is `false`, all requests pass through this layer; route dependencies still enforce Layer 2.
 
 Accepted credential types:
 
@@ -52,57 +55,70 @@ Accepted credential types:
 |---|---|
 | API key as Bearer token | `Authorization: Bearer blom_<key>` |
 | API key as raw header | `Authorization: blom_<key>` |
-| API key as query param | `?api_key=blom_<key>` |
-| API key via HTTP Basic Auth | `Authorization: Basic base64(<user>:<blom_key>)` |
+| API key as query param | `?api_key=blom_<key>` *(API and Danbooru routes only)* |
+| API key via HTTP Basic Auth | `Authorization: Basic base64(<user>:<blom_key>)` *(API and Danbooru routes only)* |
 | JWT as Bearer token | `Authorization: Bearer <jwt>` |
-| JWT or API key as `admin_token` cookie | `Cookie: admin_token=<jwt>` |
+| JWT as `admin_token` cookie | `Cookie: admin_token=<jwt>` |
 
 > [!NOTE]
-> `Authorization: Bearer <jwt>` authenticates you at the middleware level, but on its own is **not sufficient** for write endpoints. See Layer 2.
+> API keys are strictly passed via headers or query parameters. Any `blom_` key provided in the `admin_token` cookie is rejected, as this cookie is reserved exclusively for browser JWT sessions.
 
 ---
 
-### Layer 2: Admin Mode (route dependency)
+### Layer 2: Endpoint Authorization and Admin Mode (route dependencies)
 
-All write endpoints (marked `require_admin_mode` in this document) have an **unconditional** secondary check that is active regardless of `REQUIRE_AUTH` and regardless of how Layer 1 auth was provided.
+Regardless of the `REQUIRE_AUTH` setting, protected route dependencies always verify credentials, returning `401 {"detail": "Not authenticated"}` if unauthenticated:
 
-This check requires the `admin_mode` cookie to be present and set to `"true"`. Without it the endpoint returns `403` even when a valid credential is supplied.
+- **`require_admin_mode` endpoints**: Write and content-mutation endpoints, including most of `/api/admin/*` (backups, API key management).
+  - **API Keys**: Checked against their permission tier (see below). No `admin_mode` cookie is needed.
+  - **Browser Sessions (`admin_token` cookie)**: The `admin_mode` cookie must be present and set to `"true"`. Without it, the endpoint returns `403 {"detail": "You need to be logged in as the admin to perform this action"}`. This is a UX safeguard against accidental destructive actions in the web UI.
+  - **Bearer JWT**: Without an `admin_token` cookie, a Bearer JWT is not subject to the `admin_mode` toggle. The toggle is only enforced when the `admin_token` cookie is present.
+- **`get_current_admin_user` endpoints**: Authentication and the API key tier check only. The `admin_mode` toggle is not checked.
 
-This is a UX safeguard against accidental destructive actions in the browser UI. **It is not a security gate**. For scripting purposes it must simply be passed as a cookie header.
+---
+
+### API Key Permission Tiers
+
+API keys are assigned one of three permission tiers upon creation. The tier is enforced by request path, identically for both dependencies above: `/api/admin/*` requires an `admin` key, and all other protected routes require a `write` or `admin` key.
+
+| Permission | Allowed Scope | Restrictions |
+|---|---|---|
+| `read` | Read-only access (search, viewing media, listing tags and albums) | Content mutation endpoints return `403 Forbidden` ("This API key has read-only access"); administrative endpoints under `/api/admin/*` return `403 Forbidden` ("This API key requires administrator access") |
+| `write` | Content mutations (uploading, editing, tagging, deleting media and albums) | Administrative endpoints under `/api/admin/*` return `403 Forbidden` ("This API key requires administrator access") |
+| `admin` | Full administrator privileges | No restrictions; can call `/api/admin/*` administrative endpoints and execute all operations |
 
 ---
 
 ### How to authenticate from a script
 
-**Recommended: use the session cookie jar**
+**Option 1: API Key (recommended for automation)**
 
-Log in once and reuse the resulting cookies. This is the simplest approach and satisfies both layers automatically.
+Supply a `write` or `admin` API key via the `Authorization` header. Note that a `write` key cannot call `/api/admin/*` management endpoints (which require an `admin` key; see the permission tiers table above). No session cookies or `admin_mode` toggles are needed:
 
 ```bash
-# Step 1: login, save both cookies to file
+curl --request PATCH \
+     --url http://127.0.0.1:8000/api/media/1 \
+     --header 'Authorization: Bearer blom_<key>' \
+     --header 'Content-Type: application/json' \
+     --data '{"rating":"safe","description":"..."}'
+```
+
+**Option 2: Session cookie jar**
+
+Log in once to obtain session cookies and reuse the resulting cookie jar. This satisfies browser session auth and the `admin_mode` toggle automatically:
+
+```bash
+# Step 1: login, save cookies to file
 curl --cookie-jar cookies.txt \
      --request POST \
      --url http://127.0.0.1:8000/api/admin/login \
      --header 'Content-Type: application/json' \
      --data '{"username":"admin","password":"yourpassword"}'
 
-# Step 2: use saved cookies for any subsequent request
+# Step 2: use saved cookies for subsequent requests
 curl --cookie cookies.txt \
      --request PATCH \
      --url http://127.0.0.1:8000/api/media/1 \
-     --header 'Content-Type: application/json' \
-     --data '{"rating":"safe","description":"..."}'
-```
-
-**Alternative: API key + admin_mode cookie**
-
-If you have an API key and prefer not to use a session, you must still supply the `admin_mode` cookie manually for write endpoints:
-
-```bash
-curl --request PATCH \
-     --url http://127.0.0.1:8000/api/media/1 \
-     --header 'Authorization: Bearer blom_<key>' \
-     --header 'Cookie: admin_mode=true' \
      --header 'Content-Type: application/json' \
      --data '{"rating":"safe","description":"..."}'
 ```
