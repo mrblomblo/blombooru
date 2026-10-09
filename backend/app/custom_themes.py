@@ -57,7 +57,8 @@ def sanitize_css(raw_css: str) -> str:
 
             if rule_name == "import":
                 # Re-check the prelude for blocked patterns
-                _check_value_string(prelude_str)
+                import_prelude = tinycss2.serialize(rule.prelude)
+                _check_value_string(import_prelude)
                 output_parts.append(tinycss2.serialize([rule]))
                 continue
 
