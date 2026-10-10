@@ -1153,7 +1153,7 @@
         "setup_intro": "让我们开始配置您的实例。只需一分钟。",
         "setup_title": "初始设置",
         "skip": "跳过",
-        "welcome": "欢迎使用 Blombooru！"
+        "welcome": "欢迎使用 {app_name}！"
     },
     "search": {
         "random": "手气不错 (随机)"

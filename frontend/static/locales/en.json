@@ -1153,7 +1153,7 @@
         "setup_intro": "Let's get your instance configured. This will only take a minute.",
         "setup_title": "Initial Setup",
         "skip": "Skip",
-        "welcome": "Welcome to Blombooru!"
+        "welcome": "Welcome to {app_name}!"
     },
     "search": {
         "random": "I'm Feeling Lucky"
