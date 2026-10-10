@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,21 @@ from ...utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 from sqlalchemy.orm import Session
 
 router = APIRouter()
+
+_maintenance_lock = threading.Lock()
+
+async def _run_exclusive(fn, *args):
+    """Run a blocking maintenance job in the threadpool, rejecting it if another is running."""
+    if not _maintenance_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="common.processing")
+
+    def runner():
+        try:
+            return fn(*args)
+        finally:
+            _maintenance_lock.release()
+
+    return await run_in_threadpool(runner)
 
 @router.post("/scan-media")
 async def scan_media(
@@ -423,8 +439,10 @@ async def regenerate_all_thumbnails(
 ):
     """Delete all thumbnails and regenerate them from source files, updating DB paths."""
     try:
-        result = await run_in_threadpool(_do_regenerate_all_thumbnails)
+        result = await _run_exclusive(_do_regenerate_all_thumbnails)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error regenerating all thumbnails: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -435,8 +453,10 @@ async def generate_missing_thumbnails(
 ):
     """Remove orphaned thumbnail files and generate thumbnails for media items that are missing one."""
     try:
-        result = await run_in_threadpool(_do_generate_missing_thumbnails)
+        result = await _run_exclusive(_do_generate_missing_thumbnails)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error generating missing thumbnails: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -447,8 +467,10 @@ async def relink_media(
 ):
     """Scan storage and re-link database records for moved or renamed media files based on content hash."""
     try:
-        result = await run_in_threadpool(relink_media_files)
+        result = await _run_exclusive(relink_media_files)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error relinking media: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

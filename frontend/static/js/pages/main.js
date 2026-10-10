@@ -689,11 +689,16 @@ class Blombooru {
             const error = await response.json();
             let errorMessage = error.detail || 'API call failed';
 
-            // Check if error detail is an i18n key (starts with error_ or exists in notifications.admin)
-            if (typeof errorMessage === 'string' && (errorMessage.startsWith('error_') || errorMessage.includes('.'))) {
-                const translated = window.i18n.t(`notifications.admin.${errorMessage}`);
-                if (translated !== `notifications.admin.${errorMessage}`) {
-                    errorMessage = translated;
+            // Check if error detail is an i18n key (starts with error_, exists in notifications.admin, or is a direct key)
+            if (typeof errorMessage === 'string') {
+                const adminTranslated = window.i18n.t(`notifications.admin.${errorMessage}`);
+                if (adminTranslated !== `notifications.admin.${errorMessage}`) {
+                    errorMessage = adminTranslated;
+                } else {
+                    const directTranslated = window.i18n.t(errorMessage);
+                    if (directTranslated !== errorMessage) {
+                        errorMessage = directTranslated;
+                    }
                 }
             }
 
