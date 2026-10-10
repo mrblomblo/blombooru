@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 
 from backend.app.config import APP_VERSION, SCHEMA_VERSION, settings
 from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
-from backend.app.models import (Album, BooruConfig, Media, Tag, TagAlias,
-                                TagImplication, blombooru_album_media)
-from backend.app.utils.backup import import_full_backup
+from backend.app.models import (Album, BooruConfig, Media, Tag,
+                                TagImplication, blombooru_album_hierarchy,
+                                blombooru_album_media)
+from backend.app.utils.backup import import_albums_logical, import_full_backup
 from tests.test_base import BackupTestBase, make_dummy_jpeg
 
 class TestBackupFullRoundtrip(BackupTestBase):
@@ -447,6 +448,222 @@ class TestBackupFullRoundtrip(BackupTestBase):
 
         tag = self.db.query(Tag).filter(Tag.name == "sky").first()
         self.assertEqual(tag.post_count, 2)
+
+    def test_album_sort_position_and_metrics_full_roundtrip(self):
+        """Test full roundtrip export and import"""
+        import asyncio
+        from backend.app.routes.admin.backup import backup_full_db
+        from backend.app.models import User
+
+        # Create dummy admin
+        admin = User(username="admin_tester", password_hash="dummy")
+        self.db.add(admin)
+        self.db.commit()
+
+        # 1. Setup sample media files
+        dummy_jpeg = make_dummy_jpeg()
+        (self.original_dir / "m_safe.jpg").write_bytes(dummy_jpeg)
+        (self.original_dir / "m_quest.jpg").write_bytes(dummy_jpeg)
+        (self.original_dir / "m_expl.jpg").write_bytes(dummy_jpeg)
+
+        m_safe = Media(
+            filename="m_safe.jpg",
+            path=str((self.original_dir / "m_safe.jpg").relative_to(settings.BASE_DIR)),
+            hash="hash_safe",
+            file_type=FileTypeEnum.image,
+            mime_type="image/jpeg",
+            file_size=len(dummy_jpeg),
+            rating=RatingEnum.safe
+        )
+        m_quest = Media(
+            filename="m_quest.jpg",
+            path=str((self.original_dir / "m_quest.jpg").relative_to(settings.BASE_DIR)),
+            hash="hash_quest",
+            file_type=FileTypeEnum.image,
+            mime_type="image/jpeg",
+            file_size=len(dummy_jpeg),
+            rating=RatingEnum.questionable
+        )
+        m_expl = Media(
+            filename="m_expl.jpg",
+            path=str((self.original_dir / "m_expl.jpg").relative_to(settings.BASE_DIR)),
+            hash="hash_expl",
+            file_type=FileTypeEnum.image,
+            mime_type="image/jpeg",
+            file_size=len(dummy_jpeg),
+            rating=RatingEnum.explicit
+        )
+        self.db.add_all([m_safe, m_quest, m_expl])
+        self.db.commit()
+
+        # 2. Setup albums with sort_position
+        root_a = Album(name="Root Album A", sort_position=1)
+        root_b = Album(name="Root Album B", sort_position=0)
+        child_a1 = Album(name="Child A1", sort_position=None)
+        child_a2 = Album(name="Child A2", sort_position=None)
+        self.db.add_all([root_a, root_b, child_a1, child_a2])
+        self.db.commit()
+
+        # Hierarchy with sort_position
+        self.db.execute(blombooru_album_hierarchy.insert().values([
+            {"parent_album_id": root_a.id, "child_album_id": child_a1.id, "sort_position": 2},
+            {"parent_album_id": root_a.id, "child_album_id": child_a2.id, "sort_position": 0}
+        ]))
+
+        # Album media with sort_position
+        self.db.execute(blombooru_album_media.insert().values([
+            {"album_id": root_a.id, "media_id": m_safe.id, "sort_position": 5},
+            {"album_id": child_a1.id, "media_id": m_quest.id, "sort_position": 1},
+            {"album_id": child_a2.id, "media_id": m_expl.id, "sort_position": 0}
+        ]))
+        self.db.commit()
+
+        # 3. Perform backup export via backup_full_db
+        response = asyncio.run(backup_full_db(current_user=admin, db=self.db))
+        self.assertEqual(response.media_type, "application/zip")
+
+        # Collect streamed ZIP bytes
+        zip_bytes = io.BytesIO()
+        async def collect_stream():
+            async for chunk in response.body_iterator:
+                zip_bytes.write(chunk)
+        asyncio.run(collect_stream())
+
+        # Inspect backup.json within ZIP
+        zip_bytes.seek(0)
+        with zipfile.ZipFile(zip_bytes, 'r') as zf:
+            self.assertIn("backup.json", zf.namelist())
+            meta = json.loads(zf.read("backup.json").decode('utf-8'))
+
+        exported_albums = {alb["name"]: alb for alb in meta["albums"]}
+        self.assertEqual(exported_albums["Root Album A"]["sort_position"], 1)
+        self.assertEqual(exported_albums["Root Album B"]["sort_position"], 0)
+
+        # Check media sort_position in Root Album A
+        root_a_media = {m["hash"]: m for m in exported_albums["Root Album A"]["media"]}
+        self.assertEqual(root_a_media["hash_safe"]["sort_position"], 5)
+
+        # Check children sort_position in Root Album A
+        root_a_children = {c["id"]: c["sort_position"] for c in exported_albums["Root Album A"]["children"]}
+        self.assertEqual(root_a_children[child_a1.id], 2)
+        self.assertEqual(root_a_children[child_a2.id], 0)
+
+        # 4. Clean database and media directories
+        self.wipe_database()
+        for p in [self.original_dir / "m_safe.jpg", self.original_dir / "m_quest.jpg", self.original_dir / "m_expl.jpg"]:
+            if p.exists():
+                p.unlink()
+
+        # 5. Restore full backup
+        zip_bytes.seek(0)
+        import_res = import_full_backup(zip_bytes, self.db)
+        self.assertEqual(import_res["message"], "Import completed successfully")
+
+        # 6. Verify sort_positions restored accurately
+        restored_root_a = self.db.query(Album).filter(Album.name == "Root Album A").first()
+        restored_root_b = self.db.query(Album).filter(Album.name == "Root Album B").first()
+        restored_child_a1 = self.db.query(Album).filter(Album.name == "Child A1").first()
+        restored_child_a2 = self.db.query(Album).filter(Album.name == "Child A2").first()
+
+        self.assertIsNotNone(restored_root_a)
+        self.assertIsNotNone(restored_root_b)
+        self.assertIsNotNone(restored_child_a1)
+        self.assertIsNotNone(restored_child_a2)
+
+        self.assertEqual(restored_root_a.sort_position, 1)
+        self.assertEqual(restored_root_b.sort_position, 0)
+
+        # Verify album_media sort_position
+        restored_m_safe = self.db.query(Media).filter(Media.hash == "hash_safe").first()
+        restored_m_quest = self.db.query(Media).filter(Media.hash == "hash_quest").first()
+        restored_m_expl = self.db.query(Media).filter(Media.hash == "hash_expl").first()
+
+        row_safe = self.db.query(blombooru_album_media).filter(
+            blombooru_album_media.c.album_id == restored_root_a.id,
+            blombooru_album_media.c.media_id == restored_m_safe.id
+        ).first()
+        self.assertEqual(row_safe.sort_position, 5)
+
+        row_quest = self.db.query(blombooru_album_media).filter(
+            blombooru_album_media.c.album_id == restored_child_a1.id,
+            blombooru_album_media.c.media_id == restored_m_quest.id
+        ).first()
+        self.assertEqual(row_quest.sort_position, 1)
+
+        row_expl = self.db.query(blombooru_album_media).filter(
+            blombooru_album_media.c.album_id == restored_child_a2.id,
+            blombooru_album_media.c.media_id == restored_m_expl.id
+        ).first()
+        self.assertEqual(row_expl.sort_position, 0)
+
+        # Verify hierarchy sort_position
+        hier_a1 = self.db.query(blombooru_album_hierarchy).filter(
+            blombooru_album_hierarchy.c.parent_album_id == restored_root_a.id,
+            blombooru_album_hierarchy.c.child_album_id == restored_child_a1.id
+        ).first()
+        self.assertEqual(hier_a1.sort_position, 2)
+
+        hier_a2 = self.db.query(blombooru_album_hierarchy).filter(
+            blombooru_album_hierarchy.c.parent_album_id == restored_root_a.id,
+            blombooru_album_hierarchy.c.child_album_id == restored_child_a2.id
+        ).first()
+        self.assertEqual(hier_a2.sort_position, 0)
+
+        # 7. Verify metrics recalculated on restore
+        # Child A1 has 1 questionable media
+        self.assertEqual(restored_child_a1.cached_direct_media_count, 1)
+        self.assertEqual(restored_child_a1.cached_media_count, 1)
+        self.assertEqual(restored_child_a1.cached_rating, RatingEnum.questionable)
+
+        # Child A2 has 1 explicit media
+        self.assertEqual(restored_child_a2.cached_direct_media_count, 1)
+        self.assertEqual(restored_child_a2.cached_media_count, 1)
+        self.assertEqual(restored_child_a2.cached_rating, RatingEnum.explicit)
+
+        # Root Album A has 1 safe direct media + 2 from children (1 quest + 1 expl) -> total 3, rating explicit
+        self.assertEqual(restored_root_a.cached_direct_media_count, 1)
+        self.assertEqual(restored_root_a.cached_media_count, 3)
+        self.assertEqual(restored_root_a.cached_rating, RatingEnum.explicit)
+
+        # Root Album B is empty
+        self.assertEqual(restored_root_b.cached_direct_media_count, 0)
+        self.assertEqual(restored_root_b.cached_media_count, 0)
+        self.assertEqual(restored_root_b.cached_rating, RatingEnum.safe)
+
+    def test_import_albums_logical_recalculates_metrics_standalone(self):
+        """Test that calling import_albums_logical standalone updates metrics for all albums."""
+        dummy_jpeg = make_dummy_jpeg()
+        m = Media(
+            filename="standalone_photo.jpg",
+            path=str(self.original_dir / "standalone_photo.jpg"),
+            hash="hash_standalone",
+            file_type=FileTypeEnum.image,
+            mime_type="image/jpeg",
+            file_size=len(dummy_jpeg),
+            rating=RatingEnum.explicit
+        )
+        self.db.add(m)
+        self.db.commit()
+
+        albums_data = [
+            {
+                "id": 100,
+                "name": "Standalone Album",
+                "sort_position": 3,
+                "media": [
+                    {"hash": "hash_standalone", "sort_position": 0}
+                ]
+            }
+        ]
+
+        import_albums_logical(self.db, albums_data)
+
+        alb = self.db.query(Album).filter(Album.name == "Standalone Album").first()
+        self.assertIsNotNone(alb)
+        self.assertEqual(alb.sort_position, 3)
+        self.assertEqual(alb.cached_direct_media_count, 1)
+        self.assertEqual(alb.cached_media_count, 1)
+        self.assertEqual(alb.cached_rating, RatingEnum.explicit)
 
 if __name__ == "__main__":
     unittest.main()

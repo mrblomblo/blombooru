@@ -9,7 +9,7 @@ from sqlalchemy.engine import URL
 load_dotenv()
 
 APP_VERSION = "1.41.0"
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 class Settings:
     def __init__(self):

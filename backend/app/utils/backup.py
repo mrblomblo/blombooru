@@ -19,6 +19,7 @@ from ..models import (Album, Media, Tag, TagAlias, TagImplication,
                       blombooru_media_tags)
 from ..routes.media import update_tag_counts
 from ..services.booru import normalize_domain, upsert_booru_config
+from ..utils.album_utils import recalculate_all_album_metrics
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
 from ..utils.logger import logger
@@ -549,12 +550,17 @@ def import_albums_logical(db: Session, albums_list: List[dict]) -> dict:
             except Exception:
                 last_modified = None
         
+        sort_position = alb_data.get('sort_position')
+        
         if name in existing_albums:
             id_map[json_id] = existing_albums[name].id
+            if sort_position is not None:
+                existing_albums[name].sort_position = sort_position
             albums_existing += 1
         else:
             new_album = Album(
                 name=name,
+                sort_position=sort_position,
                 created_at=created_at or datetime.now(timezone.utc),
                 updated_at=updated_at or datetime.now(timezone.utc),
                 last_modified=last_modified or datetime.now(timezone.utc)
@@ -587,7 +593,7 @@ def import_albums_logical(db: Session, albums_list: List[dict]) -> dict:
         # Support both new 'media' object list and legacy 'media_hashes' string list
         media_items = alb_data.get('media', [])
         if not media_items and 'media_hashes' in alb_data:
-            media_items = [{'hash': h, 'added_at': None} for h in alb_data['media_hashes']]
+            media_items = [{'hash': h, 'added_at': None, 'sort_position': None} for h in alb_data['media_hashes']]
 
         for item in media_items:
             m_hash = item.get('hash') if isinstance(item, dict) else item
@@ -595,21 +601,35 @@ def import_albums_logical(db: Session, albums_list: List[dict]) -> dict:
                 continue
 
             media_id = media_map[m_hash]
-            if media_id not in existing_links:
-                added_at_val = None
-                if isinstance(item, dict) and item.get('added_at'):
+            added_at_val = None
+            sort_pos_val = None
+            if isinstance(item, dict):
+                if item.get('added_at'):
                     try:
                         added_at_val = datetime.fromisoformat(item['added_at'])
                     except Exception:
                         added_at_val = None
+                sort_pos_val = item.get('sort_position')
 
+            if media_id not in existing_links:
                 album_media_inserts.append({
                     'album_id': db_id,
                     'media_id': media_id,
-                    'added_at': added_at_val or datetime.now(timezone.utc)
+                    'added_at': added_at_val or datetime.now(timezone.utc),
+                    'sort_position': sort_pos_val
                 })
                 existing_links.add(media_id)
                 links_created += 1
+            else:
+                if sort_pos_val is not None:
+                    db.execute(
+                        blombooru_album_media.update()
+                        .where(
+                            blombooru_album_media.c.album_id == db_id,
+                            blombooru_album_media.c.media_id == media_id
+                        )
+                        .values(sort_position=sort_pos_val)
+                    )
 
     if album_media_inserts:
         for i in range(0, len(album_media_inserts), DB_BATCH_SIZE):
@@ -625,28 +645,52 @@ def import_albums_logical(db: Session, albums_list: List[dict]) -> dict:
             continue
             
         parent_db_id = id_map[parent_json_id]
-        child_json_ids = alb_data.get('child_ids', [])
+        
+        # Support both 'children' object list and legacy 'child_ids' list
+        children_data = alb_data.get('children')
+        if children_data is None:
+            children_data = alb_data.get('child_ids', [])
         
         existing_children = set(
             r[0] for r in db.query(blombooru_album_hierarchy.c.child_album_id)
             .filter(blombooru_album_hierarchy.c.parent_album_id == parent_db_id).all()
         )
         
-        for child_json_id in child_json_ids:
+        for item in children_data:
+            if isinstance(item, dict):
+                child_json_id = item.get('id')
+                sort_pos = item.get('sort_position')
+            else:
+                child_json_id = item
+                sort_pos = None
+
             if child_json_id in id_map:
                 child_db_id = id_map[child_json_id]
                 if child_db_id != parent_db_id and child_db_id not in existing_children:
                     hierarchy_inserts.append({
                         'parent_album_id': parent_db_id,
-                        'child_album_id': child_db_id
+                        'child_album_id': child_db_id,
+                        'sort_position': sort_pos
                     })
                     existing_children.add(child_db_id)
+                elif child_db_id != parent_db_id and child_db_id in existing_children:
+                    if sort_pos is not None:
+                        db.execute(
+                            blombooru_album_hierarchy.update()
+                            .where(
+                                blombooru_album_hierarchy.c.parent_album_id == parent_db_id,
+                                blombooru_album_hierarchy.c.child_album_id == child_db_id
+                            )
+                            .values(sort_position=sort_pos)
+                        )
 
     if hierarchy_inserts:
         for i in range(0, len(hierarchy_inserts), DB_BATCH_SIZE):
             chunk = hierarchy_inserts[i:i+DB_BATCH_SIZE]
             db.execute(blombooru_album_hierarchy.insert(), chunk)
             db.commit()
+
+    recalculate_all_album_metrics(db)
             
     return {
         "albums_created": albums_created,

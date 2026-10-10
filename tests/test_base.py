@@ -40,6 +40,12 @@ class BlombooruTestSandboxMixin:
         self.SessionLocal = self.TestingSessionLocal
         self.db = self.TestingSessionLocal()
 
+        import backend.app.database as db_module
+        self.old_db_session_local = db_module.SessionLocal
+        self.old_db_engine = db_module.engine
+        db_module.SessionLocal = self.TestingSessionLocal
+        db_module.engine = self.engine
+
         self.media_dir = self.tmp_path / "media"
         self.original_dir = self.media_dir / "original"
         self.thumbnail_dir = self.media_dir / "thumbnails"
@@ -99,6 +105,11 @@ class BlombooruTestSandboxMixin:
             self.db.close()
         if hasattr(self, "engine") and self.engine is not None:
             self.engine.dispose()
+        import backend.app.database as db_module
+        if hasattr(self, "old_db_session_local"):
+            db_module.SessionLocal = self.old_db_session_local
+        if hasattr(self, "old_db_engine"):
+            db_module.engine = self.old_db_engine
         import backend.app.routes.uploads as uploads_module
         uploads_module.UPLOAD_SESSIONS_DIR = self.old_module_sessions_dir
         settings.BASE_DIR = self.old_base_dir

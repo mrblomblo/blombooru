@@ -8,12 +8,12 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, selectinload
 
-from ...auth import get_current_admin_user, require_admin_mode
+from ...auth import require_admin_mode
 from ...config import APP_VERSION, SCHEMA_VERSION, settings
 from ...custom_themes import custom_theme_manager
 from ...database import get_db
 from ...models import (Album, BooruConfig, Media, TagImplication, User,
-                      blombooru_album_media)
+                      blombooru_album_hierarchy, blombooru_album_media)
 from ...utils.backup import (generate_tags_csv_stream,
                              get_custom_theme_files_generator,
                              get_media_files_generator, import_full_backup,
@@ -72,9 +72,9 @@ async def backup_full_db(
     albums_query = db.query(Album).all()
     
     for album in albums_query:
-        # Fetch album media with added_at timestamps
+        # Fetch album media with metadata
         album_media_rows = (
-            db.query(blombooru_album_media.c.added_at, Media.hash)
+            db.query(blombooru_album_media.c.added_at, blombooru_album_media.c.sort_position, Media.hash)
             .join(Media, blombooru_album_media.c.media_id == Media.id)
             .filter(blombooru_album_media.c.album_id == album.id)
             .all()
@@ -83,22 +83,39 @@ async def backup_full_db(
         media_items = [
             {
                 "hash": row.hash,
-                "added_at": row.added_at.isoformat() if row.added_at else None
+                "added_at": row.added_at.isoformat() if row.added_at else None,
+                "sort_position": row.sort_position
             }
             for row in album_media_rows
         ]
         media_hashes = [row.hash for row in album_media_rows]
-        child_ids = [child.id for child in album.children]
+
+        # Fetch album children with sort_position
+        child_rows = (
+            db.query(blombooru_album_hierarchy.c.child_album_id, blombooru_album_hierarchy.c.sort_position)
+            .filter(blombooru_album_hierarchy.c.parent_album_id == album.id)
+            .all()
+        )
+        child_items = [
+            {
+                "id": row.child_album_id,
+                "sort_position": row.sort_position
+            }
+            for row in child_rows
+        ]
+        child_ids = [row.child_album_id for row in child_rows]
         
         album_list.append({
             "id": album.id,
             "name": album.name,
+            "sort_position": album.sort_position,
             "created_at": album.created_at.isoformat() if album.created_at else None,
             "updated_at": album.updated_at.isoformat() if album.updated_at else None,
             "last_modified": album.last_modified.isoformat() if album.last_modified else None,
             "media": media_items,
             "media_hashes": media_hashes,
-            "child_ids": child_ids
+            "child_ids": child_ids,
+            "children": child_items
         })
     
     # 2. Media export
