@@ -535,7 +535,7 @@ def delete_album_cascade(db: Session, album_id: int, cascade: bool = False) -> N
         raise HTTPException(status_code=404, detail="Album not found")
 
     # Capture ancestor breadcrumb trail before deletion
-    parent_ids = get_parent_ids(album_id, db)
+    parent_ids = list(get_all_ancestor_ids(db, [album_id]))
 
     if cascade:
         # Collect all descendant album IDs to delete
@@ -556,6 +556,7 @@ def delete_album_cascade(db: Session, album_id: int, cascade: bool = False) -> N
     db.commit()
 
     if parent_ids:
+        update_album_last_modified(parent_ids, db)
         recalculate_album_metrics(db, parent_ids)
         db.commit()
 

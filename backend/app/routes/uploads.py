@@ -23,11 +23,11 @@ from ..schemas import (FolderMappingRequest, PendingAlbumEntity, PendingAlbumUpd
                        ProposedTag, UploadSessionAddUntrackedRequest,
                        UploadSessionCommitItemResult, UploadSessionCommitResponse,
                        UploadSessionItemUpdate)
-from ..utils.album_path_resolver import (apply_folder_mapping_to_path,
-                                         build_pending_album_tree,
+from ..utils.album_path_resolver import (build_pending_album_tree,
                                          derive_item_suggested_album_path,
                                          resolve_album_path)
-from ..utils.album_utils import update_album_last_modified
+from ..utils.album_utils import (recalculate_album_metrics,
+                                 update_album_last_modified)
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_tag_cache)
 from ..utils.logger import logger
@@ -1340,8 +1340,9 @@ async def commit_upload_session(
                 db.commit()
 
             if all_affected_album_ids:
-                for aid in all_affected_album_ids:
-                    update_album_last_modified(aid, db)
+                affected_album_ids_list = list(all_affected_album_ids)
+                update_album_last_modified(affected_album_ids_list, db)
+                recalculate_album_metrics(db, affected_album_ids_list)
                 db.commit()
                 invalidate_album_cache()
 

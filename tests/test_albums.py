@@ -5,10 +5,11 @@ from sqlalchemy import event
 
 from backend.app.auth import create_access_token
 from backend.app.enums import FileTypeEnum
-from backend.app.models import (Album, ApiKey, Media, RatingEnum, User,
+from backend.app.models import (Album, Media, RatingEnum, User,
                                 blombooru_album_hierarchy, blombooru_album_media)
 from backend.app.routes.albums import (autocomplete_albums, clear_album_media_order,
                                        clear_root_albums_order, clear_sub_albums_order,
+                                       delete_album,
                                        get_album_contents, get_album_statistics,
                                        get_albums, get_albums_tree,
                                        reorder_album_media, reorder_root_albums,
@@ -221,6 +222,30 @@ class TestAlbumArchitecture(BackupTestBase):
 
         # Cascade delete child
         delete_album_cascade(self.db, child.id)
+
+        self.db.refresh(root)
+        self.assertEqual(root.cached_media_count, 0)
+        self.assertEqual(root.cached_rating, RatingEnum.safe)
+        self.assertIsNone(self.db.query(Album).filter(Album.id == child.id).first())
+
+    def test_delete_album_endpoint_recalculates_ancestor_metrics(self):
+        root = self._create_album("Root")
+        child = self._create_album("Child", parent_id=root.id)
+        m = self._create_media("m.jpg", rating=RatingEnum.explicit)
+        add_media_to_album(self.db, child.id, [m.id])
+
+        self.db.refresh(root)
+        self.assertEqual(root.cached_media_count, 1)
+        self.assertEqual(root.cached_rating, RatingEnum.explicit)
+
+        # Delete child via route
+        res = asyncio.run(delete_album(
+            album_id=child.id,
+            cascade=False,
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        self.assertEqual(res["message"], "Album deleted successfully")
 
         self.db.refresh(root)
         self.assertEqual(root.cached_media_count, 0)

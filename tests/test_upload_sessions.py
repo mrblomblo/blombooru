@@ -705,3 +705,62 @@ class TestUploadSessions(BackupTestBase):
         for it in bulk_res["items"]:
             self.assertIsNone(it.get("suggested_album_path"))
             self.assertIsNone(it.get("suggested_album_segments"))
+
+    def test_upload_session_commit_recalculates_album_metrics(self):
+        """Test that committing items linked to albums or suggested album paths properly recalculates metrics for albums and their ancestors."""
+        parent_album = Album(
+            name="Artworks",
+            cached_rating=RatingEnum.safe,
+            cached_media_count=0,
+            cached_direct_media_count=0,
+        )
+        self.db.add(parent_album)
+        self.db.commit()
+        self.db.refresh(parent_album)
+
+        session_res = asyncio.run(create_upload_session(current_user=self.admin_user))
+        s_id = session_res["session_id"]
+
+        f1 = UploadFile(filename="pic1.jpg", file=io.BytesIO(make_dummy_jpeg()))
+        f2 = UploadFile(filename="pic2.jpg", file=io.BytesIO(make_dummy_jpeg() + b"extra_unique_bytes"))
+
+        item1 = asyncio.run(upload_files_to_session(
+            session_id=s_id,
+            file=f1,
+            base_rating="explicit",
+            base_album_ids=str(parent_album.id),
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        item2 = asyncio.run(upload_files_to_session(
+            session_id=s_id,
+            file=f2,
+            base_rating="questionable",
+            relative_path="Artworks/2026/pic2.jpg",
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+
+        commit_res = asyncio.run(commit_upload_session(
+            session_id=s_id,
+            current_user=self.admin_user,
+            db=self.db,
+        ))
+        self.assertEqual(commit_res.total_created, 2)
+        self.assertEqual(commit_res.total_failed, 0)
+
+        # Query albums from DB
+        self.db.refresh(parent_album)
+        child_album = self.db.query(Album).filter(Album.name == "2026").first()
+        self.assertIsNotNone(child_album)
+
+        # Verify child album metrics
+        self.assertEqual(child_album.cached_direct_media_count, 1)
+        self.assertEqual(child_album.cached_media_count, 1)
+        self.assertEqual(child_album.cached_rating, RatingEnum.questionable)
+
+        # Verify parent album metrics
+        self.assertEqual(parent_album.cached_direct_media_count, 1)
+        self.assertEqual(parent_album.cached_media_count, 2)
+        self.assertEqual(parent_album.cached_rating, RatingEnum.explicit)
