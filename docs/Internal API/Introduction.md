@@ -4,7 +4,7 @@
 > **Stability notice:** The internal API has no stability guarantees and may change at any time without prior notice. Its intended use case is internal tooling. The docs are also not guaranteed to be up to date with the latest changes in the API.
 
 > [!NOTE]
-> Last updated: `October 9, 2026`  
+> Last updated: `October 10, 2026`  
 > Update date for the docs can be found in the individual doc files.
 
 
@@ -205,10 +205,12 @@ All error responses follow the FastAPI default format:
 | Category | Description | Link |
 |---|---|---|
 | **Instance Info** | Harmless public metadata for clients | [Instance Info](/docs/Internal%20API/API/Instance%20Info.md) |
+| **Acknowledgements** | Open-source dependency licenses and attributions | [Acknowledgements](/docs/Internal%20API/API/Acknowledgements.md) |
 | **AI Tagger** | WDv3 model tag prediction | [AI Tagger](/docs/Internal%20API/API/AI%20Tagger.md) |
 | **Albums** | Album management, contents, hierarchy | [Albums](/docs/Internal%20API/API/Albums.md) |
 | **Booru Config** | External booru credentials | [Booru Config](/docs/Internal%20API/API/Booru%20Config.md) |
 | **Booru Import** | Fetch and download posts from external boorus | [Booru Import](/docs/Internal%20API/API/Booru%20Import.md) |
+| **Changelog** | Version release notes and update modal status | [Changelog](/docs/Internal%20API/API/Changelog.md) |
 | **Media** | Media listing, uploading, and updating | [Media](/docs/Internal%20API/API/Media.md) |
 | **Search** | Tag-based search and random media | [Search](/docs/Internal%20API/API/Search.md) |
 | **Shared Media** | Public endpoints for shared media links | [Shared Media](/docs/Internal%20API/API/Shared%20Media.md) |
@@ -221,6 +223,7 @@ All error responses follow the FastAPI default format:
 | **Admin: Auth & Account** | Admin login, admin mode, credentials | [Admin/Auth and Account](/docs/Internal%20API/API/Admin/Auth%20and%20Account.md) |
 | **Admin: Backup & Import** | Tag/media export and full backup import | [Admin/Backup](/docs/Internal%20API/API/Admin/Backup.md) |
 | **Admin: Custom Themes** | Custom theme CRUD and import/export | [Admin/Custom Themes](/docs/Internal%20API/API/Admin/Custom%20Themes.md) |
+| **Admin: Keybindings** | Action keybinding registry and customization | [Admin/Keybindings](/docs/Internal%20API/API/Admin/Keybindings.md) |
 | **Admin: Media** | Untracked file scanning, stats, and thumbnail management | [Admin/Media](/docs/Internal%20API/API/Admin/Media.md) |
 | **Admin: Settings** | App configuration, cache management, themes, languages | [Admin/Settings](/docs/Internal%20API/API/Admin/Settings.md) |
 | **Admin: Shared Tags** | Shared tag database sync and status | [Admin/Shared Tags](/docs/Internal%20API/API/Admin/Shared%20Tags.md) |

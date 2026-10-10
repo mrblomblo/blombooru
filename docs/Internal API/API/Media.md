@@ -1,7 +1,7 @@
 ## Media
 
 > [!NOTE]
-> Last updated: `September 8, 2026`
+> Last updated: `October 10, 2026`
 
 **Base path:** `/api/media`
 
@@ -51,6 +51,7 @@ Every endpoint returning media records outputs a `MediaResponse`:
   "rating": "safe",
   "source": "https://example.com/original",
   "description": "Artwork description text",
+  "description_enlarged": false,
   "uploaded_at": "2026-09-08T18:00:00+00:00",
   "is_shared": false,
   "share_uuid": null,
@@ -67,12 +68,102 @@ Every endpoint returning media records outputs a `MediaResponse`:
 GET /api/media/{id}
 ```
 
-Returns a `MediaResponse` extended with:
+Returns a `MediaDetailResponse` extending `MediaResponse` with parsed description HTML, parent/child relationships, and share metadata options:
 
 ```json
 {
+  "id": 1,
+  "filename": "20260908-image.webp",
+  "path": "media/original/20260908-image.webp",
+  "transcoded_path": "media/transcoded/20260908-image.webp",
+  "thumbnail_path": "media/thumbnails/20260908-image.jpg",
+  "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "file_type": "image",
+  "mime_type": "image/webp",
+  "file_size": 2048576,
+  "width": 1920,
+  "height": 1080,
+  "duration": null,
+  "rating": "safe",
+  "source": "https://example.com/original",
+  "description": "Artwork description text",
+  "description_enlarged": false,
+  "description_html": "<p class=\"mb-3 text-xs last:mb-0 leading-relaxed\">Artwork description text</p>",
+  "uploaded_at": "2026-09-08T18:00:00+00:00",
+  "is_shared": false,
+  "share_uuid": null,
+  "share_language": null,
+  "parent_id": null,
+  "has_children": false,
   "hierarchy": [ /* MediaResponse[] - parent/siblings/children */ ],
-  "share_ai_metadata": false
+  "share_ai_metadata": false,
+  "tags": [ /* TagResponse[] */ ]
+}
+```
+
+### Preview description Markdown
+
+Requires `require_admin_mode`. Renders arbitrary Markdown description text into sanitized HTML using the blombooru Markdown pipeline.
+
+```
+POST /api/media/preview-description
+Content-Type: application/json
+
+{ "text": "Draft description with *formatting*" }
+```
+
+**Response:**
+
+```json
+{ "html": "<p class=\"mb-3 text-xs last:mb-0 leading-relaxed\">Draft description with <em>formatting</em></p>" }
+```
+
+### Get related media
+
+```
+GET /api/media/{id}/related
+```
+
+Returns related media items using category-weighted TF-IDF tag similarity.
+
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `limit` | int | 12 | Maximum items to return (1-100) |
+| `album_id` | int | | Optional album ID to constrain related results within |
+| `rating` | string | | Rating filter: `safe`, `questionable`, `explicit`, or shorthands `s`, `q`, `e` (comma-separated) |
+| `custom_filter` | string[] | | Custom filter tag expressions |
+
+**Response:** `{ "items": [ /* MediaResponse[] */ ], "status": "ready" }`
+
+### Get adjacent media
+
+```
+GET /api/media/{id}/adjacent
+```
+
+Returns the previous and next media IDs, hashes, and ratings relative to `media_id` within the active search or album view context.
+
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `mode` | string | `search` | View context mode: `search` or `album` |
+| `album_id` | int | | Album ID (used when `mode=album`) |
+| `q` | string | | Search query string |
+| `rating` | string | | Rating filter: `safe`, `questionable`, `explicit`, or shorthands `s`, `q`, `e` (comma-separated). Applied as an additional filter. A `rating:` term inside `q` takes precedence over this parameter. |
+| `custom_filter` | string[] | | Custom filter tag expressions |
+| `sort` | string | null | Sort field (falls back to settings default when omitted and not specified in `q`) |
+| `order` | string | null | Sort direction (`asc` or `desc`, falls back to settings default when omitted and not specified in `q`) |
+| `seed` | string | | Seed string for randomized sorting |
+
+**Response:**
+
+```json
+{
+  "prev_id": 12,
+  "prev_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "prev_rating": "safe",
+  "next_id": 14,
+  "next_hash": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "next_rating": "questionable"
 }
 ```
 
@@ -85,8 +176,58 @@ GET /api/media/batch?ids=1,2,3
 | Query param | Type | Description |
 |---|---|---|
 | `ids` | string | Comma-separated media IDs |
+| `projection` | string | Optional projection: `tags_only`, `ai_metadata`, or `tags_and_metadata` |
 
-**Response:** `{ "items": [ /* MediaResponse[] */ ] }`
+Alternatively, the batch endpoint can be called via POST:
+
+```
+POST /api/media/batch
+Content-Type: application/json
+
+{
+  "ids": [1, 2, 3],
+  "projection": "tags_only"
+}
+```
+
+**Response (default, without projection):** `{ "items": [ /* MediaResponse[] */ ] }`
+
+**Response (with `projection=tags_only`):**
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "filename": "image.webp",
+      "file_type": "image",
+      "tags": [
+        { "name": "fox", "category": "general" }
+      ]
+    }
+  ]
+}
+```
+
+**Response (with `projection=ai_metadata` or `tags_and_metadata`):**
+
+Includes extracted metadata alongside the slim item shape:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "filename": "image.webp",
+      "file_type": "image",
+      "tags": [
+        { "name": "fox", "category": "general" }
+      ],
+      "metadata": { /* EXIF or AI generation metadata, or null */ }
+    }
+  ]
+}
+```
 
 ### Serve media file
 
@@ -160,6 +301,7 @@ Content-Type: application/json
   "tags": ["tag1", "tag2"],
   "source": "https://...",
   "description": "...",
+  "description_enlarged": false,
   "parent_id": null
 }
 ```
