@@ -432,5 +432,32 @@ class TestApiKeyPermissions(BackupTestBase):
             _enforce_api_key_permission(req_unknown, self.user)
         self.assertEqual(ctx2.exception.status_code, 403)
 
+    def test_is_authenticated_admin_caching(self):
+        """Test _is_authenticated_admin caching on request.state.is_admin."""
+        from unittest.mock import patch
+        from backend.app.auth import create_access_token
+        from backend.app.main import _is_authenticated_admin
+
+        # 1. request=None
+        self.assertFalse(_is_authenticated_admin(None))
+
+        # 2. Anonymous request (no cookies)
+        req_anon = DummyRequest()
+        self.assertFalse(_is_authenticated_admin(req_anon))
+        self.assertFalse(req_anon.state.is_admin)
+
+        # 3. Authenticated request with valid token
+        token = create_access_token({"sub": self.user.username})
+        req_auth = DummyRequest()
+        req_auth.cookies["admin_token"] = token
+
+        self.assertTrue(_is_authenticated_admin(req_auth))
+        self.assertTrue(req_auth.state.is_admin)
+
+        # Subsequent call should use cached state and not query SessionLocal
+        with patch("backend.app.database.SessionLocal") as mock_session_local:
+            self.assertTrue(_is_authenticated_admin(req_auth))
+            mock_session_local.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()

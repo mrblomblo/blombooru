@@ -290,18 +290,27 @@ def _is_authenticated_admin(request=None) -> bool:
     admin-only UI elements. Does NOT rely on the client-controlled admin_mode cookie alone."""
     if not request or not hasattr(request, "cookies"):
         return False
+    if hasattr(request, "state") and hasattr(request.state, "is_admin"):
+        return request.state.is_admin
     from .auth import get_current_user
     from .database import SessionLocal
     admin_token = request.cookies.get("admin_token")
     if not admin_token:
+        if hasattr(request, "state"):
+            request.state.is_admin = False
         return False
     if SessionLocal is None:
         return False
     db = SessionLocal()
     try:
         user = get_current_user(token=admin_token, admin_token=admin_token, db=db)
-        return user is not None
+        is_admin_user = user is not None
+        if hasattr(request, "state"):
+            request.state.is_admin = is_admin_user
+        return is_admin_user
     except Exception:
+        if hasattr(request, "state"):
+            request.state.is_admin = False
         return False
     finally:
         db.close()
