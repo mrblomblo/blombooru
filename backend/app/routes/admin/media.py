@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
-from ...auth import get_current_admin_user, require_admin_mode
+from ...auth import require_admin_mode
 from ...config import settings
 from ...database import get_db
 from ...models import Media, User
@@ -276,10 +276,13 @@ async def get_comprehensive_stats(
         }
     }
 
-def _do_regenerate_all_thumbnails(db: Session) -> dict:
+def _do_regenerate_all_thumbnails() -> dict:
     """Synchronous worker for regenerating all thumbnails."""
+    from ...database import SessionLocal
+
     thumbnail_dir = settings.THUMBNAIL_DIR
     original_dir = settings.ORIGINAL_DIR
+    base_dir = settings.BASE_DIR
 
     # Delete all existing thumbnails
     deleted = 0
@@ -292,127 +295,135 @@ def _do_regenerate_all_thumbnails(db: Session) -> dict:
                 except Exception as e:
                     logger.error(f"Error deleting thumbnail {f}: {e}")
 
-    # Re-generate thumbnails for all media items
-    all_media = db.query(Media).all()
-    base_dir = settings.BASE_DIR
-    generated = 0
-    failed = 0
+    db = SessionLocal()
+    try:
+        # Re-generate thumbnails for all media items
+        all_media = db.query(Media).all()
+        generated = 0
+        failed = 0
 
-    for item in all_media:
-        # Paths in DB are relative to BASE_DIR
-        source_path = base_dir / item.path
+        for item in all_media:
+            # Paths in DB are relative to BASE_DIR
+            source_path = base_dir / item.path
 
-        if not source_path.exists():
-            logger.warning(f"Source file missing for media {item.id}: {source_path}")
-            failed += 1
-            continue
+            if not source_path.exists():
+                logger.warning(f"Source file missing for media {item.id}: {source_path}")
+                failed += 1
+                continue
 
-        thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
-        thumbnail_path = thumbnail_dir / thumbnail_filename
+            thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
+            thumbnail_path = thumbnail_dir / thumbnail_filename
 
-        try:
-            ok = generate_thumbnail(source_path, thumbnail_path, item.file_type)
-            if ok:
-                item.thumbnail_path = str(thumbnail_path.relative_to(base_dir))
-                generated += 1
-            else:
+            try:
+                ok = generate_thumbnail(source_path, thumbnail_path, item.file_type)
+                if ok:
+                    item.thumbnail_path = str(thumbnail_path.relative_to(base_dir))
+                    generated += 1
+                else:
+                    item.thumbnail_path = None
+                    failed += 1
+            except Exception as e:
+                logger.error(f"Error regenerating thumbnail for media {item.id}: {e}", exc_info=True)
                 item.thumbnail_path = None
                 failed += 1
-        except Exception as e:
-            logger.error(f"Error regenerating thumbnail for media {item.id}: {e}", exc_info=True)
-            item.thumbnail_path = None
-            failed += 1
 
-    db.commit()
+        db.commit()
 
-    return {
-        "deleted": deleted,
-        "generated": generated,
-        "failed": failed,
-        "total": len(all_media),
-    }
+        return {
+            "deleted": deleted,
+            "generated": generated,
+            "failed": failed,
+            "total": len(all_media),
+        }
+    finally:
+        db.close()
 
-def _do_generate_missing_thumbnails(db: Session) -> dict:
+def _do_generate_missing_thumbnails() -> dict:
     """Synchronous worker for generating missing thumbnails only."""
+    from ...database import SessionLocal
+
     thumbnail_dir = settings.THUMBNAIL_DIR
     base_dir = settings.BASE_DIR
 
-    # Collect all thumbnail paths registered in the DB (resolved to absolute)
-    all_media = db.query(Media).all()
-    registered_paths: set = set()
-    for item in all_media:
-        if item.thumbnail_path:
-            # Paths in DB are relative to BASE_DIR
-            registered_paths.add(str((base_dir / item.thumbnail_path).resolve()))
+    db = SessionLocal()
+    try:
+        # Collect all thumbnail paths registered in the DB (resolved to absolute)
+        all_media = db.query(Media).all()
+        registered_paths: set = set()
+        for item in all_media:
+            if item.thumbnail_path:
+                # Paths in DB are relative to BASE_DIR
+                registered_paths.add(str((base_dir / item.thumbnail_path).resolve()))
 
-    # Delete orphaned thumbnail files (files with no registered DB path)
-    orphans_deleted = 0
-    if thumbnail_dir.exists():
-        for f in thumbnail_dir.rglob("*"):
-            if f.is_file() and str(f.resolve()) not in registered_paths:
-                try:
-                    f.unlink()
-                    orphans_deleted += 1
-                except Exception as e:
-                    logger.error(f"Error deleting orphaned thumbnail {f}: {e}")
+        # Delete orphaned thumbnail files (files with no registered DB path)
+        orphans_deleted = 0
+        if thumbnail_dir.exists():
+            for f in thumbnail_dir.rglob("*"):
+                if f.is_file() and str(f.resolve()) not in registered_paths:
+                    try:
+                        f.unlink()
+                        orphans_deleted += 1
+                    except Exception as e:
+                        logger.error(f"Error deleting orphaned thumbnail {f}: {e}")
 
-    # Generate thumbnails for media items whose thumbnail file is missing
-    generated = 0
-    failed = 0
-    skipped = 0
+        # Generate thumbnails for media items whose thumbnail file is missing
+        generated = 0
+        failed = 0
+        skipped = 0
 
-    for item in all_media:
-        # Check whether the recorded thumbnail file actually exists
-        thumb_exists = (
-            item.thumbnail_path is not None
-            and (base_dir / item.thumbnail_path).exists()
-        )
-        if thumb_exists:
-            skipped += 1
-            continue
+        for item in all_media:
+            # Check whether the recorded thumbnail file actually exists
+            thumb_exists = (
+                item.thumbnail_path is not None
+                and (base_dir / item.thumbnail_path).exists()
+            )
+            if thumb_exists:
+                skipped += 1
+                continue
 
-        # Source path is relative to BASE_DIR
-        source_path = base_dir / item.path
+            # Source path is relative to BASE_DIR
+            source_path = base_dir / item.path
 
-        if not source_path.exists():
-            logger.warning(f"Source file missing for media {item.id}: {source_path}")
-            failed += 1
-            continue
+            if not source_path.exists():
+                logger.warning(f"Source file missing for media {item.id}: {source_path}")
+                failed += 1
+                continue
 
-        thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
-        thumbnail_path = thumbnail_dir / thumbnail_filename
+            thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
+            thumbnail_path = thumbnail_dir / thumbnail_filename
 
-        try:
-            ok = generate_thumbnail(source_path, thumbnail_path, item.file_type)
-            if ok:
-                item.thumbnail_path = str(thumbnail_path.relative_to(base_dir))
-                generated += 1
-            else:
+            try:
+                ok = generate_thumbnail(source_path, thumbnail_path, item.file_type)
+                if ok:
+                    item.thumbnail_path = str(thumbnail_path.relative_to(base_dir))
+                    generated += 1
+                else:
+                    item.thumbnail_path = None
+                    failed += 1
+            except Exception as e:
+                logger.error(f"Error generating thumbnail for media {item.id}: {e}", exc_info=True)
                 item.thumbnail_path = None
                 failed += 1
-        except Exception as e:
-            logger.error(f"Error generating thumbnail for media {item.id}: {e}", exc_info=True)
-            item.thumbnail_path = None
-            failed += 1
 
-    db.commit()
+        db.commit()
 
-    return {
-        "orphans_deleted": orphans_deleted,
-        "generated": generated,
-        "failed": failed,
-        "skipped": skipped,
-        "total": len(all_media),
-    }
+        return {
+            "orphans_deleted": orphans_deleted,
+            "generated": generated,
+            "failed": failed,
+            "skipped": skipped,
+            "total": len(all_media),
+        }
+    finally:
+        db.close()
 
 @router.post("/regenerate-all-thumbnails")
 async def regenerate_all_thumbnails(
     current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db),
 ):
     """Delete all thumbnails and regenerate them from source files, updating DB paths."""
     try:
-        result = await run_in_threadpool(_do_regenerate_all_thumbnails, db)
+        result = await run_in_threadpool(_do_regenerate_all_thumbnails)
         return result
     except Exception as e:
         logger.error(f"Error regenerating all thumbnails: {e}", exc_info=True)
@@ -421,11 +432,10 @@ async def regenerate_all_thumbnails(
 @router.post("/generate-missing-thumbnails")
 async def generate_missing_thumbnails(
     current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db),
 ):
     """Remove orphaned thumbnail files and generate thumbnails for media items that are missing one."""
     try:
-        result = await run_in_threadpool(_do_generate_missing_thumbnails, db)
+        result = await run_in_threadpool(_do_generate_missing_thumbnails)
         return result
     except Exception as e:
         logger.error(f"Error generating missing thumbnails: {e}", exc_info=True)
@@ -434,11 +444,10 @@ async def generate_missing_thumbnails(
 @router.post("/relink-media")
 async def relink_media(
     current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db),
 ):
     """Scan storage and re-link database records for moved or renamed media files based on content hash."""
     try:
-        result = await run_in_threadpool(relink_media_files, db)
+        result = await run_in_threadpool(relink_media_files)
         return result
     except Exception as e:
         logger.error(f"Error relinking media: {e}", exc_info=True)

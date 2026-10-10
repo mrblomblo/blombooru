@@ -503,7 +503,7 @@ class TestTagImplications(BackupTestBase):
         m3.tags.append(self.tag_solo)
         self.db.commit()
 
-        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user, db=self.db))
+        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user))
         affected = result.get("affected_media", [])
         self.assertEqual(len(affected), 1)
         self.assertEqual(affected[0]["media_id"], m1.id)
@@ -511,7 +511,7 @@ class TestTagImplications(BackupTestBase):
 
     def test_simulate_apply_all_no_implications(self):
         """Test simulate_apply_all_implications returns empty list when no implications exist."""
-        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user, db=self.db))
+        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user))
         self.assertEqual(result, {"affected_media": []})
 
     # Database Cascades & Relationship Integrity Tests
@@ -729,7 +729,7 @@ class TestTagImplications(BackupTestBase):
         self.db.commit()
 
         start = time.perf_counter()
-        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user, db=self.db))
+        result = asyncio.run(simulate_apply_all_implications(current_user=self.admin_user))
         duration = time.perf_counter() - start
 
         affected = result.get("affected_media", [])

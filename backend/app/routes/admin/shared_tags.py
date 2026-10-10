@@ -94,15 +94,30 @@ async def get_shared_tags_status(
     
     return status
 
+def _do_full_sync():
+    from ...database import SessionLocal, SharedSessionLocal, is_shared_db_available
+    from ...services.shared_tags import SharedTagService
+
+    if not is_shared_db_available() or SharedSessionLocal is None:
+        raise HTTPException(status_code=503, detail="Shared tag database not available")
+
+    local_db = SessionLocal()
+    shared_db = SharedSessionLocal()
+    try:
+        service = SharedTagService(local_db, shared_db)
+        return service.full_sync()
+    finally:
+        try:
+            local_db.close()
+        finally:
+            shared_db.close()
+
 @router.post("/shared-tags/sync")
 async def sync_shared_tags(
     current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db)
 ):
     """Trigger manual sync with shared tag database"""
-    from ...database import (get_shared_db, is_shared_db_available,
-                            reconnect_shared_db)
-    from ...services.shared_tags import SharedTagService
+    from ...database import is_shared_db_available, reconnect_shared_db
     from ...utils.cache import invalidate_tag_cache
     
     if not settings.SHARED_TAGS_ENABLED:
@@ -114,32 +129,18 @@ async def sync_shared_tags(
     if not is_shared_db_available():
         raise HTTPException(status_code=503, detail="Shared tag database not available")
     
-    shared_db_gen = get_shared_db()
-    shared_db = next(shared_db_gen, None)
+    result = await asyncio.to_thread(_do_full_sync)
+    invalidate_tag_cache()
     
-    try:
-        if not shared_db:
-            raise HTTPException(status_code=503, detail="Could not get shared database session")
-        
-        service = SharedTagService(db, shared_db)
-        result = await asyncio.to_thread(service.full_sync)
-        invalidate_tag_cache()
-        
-        return {
-            "success": len(result.errors) == 0,
-            "tags_imported": result.tags_imported,
-            "tags_exported": result.tags_exported,
-            "aliases_imported": result.aliases_imported,
-            "aliases_exported": result.aliases_exported,
-            "conflicts_resolved": result.conflicts_resolved,
-            "errors": result.errors
-        }
-    finally:
-        if shared_db:
-            try:
-                next(shared_db_gen, None)
-            except StopIteration:
-                pass
+    return {
+        "success": len(result.errors) == 0,
+        "tags_imported": result.tags_imported,
+        "tags_exported": result.tags_exported,
+        "aliases_imported": result.aliases_imported,
+        "aliases_exported": result.aliases_exported,
+        "conflicts_resolved": result.conflicts_resolved,
+        "errors": result.errors
+    }
 
 @router.post("/shared-tags/reconnect")
 async def reconnect_shared_tags(

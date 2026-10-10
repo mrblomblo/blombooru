@@ -10,7 +10,7 @@ from typing import Annotated, Self
 
 from ..auth import require_admin_mode
 from ..database import get_db
-from ..models import blombooru_implication_implied, blombooru_implication_targets, Media, Tag, TagImplication, User 
+from ..models import blombooru_implication_implied, blombooru_implication_targets, Tag, TagImplication, User 
 from ..utils.cache import invalidate_tag_cache
 from ..utils.tag_utils import resolve_implications
 
@@ -292,14 +292,15 @@ async def expand_tag_implications(
 @router.post("/simulate-apply-all")
 async def simulate_apply_all_implications(
     current_user: User = Depends(require_admin_mode),
-    db: Session = Depends(get_db)
 ):
     """
     Simulate applying all tag implications to all media in the database.
     Runs asynchronously in an executor to avoid blocking the event loop.
     Returns a list of affected media along with the newly implied tags.
     """
-    loop = asyncio.get_event_loop()
+    from ..database import SessionLocal
+
+    loop = asyncio.get_running_loop()
 
     def do_simulate_apply_all():
         import fnmatch
@@ -312,104 +313,108 @@ async def simulate_apply_all_implications(
             TagImplication,
         )
 
-        # 1. Quick check if any implications exist
-        has_implications = db.execute(select(TagImplication.id).limit(1)).scalar_one_or_none()
-        if not has_implications:
-            return []
+        db = SessionLocal()
+        try:
+            # 1. Quick check if any implications exist
+            has_implications = db.execute(select(TagImplication.id).limit(1)).scalar_one_or_none()
+            if not has_implications:
+                return []
 
-        # 2. Bulk load tag id -> name mapping
-        tag_rows = db.execute(select(Tag.id, Tag.name)).all()
-        if not tag_rows:
-            return []
-        id_to_name = {tid: name for tid, name in tag_rows}
+            # 2. Bulk load tag id -> name mapping
+            tag_rows = db.execute(select(Tag.id, Tag.name)).all()
+            if not tag_rows:
+                return []
+            id_to_name = {tid: name for tid, name in tag_rows}
 
-        # 3. Bulk load implication relationships from association tables
-        target_rows = db.execute(
-            select(blombooru_implication_targets.c.implication_id, blombooru_implication_targets.c.tag_id)
-        ).all()
+            # 3. Bulk load implication relationships from association tables
+            target_rows = db.execute(
+                select(blombooru_implication_targets.c.implication_id, blombooru_implication_targets.c.tag_id)
+            ).all()
 
-        implied_rows = db.execute(
-            select(blombooru_implication_implied.c.implication_id, blombooru_implication_implied.c.tag_id)
-        ).all()
+            implied_rows = db.execute(
+                select(blombooru_implication_implied.c.implication_id, blombooru_implication_implied.c.tag_id)
+            ).all()
 
-        pattern_rows = db.execute(
-            select(TagImplication.id, TagImplication.target_tag_patterns)
-            .where(TagImplication.target_tag_patterns.is_not(None))
-        ).all()
+            pattern_rows = db.execute(
+                select(TagImplication.id, TagImplication.target_tag_patterns)
+                .where(TagImplication.target_tag_patterns.is_not(None))
+            ).all()
 
-        # Map implication_id -> set of implied tag_ids
-        imp_to_implied = defaultdict(set)
-        for imp_id, tag_id in implied_rows:
-            imp_to_implied[imp_id].add(tag_id)
+            # Map implication_id -> set of implied tag_ids
+            imp_to_implied = defaultdict(set)
+            for imp_id, tag_id in implied_rows:
+                imp_to_implied[imp_id].add(tag_id)
 
-        # Build trigger graph: trigger_tag_id -> set of implied tag_ids
-        direct_graph = defaultdict(set)
-        for imp_id, tag_id in target_rows:
-            if imp_id in imp_to_implied:
-                direct_graph[tag_id].update(imp_to_implied[imp_id])
+            # Build trigger graph: trigger_tag_id -> set of implied tag_ids
+            direct_graph = defaultdict(set)
+            for imp_id, tag_id in target_rows:
+                if imp_id in imp_to_implied:
+                    direct_graph[tag_id].update(imp_to_implied[imp_id])
 
-        # Evaluate wildcard patterns across existing tags
-        if pattern_rows:
-            for imp_id, patterns in pattern_rows:
-                if not patterns or imp_id not in imp_to_implied:
-                    continue
-                rule_implied = imp_to_implied[imp_id]
-                for tid, name in tag_rows:
-                    if any(fnmatch.fnmatch(name, pat) for pat in patterns):
-                        direct_graph[tid].update(rule_implied)
+            # Evaluate wildcard patterns across existing tags
+            if pattern_rows:
+                for imp_id, patterns in pattern_rows:
+                    if not patterns or imp_id not in imp_to_implied:
+                        continue
+                    rule_implied = imp_to_implied[imp_id]
+                    for tid, name in tag_rows:
+                        if any(fnmatch.fnmatch(name, pat) for pat in patterns):
+                            direct_graph[tid].update(rule_implied)
 
-        if not direct_graph:
-            return []
+            if not direct_graph:
+                return []
 
-        # 4. Compute transitive closure for each tag with outgoing edges using BFS
-        closure = {}
-        for start_tag in direct_graph:
-            visited = set()
-            queue = deque([start_tag])
-            while queue:
-                curr = queue.popleft()
-                for nxt in direct_graph.get(curr, ()):
-                    if nxt not in visited and nxt != start_tag:
-                        visited.add(nxt)
-                        queue.append(nxt)
-            if visited:
-                closure[start_tag] = visited
+            # 4. Compute transitive closure for each tag with outgoing edges using BFS
+            closure = {}
+            for start_tag in direct_graph:
+                visited = set()
+                queue = deque([start_tag])
+                while queue:
+                    curr = queue.popleft()
+                    for nxt in direct_graph.get(curr, ()):
+                        if nxt not in visited and nxt != start_tag:
+                            visited.add(nxt)
+                            queue.append(nxt)
+                if visited:
+                    closure[start_tag] = visited
 
-        if not closure:
-            return []
+            if not closure:
+                return []
 
-        # 5. Bulk load media tags directly from association table
-        media_tag_rows = db.execute(
-            select(blombooru_media_tags.c.media_id, blombooru_media_tags.c.tag_id)
-            .order_by(blombooru_media_tags.c.media_id)
-        ).all()
+            # 5. Bulk load media tags directly from association table
+            media_tag_rows = db.execute(
+                select(blombooru_media_tags.c.media_id, blombooru_media_tags.c.tag_id)
+                .order_by(blombooru_media_tags.c.media_id)
+            ).all()
 
-        if not media_tag_rows:
-            return []
+            if not media_tag_rows:
+                return []
 
-        # Group tag IDs by media_id
-        media_to_tags = defaultdict(set)
-        for m_id, t_id in media_tag_rows:
-            media_to_tags[m_id].add(t_id)
+            # Group tag IDs by media_id
+            media_to_tags = defaultdict(set)
+            for m_id, t_id in media_tag_rows:
+                media_to_tags[m_id].add(t_id)
 
-        # 6. For each media item, compute newly implied tags from the closure
-        affected_media = []
-        for m_id, current_tag_ids in media_to_tags.items():
-            implied_ids = set()
-            for t_id in current_tag_ids:
-                if t_id in closure:
-                    implied_ids.update(closure[t_id])
+            # 6. For each media item, compute newly implied tags from the closure
+            affected_media = []
+            for m_id, current_tag_ids in media_to_tags.items():
+                implied_ids = set()
+                for t_id in current_tag_ids:
+                    if t_id in closure:
+                        implied_ids.update(closure[t_id])
 
-            new_tag_ids = implied_ids - current_tag_ids
-            if new_tag_ids:
-                added_tags = sorted(id_to_name[tid] for tid in new_tag_ids if tid in id_to_name)
-                if added_tags:
-                    affected_media.append({
-                        "media_id": m_id,
-                        "added_tags": added_tags
-                    })
+                new_tag_ids = implied_ids - current_tag_ids
+                if new_tag_ids:
+                    added_tags = sorted(id_to_name[tid] for tid in new_tag_ids if tid in id_to_name)
+                    if added_tags:
+                        affected_media.append({
+                            "media_id": m_id,
+                            "added_tags": added_tags
+                        })
 
-        return affected_media
+            return affected_media
+        finally:
+            db.close()
 
     affected_media = await loop.run_in_executor(None, do_simulate_apply_all)
     return {"affected_media": affected_media}
