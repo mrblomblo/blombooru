@@ -3,6 +3,7 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import create_engine as sqlalchemy_create_engine
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import Session
 
 from ...auth import require_admin_mode
@@ -25,7 +26,19 @@ async def test_shared_tag_db(data: dict, current_user: User = Depends(require_ad
         if password == "***":
             password = settings.SHARED_TAG_DB_PASSWORD
         
-        test_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
+        try:
+            port_num = int(port) if port is not None and str(port).strip() != "" else 5432
+        except (ValueError, TypeError):
+            port_num = 5432
+
+        test_url = URL.create(
+            drivername="postgresql",
+            username=user,
+            password=password,
+            host=host,
+            port=port_num,
+            database=name
+        )
         
         test_engine = sqlalchemy_create_engine(
             test_url, 

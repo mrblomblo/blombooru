@@ -4,6 +4,7 @@ from datetime import timedelta
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from sqlalchemy import create_engine as sqlalchemy_create_engine
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import sessionmaker
 
@@ -44,7 +45,14 @@ def _setup_onboarding(data: OnboardingData) -> None:
     logger.debug(f"1. Testing database connection to {data.database.host}:{data.database.port}/{data.database.name}")
     
     try:
-        test_url = f"postgresql://{data.database.user}:{data.database.password}@{data.database.host}:{data.database.port}/{data.database.name}"
+        test_url = URL.create(
+            drivername="postgresql",
+            username=data.database.user,
+            password=data.database.password,
+            host=data.database.host,
+            port=data.database.port,
+            database=data.database.name,
+        )
         
         test_engine = sqlalchemy_create_engine(test_url, pool_pre_ping=True)
         with test_engine.connect() as conn:
@@ -72,7 +80,14 @@ def _setup_onboarding(data: OnboardingData) -> None:
     temp_engine = None
     
     try:
-        temp_db_url = f"postgresql://{data.database.user}:{data.database.password}@{data.database.host}:{data.database.port}/{data.database.name}"
+        temp_db_url = URL.create(
+            drivername="postgresql",
+            username=data.database.user,
+            password=data.database.password,
+            host=data.database.host,
+            port=data.database.port,
+            database=data.database.name,
+        )
         temp_engine = sqlalchemy_create_engine(temp_db_url, pool_pre_ping=True)
         new_session_local = sessionmaker(autocommit=False, autoflush=False, bind=temp_engine)
         
