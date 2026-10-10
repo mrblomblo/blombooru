@@ -12,6 +12,7 @@ from ..auth import require_admin_mode
 from ..config import settings
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
+from ..enums import RatingEnum
 from ..models import Media, User
 from ..services.booru import (BooruPost, get_client_for_url,
                              get_user_agent_for_url)
@@ -206,7 +207,7 @@ async def download_and_import(
         relative_path = file_path.relative_to(settings.BASE_DIR)
         relative_thumb = thumbnail_path.relative_to(settings.BASE_DIR) if thumbnail_generated else None
 
-        final_rating = req.rating or post.rating
+        final_rating = RatingEnum.normalize(req.rating) or (RatingEnum.normalize(post.rating) if post and post.rating else None) or RatingEnum.safe
         final_source = req.source if req.source is not None else (post.source or post.booru_url)
         final_tags = req.tags if req.tags is not None else [t.name for t in post.tags]
         final_description = req.description if req.description is not None else post.description

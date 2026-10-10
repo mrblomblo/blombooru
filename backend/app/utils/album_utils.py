@@ -10,7 +10,8 @@ from .cache import invalidate_album_cache
 from .search_parser import (apply_custom_filters_or, apply_search_criteria,
                             build_search_criteria_conditions,
                             parse_search_query)
-from ..enums import rating_to_str
+from ..enums import (is_rating_filter_active, parse_rating_filter,
+                      rating_to_str)
 from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
                       blombooru_album_media, blombooru_media_tags, Tag)
 
@@ -561,30 +562,6 @@ def delete_album_cascade(db: Session, album_id: int, cascade: bool = False) -> N
         db.commit()
 
     invalidate_album_cache()
-
-VALID_RATING_MAP = {
-    's': RatingEnum.safe, 'safe': RatingEnum.safe,
-    'q': RatingEnum.questionable, 'questionable': RatingEnum.questionable,
-    'e': RatingEnum.explicit, 'explicit': RatingEnum.explicit
-}
-
-def parse_rating_filter(rating: Optional[str]) -> List[RatingEnum]:
-    """Parses a comma-separated rating string into unique valid RatingEnum values."""
-    if not rating or not isinstance(rating, str) or not rating.strip():
-        return []
-    vals = [r.strip().lower() for r in rating.split(",") if r.strip()]
-    ratings = [VALID_RATING_MAP[r] for r in vals if r in VALID_RATING_MAP]
-    seen = set()
-    result = []
-    for r in ratings:
-        if r not in seen:
-            seen.add(r)
-            result.append(r)
-    return result
-
-def is_rating_filter_active(valid_ratings: List[RatingEnum]) -> bool:
-    """Returns True if ratings are restricted (i.e. not empty and not all ratings allowed)."""
-    return 0 < len(valid_ratings) < len(RatingEnum)
 
 def is_album_filter_active(
     rating: Optional[str] = None,

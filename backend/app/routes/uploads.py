@@ -340,12 +340,15 @@ def _process_and_stage_item(
 
     # Resolve initial rating
     if not base_rating_str and parsed and parsed.rating:
-        if parsed.rating in RatingEnum._value2member_map_:
-            base_rating_str = parsed.rating
+        parsed_rating = RatingEnum.normalize(parsed.rating)
+        if parsed_rating:
+            base_rating_str = parsed_rating.value
 
     rating = RatingEnum.safe
-    if base_rating_str and base_rating_str in RatingEnum._value2member_map_:
-        rating = RatingEnum(base_rating_str)
+    if base_rating_str:
+        norm_rating = RatingEnum.normalize(base_rating_str)
+        if norm_rating:
+            rating = norm_rating
 
     if not base_source_str and parsed and parsed.source:
         base_source_str = parsed.source
@@ -1300,7 +1303,7 @@ async def commit_upload_session(
                     width=item.get("width"),
                     height=item.get("height"),
                     duration=item.get("duration"),
-                    rating=RatingEnum(item.get("rating", "safe")),
+                    rating=RatingEnum.normalize(item.get("rating")) or RatingEnum.safe,
                     source=item.get("source") or None,
                     description=item.get("description") or None,
                 )

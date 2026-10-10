@@ -161,7 +161,7 @@ def _do_import_media_url(req: ImportRequest, db: Session) -> MediaResponse:
 
         rating = req.rating
         if rating is None:
-            rating = RatingEnum(booru_post.rating) if booru_post and booru_post.rating else RatingEnum.safe
+            rating = (RatingEnum.normalize(booru_post.rating) or RatingEnum.safe) if booru_post and booru_post.rating else RatingEnum.safe
 
         source = req.source
         if source is None:

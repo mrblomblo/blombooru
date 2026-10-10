@@ -5,16 +5,17 @@ from typing import List, Optional, Set, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from sqlalchemy import and_, asc, case, desc, exists, func, or_
+from sqlalchemy import asc, case, desc, func, or_
 from sqlalchemy.orm import Session, load_only, selectinload
 
 from ..auth import verify_api_key
 from ..config import settings
 from ..database import get_db
-from ..models import (Album, ApiKey, Media, Tag, TagAlias, TagCategoryEnum,
+from ..enums import RATING_TO_SHORTHAND_MAP
+from ..models import (Album, Media, Tag, TagAlias, TagCategoryEnum,
                       User, blombooru_album_hierarchy, blombooru_album_media,
                       blombooru_media_tags)
-from ..utils.cache import cache_response, invalidate_cache
+from ..utils.cache import cache_response
 from ..utils.search_parser import apply_search_criteria, parse_search_query
 
 # --- AUTHENTICATION ---
@@ -99,7 +100,6 @@ router = APIRouter(
 
 # --- MODULE-LEVEL CONSTANTS ---
 
-RATING_MAP = {"safe": "s", "questionable": "q", "explicit": "e"}
 CATEGORY_MAP = {"general": 0, "artist": 1, "copyright": 3, "series": 3, "character": 4, "meta": 5}
 TAG_WORD_SPLIT_PATTERN = re.compile(r'[_\-]')
 
@@ -186,7 +186,7 @@ def format_media_response(media: Media, base_url: str, auth_key: Optional[str] =
     """Formats a Media object into a Danbooru v2 compatible JSON dictionary."""
     # Handle enum value or string representation
     r_val = media.rating.value if hasattr(media.rating, 'value') else str(media.rating)
-    rating = RATING_MAP.get(r_val, "q")
+    rating = RATING_TO_SHORTHAND_MAP.get(r_val, "q")
 
     # Generate URLs
     media_id = media.id

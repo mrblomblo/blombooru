@@ -408,12 +408,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
             logger.error(f"Failed to generate thumbnail for {thumb_source}: {e}")
 
         # Parse rating
-        rating_str = media_data.get('rating', 'safe')
-        rating_enum = RatingEnum.safe
-        if rating_str == 'questionable':
-            rating_enum = RatingEnum.questionable
-        elif rating_str == 'explicit':
-            rating_enum = RatingEnum.explicit
+        rating_enum = RatingEnum.normalize(media_data.get('rating')) or RatingEnum.safe
 
         # Parse uploaded_at
         uploaded_at_val = None
