@@ -6,8 +6,8 @@ from sqlalchemy import (Float, and_, case, cast, exists, false, func,
                         literal, not_, or_)
 from sqlalchemy.orm import Query, Session, aliased
 
-from ..enums import FileTypeEnum
-from ..models import (Album, Media, RatingEnum, Tag, TagCategoryEnum,
+from ..enums import FileTypeEnum, parse_rating_filter
+from ..models import (Album, Media, Tag, TagCategoryEnum,
                       blombooru_media_tags)
 
 TOKEN_PATTERN = re.compile(r'(-?)(?:([a-zA-Z0-9_]+):)?("[^"]*"|[^\s"]+)')
@@ -1006,13 +1006,7 @@ def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) 
 
     if 'rating' in meta:
         for item in meta['rating']:
-            valid_map = {
-                's': RatingEnum.safe, 'safe': RatingEnum.safe,
-                'q': RatingEnum.questionable, 'questionable': RatingEnum.questionable,
-                'e': RatingEnum.explicit, 'explicit': RatingEnum.explicit
-            }
-            vals = [v.strip().lower() for v in item['value'].split(',') if v.strip()]
-            ratings = [valid_map[v] for v in vals if v in valid_map]
+            ratings = parse_rating_filter(item['value'])
 
             if ratings:
                 if item['negated']:

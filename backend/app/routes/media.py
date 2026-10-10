@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..auth import require_admin_mode
 from ..config import settings
-from ..enums import rating_to_str
+from ..enums import parse_rating_filter, rating_to_str, RatingEnum
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..models import (Album, Media, Tag, User, blombooru_album_media,
@@ -21,7 +21,7 @@ from ..models import (Album, Media, Tag, User, blombooru_album_media,
 from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataRequest,
                        BulkTagUpdateRequest, BulkTagUpdateResponse,
                        MediaDetailResponse, MediaResponse,
-                       MediaUpdate, RatingEnum, ShareSettingsUpdate)
+                       MediaUpdate, ShareSettingsUpdate)
 from ..utils.album_utils import (get_bulk_album_thumbnails, get_flattened_media_ids,
                                 handle_media_deleted, handle_media_rating_changed,
                                 set_media_albums)
@@ -115,8 +115,9 @@ async def update_from_source(
     filename_changed = False
     file_updated = False
     if req.update_rating and req.rating:
-        if media.rating != req.rating:
-            media.rating = req.rating
+        norm_rating = RatingEnum.normalize(req.rating)
+        if norm_rating and media.rating != norm_rating:
+            media.rating = norm_rating
             rating_changed = True
 
     if req.update_source:
@@ -693,8 +694,7 @@ async def get_media_list(
         query = db.query(Media).options(selectinload(Media.tags))
         
         if rating:
-            ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
-            valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+            valid_ratings = parse_rating_filter(rating)
             if valid_ratings:
                 query = query.filter(Media.rating.in_(valid_ratings))
 
@@ -1090,8 +1090,7 @@ async def get_related_media(
     media_query = db.query(Media).options(selectinload(Media.tags)).filter(Media.id.in_(similar_ids))
 
     if rating:
-        ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
-        valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+        valid_ratings = parse_rating_filter(rating)
         if valid_ratings:
             media_query = media_query.filter(Media.rating.in_(valid_ratings))
 
@@ -1140,8 +1139,7 @@ async def get_adjacent_media(
                 media_query = apply_search_criteria(media_query, parsed, db)
             else:
                 if rating:
-                    ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
-                    valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+                    valid_ratings = parse_rating_filter(rating)
                     if valid_ratings:
                         media_query = media_query.filter(Media.rating.in_(valid_ratings))
 

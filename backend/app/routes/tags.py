@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from ..auth import require_admin_mode
 from ..config import settings
 from ..database import get_db
-from ..models import Media, RatingEnum, Tag, TagAlias, User, blombooru_media_tags
+from ..enums import parse_rating_filter
+from ..models import Media, Tag, TagAlias, User, blombooru_media_tags
 from ..schemas import (BatchResolveCombinedRequest,
                        BatchResolveCombinedResponse, BatchTagValidateRequest,
                        TagCategoryEnum, TagCreate, TagResponse)
@@ -432,8 +433,7 @@ async def search_related_tags(
 
     # Apply top-level rating filter if not already specified in query string
     if rating and 'rating' not in parsed['meta']:
-        ratings_list = [r.strip().lower() for r in rating.split(",") if r.strip()]
-        valid_ratings = [RatingEnum[r] for r in ratings_list if r in RatingEnum.__members__]
+        valid_ratings = parse_rating_filter(rating)
         if valid_ratings:
             media_query = media_query.filter(Media.rating.in_(valid_ratings))
 

@@ -3,7 +3,9 @@ import urllib.parse
 from fastapi import Request
 
 from backend.app.config import settings
-from backend.app.enums import FileTypeEnum, RatingEnum, TagCategoryEnum
+from backend.app.enums import (FileTypeEnum, RatingEnum, TagCategoryEnum,
+                               is_rating_filter_active, parse_rating_filter,
+                               RATING_TO_SHORTHAND_MAP, rating_to_str)
 from backend.app.models import Album, Media, Tag, blombooru_album_media, blombooru_media_tags
 from backend.app.redis_client import redis_cache
 from backend.app.routes.albums import get_album_contents, get_albums
@@ -138,6 +140,38 @@ class TestRatingFilterMode(BackupTestBase):
         res_safe_expl = asyncio.run(get_media_list(request=req, rating="safe,explicit", db=self.db))
         self.assertCountEqual(get_ids(res_safe_expl), [1, 3])
 
+        # 4. Shorthand ratings (s, q, e)
+        res_s = asyncio.run(get_media_list(request=req, rating="s", db=self.db))
+        self.assertEqual(get_ids(res_s), [1])
+
+        res_q = asyncio.run(get_media_list(request=req, rating="q", db=self.db))
+        self.assertEqual(get_ids(res_q), [2])
+
+        res_e = asyncio.run(get_media_list(request=req, rating="e", db=self.db))
+        self.assertEqual(get_ids(res_e), [3])
+
+        res_sq = asyncio.run(get_media_list(request=req, rating="s,q", db=self.db))
+        self.assertCountEqual(get_ids(res_sq), [1, 2])
+
+        res_se = asyncio.run(get_media_list(request=req, rating="s,e", db=self.db))
+        self.assertCountEqual(get_ids(res_se), [1, 3])
+
+        res_qe = asyncio.run(get_media_list(request=req, rating="q,e", db=self.db))
+        self.assertCountEqual(get_ids(res_qe), [2, 3])
+
+        res_mixed = asyncio.run(get_media_list(request=req, rating="s,questionable", db=self.db))
+        self.assertCountEqual(get_ids(res_mixed), [1, 2])
+
+        res_all_short = asyncio.run(get_media_list(request=req, rating="s,q,e", db=self.db))
+        self.assertCountEqual(get_ids(res_all_short), [1, 2, 3])
+
+        # 5. Invalid / whitespace handling
+        res_spaces = asyncio.run(get_media_list(request=req, rating=" s , q ", db=self.db))
+        self.assertCountEqual(get_ids(res_spaces), [1, 2])
+
+        res_invalid = asyncio.run(get_media_list(request=req, rating="invalid_val", db=self.db))
+        self.assertCountEqual(get_ids(res_invalid), [1, 2, 3])
+
     def test_get_random_media_ratings(self):
         res_expl = asyncio.run(get_random_media(rating="explicit", db=self.db))
         self.assertEqual(res_expl["id"], 3)
@@ -164,6 +198,35 @@ class TestRatingFilterMode(BackupTestBase):
         # In safe,explicit mode with order=asc, next for id=1 should skip questionable and be id=3
         res_skip = asyncio.run(get_adjacent_media(media_id=1, rating="safe,explicit", order="asc", db=self.db))
         self.assertEqual(res_skip.get("next_id"), 3)
+
+        # Shorthand rating tests in search mode
+        res_short_q = asyncio.run(get_adjacent_media(media_id=2, rating="q", db=self.db))
+        self.assertIsNone(res_short_q.get("prev_id"))
+        self.assertIsNone(res_short_q.get("next_id"))
+
+        res_short_se = asyncio.run(get_adjacent_media(media_id=1, rating="s,e", order="asc", db=self.db))
+        self.assertEqual(res_short_se.get("next_id"), 3)
+
+        res_short_sq = asyncio.run(get_adjacent_media(media_id=1, rating="s,q", order="asc", db=self.db))
+        self.assertEqual(res_short_sq.get("next_id"), 2)
+
+        # Shorthand rating tests in album mode
+        a_adj = Album(id=99, name="Adjacent Album")
+        self.db.add(a_adj)
+        self.db.commit()
+        self.db.execute(blombooru_album_media.insert().values([
+            {"album_id": 99, "media_id": 1},
+            {"album_id": 99, "media_id": 2},
+            {"album_id": 99, "media_id": 3},
+        ]))
+        self.db.commit()
+
+        res_album_se = asyncio.run(get_adjacent_media(media_id=1, mode="album", album_id=99, rating="s,e", order="asc", db=self.db))
+        self.assertEqual(res_album_se.get("next_id"), 3)
+
+        res_album_q = asyncio.run(get_adjacent_media(media_id=2, mode="album", album_id=99, rating="q", order="asc", db=self.db))
+        self.assertIsNone(res_album_q.get("prev_id"))
+        self.assertIsNone(res_album_q.get("next_id"))
 
     def test_albums_ratings(self):
         req = make_dummy_request()
@@ -241,6 +304,19 @@ class TestRatingFilterMode(BackupTestBase):
         tags_multi = asyncio.run(search_related_tags(request=req, q="cat", rating="safe,explicit", db=self.db))
         tag_names_multi = [t["name"] for t in tags_multi]
         self.assertIn("nsfw_tag", tag_names_multi)
+
+        # Shorthand rating tests
+        tags_s = asyncio.run(search_related_tags(request=req, q="cat", rating="s", db=self.db))
+        self.assertNotIn("nsfw_tag", [t["name"] for t in tags_s])
+
+        tags_e = asyncio.run(search_related_tags(request=req, q="cat", rating="e", db=self.db))
+        self.assertIn("nsfw_tag", [t["name"] for t in tags_e])
+
+        tags_se = asyncio.run(search_related_tags(request=req, q="cat", rating="s,e", db=self.db))
+        self.assertIn("nsfw_tag", [t["name"] for t in tags_se])
+
+        tags_q = asyncio.run(search_related_tags(request=req, q="cat", rating="q", db=self.db))
+        self.assertNotIn("nsfw_tag", [t["name"] for t in tags_q])
 
     def test_user_typed_rating_in_q_overrides_sidebar_rating(self):
         """Verify that user-typed rating in search query (q) takes precedence over top-level rating parameter."""
@@ -487,6 +563,25 @@ class TestRatingFilterMode(BackupTestBase):
         res_custom = asyncio.run(get_related_media(request=req, media_id=1, custom_filter=["cool"], db=self.db))
         self.assertEqual(get_ids(res_custom), [3])
 
+        # Shorthand rating filters
+        res_short_s = asyncio.run(get_related_media(request=req, media_id=1, rating="s", db=self.db))
+        self.assertEqual(get_ids(res_short_s), [])
+
+        res_short_q = asyncio.run(get_related_media(request=req, media_id=1, rating="q", db=self.db))
+        self.assertEqual(get_ids(res_short_q), [2])
+
+        res_short_e = asyncio.run(get_related_media(request=req, media_id=1, rating="e", db=self.db))
+        self.assertEqual(get_ids(res_short_e), [3])
+
+        res_short_sq = asyncio.run(get_related_media(request=req, media_id=1, rating="s,q", db=self.db))
+        self.assertEqual(get_ids(res_short_sq), [2])
+
+        res_short_qe = asyncio.run(get_related_media(request=req, media_id=1, rating="q,e", db=self.db))
+        self.assertCountEqual(get_ids(res_short_qe), [2, 3])
+
+        res_short_all = asyncio.run(get_related_media(request=req, media_id=1, rating="s,q,e", db=self.db))
+        self.assertCountEqual(get_ids(res_short_all), [2, 3])
+
     def test_config_and_schema(self):
         from pydantic import ValidationError
 
@@ -513,3 +608,55 @@ class TestRatingFilterMode(BackupTestBase):
         # Restore default
         settings.save_settings({"sidebar_filter_mode": "rating"})
         self.assertEqual(settings.SIDEBAR_FILTER_MODE, "rating")
+
+    def test_rating_enum_normalization_and_helpers(self):
+        # Enum constructor missing fallback
+        self.assertEqual(RatingEnum("s"), RatingEnum.safe)
+        self.assertEqual(RatingEnum("S"), RatingEnum.safe)
+        self.assertEqual(RatingEnum("q"), RatingEnum.questionable)
+        self.assertEqual(RatingEnum("Q"), RatingEnum.questionable)
+        self.assertEqual(RatingEnum("e"), RatingEnum.explicit)
+        self.assertEqual(RatingEnum("E"), RatingEnum.explicit)
+        self.assertEqual(RatingEnum("safe"), RatingEnum.safe)
+        self.assertEqual(RatingEnum("Safe"), RatingEnum.safe)
+        with self.assertRaises(ValueError):
+            RatingEnum("invalid")
+
+        # normalize method
+        self.assertEqual(RatingEnum.normalize("s"), RatingEnum.safe)
+        self.assertEqual(RatingEnum.normalize("safe"), RatingEnum.safe)
+        self.assertEqual(RatingEnum.normalize("q"), RatingEnum.questionable)
+        self.assertEqual(RatingEnum.normalize("questionable"), RatingEnum.questionable)
+        self.assertEqual(RatingEnum.normalize("e"), RatingEnum.explicit)
+        self.assertEqual(RatingEnum.normalize("explicit"), RatingEnum.explicit)
+        self.assertEqual(RatingEnum.normalize("  S  "), RatingEnum.safe)
+        self.assertEqual(RatingEnum.normalize(RatingEnum.safe), RatingEnum.safe)
+        self.assertIsNone(RatingEnum.normalize(None))
+        self.assertIsNone(RatingEnum.normalize(""))
+        self.assertIsNone(RatingEnum.normalize("invalid"))
+        self.assertIsNone(RatingEnum.normalize(123))
+
+        # parse_list / parse_rating_filter
+        self.assertEqual(parse_rating_filter("s"), [RatingEnum.safe])
+        self.assertEqual(parse_rating_filter("s,q"), [RatingEnum.safe, RatingEnum.questionable])
+        self.assertEqual(parse_rating_filter("s, safe, q"), [RatingEnum.safe, RatingEnum.questionable])
+        self.assertEqual(parse_rating_filter("s,explicit"), [RatingEnum.safe, RatingEnum.explicit])
+        self.assertEqual(parse_rating_filter("invalid,q"), [RatingEnum.questionable])
+        self.assertEqual(parse_rating_filter(["s", "e"]), [RatingEnum.safe, RatingEnum.explicit])
+        self.assertEqual(parse_rating_filter([RatingEnum.safe, RatingEnum.explicit]), [RatingEnum.safe, RatingEnum.explicit])
+        self.assertEqual(parse_rating_filter(""), [])
+        self.assertEqual(parse_rating_filter(None), [])
+        self.assertEqual(parse_rating_filter("invalid"), [])
+
+        # Helpers and string conversions
+        self.assertEqual(RATING_TO_SHORTHAND_MAP["safe"], "s")
+        self.assertEqual(RATING_TO_SHORTHAND_MAP["questionable"], "q")
+        self.assertEqual(RATING_TO_SHORTHAND_MAP["explicit"], "e")
+        self.assertEqual(rating_to_str(RatingEnum.safe), "safe")
+        self.assertEqual(rating_to_str(None), "safe")
+
+        # is_rating_filter_active
+        self.assertFalse(is_rating_filter_active([]))
+        self.assertTrue(is_rating_filter_active([RatingEnum.safe]))
+        self.assertTrue(is_rating_filter_active([RatingEnum.safe, RatingEnum.questionable]))
+        self.assertFalse(is_rating_filter_active([RatingEnum.safe, RatingEnum.questionable, RatingEnum.explicit]))
