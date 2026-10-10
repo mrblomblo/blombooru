@@ -431,7 +431,7 @@ class Settings:
     
     @property
     def SHARED_TAG_DB_NAME(self) -> str:
-        return self.file_settings.get("shared_tags", {}).get("name") or os.getenv("SHARED_TAG_DB_NAME") or self.settings.get("shared_tags", {}).get("name", "shared_tags")
+        return self.file_settings.get("shared_tags", {}).get("name") or os.getenv("SHARED_TAG_DB_NAME") or os.getenv("SHARED_TAG_DB") or self.settings.get("shared_tags", {}).get("name", "shared_tags")
     
     @property
     def SHARED_TAG_DB_USER(self) -> str:
