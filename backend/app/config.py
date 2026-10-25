@@ -1,7 +1,9 @@
+import functools
+import ipaddress
 import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import FrozenSet, List, Optional, Union
 
 from dotenv import load_dotenv
 from sqlalchemy.engine import URL
@@ -504,5 +506,26 @@ class Settings:
             return max(0, int(val))
         except (ValueError, TypeError):
             return 0
+
+@functools.lru_cache(maxsize=16)
+def _parse_trusted_proxies(raw: str) -> FrozenSet[Union[ipaddress.IPv4Network, ipaddress.IPv6Network]]:
+    """Parse a comma-separated list of trusted-proxy CIDRs."""
+    if not raw:
+        return frozenset()
+    import logging as _logging
+    networks = set()
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            networks.add(ipaddress.ip_network(entry, strict=False))
+        except ValueError:
+            _logging.getLogger("blombooru").warning(
+                "BLOMBOORU_TRUSTED_PROXIES: %r is not a valid IP address or "
+                "CIDR block and will be ignored. Check your configuration.",
+                entry,
+            )
+    return frozenset(networks)
 
 settings = Settings()
