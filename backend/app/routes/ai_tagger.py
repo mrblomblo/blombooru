@@ -230,10 +230,11 @@ async def get_models(
         current_model = tagger.current_model if tagger.is_loaded else None
         
         models_info = []
-        for model_name, repo_id in WDTagger.AVAILABLE_MODELS.items():
+        for model_name in WDTagger.AVAILABLE_MODELS.keys():
+            active_repo = WDTagger.get_active_repo_id(model_name)
             models_info.append({
                 "name": model_name,
-                "repo_id": repo_id,
+                "repo_id": active_repo,
                 "is_downloaded": WDTagger.is_model_downloaded(model_name),
                 "is_loaded": (current_model == model_name),
                 "is_downloading": WDTagger.is_downloading(model_name),
@@ -265,21 +266,12 @@ async def get_model_status(
         is_downloading = WDTagger.is_downloading(model_name)
         is_downloaded = WDTagger.is_model_downloaded(model_name)
         
-        model_sizes = {
-            "pixai-tagger-v1.0": 935,
-            "wd-eva02-large-tagger-v3": 850,
-            "wd-vit-tagger-v3": 350,
-            "wd-swinv2-tagger-v3": 450,
-            "wd-convnext-tagger-v3": 350,
-            "wd-vit-large-tagger-v3": 1200,
-        }
-        
         return ModelStatusResponse(
             model_name=model_name,
             is_downloaded=is_downloaded,
             is_loaded=is_loaded,
             is_downloading=is_downloading,
-            download_size_mb=model_sizes.get(model_name),
+            download_size_mb=WDTagger.get_download_size_mb(model_name),
             optimal_batch_size=WDTagger.OPTIMAL_BATCH_SIZES.get(model_name)
         )
         
@@ -305,22 +297,22 @@ async def delete_model(
         import huggingface_hub
         import shutil
 
-        repo_id = WDTagger.AVAILABLE_MODELS[model_name]
+        repos_to_delete = [WDTagger.AVAILABLE_MODELS[model_name]] + WDTagger.LEGACY_MODEL_VARIANTS.get(model_name, [])
         cache_info = huggingface_hub.scan_cache_dir(cache_dir=settings.MODELS_DIR)
 
         deleted = False
-        for repo in cache_info.repos:
-            if repo.repo_id == repo_id:
-                revisions = [r.commit_hash for r in repo.revisions]
-                if revisions:
-                    delete_strategy = cache_info.delete_revisions(*revisions)
-                    delete_strategy.execute()
-                if hasattr(repo, "repo_path") and Path(repo.repo_path).exists():
-                    shutil.rmtree(repo.repo_path, ignore_errors=True)
-                deleted = True
-                break
+        for repo_id in repos_to_delete:
+            for repo in cache_info.repos:
+                if repo.repo_id == repo_id:
+                    revisions = [r.commit_hash for r in repo.revisions]
+                    if revisions:
+                        delete_strategy = cache_info.delete_revisions(*revisions)
+                        delete_strategy.execute()
+                    if hasattr(repo, "repo_path") and Path(repo.repo_path).exists():
+                        shutil.rmtree(repo.repo_path, ignore_errors=True)
+                    deleted = True
+                    break
 
-        if not deleted:
             repo_folder_name = "models--" + repo_id.replace("/", "--")
             repo_dir = settings.MODELS_DIR / repo_folder_name
             if repo_dir.exists():

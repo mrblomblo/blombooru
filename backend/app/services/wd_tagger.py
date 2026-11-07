@@ -220,11 +220,48 @@ class WDTagger:
             return model_name in cls._active_downloads
 
     @classmethod
+    def get_repo_files(cls, repo_id: Optional[str]) -> Tuple[List[str], str, str]:
+        """Return (required_files, model_filename, label_filename) for a given repo."""
+        if repo_id and repo_id in cls.MODEL_REPO_SPECS:
+            spec = cls.MODEL_REPO_SPECS[repo_id]
+            return spec["required_files"], spec["model_file"], spec["label_file"]
+        return ["model.onnx", "selected_tags.csv"], "model.onnx", "selected_tags.csv"
+
+    @classmethod
+    def is_repo_downloaded(cls, repo_id: str) -> bool:
+        """Check if all required files for a repository are present in local cache."""
+        try:
+            import huggingface_hub
+            required_files, _, _ = cls.get_repo_files(repo_id)
+            for fname in required_files:
+                cached = huggingface_hub.try_to_load_from_cache(
+                    repo_id, fname, cache_dir=settings.MODELS_DIR
+                )
+                if not (isinstance(cached, str) and os.path.exists(cached)):
+                    return False
+            return True
+        except Exception:
+            return False
+
+    @classmethod
+    def get_active_repo_id(cls, model_name: str) -> str:
+        """Primary repo if downloaded, or installed legacy variant, or primary if none."""
+        if model_name not in cls.AVAILABLE_MODELS:
+            raise ValueError(f"Unknown model: {model_name}. Available: {list(cls.AVAILABLE_MODELS.keys())}")
+        primary_repo = cls.AVAILABLE_MODELS[model_name]
+        if cls.is_repo_downloaded(primary_repo):
+            return primary_repo
+        for legacy_repo in cls.LEGACY_MODEL_VARIANTS.get(model_name, []):
+            if cls.is_repo_downloaded(legacy_repo):
+                return legacy_repo
+        return primary_repo
+
+    @classmethod
     def get_model_filenames(cls, model_name: str) -> Tuple[str, str]:
         """Return (model_filename, label_filename) for a given model."""
-        if model_name == "pixai-tagger-v1.0":
-            return "model.onnx", "tags.json"
-        return "model.onnx", "selected_tags.csv"
+        repo_id = cls.get_active_repo_id(model_name) if model_name in cls.AVAILABLE_MODELS else None
+        _, model_file, label_file = cls.get_repo_files(repo_id)
+        return model_file, label_file
 
     @classmethod
     def is_model_downloaded(cls, model_name: str) -> bool:
@@ -233,22 +270,13 @@ class WDTagger:
             return False
         if cls.is_downloading(model_name):
             return False
-        try:
-            import huggingface_hub
-            repo_id = cls.AVAILABLE_MODELS[model_name]
-            model_file, label_file = cls.get_model_filenames(model_name)
-            model_path = huggingface_hub.try_to_load_from_cache(
-                repo_id, model_file, cache_dir=settings.MODELS_DIR
-            )
-            label_path = huggingface_hub.try_to_load_from_cache(
-                repo_id, label_file, cache_dir=settings.MODELS_DIR
-            )
-            return bool(
-                isinstance(model_path, str) and os.path.exists(model_path) and
-                isinstance(label_path, str) and os.path.exists(label_path)
-            )
-        except Exception:
-            return False
+        primary_repo = cls.AVAILABLE_MODELS[model_name]
+        if cls.is_repo_downloaded(primary_repo):
+            return True
+        for legacy_repo in cls.LEGACY_MODEL_VARIANTS.get(model_name, []):
+            if cls.is_repo_downloaded(legacy_repo):
+                return True
+        return False
 
     @classmethod
     def get_active_download(cls, model_name: str) -> Optional[DownloadTask]:
@@ -288,12 +316,31 @@ class WDTagger:
                 task.cancel()
     
     AVAILABLE_MODELS = {
-        "pixai-tagger-v1.0": "A1yCE/pixai-tagger-v1.0-onnx-fp16",
+        "pixai-tagger-v1.0": "noaione/pixai-tagger-v1.0-onnx",
         "wd-eva02-large-tagger-v3": "SmilingWolf/wd-eva02-large-tagger-v3",
         "wd-vit-large-tagger-v3": "SmilingWolf/wd-vit-large-tagger-v3",
         "wd-swinv2-tagger-v3": "SmilingWolf/wd-swinv2-tagger-v3",
         "wd-convnext-tagger-v3": "SmilingWolf/wd-convnext-tagger-v3",
         "wd-vit-tagger-v3": "SmilingWolf/wd-vit-tagger-v3",
+    }
+
+    LEGACY_MODEL_VARIANTS = {
+        "pixai-tagger-v1.0": ["A1yCE/pixai-tagger-v1.0-onnx-fp16"],
+    }
+
+    MODEL_REPO_SPECS = {
+        "noaione/pixai-tagger-v1.0-onnx": {
+            "required_files": ["model.onnx", "model.onnx.data", "tags.json"],
+            "model_file": "model.onnx",
+            "label_file": "tags.json",
+            "download_size_bytes": int(1980.0 * 1024 * 1024),
+        },
+        "A1yCE/pixai-tagger-v1.0-onnx-fp16": {
+            "required_files": ["model.onnx", "tags.json"],
+            "model_file": "model.onnx",
+            "label_file": "tags.json",
+            "download_size_bytes": int(935.4 * 1024 * 1024),
+        },
     }
     
     # Speed ranking (relative, lower is faster)
@@ -336,8 +383,19 @@ class WDTagger:
         "wd-swinv2-tagger-v3": int(445.3 * 1024 * 1024),
         "wd-eva02-large-tagger-v3": int(850.3 * 1024 * 1024),
         "wd-vit-large-tagger-v3": int(1200.3 * 1024 * 1024),
-        "pixai-tagger-v1.0": int(935.4 * 1024 * 1024),
+        "pixai-tagger-v1.0": int(1980.0 * 1024 * 1024),
     }
+
+    @classmethod
+    def get_download_size_bytes(cls, model_name: str, repo_id: Optional[str] = None) -> int:
+        target_repo = repo_id or (cls.get_active_repo_id(model_name) if model_name in cls.AVAILABLE_MODELS else None)
+        if target_repo and target_repo in cls.MODEL_REPO_SPECS:
+            return cls.MODEL_REPO_SPECS[target_repo]["download_size_bytes"]
+        return cls.MODEL_DOWNLOAD_SIZES_BYTES.get(model_name, int(500 * 1024 * 1024))
+
+    @classmethod
+    def get_download_size_mb(cls, model_name: str) -> int:
+        return int(round(cls.get_download_size_bytes(model_name) / (1024 * 1024)))
     
     def __new__(cls):
         if cls._instance is None:
@@ -409,7 +467,7 @@ class WDTagger:
         cpu_count = os.cpu_count() or 4
         sess_options.intra_op_num_threads = cpu_count
         sess_options.inter_op_num_threads = max(1, cpu_count // 2)
-        sess_options.execution_mode = rt.ExecutionMode.ORT_PARALLEL
+        sess_options.execution_mode = rt.ExecutionMode.ORT_SEQUENTIAL
         sess_options.enable_mem_pattern = True
 
         if any(p == "CPUExecutionProvider" or (isinstance(p, tuple) and p[0] == "CPUExecutionProvider") for p in providers):
@@ -634,47 +692,40 @@ class WDTagger:
         if is_cancelled and is_cancelled():
             raise DownloadCancelledException("Operation cancelled")
         
-        model_repo = self.AVAILABLE_MODELS[model_name]
-        model_filename, label_filename = self.get_model_filenames(model_name)
+        model_repo = self.get_active_repo_id(model_name)
         
         def _fetch_paths(force_download: bool = False):
             if is_cancelled and is_cancelled():
                 raise DownloadCancelledException("Operation cancelled")
-            expected_total = self.MODEL_DOWNLOAD_SIZES_BYTES.get(model_name)
+            
+            repo_to_fetch = self.AVAILABLE_MODELS[model_name] if force_download else model_repo
+            req_files, model_fname, label_fname = self.get_repo_files(repo_to_fetch)
+            expected_total = self.get_download_size_bytes(model_name, repo_id=repo_to_fetch)
+            
             if force_download:
-                logger.info(f"Verifying hashes and re-downloading '{model_name}' if necessary...")
+                logger.info(f"Verifying hashes and re-downloading '{model_name}' ({repo_to_fetch}) if necessary...")
                 with cancellable_hf_download(is_cancelled, progress_callback, expected_total_bytes=expected_total):
-                    return (
-                        huggingface_hub.hf_hub_download(
-                            model_repo,
-                            label_filename,
-                            force_download=True,
-                            cache_dir=settings.MODELS_DIR
-                        ),
-                        huggingface_hub.hf_hub_download(
-                            model_repo,
-                            model_filename,
+                    paths = {}
+                    for fname in req_files:
+                        paths[fname] = huggingface_hub.hf_hub_download(
+                            repo_to_fetch,
+                            fname,
                             force_download=True,
                             cache_dir=settings.MODELS_DIR
                         )
-                    )
+                    return paths[label_fname], paths[model_fname]
             
             try:
                 # Try to load from local cache first to avoid network requests
-                return (
-                    huggingface_hub.hf_hub_download(
-                        model_repo,
-                        label_filename,
-                        local_files_only=True,
-                        cache_dir=settings.MODELS_DIR
-                    ),
-                    huggingface_hub.hf_hub_download(
-                        model_repo,
-                        model_filename,
+                paths = {}
+                for fname in req_files:
+                    paths[fname] = huggingface_hub.hf_hub_download(
+                        repo_to_fetch,
+                        fname,
                         local_files_only=True,
                         cache_dir=settings.MODELS_DIR
                     )
-                )
+                return paths[label_fname], paths[model_fname]
             except LocalEntryNotFoundError:
                 logger.info(f"Model '{model_name}' not found in cache. Downloading from HuggingFace...")
                 return _fetch_paths(force_download=True)
