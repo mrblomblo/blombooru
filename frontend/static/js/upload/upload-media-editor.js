@@ -621,13 +621,18 @@ class UploadMediaEditor {
 
         // Bulk Source
         const sourceInput = this.container.querySelector('#editor-bulk-source');
-        const sourceApplyBtn = this.container.querySelector('#editor-bulk-source-apply-btn');
+        const sourceApplyBtn = this.container.querySelector('#editor-bulk-apply-source-btn');
         const applyBulkSource = async () => {
             const source = sourceInput?.value.trim();
             if (source !== undefined && itemIds.length > 0) {
-                await this.session.bulkUpdate(itemIds, { source });
-                window.app.showNotification(window.i18n.t('upload.bulk.source_applied'), 'success');
-                if (this.options.onItemChanged) this.options.onItemChanged();
+                try {
+                    await this.session.bulkUpdate(itemIds, { source });
+                    window.app.showNotification(window.i18n.t('upload.bulk.source_applied'), 'success');
+                    if (this.options.onItemChanged) this.options.onItemChanged();
+                } catch (e) {
+                    console.error('Failed to bulk update source:', e);
+                    window.app.showNotification(e.message, 'error');
+                }
             }
         };
         if (sourceApplyBtn) sourceApplyBtn.addEventListener('click', applyBulkSource);
@@ -646,9 +651,14 @@ class UploadMediaEditor {
         const applyBulkDate = async () => {
             const isoStr = parseLocalInputDateTime(bulkDateInput?.value);
             if (itemIds.length > 0) {
-                await this.session.bulkUpdate(itemIds, { custom_date: isoStr });
-                window.app.showNotification(window.i18n.t('upload.bulk.date_applied'), 'success');
-                if (this.options.onItemChanged) this.options.onItemChanged();
+                try {
+                    await this.session.bulkUpdate(itemIds, { custom_date: isoStr });
+                    window.app.showNotification(window.i18n.t('upload.bulk.date_applied'), 'success');
+                    if (this.options.onItemChanged) this.options.onItemChanged();
+                } catch (e) {
+                    console.error('Failed to bulk update date:', e);
+                    window.app.showNotification(e.message, 'error');
+                }
             }
         };
         if (bulkDateApplyBtn) bulkDateApplyBtn.addEventListener('click', applyBulkDate);
@@ -661,13 +671,18 @@ class UploadMediaEditor {
                 this.autoResizeTextarea(e.target);
             });
         }
-        const descApplyBtn = this.container.querySelector('#editor-bulk-description-apply-btn');
+        const descApplyBtn = this.container.querySelector('#editor-bulk-apply-desc-btn');
         const applyBulkDescription = async () => {
             const description = descInput?.value.trim();
             if (description !== undefined && itemIds.length > 0) {
-                await this.session.bulkUpdate(itemIds, { description });
-                window.app.showNotification(window.i18n.t('upload.bulk.description_applied'), 'success');
-                if (this.options.onItemChanged) this.options.onItemChanged();
+                try {
+                    await this.session.bulkUpdate(itemIds, { description });
+                    window.app.showNotification(window.i18n.t('upload.bulk.description_applied'), 'success');
+                    if (this.options.onItemChanged) this.options.onItemChanged();
+                } catch (e) {
+                    console.error('Failed to bulk update description:', e);
+                    window.app.showNotification(e.message, 'error');
+                }
             }
         };
         if (descApplyBtn) descApplyBtn.addEventListener('click', applyBulkDescription);
