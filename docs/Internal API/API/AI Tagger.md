@@ -11,7 +11,7 @@ Uses the WDv3 model family to suggest tags for images. The `GET /api/ai-tagger/s
 
 | Model | Approx. size | Speed Rank (CPU) | Accuracy Rank | Optimal Batch Size (CPU) |
 |---|---|---|---|---|
-| `pixai-tagger-v1.0` | ~935 MB | 6 (Slowest) | 1 (Most accurate) | 1 |
+| `pixai-tagger-v1.0` | ~1980 MB | 6 (Slowest) | 1 (Most accurate) | 1 |
 | `wd-eva02-large-tagger-v3` (default) | ~850 MB | 4 | 2 | 2 |
 | `wd-vit-large-tagger-v3` | ~1200 MB | 5 | 3 | 5 |
 | `wd-swinv2-tagger-v3` | ~450 MB | 3 | 4 | 15 |
@@ -57,7 +57,7 @@ GET /api/ai-tagger/models
 [
   {
     "name": "pixai-tagger-v1.0",
-    "repo_id": "A1yCE/pixai-tagger-v1.0-onnx-fp16",
+    "repo_id": "noaione/pixai-tagger-v1.0-onnx",
     "is_downloaded": true,
     "is_loaded": false,
     "is_downloading": false,
