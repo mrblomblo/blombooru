@@ -662,6 +662,14 @@ class UploadMediaEditor {
             }
         };
         if (bulkDateApplyBtn) bulkDateApplyBtn.addEventListener('click', applyBulkDate);
+        if (bulkDateInput) {
+            bulkDateInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyBulkDate();
+                }
+            });
+        }
 
         // Bulk Description
         const descInput = this.container.querySelector('#editor-bulk-description');
@@ -669,6 +677,12 @@ class UploadMediaEditor {
             this.autoResizeTextarea(descInput);
             descInput.addEventListener('input', (e) => {
                 this.autoResizeTextarea(e.target);
+            });
+            descInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    applyBulkDescription();
+                }
             });
         }
         const descApplyBtn = this.container.querySelector('#editor-bulk-apply-desc-btn');
