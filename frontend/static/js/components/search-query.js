@@ -9,7 +9,7 @@ function canonicalizeQuery(queryString) {
         'date', 'age', 'filetype', 'source', 'md5',
         'album', 'pool', 'album_tree', 'pool_tree', 'parent', 'child',
         'order', 'sort', 'uploaded_at', 'time', 'created_at',
-        'custom_date', 'custom_age'
+        'custom_date', 'custom_age', 'filename', 'name'
     ]);
 
     const orderedKeys = [];

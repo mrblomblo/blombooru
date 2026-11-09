@@ -16,7 +16,7 @@ COMBINABLE_KEYS: Set[str] = {
     'rating', 'tagcount', 'gentags', 'arttags', 'chartags', 'copytags', 'metatags',
     'id', 'width', 'height', 'duration', 'filesize', 'date', 'age', 'filetype',
     'source', 'md5', 'album', 'pool', 'album_tree', 'pool_tree', 'parent', 'child',
-    'custom_date', 'custom_age'
+    'custom_date', 'custom_age', 'filename', 'name'
 }
 
 SINGULAR_KEYS: Set[str] = {'order', 'sort'}
@@ -804,6 +804,34 @@ def build_age_condition(column, value_str: str):
         return conditions[0]
     return or_(*conditions)
 
+def build_filename_condition(column, value_str: str):
+    """Builds a SQLAlchemy boolean expression for filename matching with wildcards and multi-values."""
+    parts = [p.strip() for p in value_str.split(',') if p.strip()]
+    if not parts:
+        return None
+
+    conditions = []
+    for part in parts:
+        has_wildcard = '*' in part or '?' in part
+        escaped = part.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        if has_wildcard:
+            pattern = escaped.replace('*', '%').replace('?', '_')
+            conditions.append(column.ilike(pattern, escape='\\'))
+        else:
+            if '.' not in part:
+                conditions.append(or_(
+                    column.ilike(escaped, escape='\\'),
+                    column.ilike(f"{escaped}.%", escape='\\')
+                ))
+            else:
+                conditions.append(column.ilike(escaped, escape='\\'))
+
+    if not conditions:
+        return None
+    if len(conditions) == 1:
+        return conditions[0]
+    return or_(*conditions)
+
 def apply_sort_ordering(query: Query, order_val: str, db: Session, parsed_meta: Dict[str, Any]) -> Query:
     """
     Applies comprehensive sorting with full _asc and _desc support for all fields.
@@ -1083,6 +1111,13 @@ def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) 
                     conditions.append(not_(combined_cond))
                 else:
                     conditions.append(combined_cond)
+
+    if 'filename' in meta or 'name' in meta:
+        items = meta.get('filename', []) + meta.get('name', [])
+        for item in items:
+            cond = build_filename_condition(Media.filename, item['value'])
+            if cond is not None:
+                conditions.append(not_(cond) if item['negated'] else cond)
 
     if 'pool' in meta or 'album' in meta:
         items = meta.get('pool', []) + meta.get('album', [])

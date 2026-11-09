@@ -1325,6 +1325,7 @@ TagAutocomplete.QUALIFIERS = {
     age: ['<24h', '<7d', '1w..1mo', '>1y'],
     custom_age: ['<24h', '<7d', '1w..1mo', '>1y'],
     md5: ['<checksum>'],
+    filename: ['image.png', 'my_image.jpg', '*.png', 'scan_*', '*.mp4'],
     order: [
         'id_desc', 'id_asc', 'date_desc', 'date_asc',
         'custom_date_desc', 'custom_date_asc',
@@ -1349,5 +1350,6 @@ TagAutocomplete.QUALIFIER_ALIASES = {
     tag_count: 'tagcount',
     tags: 'tagcount',
     file_type: 'filetype',
-    hash: 'md5'
+    hash: 'md5',
+    name: 'filename'
 };
