@@ -500,7 +500,8 @@ def canonicalize_query(query_string: str) -> str:
             values = qualifier_values.get((is_negated, identifier), [])
             folded = fold_condition_items(values, key=identifier)
             if folded:
-                val_str = ','.join(f'"{v}"' if ' ' in v else v for v in folded)
+                joined = ','.join(folded)
+                val_str = f'"{joined}"' if ' ' in joined else joined
                 formatted_tokens.append(f"{prefix}{identifier}:{val_str}")
         elif token_type == 'singular':
             val = singular_values.get(identifier, '')

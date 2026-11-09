@@ -421,7 +421,8 @@ function canonicalizeQuery(queryString) {
             const values = qualifierValues.get(mapKey) || [];
             const folded = foldConditionItems(values, rawKey);
             if (folded.length > 0) {
-                const valStr = folded.map(v => v.includes(' ') ? `"${v}"` : v).join(',');
+                const joined = folded.join(',');
+                const valStr = joined.includes(' ') ? `"${joined}"` : joined;
                 formattedTokens.push(`${mapKey}:${valStr}`);
             }
         } else if (entry.type === 'singular') {

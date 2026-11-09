@@ -420,6 +420,54 @@ class TestSearchParserDBIntegration(unittest.TestCase):
         self.assertIn(3, ids)
         self.assertNotIn(2, ids)
 
+    def test_filename_exact_with_extension(self):
+        # filename:image1.png -> only m1
+        parsed = parse_search_query("filename:image1.png")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertIn(1, ids)
+        self.assertNotIn(2, ids)
+        self.assertNotIn(3, ids)
+
+    def test_filename_stem_without_extension(self):
+        # filename:image1 -> matches image1.png (m1) via stem-only match
+        parsed = parse_search_query("filename:image1")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertIn(1, ids)
+        self.assertNotIn(2, ids)
+
+    def test_filename_wildcard_prefix(self):
+        # m2 = image2.jpg, m3 = clip.mp4 -- neither starts with "image1"
+        # Use filetype:jpg which covers m2; here test wildcard "image*"
+        parsed = parse_search_query("filename:image*")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertIn(1, ids)
+        self.assertIn(2, ids)
+        self.assertNotIn(3, ids)
+
+    def test_filename_wildcard_extension(self):
+        # filename:*.jpg -> m2 (image2.jpg) only; m1 is .png, m3 is .mp4
+        parsed = parse_search_query("filename:*.jpg")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertIn(2, ids)
+        self.assertNotIn(1, ids)
+        self.assertNotIn(3, ids)
+
+    def test_filename_negated(self):
+        # -filename:*.jpg -> everything except m2
+        parsed = parse_search_query("-filename:*.jpg")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertNotIn(2, ids)
+        self.assertIn(1, ids)
+        self.assertIn(3, ids)
+
+    def test_filename_name_alias(self):
+        # name: is an alias for filename:
+        parsed_fn = parse_search_query("filename:image1.png")
+        parsed_n = parse_search_query("name:image1.png")
+        ids_fn = sorted(m.id for m in apply_search_criteria(self.db.query(Media), parsed_fn, self.db).all())
+        ids_n = sorted(m.id for m in apply_search_criteria(self.db.query(Media), parsed_n, self.db).all())
+        self.assertEqual(ids_fn, ids_n)
+
     def test_dimensions_multi_filter(self):
         # Query: width:<1000,>1500 -> matches m2 (800) and m1 (1920), excludes m3 (1280)
         parsed = parse_search_query("width:<1000,>1500")
