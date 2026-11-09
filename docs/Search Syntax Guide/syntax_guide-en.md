@@ -41,6 +41,7 @@ Note: Ranges and multi-value lists can be used with most meta qualifiers.
 - `duration`: Video / animated GIF duration in seconds (`duration:>30`, `duration:10..60`)
 - `filesize`: File size (b, kb, mb, gb with fuzzy matching) (`filesize:>5mb`, `filesize:52mb`)
 - `filetype`: Extension (png, gif, mp4, etc.) or media type (image, video) (`filetype:png,jpg`, `filetype:video`)
+- `filename`: Filename with optional extension (`filename:image.png`, `filename:scan_*`, `filename:*.jpg`)
 
 ### Metadata & Info
 

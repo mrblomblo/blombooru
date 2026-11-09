@@ -41,6 +41,7 @@ OBS: Intervall och flervärdeslistor kan användas med de flesta metaqualifiers.
 - `duration`: Video- / animerad GIF-längd i sekunder (`duration:>30`, `duration:10..60`)
 - `filesize`: Filstorlek (b, kb, mb, gb med fuzzy-matchning) (`filesize:>5mb`, `filesize:52mb`)
 - `filetype`: Filändelse (png, gif, mp4 osv.) eller medietyp (image, video) (`filetype:png,jpg`, `filetype:video`)
+- `filename`: Filnamn med valfri ändelse (`filename:image.png`, `filename:scan_*`, `filename:*.jpg`)
 
 ### Metadata och info
 

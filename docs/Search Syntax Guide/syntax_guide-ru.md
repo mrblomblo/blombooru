@@ -41,6 +41,7 @@
 - `duration`: Длительность видео / GIF в секундах (`duration:>30`, `duration:10..60`)
 - `filesize`: Вес файла (b, kb, mb, gb, поддерживает нечёткие совпадения) (`filesize:>5mb`, `filesize:52mb`)
 - `filetype`: Расширение (png, gif, mp4, итд.) или тип медиа (image, video) (`filetype:png,jpg`, `filetype:video`)
+- `filename`:  (`filename:image.png`, `filename:scan_*`, `filename:*.jpg`)
 
 ### Метаданные и информация
 
