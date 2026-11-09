@@ -97,22 +97,23 @@ class TagInfoPanel {
         const hasHiddenContent = related.length > 1;
 
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 flex-wrap';
+        row.className = 'flex items-start gap-2 flex-wrap';
 
         const chevronBtn = document.createElement('button');
         chevronBtn.type = 'button';
+        chevronBtn.setAttribute('aria-label', window.i18n.t('tags_gallery.toggle_details'));
         if (hasHiddenContent) {
             chevronBtn.disabled = false;
-            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         } else {
             chevronBtn.disabled = true;
-            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         }
         chevronBtn.innerHTML = window.Icons.chevronRight({ size: 14, class: 'related-chevron transition-transform duration-200' });
         const chevronSvg = chevronBtn.querySelector('.related-chevron') || chevronBtn.firstElementChild;
 
         const label = document.createElement('span');
-        label.className = 'font-bold text-secondary shrink-0 select-none';
+        label.className = 'font-bold text-secondary shrink-0 select-none min-h-[22px] flex items-center';
         label.textContent = `${window.i18n.t('gallery.related_tags')}:`;
 
         const itemsContainer = document.createElement('div');
@@ -157,12 +158,15 @@ class TagInfoPanel {
         };
 
         if (hasHiddenContent) {
-            chevronBtn.addEventListener('click', (e) => {
+            const toggle = (e) => {
                 e.stopPropagation();
                 showAll = !showAll;
                 if (chevronSvg) chevronSvg.style.transform = showAll ? 'rotate(90deg)' : '';
                 renderItems();
-            });
+            };
+            chevronBtn.addEventListener('click', toggle);
+            label.classList.add('cursor-pointer');
+            label.addEventListener('click', toggle);
         }
 
         row.appendChild(chevronBtn);
@@ -192,22 +196,23 @@ class TagInfoPanel {
         const hasHiddenContent = implyingTags.length > 1;
 
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 flex-wrap';
+        row.className = 'flex items-start gap-2 flex-wrap';
 
         const chevronBtn = document.createElement('button');
         chevronBtn.type = 'button';
+        chevronBtn.setAttribute('aria-label', window.i18n.t('tags_gallery.toggle_details'));
         if (hasHiddenContent) {
             chevronBtn.disabled = false;
-            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         } else {
             chevronBtn.disabled = true;
-            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         }
         chevronBtn.innerHTML = window.Icons.chevronRight({ size: 14, class: 'implied-by-chevron transition-transform duration-200' });
         const chevronSvg = chevronBtn.querySelector('.implied-by-chevron') || chevronBtn.firstElementChild;
 
         const label = document.createElement('span');
-        label.className = 'font-bold text-secondary shrink-0 select-none';
+        label.className = 'font-bold text-secondary shrink-0 select-none min-h-[22px] flex items-center';
         label.textContent = `${window.i18n.t('tags_gallery.implied_by')}:`;
 
         const itemsContainer = document.createElement('div');
@@ -248,12 +253,15 @@ class TagInfoPanel {
         };
 
         if (hasHiddenContent) {
-            chevronBtn.addEventListener('click', (e) => {
+            const toggle = (e) => {
                 e.stopPropagation();
                 showAll = !showAll;
                 if (chevronSvg) chevronSvg.style.transform = showAll ? 'rotate(90deg)' : '';
                 renderItems();
-            });
+            };
+            chevronBtn.addEventListener('click', toggle);
+            label.classList.add('cursor-pointer');
+            label.addEventListener('click', toggle);
         }
 
         row.appendChild(chevronBtn);
@@ -296,16 +304,17 @@ class TagInfoPanel {
         row.className = 'space-y-1.5';
 
         const topRow = document.createElement('div');
-        topRow.className = 'flex items-center gap-2 flex-wrap';
+        topRow.className = 'flex items-start gap-2 flex-wrap';
 
         const chevronBtn = document.createElement('button');
         chevronBtn.type = 'button';
+        chevronBtn.setAttribute('aria-label', window.i18n.t('tags_gallery.toggle_details'));
         if (hasHiddenContent) {
             chevronBtn.disabled = false;
-            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         } else {
             chevronBtn.disabled = true;
-            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         }
         chevronBtn.innerHTML = window.Icons.chevronRight({ size: 14, class: 'implies-chevron transition-transform duration-200' });
         const chevronSvg = chevronBtn.querySelector('.implies-chevron') || chevronBtn.firstElementChild;
@@ -314,7 +323,7 @@ class TagInfoPanel {
         }
 
         const label = document.createElement('span');
-        label.className = 'font-bold text-secondary shrink-0 select-none';
+        label.className = 'font-bold text-secondary shrink-0 select-none min-h-[22px] flex items-center';
         label.textContent = `${window.i18n.t('admin.tags_implications.implies_tags')}:`;
 
         const chipsContainer = document.createElement('div');
@@ -472,10 +481,13 @@ class TagInfoPanel {
         };
 
         if (hasHiddenContent) {
-            chevronBtn.addEventListener('click', (e) => {
+            const handleToggle = (e) => {
                 e.stopPropagation();
                 toggleExpand();
-            });
+            };
+            chevronBtn.addEventListener('click', handleToggle);
+            label.classList.add('cursor-pointer');
+            label.addEventListener('click', handleToggle);
         }
 
         topRow.appendChild(chevronBtn);
@@ -498,12 +510,13 @@ class TagInfoPanel {
         row.className = 'space-y-1.5';
 
         const topRow = document.createElement('div');
-        topRow.className = 'flex items-center gap-2 flex-wrap';
+        topRow.className = 'flex items-start gap-2 flex-wrap';
 
         const chevronBtn = document.createElement('button');
         chevronBtn.type = 'button';
         chevronBtn.disabled = false;
-        chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0';
+        chevronBtn.setAttribute('aria-label', window.i18n.t('tags_gallery.toggle_details'));
+        chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         chevronBtn.innerHTML = window.Icons.chevronRight({ size: 14, class: 'alias-chevron transition-transform duration-200' });
         const chevronSvg = chevronBtn.querySelector('.alias-chevron') || chevronBtn.firstElementChild;
         if (isExpanded && chevronSvg) {
@@ -511,7 +524,7 @@ class TagInfoPanel {
         }
 
         const label = document.createElement('span');
-        label.className = 'font-bold text-secondary shrink-0 select-none';
+        label.className = 'font-bold text-secondary shrink-0 select-none min-h-[22px] flex items-center cursor-pointer';
         label.textContent = `${window.i18n.t('admin.tags_management.tag_aliases')}:`;
 
         const chipsContainer = document.createElement('div');
@@ -691,10 +704,13 @@ class TagInfoPanel {
             renderChips();
         };
 
-        chevronBtn.addEventListener('click', (e) => {
+        const handleToggle = (e) => {
             e.stopPropagation();
             toggleExpand();
-        });
+        };
+
+        chevronBtn.addEventListener('click', handleToggle);
+        label.addEventListener('click', handleToggle);
 
         topRow.appendChild(chevronBtn);
         topRow.appendChild(label);
@@ -710,22 +726,23 @@ class TagInfoPanel {
         const hasHiddenContent = aliases.length > 1;
 
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 flex-wrap';
+        row.className = 'flex items-start gap-2 flex-wrap';
 
         const chevronBtn = document.createElement('button');
         chevronBtn.type = 'button';
+        chevronBtn.setAttribute('aria-label', window.i18n.t('tags_gallery.toggle_details'));
         if (hasHiddenContent) {
             chevronBtn.disabled = false;
-            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary hover:text-primary transition-transform duration-200 cursor-pointer flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         } else {
             chevronBtn.disabled = true;
-            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0';
+            chevronBtn.className = 'p-0.5 text-secondary opacity-30 cursor-default flex items-center justify-center shrink-0 min-h-[22px] h-[22px]';
         }
         chevronBtn.innerHTML = window.Icons.chevronRight({ size: 14, class: 'alias-chevron transition-transform duration-200' });
         const chevronSvg = chevronBtn.querySelector('.alias-chevron') || chevronBtn.firstElementChild;
 
         const label = document.createElement('span');
-        label.className = 'font-bold text-secondary shrink-0 select-none';
+        label.className = 'font-bold text-secondary shrink-0 select-none min-h-[22px] flex items-center';
         label.textContent = `${window.i18n.t('admin.tags_management.tag_aliases')}:`;
 
         const chipsContainer = document.createElement('div');
@@ -764,12 +781,15 @@ class TagInfoPanel {
         };
 
         if (hasHiddenContent) {
-            chevronBtn.addEventListener('click', (e) => {
+            const toggle = (e) => {
                 e.stopPropagation();
                 showAll = !showAll;
                 if (chevronSvg) chevronSvg.style.transform = showAll ? 'rotate(90deg)' : '';
                 renderItems();
-            });
+            };
+            chevronBtn.addEventListener('click', toggle);
+            label.classList.add('cursor-pointer');
+            label.addEventListener('click', toggle);
         }
 
         row.appendChild(chevronBtn);
