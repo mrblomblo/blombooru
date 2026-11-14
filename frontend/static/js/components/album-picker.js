@@ -11,6 +11,7 @@ class AlbumPicker {
         };
 
         this.modal = null;
+        this.secondaryModal = null;
         this.tree = null;
         this._escapeHandler = null;
     }
@@ -77,8 +78,9 @@ class AlbumPicker {
                 </div>
 
                 <div class="flex gap-2 justify-end">
-                    <button id="album-picker-confirm" class="btn-primary cursor-pointer">${window.i18n.t('common.confirm')}</button>
-                    <button id="album-picker-cancel" class="btn-dark cursor-pointer">${window.i18n.t('common.cancel')}</button>
+                    <button id="album-picker-create" type="button" class="btn cursor-pointer">${window.i18n.t('common.create')}</button>
+                    <button id="album-picker-confirm" type="button" class="btn-primary cursor-pointer">${window.i18n.t('common.confirm')}</button>
+                    <button id="album-picker-cancel" type="button" class="btn-dark cursor-pointer">${window.i18n.t('common.cancel')}</button>
                 </div>
             </div>
         `;
@@ -86,11 +88,13 @@ class AlbumPicker {
         document.body.appendChild(this.modal);
 
         // Event listeners
+        this.modal.querySelector('#album-picker-create').addEventListener('click', () => this.showCreateModal());
         this.modal.querySelector('#album-picker-cancel').addEventListener('click', () => this.hide());
         this.modal.querySelector('#album-picker-confirm').addEventListener('click', () => this.confirm());
 
         // Close on Escape key
         this._escapeHandler = (e) => {
+            if (this.secondaryModal) return;
             if (e.key === 'Escape') this.hide();
         };
         document.addEventListener('keydown', this._escapeHandler);
@@ -99,6 +103,46 @@ class AlbumPicker {
         this.modal.querySelector('.modal-content').addEventListener('click', (e) => {
             e.stopPropagation();
         });
+    }
+
+    async refreshTree() {
+        if (!this.tree) return;
+        await this.tree.loadAlbums();
+        const searchInput = this.modal?.querySelector('#album-picker-search');
+        const query = searchInput ? searchInput.value.trim() : '';
+        if (query) {
+            this.tree.handleSearch(query);
+        } else {
+            this.tree.render();
+        }
+    }
+
+    async showCreateModal() {
+        if (this.secondaryModal) return;
+
+        this.secondaryModal = new window.AlbumCreateModal({
+            albums: this.tree?.albums,
+            zIndex: 1010,
+            onCreated: (createdAlbum) => {
+                if (createdAlbum && createdAlbum.id && this.tree) {
+                    if (this.options.multiSelect) {
+                        this.tree.options.selectedIds.add(createdAlbum.id);
+                    } else {
+                        this.tree.options.selectedIds = new Set([createdAlbum.id]);
+                    }
+                    const countEl = this.modal?.querySelector('#album-picker-selected-status');
+                    if (countEl) {
+                        countEl.textContent = window.i18n.t('album_picker.selected_count', { count: this.tree.options.selectedIds.size });
+                    }
+                }
+            },
+            onClose: async () => {
+                this.secondaryModal = null;
+                await this.refreshTree();
+            }
+        });
+
+        await this.secondaryModal.show();
     }
 
     confirm() {
@@ -110,6 +154,10 @@ class AlbumPicker {
     }
 
     hide(triggerCancel = true) {
+        if (this.secondaryModal) {
+            this.secondaryModal.close();
+            this.secondaryModal = null;
+        }
         if (this._escapeHandler) {
             document.removeEventListener('keydown', this._escapeHandler);
             this._escapeHandler = null;
