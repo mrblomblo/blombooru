@@ -1,12 +1,13 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import case, desc, func, literal
+from sqlalchemy import case, desc, func, literal, or_
 from sqlalchemy.orm import Session, selectinload
 
 from ..auth import User, require_admin_mode
 from ..config import settings
 from ..database import get_db
+from ..enums import is_rating_filter_active, parse_rating_filter
 from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
                       blombooru_album_media)
 from ..schemas import (AlbumCreate, AlbumHierarchyResponse, AlbumListResponse, 
@@ -116,9 +117,39 @@ async def get_albums(
             )
         )
     
+    rating_str = rating if isinstance(rating, str) else None
+    valid_ratings = parse_rating_filter(rating_str) if rating_str else None
+    sidebar_rating_active = is_rating_filter_active(valid_ratings) if valid_ratings else False
+    custom_filter_list = custom_filter if isinstance(custom_filter, (list, tuple, set)) else None
+    custom_filter_active = bool(custom_filter_list and any(cf.strip() for cf in custom_filter_list if isinstance(cf, str)))
+    sidebar_filters_active = sidebar_rating_active or custom_filter_active
+
+    visible_count = len([a for a in album_list if (a.media_count > 0 or getattr(a, 'children_count', 0) > 0)])
+    if visible_count == 0 and sidebar_filters_active:
+        unfiltered_q = db.query(Album)
+        if isinstance(root_only, bool) and root_only:
+            unfiltered_q = unfiltered_q.filter(~Album.id.in_(db.query(blombooru_album_hierarchy.c.child_album_id)))
+        q_str = q if isinstance(q, str) and q.strip() else None
+        if q_str:
+            matching_q = get_matching_album_ids(db, q=q_str)
+            if not matching_q:
+                unfiltered_total = 0
+            else:
+                unfiltered_total = unfiltered_q.filter(Album.id.in_(matching_q)).count()
+        else:
+            unfiltered_total = unfiltered_q.filter(
+                or_(
+                    Album.cached_media_count > 0,
+                    Album.id.in_(db.query(blombooru_album_hierarchy.c.parent_album_id))
+                )
+            ).count()
+    else:
+        unfiltered_total = total
+
     return {
         "items": album_list,
         "total": total,
+        "unfiltered_total": unfiltered_total,
         "page": page,
         "limit": limit,
         "pages": pages
@@ -529,10 +560,53 @@ async def get_album_contents(
             )
         )
     
+    rating_str = rating if isinstance(rating, str) else None
+    valid_ratings = parse_rating_filter(rating_str) if rating_str else None
+    sidebar_rating_active = is_rating_filter_active(valid_ratings) if valid_ratings else False
+    custom_filter_list = custom_filter if isinstance(custom_filter, (list, tuple, set)) else None
+    custom_filter_active = bool(custom_filter_list and any(cf.strip() for cf in custom_filter_list if isinstance(cf, str)))
+    sidebar_filters_active = sidebar_rating_active or custom_filter_active
+
+    if sidebar_filters_active:
+        unfiltered_media_q = db.query(func.count(Media.id)).join(
+            blombooru_album_media,
+            Media.id == blombooru_album_media.c.media_id
+        ).filter(
+            blombooru_album_media.c.album_id == album_id
+        )
+        q_str = q if isinstance(q, str) and q.strip() else None
+        if q_str:
+            unfiltered_media_q = apply_media_filters(unfiltered_media_q, db, q=q_str)
+        unfiltered_total_media = unfiltered_media_q.scalar()
+
+        unfiltered_child_q = db.query(Album).join(
+            blombooru_album_hierarchy,
+            Album.id == blombooru_album_hierarchy.c.child_album_id
+        ).filter(
+            blombooru_album_hierarchy.c.parent_album_id == album_id
+        )
+        if q_str:
+            matching_child_q = get_matching_album_ids(db, q=q_str)
+            if not matching_child_q:
+                unfiltered_child_q = unfiltered_child_q.filter(literal(False))
+            else:
+                unfiltered_child_q = unfiltered_child_q.filter(Album.id.in_(matching_child_q))
+        unfiltered_total_albums = unfiltered_child_q.filter(
+            or_(
+                Album.cached_media_count > 0,
+                Album.id.in_(db.query(blombooru_album_hierarchy.c.parent_album_id))
+            )
+        ).count()
+    else:
+        unfiltered_total_media = total_media
+        unfiltered_total_albums = len([c for c in child_album_list if (c.media_count > 0 or getattr(c, 'children_count', 0) > 0)])
+    
     return {
         "media": [MediaResponse.model_validate(m) for m in media_items],
         "albums": child_album_list,
         "total_media": total_media,
+        "unfiltered_total_media": unfiltered_total_media,
+        "unfiltered_total_albums": unfiltered_total_albums,
         "page": page,
         "limit": limit,
         "pages": total_pages

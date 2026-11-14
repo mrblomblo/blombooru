@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..auth import require_admin_mode
 from ..config import settings
-from ..enums import parse_rating_filter, rating_to_str, RatingEnum
+from ..enums import is_rating_filter_active, parse_rating_filter, rating_to_str, RatingEnum
 from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..models import (Album, Media, Tag, User, blombooru_album_media,
@@ -1129,13 +1129,16 @@ async def get_media_list(
     try:
         query = db.query(Media).options(selectinload(Media.tags), selectinload(Media.media_tag_links))
         
-        if rating:
-            valid_ratings = parse_rating_filter(rating)
-            if valid_ratings:
-                query = query.filter(Media.rating.in_(valid_ratings))
+        rating_str = rating if isinstance(rating, str) else None
+        valid_ratings = parse_rating_filter(rating_str) if rating_str else None
+        sidebar_rating_active = is_rating_filter_active(valid_ratings) if valid_ratings else False
+        if valid_ratings:
+            query = query.filter(Media.rating.in_(valid_ratings))
 
-        if custom_filter:
-            query = apply_custom_filters_or(query, custom_filter, db)
+        custom_filter_list = custom_filter if isinstance(custom_filter, (list, tuple, set)) else None
+        custom_filter_active = bool(custom_filter_list and any(cf.strip() for cf in custom_filter_list if isinstance(cf, str)))
+        if custom_filter_active:
+            query = apply_custom_filters_or(query, custom_filter_list, db)
         
         # Sorting
         sort_by = sort if sort else settings.get_default_sort()
@@ -1159,9 +1162,15 @@ async def get_media_list(
         
         items = [MediaResponse.model_validate(m) for m in media_list]
         
+        if total == 0 and (sidebar_rating_active or custom_filter_active):
+            unfiltered_total = db.query(func.count(Media.id)).scalar()
+        else:
+            unfiltered_total = total
+        
         return {
             "items": items,
             "total": total,
+            "unfiltered_total": unfiltered_total,
             "page": page,
             "pages": max(1, (total + limit - 1) // limit)
         }

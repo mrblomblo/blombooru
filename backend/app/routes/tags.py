@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..auth import require_admin_mode
 from ..config import settings
 from ..database import get_db
-from ..enums import parse_rating_filter
+from ..enums import is_rating_filter_active, parse_rating_filter
 from ..models import Media, Tag, TagAlias, User, blombooru_media_tags
 from ..schemas import (BatchResolveCombinedRequest,
                        BatchResolveCombinedResponse, BatchTagValidateRequest,
@@ -334,14 +334,23 @@ async def get_tags_list(
             Tag.aliases.any(TagAlias.alias_name.ilike(pattern, escape="\\"))
         ))
 
-    if categories is not None and categories.strip():
-        valid_categories = {c.value for c in TagCategoryEnum}
+    rating_str = rating if isinstance(rating, str) else None
+    valid_ratings = parse_rating_filter(rating_str) if rating_str else None
+    sidebar_rating_active = is_rating_filter_active(valid_ratings) if valid_ratings else False
+    if rating_str and not valid_ratings and "none" in [r.strip().lower() for r in rating_str.split(",") if r.strip()]:
+        sidebar_rating_active = True
+
+    valid_categories = {c.value for c in TagCategoryEnum}
+    if isinstance(categories, str) and categories.strip():
         requested = [c.strip().lower() for c in categories.split(",") if c.strip()]
         selected = [c for c in requested if c in valid_categories]
+        categories_filter_active = len(selected) < len(valid_categories)
         if selected:
             query = query.filter(Tag.category.in_(selected))
         else:
             query = query.filter(false())
+    else:
+        categories_filter_active = False
 
     sort_column = TAG_LIST_SORT_COLUMNS.get(sort, Tag.post_count)
     direction = desc if order == "desc" else asc
@@ -349,9 +358,22 @@ async def get_tags_list(
     query = query.order_by(direction(sort_column), direction(Tag.id))
 
     # Apply Rating Filter
-    query = apply_tag_rating_filter(query, rating)
+    query = apply_tag_rating_filter(query, rating_str)
 
     total_tags = query.count()
+
+    sidebar_filters_active = sidebar_rating_active or categories_filter_active
+    if total_tags == 0 and sidebar_filters_active:
+        unfiltered_q = db.query(func.count(Tag.id))
+        if search_term:
+            pattern = f"%{_escape_like(search_term)}%"
+            unfiltered_q = unfiltered_q.filter(or_(
+                Tag.name.ilike(pattern, escape="\\"),
+                Tag.aliases.any(TagAlias.alias_name.ilike(pattern, escape="\\"))
+            ))
+        unfiltered_total = unfiltered_q.scalar()
+    else:
+        unfiltered_total = total_tags
 
     if include_aliases:
         paginated_tags = (
@@ -393,6 +415,7 @@ async def get_tags_list(
     return {
         "items": return_items,
         "total": total_tags,
+        "unfiltered_total": unfiltered_total,
         "page": page,
         "limit": limit,
         "pages": max(1, (total_tags + limit - 1) // limit) if limit > 0 else 1

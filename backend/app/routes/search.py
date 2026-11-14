@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
 from ..database import get_db
+from ..enums import is_rating_filter_active, parse_rating_filter
 from ..models import Album, Media
 from ..schemas import MediaResponse
 from ..utils.cache import cache_response
@@ -100,13 +101,18 @@ async def search_media(
     query = db.query(Media).options(selectinload(Media.tags), selectinload(Media.media_tag_links))
     parsed = parse_search_query(q)
     
-    if rating and 'rating' not in parsed['meta']:
-        parsed['meta']['rating'] = [{'value': rating.lower(), 'negated': False}]
+    rating_str = rating if isinstance(rating, str) else None
+    valid_ratings = parse_rating_filter(rating_str) if rating_str else None
+    sidebar_rating_active = is_rating_filter_active(valid_ratings) if valid_ratings else False
+    if sidebar_rating_active and 'rating' not in parsed['meta']:
+        parsed['meta']['rating'] = [{'value': rating_str.lower(), 'negated': False}]
 
     # Apply all criteria
     query = apply_search_criteria(query, parsed, db)
-    if custom_filter:
-        query = apply_custom_filters_or(query, custom_filter, db)
+    custom_filter_list = custom_filter if isinstance(custom_filter, (list, tuple, set)) else None
+    custom_filter_active = bool(custom_filter_list and any(cf.strip() for cf in custom_filter_list if isinstance(cf, str)))
+    if custom_filter_active:
+        query = apply_custom_filters_or(query, custom_filter_list, db)
 
     # Apply UI sort/order unless the search query specifies its own ordering
     if 'order' not in parsed['meta'] and 'sort' not in parsed['meta']:
@@ -121,10 +127,20 @@ async def search_media(
     media_list = query.offset(offset).limit(limit).all()
     
     items = [MediaResponse.model_validate(m) for m in media_list]
+
+    sidebar_filter_applied = (sidebar_rating_active and 'rating' not in parse_search_query(q)['meta']) or custom_filter_active
+    if total == 0 and sidebar_filter_applied:
+        base_parsed = parse_search_query(q)
+        unfiltered_query = db.query(func.count(Media.id))
+        unfiltered_query = apply_search_criteria(unfiltered_query, base_parsed, db)
+        unfiltered_total = unfiltered_query.scalar()
+    else:
+        unfiltered_total = total
     
     return {
         "items": items,
         "total": total,
+        "unfiltered_total": unfiltered_total,
         "page": page,
         "pages": max(1, (total + limit - 1) // limit),
         "query": canonicalize_query(q)
