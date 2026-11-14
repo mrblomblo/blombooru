@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
+<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.webp" />
   
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=fff)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000)

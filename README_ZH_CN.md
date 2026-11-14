@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.png" />
+<img width="830" alt="Blombooru Banner" src=".github/images/Blombooru_Banner.webp" />
   
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=fff)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000)
@@ -25,22 +25,7 @@ Blombooru 是 Danbooru 和 Gelbooru 等图库站（Booru）的私密、单用户
 > 本地化翻译为简体中文: @2455DD  
 > 最后更新于2026年2月23日
 
-<details>
-<summary>查看截图</summary>
-
-**首页**
-<img width="1920" alt="首页" src=".github/images/Gallery.png" />
-
-**媒体查看页**
-<img width="1920" alt="媒体查看页" src=".github/images/Media.png" />
-
-**媒体共享页**
-<img width="1920" alt="媒体共享页" src=".github/images/Shared.png" />
-
-**管理面板**
-<img width="1920" alt="管理面板" src=".github/images/Admin_Panel.png" />
-
-</details>
+**[查看截图](docs/Gallery.md)**
 
 ## 目录
 
