@@ -1289,13 +1289,17 @@ class WDTagger:
         """Extract a frame from a video file using ffmpeg."""
         import subprocess
         import tempfile
+
+        import imageio_ffmpeg
+
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
         
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             tmp_path = tmp.name
         
         try:
             cmd = [
-                'ffmpeg', '-i', file_path,
+                ffmpeg_exe, '-i', file_path,
                 '-vf', f'select=eq(n\\,{frame_index})',
                 '-vframes', '1',
                 '-y', '-loglevel', 'error',
