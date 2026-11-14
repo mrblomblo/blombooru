@@ -23,6 +23,23 @@ router = APIRouter(prefix="/api/ai-tagger", tags=["ai-tagger"])
 # Dedicated thread pool for inference
 _inference_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="wd_inference")
 
+SSE_HEARTBEAT_INTERVAL = 10.0  # seconds
+SSE_HEARTBEAT = ": heartbeat\n\n"
+
+async def run_with_heartbeat(awaitable, interval: float = SSE_HEARTBEAT_INTERVAL):
+    """Await `awaitable` while periodically yielding heartbeats."""
+    task = asyncio.ensure_future(awaitable)
+    try:
+        while True:
+            done, _ = await asyncio.wait({task}, timeout=interval)
+            if done:
+                yield True, task.result()
+                return
+            yield False, SSE_HEARTBEAT
+    finally:
+        if not task.done():
+            task.cancel()
+
 def shutdown_tagger_resources():
     """Cleanup tagger resources on application shutdown."""
     _inference_executor.shutdown(wait=False)
@@ -399,6 +416,10 @@ async def download_model(
             loop.run_in_executor(_inference_executor, run_download)
 
         try:
+            # Flush headers immediately
+            yield SSE_HEARTBEAT
+            last_sent = time.monotonic()
+
             while True:
                 if disconnect_event.is_set():
                     break
@@ -408,9 +429,13 @@ async def download_model(
                 except asyncio.TimeoutError:
                     if not WDTagger.is_downloading(model_name) and queue.empty():
                         break
+                    if time.monotonic() - last_sent >= SSE_HEARTBEAT_INTERVAL:
+                        yield SSE_HEARTBEAT
+                        last_sent = time.monotonic()
                     continue
 
                 yield f"data: {json.dumps(item)}\n\n"
+                last_sent = time.monotonic()
                 
                 if item.get("type") in ("complete", "error", "cancelled"):
                     break
@@ -663,6 +688,9 @@ async def predict_tags_stream(
             failed_ids.append(media_id)
     
     async def generate():
+        # Flush headers immediately
+        yield SSE_HEARTBEAT
+
         # Send failed items first
         for media_id in failed_ids:
             event = {
@@ -699,7 +727,11 @@ async def predict_tags_stream(
             def load_model():
                 tagger.ensure_loaded(batch_request.model_name, is_cancelled=lambda: disconnect_event.is_set())
             
-            await loop.run_in_executor(_inference_executor, load_model)
+            async for finished, value in run_with_heartbeat(
+                loop.run_in_executor(_inference_executor, load_model)
+            ):
+                if not finished:
+                    yield value
             
             file_paths = [fp for _, fp in file_info]
             total = len(file_paths)
@@ -728,7 +760,14 @@ async def predict_tags_stream(
                         is_cancelled=lambda: disconnect_event.is_set()
                     )
                 
-                chunk_results = await loop.run_in_executor(_inference_executor, do_chunk)
+                chunk_results = None
+                async for finished, value in run_with_heartbeat(
+                    loop.run_in_executor(_inference_executor, do_chunk)
+                ):
+                    if finished:
+                        chunk_results = value
+                    else:
+                        yield value
                 
                 if disconnect_event.is_set() or await request.is_disconnected():
                     disconnect_event.set()
