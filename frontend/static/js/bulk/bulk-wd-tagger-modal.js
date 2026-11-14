@@ -51,29 +51,19 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                         <p class="text-secondary text-xs sm:text-sm">${window.i18n.t('bulk_modal.messages.review_tags')}</p>
                         ${this.getHideImpliedCheckboxHTML()}
                     </div>
-                    <div class="${prefix}-top-counter flex items-center flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm" style="display: none;">
-                        <span class="${prefix}-top-status-wrapper flex items-center gap-1.5 text-secondary">
-                            <span class="spinner ${prefix}-top-spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; display: none;"></span>
-                            <span class="${prefix}-top-status-text"></span>
+                    <div class="${prefix}-progress-counter flex items-center flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm" style="display: none;">
+                        <span class="${prefix}-progress-status-wrapper flex items-center gap-1.5 text-secondary">
+                            <span class="spinner ${prefix}-progress-spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; display: none;"></span>
+                            <span class="${prefix}-progress-status-text"></span>
                         </span>
-                        <span class="${prefix}-top-progress text-secondary"></span>
-                        <span class="${prefix}-top-tagged text-primary"></span>
-                        <span class="${prefix}-top-skipped text-secondary"></span>
-                        <span class="${prefix}-top-failed text-danger" style="display: none;"></span>
+                        <span class="${prefix}-progress-count text-secondary"></span>
+                        <span class="${prefix}-progress-tagged text-primary"></span>
+                        <span class="${prefix}-progress-skipped text-secondary"></span>
+                        <span class="${prefix}-progress-failed text-danger" style="display: none;"></span>
                     </div>
                 </div>
                 <div class="flex-1 overflow-y-auto -mx-4 px-4 pb-2 flex flex-col" style="overscroll-behavior: contain;">
                     <div class="${prefix}-items space-y-3"></div>
-                    <div class="${prefix}-scan-loading flex flex-col items-center justify-center py-8" style="display: none;">
-                        <div class="spinner ${prefix}-bottom-spinner"></div>
-                        <p class="text-secondary mt-2 ${prefix}-scan-status text-center"></p>
-                        <div class="text-secondary text-xs sm:text-sm text-center mt-1 flex items-center justify-center flex-wrap gap-x-3 gap-y-1">
-                            <span class="${prefix}-scan-phase"></span>
-                            <span class="${prefix}-bottom-tagged text-primary"></span>
-                            <span class="${prefix}-bottom-skipped text-secondary"></span>
-                            <span class="${prefix}-bottom-failed text-danger" style="display: none;"></span>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -105,74 +95,38 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             totalMedia: totalItems
         });
 
-        // Update Top Counter
-        const topCounter = this.modalElement.querySelector(`.${prefix}-top-counter`);
-        const topSpinner = this.modalElement.querySelector(`.${prefix}-top-spinner`);
-        const topCheck = this.modalElement.querySelector(`.${prefix}-top-check`);
-        const topStatusText = this.modalElement.querySelector(`.${prefix}-top-status-text`);
-        const topProgress = this.modalElement.querySelector(`.${prefix}-top-progress`);
-        const topTagged = this.modalElement.querySelector(`.${prefix}-top-tagged`);
-        const topSkipped = this.modalElement.querySelector(`.${prefix}-top-skipped`);
-        const topFailed = this.modalElement.querySelector(`.${prefix}-top-failed`);
+        // Update tagging progress
+        const progressCounter = this.modalElement.querySelector(`.${prefix}-progress-counter`);
+        const progressSpinner = this.modalElement.querySelector(`.${prefix}-progress-spinner`);
+        const progressCheck = this.modalElement.querySelector(`.${prefix}-progress-check`);
+        const progressStatusText = this.modalElement.querySelector(`.${prefix}-progress-status-text`);
+        const progressCount = this.modalElement.querySelector(`.${prefix}-progress-count`);
+        const progressTagged = this.modalElement.querySelector(`.${prefix}-progress-tagged`);
+        const progressSkipped = this.modalElement.querySelector(`.${prefix}-progress-skipped`);
+        const progressFailed = this.modalElement.querySelector(`.${prefix}-progress-failed`);
 
-        if (topCounter) topCounter.style.display = 'flex';
-        if (topTagged) topTagged.textContent = taggedText;
-        if (topSkipped) topSkipped.textContent = skippedText;
-        if (topFailed) {
-            topFailed.textContent = failedText;
-            topFailed.style.display = failed > 0 ? 'inline' : 'none';
+        if (progressCounter) progressCounter.style.display = 'flex';
+        if (progressTagged) progressTagged.textContent = taggedText;
+        if (progressSkipped) progressSkipped.textContent = skippedText;
+        if (progressFailed) {
+            progressFailed.textContent = failedText;
+            progressFailed.style.display = failed > 0 ? 'inline' : 'none';
         }
-        if (topProgress) topProgress.textContent = processedText;
+        if (progressCount) progressCount.textContent = processedText;
 
         if (this.isScanningComplete) {
-            if (topSpinner) topSpinner.style.display = 'none';
-            if (topCheck) topCheck.style.display = 'inline-block';
-            if (topStatusText) topStatusText.textContent = window.i18n.t('bulk_modal.progress.tagging_complete');
+            if (progressSpinner) progressSpinner.style.display = 'none';
+            if (progressCheck) progressCheck.style.display = 'inline-block';
+            if (progressStatusText) progressStatusText.textContent = window.i18n.t('bulk_modal.progress.tagging_complete');
         } else {
-            if (topCheck) topCheck.style.display = 'none';
-            if (topSpinner) {
-                topSpinner.style.display = status === null ? 'none' : 'inline-block';
+            if (progressCheck) progressCheck.style.display = 'none';
+            if (progressSpinner) {
+                progressSpinner.style.display = status === null ? 'none' : 'inline-block';
             }
-            if (topStatusText) {
-                topStatusText.textContent = status || window.i18n.t('bulk_modal.progress.predicting_tags');
-            }
-        }
-
-        // Update Bottom Counter
-        const loadingEl = this.modalElement.querySelector(`.${prefix}-scan-loading`);
-        const bottomSpinner = this.modalElement.querySelector(`.${prefix}-bottom-spinner`);
-        const statusEl = this.modalElement.querySelector(`.${prefix}-scan-status`);
-        const phaseEl = this.modalElement.querySelector(`.${prefix}-scan-phase`);
-        const bottomTagged = this.modalElement.querySelector(`.${prefix}-bottom-tagged`);
-        const bottomSkipped = this.modalElement.querySelector(`.${prefix}-bottom-skipped`);
-        const bottomFailed = this.modalElement.querySelector(`.${prefix}-bottom-failed`);
-
-        if (loadingEl) loadingEl.style.display = 'flex';
-        if (phaseEl) phaseEl.textContent = processedText;
-        if (bottomTagged) bottomTagged.textContent = taggedText;
-        if (bottomSkipped) bottomSkipped.textContent = skippedText;
-        if (bottomFailed) {
-            bottomFailed.textContent = failedText;
-            bottomFailed.style.display = failed > 0 ? 'inline' : 'none';
-        }
-
-        if (this.isScanningComplete) {
-            if (bottomSpinner) bottomSpinner.style.display = 'none';
-            if (statusEl) statusEl.textContent = window.i18n.t('bulk_modal.progress.tagging_complete');
-        } else {
-            if (bottomSpinner) {
-                bottomSpinner.style.display = status === null ? 'none' : 'block';
-            }
-            if (statusEl) {
-                statusEl.textContent = status || window.i18n.t('bulk_modal.progress.predicting_tags');
+            if (progressStatusText) {
+                progressStatusText.textContent = status || window.i18n.t('bulk_modal.progress.predicting_tags');
             }
         }
-    }
-
-    hideScanProgress() {
-        const prefix = this.options.classPrefix;
-        const loadingEl = this.modalElement?.querySelector(`.${prefix}-scan-loading`);
-        if (loadingEl) loadingEl.style.display = 'none';
     }
 
     reset() {
@@ -183,10 +137,9 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         this.processedCount = 0;
         this.totalCount = 0;
         this.isScanningComplete = false;
-        this.hideScanProgress();
         const prefix = this.options.classPrefix;
-        const topCounter = this.modalElement?.querySelector(`.${prefix}-top-counter`);
-        if (topCounter) topCounter.style.display = 'none';
+        const progressCounter = this.modalElement?.querySelector(`.${prefix}-progress-counter`);
+        if (progressCounter) progressCounter.style.display = 'none';
     }
 
     async show(selectedItems) {
@@ -586,10 +539,8 @@ class BulkWDTaggerModal extends BulkTagModalBase {
                 false
             );
             const prefix = this.options.classPrefix;
-            const topSpinner = this.modalElement?.querySelector(`.${prefix}-top-spinner`);
-            const bottomSpinner = this.modalElement?.querySelector(`.${prefix}-bottom-spinner`);
-            if (topSpinner) topSpinner.style.display = 'none';
-            if (bottomSpinner) bottomSpinner.style.display = 'none';
+            const progressSpinner = this.modalElement?.querySelector(`.${prefix}-progress-spinner`);
+            if (progressSpinner) progressSpinner.style.display = 'none';
         }
 
         if (this.itemsData.length === 0) {
