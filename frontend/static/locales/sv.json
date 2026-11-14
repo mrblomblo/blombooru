@@ -472,8 +472,7 @@
             "tags_without_prefix": "Taggar utan prefix läggs till som \"allmän\" kategori.",
             "title": "Tagghantering",
             "total_tags": "Totalt antal taggar",
-            "create_tag": "Skapa Tagg",
-            "create_tag_submit": "Skapa"
+            "create_tag": "Skapa Tagg"
         },
         "tags_implications": {
             "title": "Taggimplikationer",
@@ -649,6 +648,7 @@
         "connection_failed": "Anslutning misslyckades",
         "connection_successful": "Anslutning lyckades!",
         "copy": "Kopiera",
+        "create": "Skapa",
         "database": "Databas",
         "default": "Standard",
         "delete": "Radera",

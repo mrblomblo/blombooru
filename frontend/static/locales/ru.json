@@ -472,8 +472,7 @@
             "tags_without_prefix": "Теги без префикса будут добавлены в категорию \"Общие (general)\"",
             "title": "Управление тегами",
             "total_tags": "Всего тегов",
-            "create_tag": "Создать тег",
-            "create_tag_submit": "Создать"
+            "create_tag": "Создать тег"
         },
         "tags_implications": {
             "title": "Связки тегов",
@@ -649,6 +648,7 @@
         "connection_failed": "Ошибка подключения",
         "connection_successful": "Подключение успешно!",
         "copy": "Копировать",
+        "create": "Создать",
         "database": "База данных",
         "default": "По умолчанию",
         "delete": "Удалить",

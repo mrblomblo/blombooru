@@ -530,7 +530,7 @@ class TagAutocomplete {
         const titleText = window.i18n.t('admin.tags_management.create_tag');
         const nameLabel = window.i18n.t('admin.tags_management.tag_name');
         const categoryLabel = window.i18n.t('admin.tags_management.tag_category');
-        const createText = window.i18n.t('admin.tags_management.create_tag_submit');
+        const createText = window.i18n.t('common.create');
         const cancelText = window.i18n.t('common.cancel');
         const tagExistsError = window.i18n.t('notifications.admin.tag_name_conflict');
         const generalLabel = categories[0].label;

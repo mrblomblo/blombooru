@@ -472,8 +472,7 @@
             "tags_without_prefix": "Tags without a prefix will be added as \"general\" category.",
             "title": "Tags Management",
             "total_tags": "Total Tags",
-            "create_tag": "Create Tag",
-            "create_tag_submit": "Create"
+            "create_tag": "Create Tag"
         },
         "tags_implications": {
             "title": "Tag Implications",
@@ -649,6 +648,7 @@
         "connection_failed": "Connection failed",
         "connection_successful": "Connection successful!",
         "copy": "Copy",
+        "create": "Create",
         "database": "Database",
         "default": "Default",
         "delete": "Delete",

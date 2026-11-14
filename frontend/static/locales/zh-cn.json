@@ -472,8 +472,7 @@
             "tags_without_prefix": "不带前缀的标签将被添加为“常规”类别。",
             "title": "标签管理",
             "total_tags": "标签总数",
-            "create_tag": "",
-            "create_tag_submit": ""
+            "create_tag": ""
         },
         "tags_implications": {
             "title": "",
@@ -649,6 +648,7 @@
         "connection_failed": "连接失败",
         "connection_successful": "连接成功！",
         "copy": "复制",
+        "create": "",
         "database": "数据库",
         "default": "默认",
         "delete": "删除",
