@@ -36,6 +36,29 @@ class MediaViewerBase {
         }
     }
 
+    buildRatingSelectHtml(rating) {
+        const current = rating || 'safe';
+        const ratings = ['safe', 'questionable', 'explicit'];
+        const selectArrow = window.Icons.selectArrow({ size: 10 });
+
+        const options = ratings.map(r => {
+            const label = window.i18n.t(`common.${r}`);
+            const selected = r === current ? ' selected' : '';
+            return `<div class="custom-select-option px-2.5 py-1.5 cursor-pointer hover:surface text text-xs${selected}" data-value="${r}">${label}</div>`;
+        }).join('');
+
+        return `
+            <div id="rating-select-inline" class="custom-select ml-auto" data-value="${current}" style="min-width:7rem;max-width:9rem">
+                <button class="custom-select-trigger w-full flex items-center justify-between gap-1 px-2 py-0.5 bg border text-xs cursor-pointer hover:border-primary transition-colors focus:outline-none focus:border-primary" type="button">
+                    <span class="custom-select-value text truncate">${window.i18n.t(`common.${current}`)}</span>
+                    ${selectArrow}
+                </button>
+                <div class="custom-select-dropdown bg border border-primary max-h-48 overflow-y-auto shadow-lg z-20">
+                    ${options}
+                </div>
+            </div>`;
+    }
+
     renderInfo(media, options = {}) {
         const { downloadUrl, isShared } = options;
         const isAdmin = !isShared && Boolean(options.isAdmin || (typeof app !== 'undefined' && app.isAdminMode));
@@ -78,7 +101,7 @@ class MediaViewerBase {
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.type')}</span><strong class="text-right">${media.file_type}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.size')}</span><strong class="text-right">${formatFileSize(media.file_size, 'long')}</strong></div>
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.dimensions')}</span><strong class="text-right">${media.width}x${media.height}</strong></div>
-            <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.rating')}</span><strong class="text-right">${media.rating}</strong></div>
+            <div class="info-row items-center"><span class="flex-shrink-0">${window.i18n.t('media.info.rating')}</span>${isAdmin ? this.buildRatingSelectHtml(media.rating) : `<strong class="text-right">${media.rating}</strong>`}</div>
             ${dateRowHtml}
             <div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.uploaded')}</span><strong class="text-right">${new Date(media.uploaded_at).toLocaleDateString()}</strong></div>
             ${media.duration ? `<div class="info-row"><span class="flex-shrink-0">${window.i18n.t('media.info.duration')}</span><strong class="text-right">${this.formatDuration(media.duration)}</strong></div>` : ''}
@@ -127,12 +150,6 @@ class MediaViewerBase {
         }
 
         this.el('media-info-content').innerHTML = infoHTML;
-
-        // Handle rating select if present (for non-shared views)
-        const ratingSelect = this.el('rating-select');
-        if (ratingSelect) {
-            ratingSelect.value = media.rating;
-        }
     }
 
     renderTags(media, options = {}) {

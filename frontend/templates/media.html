@@ -338,27 +338,7 @@ download_icon, share_icon, select_arrow_icon, edit_icon, eye_icon, enlarge_icon,
                     <div id="admin-actions" style="display: none;" class="flex flex-col gap-3">
 
                         <!-- Meta Actions Row -->
-                        <div class="grid grid-cols-2 gap-2">
-                            <div id="rating-select" class="custom-select" data-value="safe">
-                                <button
-                                    class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-1.5 bg border text-xs cursor-pointer hover:border-primary transition-colors focus:outline-none focus:border-primary"
-                                    type="button">
-                                    <span class="custom-select-value text truncate">
-                                        {{ t('common.safe') }}
-                                    </span>
-                                    {{ select_arrow_icon(size=12) }}
-                                </button>
-                                <div
-                                    class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg z-20">
-                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs selected"
-                                        data-value="safe">{{ t('common.safe') }}</div>
-                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs"
-                                        data-value="questionable">{{ t('common.questionable') }}</div>
-                                    <div class="custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs"
-                                        data-value="explicit">{{ t('common.explicit') }}</div>
-                                </div>
-                            </div>
-
+                        <div class="flex gap-2">
                             <button id="share-btn"
                                 class="btn flex items-center justify-center gap-1 w-full px-3 py-1.5 cursor-pointer">
                                 {{ share_icon(size=12) }}

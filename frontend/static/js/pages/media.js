@@ -236,12 +236,15 @@ class MediaViewer extends MediaViewerBase {
         }
 
         // Initialize custom select for rating
-        const ratingSelectElement = this.el('rating-select');
+        const ratingSelectElement = this.el('rating-select-inline');
         if (ratingSelectElement) {
             this.ratingSelect = new CustomSelect(ratingSelectElement);
             if (this.currentMedia.rating) {
                 this.ratingSelect.setValue(this.currentMedia.rating);
             }
+            ratingSelectElement.addEventListener('change', async (e) => {
+                await this.updateRating(e.detail.value);
+            });
         }
 
         // Show predict button (always available for admin)
@@ -1069,13 +1072,6 @@ class MediaViewer extends MediaViewerBase {
         this.el('enlarged-save-description-btn')?.addEventListener('click', async () => {
             await this.saveDescription();
         });
-
-        const ratingSelectElement = this.el('rating-select');
-        if (ratingSelectElement) {
-            ratingSelectElement.addEventListener('change', async (e) => {
-                await this.updateRating(e.detail.value);
-            });
-        }
 
         this.el('share-btn')?.addEventListener('click', async () => {
             const btn = this.el('share-btn');
