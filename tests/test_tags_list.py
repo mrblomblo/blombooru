@@ -519,3 +519,23 @@ class TestTagsList(BackupTestBase):
         # Empty wildcard query should return empty list
         res_empty = asyncio.run(autocomplete_tags(request=mock_req, q="***", db=self.db))
         self.assertEqual(res_empty, [])
+
+    def test_tags_list_unfiltered_total_on_filter_hidden(self):
+        from backend.app.enums import RatingEnum
+        self.tags["cat_ears"].rating = RatingEnum.explicit
+        self.db.commit()
+
+        # Query "cat_ears" with rating="safe" -> filtered out by rating
+        res = self._list(q="cat_ears", rating="safe")
+        self.assertEqual(res["total"], 0)
+        self.assertEqual(res["unfiltered_total"], 1)
+
+        # Query nonexistent tag with rating="safe" -> no results regardless of filter
+        res_none = self._list(q="nonexistent_xyz", rating="safe")
+        self.assertEqual(res_none["total"], 0)
+        self.assertEqual(res_none["unfiltered_total"], 0)
+
+        # Query "cat_ears" with categories="artist" -> filtered out by category
+        res_cat = self._list(q="cat_ears", categories="artist")
+        self.assertEqual(res_cat["total"], 0)
+        self.assertEqual(res_cat["unfiltered_total"], 1)

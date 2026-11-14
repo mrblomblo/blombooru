@@ -919,5 +919,27 @@ class TestAlbumArchitecture(BackupTestBase):
 
         self.assertEqual(res.parent_ids, [p2.id])
 
+    def test_albums_unfiltered_total_on_filter_hidden(self):
+        p1 = self._create_album("FilteredAlbum")
+        m = self._create_media("explicit.jpg", rating=RatingEnum.explicit)
+        add_media_to_album(self.db, p1.id, [m.id])
+
+        # Albums list with rating=safe: FilteredAlbum has only explicit media, so visible is 0
+        res = asyncio.run(get_albums(DummyRequest(), root_only=True, rating="safe", db=self.db))
+        # Total matching is 0
+        self.assertEqual(res["total"], 0)
+        # Unfiltered total is 1 because FilteredAlbum has media
+        self.assertEqual(res["unfiltered_total"], 1)
+
+        # Albums contents with rating=safe
+        contents = asyncio.run(get_album_contents(DummyRequest(), p1.id, rating="safe", db=self.db))
+        self.assertEqual(contents["total_media"], 0)
+        self.assertEqual(contents["unfiltered_total_media"], 1)
+
+        # Nonexistent query in get_albums
+        res_none = asyncio.run(get_albums(DummyRequest(), root_only=True, q="nonexistent_xyz", rating="safe", db=self.db))
+        self.assertEqual(res_none["total"], 0)
+        self.assertEqual(res_none["unfiltered_total"], 0)
+
 if __name__ == "__main__":
     unittest.main()
