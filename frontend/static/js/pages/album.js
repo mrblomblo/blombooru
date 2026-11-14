@@ -184,6 +184,11 @@ class AlbumViewer extends BaseGallery {
         const visibleAlbums = allAlbums.filter(a => (a.media_count > 0 || a.children_count > 0));
         const emptyCount = allAlbums.length - visibleAlbums.length;
 
+        const hiddenMedia = Math.max(0, (data.unfiltered_total_media || 0) - (data.total_media || 0));
+        const visibleSubAlbumsCount = visibleAlbums.length;
+        const hiddenAlbums = Math.max(0, (data.unfiltered_total_albums || 0) - visibleSubAlbumsCount);
+        const totalHidden = hiddenMedia + hiddenAlbums;
+
         // Only show sub-albums on first page
         if (this.currentPage === 1 && visibleAlbums.length > 0) {
             subAlbumsContainer.style.display = 'block';
@@ -216,6 +221,15 @@ class AlbumViewer extends BaseGallery {
                 });
                 this.elements.grid.appendChild(item);
             });
+        } else if (visibleAlbums.length > 0 && hiddenMedia > 0) {
+            mediaContainer.style.display = 'block';
+            if (mediaHeader) {
+                mediaHeader.style.display = 'block';
+            }
+            const mediaMsg = hiddenMedia === 1
+                ? window.i18n.t('gallery.post_hidden_by_filters')
+                : window.i18n.t('gallery.posts_hidden_by_filters', { count: hiddenMedia });
+            this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${mediaMsg}</p>`;
         } else {
             mediaContainer.style.display = 'none';
             if (subAlbumsHeader) {
@@ -226,7 +240,23 @@ class AlbumViewer extends BaseGallery {
         // 3. Empty State (No visible albums AND no media)
         if (visibleAlbums.length === 0 && (!data.media || data.media.length === 0)) {
             mediaContainer.style.display = 'block';
-            if (emptyCount > 0 && this.currentPage === 1) {
+            if (totalHidden > 0) {
+                let msg;
+                if (hiddenMedia > 0 && hiddenAlbums === 0) {
+                    msg = hiddenMedia === 1
+                        ? window.i18n.t('gallery.post_hidden_by_filters')
+                        : window.i18n.t('gallery.posts_hidden_by_filters', { count: hiddenMedia });
+                } else if (hiddenAlbums > 0 && hiddenMedia === 0) {
+                    msg = hiddenAlbums === 1
+                        ? window.i18n.t('albums.album_hidden_by_filters')
+                        : window.i18n.t('albums.albums_hidden_by_filters', { count: hiddenAlbums });
+                } else {
+                    msg = totalHidden === 1
+                        ? window.i18n.t('albums.item_hidden_by_filters')
+                        : window.i18n.t('albums.items_hidden_by_filters', { count: totalHidden });
+                }
+                this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${msg}</p>`;
+            } else if (emptyCount > 0 && this.currentPage === 1) {
                 this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${window.i18n.t('albums.only_empty_subalbums')}</p>`;
             } else if (this.currentPage > 1) {
                 this.elements.grid.innerHTML = `<p class="text-secondary col-span-full text-center py-8">${window.i18n.t('albums.no_more_items')}</p>`;

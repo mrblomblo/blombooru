@@ -57,7 +57,7 @@ class AlbumsOverview extends BaseGallery {
                 (album.media_count > 0 || album.children_count > 0)
             );
 
-            this.renderAlbums(visibleItems);
+            this.renderAlbums(visibleItems, data.unfiltered_total);
             this.renderPagination();
         } catch (error) {
             console.error('Error loading albums:', error);
@@ -68,11 +68,18 @@ class AlbumsOverview extends BaseGallery {
         }
     }
 
-    renderAlbums(albums) {
+    renderAlbums(albums, unfilteredTotal = 0) {
         if (!this.elements.grid) return;
 
         if (albums.length === 0) {
-            this.showEmptyState(window.i18n.t('albums.no_visible_albums'));
+            if (unfilteredTotal > 0) {
+                const msg = unfilteredTotal === 1
+                    ? window.i18n.t('albums.album_hidden_by_filters')
+                    : window.i18n.t('albums.albums_hidden_by_filters', { count: unfilteredTotal });
+                this.showEmptyState(msg);
+            } else {
+                this.showEmptyState(window.i18n.t('albums.no_visible_albums'));
+            }
             return;
         }
 

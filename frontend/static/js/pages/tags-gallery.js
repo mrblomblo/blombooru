@@ -264,15 +264,6 @@ class TagsGallery extends BaseGallery {
                     this.tagCache.delete(id);
                 }
             }
-            // Client-side empty state when no categories are selected
-            if (this.selectedCategories.size === 0) {
-                this.totalPages = 1;
-                this.renderTagList([]);
-                this.renderPagination();
-                this.updateBulkActionsUI();
-                return;
-            }
-
             const params = new URLSearchParams({
                 page: this.currentPage
             });
@@ -283,7 +274,9 @@ class TagsGallery extends BaseGallery {
                 params.set('q', query);
             }
 
-            if (this.selectedCategories.size > 0 && this.selectedCategories.size < this.allCategories.length) {
+            if (this.selectedCategories.size === 0) {
+                params.set('categories', 'none');
+            } else if (this.selectedCategories.size < this.allCategories.length) {
                 params.set('categories', Array.from(this.selectedCategories).join(','));
             }
 
@@ -308,7 +301,7 @@ class TagsGallery extends BaseGallery {
             }
 
             const responseItems = data.items || [];
-            this.renderTagList(responseItems);
+            this.renderTagList(responseItems, data.unfiltered_total);
             this.renderPagination();
             this.updateBulkActionsUI();
         } catch (error) {
@@ -327,11 +320,18 @@ class TagsGallery extends BaseGallery {
         }
     }
 
-    renderTagList(tags) {
+    renderTagList(tags, unfilteredTotal = 0) {
         if (!this.elements.grid) return;
 
         if (tags.length === 0) {
-            this.showEmptyState(window.i18n.t('gallery.no_tags_found'));
+            if (unfilteredTotal > 0) {
+                const msg = unfilteredTotal === 1
+                    ? window.i18n.t('gallery.tag_hidden_by_filters')
+                    : window.i18n.t('gallery.tags_hidden_by_filters', { count: unfilteredTotal });
+                this.showEmptyState(msg);
+            } else {
+                this.showEmptyState(window.i18n.t('gallery.no_tags_found'));
+            }
             return;
         }
 
