@@ -46,6 +46,7 @@ const STATIC_ASSETS = [
     '/static/js/components/tooltip-helper.js',
     '/static/js/components/custom-select.js',
     '/static/js/components/album-picker.js',
+    '/static/js/components/album-create-modal.js',
     '/static/js/components/album-tree.js',
     '/static/js/components/tag-input-helper.js',
     '/static/js/components/tag-preview.js',
