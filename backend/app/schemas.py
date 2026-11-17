@@ -539,6 +539,7 @@ class UploadSessionItem(BaseModel):
     file_type: Optional[FileTypeEnum] = None
     mime_type: Optional[str] = None
     hash: Optional[str] = None
+    phash: Optional[str] = None
     rating: RatingEnum = RatingEnum.safe
     source: Optional[str] = None
     description: Optional[str] = None

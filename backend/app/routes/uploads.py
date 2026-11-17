@@ -37,6 +37,7 @@ from ..utils.media_processor import calculate_file_hash, process_media_file
 from ..utils.request_helpers import safe_error_detail
 from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT, thumbnail_mime_type
 from ..utils.transcoder import transcode_media_if_needed
+from ..services import near_duplicates
 from ..services.metadata_parsers import get_parser_for_file
 from .media import (
     apply_media_tag_implications,
@@ -173,6 +174,35 @@ async def get_upload_session(
         "items": items_list,
     }
 
+@router.get("/sessions/{session_id}/near-duplicates")
+async def get_session_near_duplicates(
+    session_id: str,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db),
+):
+    """Report near-duplicates (perceptually similar media) for every item in the session."""
+    session_dir = _get_session_dir(session_id)
+    meta = _load_session_meta(session_dir)
+    items = meta.get("items", {})
+
+    max_distance = near_duplicates.get_max_distance()
+    response = {
+        "enabled": near_duplicates.is_enabled(),
+        "max_distance": max_distance,
+        "items": {},
+    }
+    if not response["enabled"]:
+        return response
+
+    queue_matches = near_duplicates.find_queue_matches(items, max_distance)
+    for item_id, item in items.items():
+        phash_value = near_duplicates.phash_from_hex(item.get("phash"))
+        existing = near_duplicates.find_existing_matches(db, phash_value, max_distance)
+        queue = queue_matches.get(item_id, [])
+        if existing or queue:
+            response["items"][item_id] = {"existing": existing, "queue": queue}
+    return response
+
 @router.delete("/sessions/{session_id}")
 async def cancel_upload_session(
     session_id: str,
@@ -250,6 +280,8 @@ def _process_and_stage_item(
         file_type = FileTypeEnum.image
         mime_type = None
         duration = None
+
+    phash_hex = near_duplicates.compute_item_phash_hex(file_path, file_type)
 
     # Generate preview thumbnail in session thumbs dir
     thumb_path = thumbs_dir / f"{item_id}{THUMBNAIL_EXT}"
@@ -467,6 +499,7 @@ def _process_and_stage_item(
         "file_type": file_type.value if hasattr(file_type, "value") else file_type,
         "mime_type": mime_type,
         "hash": file_hash,
+        "phash": phash_hex,
         "rating": rating.value,
         "source": base_source_str or "",
         "description": base_description_str or "",
@@ -688,6 +721,9 @@ async def analyze_staged_item(
 
         thumb_path = session_dir / "thumbs" / f"{item_id}{THUMBNAIL_EXT}"
         generate_thumbnail(media_path, thumb_path, item["file_type"])
+
+        if not near_duplicates.phash_from_hex(item.get("phash")):
+            item["phash"] = near_duplicates.compute_item_phash_hex(media_path, item["file_type"])
 
         # Re-evaluate current tags with DB
         current_tag_names = [t["name"] for t in item.get("tags", []) if t.get("name")]
@@ -1471,6 +1507,7 @@ async def commit_upload_session(
                     width=item.get("width"),
                     height=item.get("height"),
                     duration=item.get("duration"),
+                    phash=near_duplicates.phash_hex_to_db(item.get("phash")),
                     rating=RatingEnum.normalize(item.get("rating")) or RatingEnum.safe,
                     source=item.get("source") or None,
                     description=item.get("description") or None,
@@ -1525,6 +1562,7 @@ async def commit_upload_session(
 
             # Commit transaction
             db.commit()
+            near_duplicates.near_duplicate_index.invalidate()
 
             # Update tag counts and album modified times
             if all_tag_ids_to_update:
