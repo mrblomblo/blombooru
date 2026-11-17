@@ -39,6 +39,7 @@ class Media(Base):
     transcoded_path = Column(String(500), nullable=True)
     thumbnail_path = Column(String(500))
     hash = Column(String(64), unique=True, index=True)
+    phash = Column(String(64), nullable=True)
     file_type = Column(Enum(FileTypeEnum), nullable=False)
     mime_type = Column(String(100))
     file_size = Column(BigInteger)

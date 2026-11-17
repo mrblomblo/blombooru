@@ -11,7 +11,7 @@ from sqlalchemy.engine import URL
 load_dotenv()
 
 APP_VERSION = "2.1.0"
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 class Settings:
     def __init__(self):
@@ -339,6 +339,25 @@ class Settings:
         }
         saved = self.file_settings.get("wd_tagger") or self.settings.get("wd_tagger", {})
         return {**defaults, **saved}
+
+    @property
+    def NEAR_DUPLICATE_SETTINGS(self) -> dict:
+        """Near-duplicate (perceptual hash) detection settings.
+
+        ``max_distance`` is the largest Hamming distance (out of 256 bits) between two perceptual
+        hashes that still counts as a near-duplicate.
+        """
+        defaults = {"enabled": True, "max_distance": 31}
+        saved = self.file_settings.get("near_duplicates") or self.settings.get("near_duplicates", {})
+        merged = {**defaults, **(saved if isinstance(saved, dict) else {})}
+        try:
+            max_distance = int(merged.get("max_distance", defaults["max_distance"]))
+        except (TypeError, ValueError):
+            max_distance = defaults["max_distance"]
+        return {
+            "enabled": bool(merged.get("enabled", True)),
+            "max_distance": max(0, min(64, max_distance)),
+        }
 
     @property
     def MEDIA_TYPE_TAGS(self) -> dict:

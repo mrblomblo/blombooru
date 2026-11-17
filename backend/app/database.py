@@ -196,10 +196,28 @@ def check_and_migrate_schema(engine):
         migrate_add_tag_rating,
         migrate_add_custom_date,
         migrate_add_media_tags_implication_columns,
+        migrate_add_phash,
     ]
     
     for migration in migrations:
         migration(engine, inspector)
+
+def migrate_add_phash(engine, inspector):
+    """Add the 256-bit PDQ perceptual hash column used for near-duplicate detection"""
+    from sqlalchemy import text
+
+    columns = [c['name'] for c in inspector.get_columns('blombooru_media')]
+
+    if 'phash' in columns:
+        return
+
+    logger.info("Adding phash column to blombooru_media...")
+
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE blombooru_media ADD COLUMN phash VARCHAR(64)"
+        ))
+        conn.commit()
 
 def migrate_remove_duplicate_tag_aliases(engine, inspector):
     """Remove tag aliases whose alias_name already exists as a tag in blombooru_tags."""
