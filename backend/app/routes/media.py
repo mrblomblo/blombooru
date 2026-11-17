@@ -24,10 +24,12 @@ from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataReques
                        BulkTagUpdateRequest, BulkTagUpdateResponse,
                        MediaCreatedResponse, MediaDetailResponse, MediaResponse,
                        MediaUpdate, ProposedTag, ShareSettingsUpdate)
+from ..utils.album_path_resolver import ensure_album_path
 from ..utils.album_utils import (get_bulk_album_thumbnails, get_flattened_media_ids,
                                 handle_media_deleted, handle_media_rating_changed,
-                                set_media_albums)
-from ..utils.cache import (cache_response, invalidate_media_cache, 
+                                recalculate_album_metrics, set_media_albums,
+                                update_album_last_modified)
+from ..utils.cache import (cache_response, invalidate_album_cache, invalidate_media_cache, 
                             invalidate_media_item_cache, invalidate_tag_cache)
 from ..utils.format_registry import format_registry
 from ..utils.logger import logger
@@ -67,6 +69,11 @@ def sync_description_enlarged(media: Media) -> None:
     if not media.description:
         media.description_enlarged = False
 
+class StagedFileRef(BaseModel):
+    """Points at a file staged in an upload session (used instead of downloading a file_url)."""
+    session_id: str
+    item_id: str
+
 class PostUpdateRequest(BaseModel):
     """Request body for the Update Post (from-source) endpoint.
 
@@ -88,6 +95,25 @@ class PostUpdateRequest(BaseModel):
     file_url: Optional[str] = None
     update_custom_date: bool = False
     custom_date: Optional[str] = None
+    staged_file: Optional[StagedFileRef] = None
+    update_albums: bool = False
+    album_ids: Optional[list[int]] = None
+    album_path: Optional[str] = None
+
+def _resolve_staged_file(ref: StagedFileRef) -> Path:
+    """Locate the file of a staged upload-session item (404 if the session/item/file is gone)."""
+    from .uploads import _get_session_dir, _load_session_meta
+    session_dir = _get_session_dir(ref.session_id)
+    item = _load_session_meta(session_dir).get("items", {}).get(ref.item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Staged item not found")
+    if item.get("source_path"):
+        path = Path(item["source_path"])
+    else:
+        path = session_dir / "raw" / item.get("staged_filename", "")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Staged file not found")
+    return path
 
 @router.patch("/{media_id}/update-from-source", response_model=MediaDetailResponse)
 async def update_from_source(
@@ -220,36 +246,43 @@ async def update_from_source(
             media.path = str(new_path.relative_to(settings.BASE_DIR))
 
     if req.update_file:
-        if not req.file_url:
-            raise HTTPException(status_code=400, detail="file_url is required when update_file is true")
+        if not req.file_url and not req.staged_file:
+            raise HTTPException(status_code=400, detail="file_url or staged_file is required when update_file is true")
 
-        import requests as _requests
-        try:
-            from ..services.booru import get_user_agent_for_url
-            user_agent = get_user_agent_for_url(req.file_url, db=db)
-            dl = safe_request(
-                "GET",
-                req.file_url,
-                timeout=60,
-                stream=True,
-                user_agent=user_agent,
-                proxies=settings.get_booru_proxies(),
-            )
-            dl.raise_for_status()
-        except UrlFetchError as e:
-            raise HTTPException(status_code=e.status_code, detail=e.message)
-        except _requests.HTTPError as e:
-            raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
-        except _requests.RequestException as e:
-            raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
+        staged_source: Optional[Path] = _resolve_staged_file(req.staged_file) if req.staged_file else None
+        dl = None
+        if staged_source is None:
+            import requests as _requests
+            try:
+                from ..services.booru import get_user_agent_for_url
+                user_agent = get_user_agent_for_url(req.file_url, db=db)
+                dl = safe_request(
+                    "GET",
+                    req.file_url,
+                    timeout=60,
+                    stream=True,
+                    user_agent=user_agent,
+                    proxies=settings.get_booru_proxies(),
+                )
+                dl.raise_for_status()
+            except UrlFetchError as e:
+                raise HTTPException(status_code=e.status_code, detail=e.message)
+            except _requests.HTTPError as e:
+                raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
+            except _requests.RequestException as e:
+                raise HTTPException(status_code=502, detail=safe_error_detail("Failed to download replacement file", e))
 
-        suffix = Path(req.file_url.split("?")[0]).suffix or ".bin"
+        suffix = (staged_source.suffix if staged_source else Path(req.file_url.split("?")[0]).suffix) or ".bin"
         import tempfile
         tmp_path = None
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                for chunk in dl.iter_content(chunk_size=8192):
-                    tmp.write(chunk)
+                if staged_source is not None:
+                    with open(staged_source, "rb") as staged_fh:
+                        shutil.copyfileobj(staged_fh, tmp)
+                else:
+                    for chunk in dl.iter_content(chunk_size=8192):
+                        tmp.write(chunk)
                 tmp_path = Path(tmp.name)
 
             new_hash = calculate_file_hash(tmp_path)
@@ -337,6 +370,12 @@ async def update_from_source(
     if affected_tag_ids:
         update_tag_counts(db, affected_tag_ids)
         db.commit()
+
+    if affected_album_ids:
+        update_album_last_modified(list(affected_album_ids), db)
+        recalculate_album_metrics(db, list(affected_album_ids))
+        db.commit()
+        invalidate_album_cache()
 
     db.refresh(media)
     invalidate_media_cache()
