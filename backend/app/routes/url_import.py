@@ -12,7 +12,7 @@ from ..auth import require_admin_mode
 from ..config import settings
 from ..enums import RatingEnum
 from ..models import User
-from ..schemas import MediaResponse
+from ..schemas import MediaCreatedResponse
 from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.request_helpers import safe_error_detail
@@ -135,7 +135,7 @@ async def proxy_media_url(
             detail=f"admin.media_management.url_import.error_proxy_failed:::{safe_error_detail('Proxy failed', e)}",
         )
 
-def _do_import_media_url(req: ImportRequest) -> MediaResponse:
+def _do_import_media_url(req: ImportRequest) -> MediaCreatedResponse:
     from ..database import SessionLocal
     from .media import process_and_save_media
 
@@ -241,7 +241,7 @@ def _do_import_media_url(req: ImportRequest) -> MediaResponse:
     finally:
         db.close()
 
-@router.post("/import", response_model=MediaResponse)
+@router.post("/import", response_model=MediaCreatedResponse)
 async def import_media_url(
     req: ImportRequest,
     current_user: User = Depends(require_admin_mode),

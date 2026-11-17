@@ -22,7 +22,7 @@ from ..models import (Album, Media, Tag, User, blombooru_album_media,
 from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataRequest,
                        BulkMediaRatingUpdateRequest, BulkMediaRatingUpdateResponse,
                        BulkTagUpdateRequest, BulkTagUpdateResponse,
-                       MediaDetailResponse, MediaResponse,
+                       MediaCreatedResponse, MediaDetailResponse, MediaResponse,
                        MediaUpdate, ProposedTag, ShareSettingsUpdate)
 from ..utils.album_utils import (get_bulk_album_thumbnails, get_flattened_media_ids,
                                 handle_media_deleted, handle_media_rating_changed,
@@ -38,7 +38,9 @@ from ..utils.media_helpers import (create_stripped_media_cache,
                                    rebuild_stripped_cache_if_needed,
                                    sanitize_filename,
                                    serve_media_file)
+from ..services import near_duplicates
 from ..utils.media_processor import calculate_file_hash, process_media_file
+from ..utils.perceptual_hash import phash_to_hex
 from ..utils.media_sort import apply_media_sort, get_media_sort_clauses
 from ..utils.search_parser import (apply_custom_filters_or,
                                    apply_search_criteria, parse_search_query)
@@ -304,10 +306,30 @@ async def update_from_source(
             logger.exception("Error replacing media file")
             raise HTTPException(status_code=500, detail=safe_error_detail("File replacement failed", e))
 
+    affected_album_ids: set[int] = set()
+    if req.update_albums:
+        wanted_album_ids = set(req.album_ids or [])
+        if req.album_path:
+            leaf_album, touched_ids = ensure_album_path(db, req.album_path)
+            if leaf_album:
+                wanted_album_ids.add(leaf_album.id)
+                affected_album_ids.update(touched_ids)
+        if wanted_album_ids:
+            already_in = {album.id for album in media.albums}
+            for album in db.query(Album).filter(Album.id.in_(wanted_album_ids)).all():
+                if album.id not in already_in:
+                    media.albums.append(album)
+                affected_album_ids.add(album.id)
+
+    if file_updated:
+        near_duplicates.refresh_media_phash(media)
+
     db.flush()
     if implied_by_tag_id_update is not None:
         apply_media_tag_implications(db, media, implied_by_tag_id_update)
     db.commit()
+    if file_updated:
+        near_duplicates.near_duplicate_index.invalidate()
 
     if rating_changed:
         handle_media_rating_changed(db, media_id, media.rating.value if hasattr(media.rating, "value") else media.rating)
@@ -453,7 +475,9 @@ async def update_file_finalize(
             if embedded_dt is not None:
                 media.custom_date = embedded_dt
 
+        near_duplicates.refresh_media_phash(media)
         db.commit()
+        near_duplicates.near_duplicate_index.invalidate()
         db.refresh(media)
         invalidate_media_cache()
         invalidate_media_item_cache(media_id)
@@ -976,7 +1000,7 @@ def process_and_save_media(
     booru_date: Optional[Union[datetime, str]] = None,
     sidecar_date: Optional[Union[datetime, str]] = None,
     client_date: Optional[Union[datetime, str]] = None,
-) -> "MediaResponse":
+) -> "MediaCreatedResponse":
     """Hash-check, thumbnail generation, DB insert, tag/album linking, and cache
     invalidation for a media file that is already on disk at *file_path*.
 
@@ -999,6 +1023,11 @@ def process_and_save_media(
 
     metadata = process_media_file(file_path, precalculated_hash=file_hash)
     logger.debug(f"Media processed: {metadata}")
+
+    new_phash = near_duplicates.compute_phash_for_new_file(
+        file_path, metadata["file_type"], metadata.get("transcoded_path")
+    )
+    near_duplicate_matches = near_duplicates.find_existing_matches(db, new_phash)
 
     thumbnail_filename = Path(unique_filename).stem + THUMBNAIL_EXT
     thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
@@ -1038,6 +1067,7 @@ def process_and_save_media(
             width=metadata["width"],
             height=metadata["height"],
             duration=metadata["duration"],
+            phash=phash_to_hex(new_phash) if new_phash is not None else None,
             rating=rating,
             source=source if source else None,
             description=description if description else None,
@@ -1105,8 +1135,11 @@ def process_and_save_media(
 
     invalidate_media_cache()
     invalidate_tag_cache()
+    near_duplicates.near_duplicate_index.invalidate()
 
-    return MediaResponse.model_validate(media)
+    response = MediaCreatedResponse.model_validate(media)
+    response.near_duplicates = near_duplicate_matches
+    return response
 
 @router.get("/")
 @router.get("")
@@ -2033,7 +2066,7 @@ async def get_media_metadata(
     
     return extract_media_metadata(file_path)
 
-@router.post("/", response_model=MediaResponse)
+@router.post("/", response_model=MediaCreatedResponse)
 async def upload_media(
     file: UploadFile = File(None),
     scanned_path: Optional[str] = Form(None),

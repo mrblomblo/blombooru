@@ -177,6 +177,10 @@ class MediaResponse(MediaBase):
             self.custom_date = self.uploaded_at
         return self
 
+class MediaCreatedResponse(MediaResponse):
+    """Response for endpoints that create a post directly (no upload queue to review)."""
+    near_duplicates: List[Dict[str, Any]] = []
+
 class MediaDetailResponse(MediaResponse):
     @computed_field
     @property
@@ -603,4 +607,3 @@ class UploadSessionCommitResponse(BaseModel):
     total_created: int
     total_duplicates: int
     total_failed: int
-

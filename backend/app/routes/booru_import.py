@@ -14,6 +14,7 @@ from ..utils.request_helpers import safe_error_detail
 from ..database import get_db
 from ..enums import RatingEnum
 from ..models import Media, User
+from ..services import near_duplicates
 from ..services.booru import (BooruAuthenticationError, BooruNotFoundError,
                               BooruPost, BooruRateLimitError, get_client_for_url,
                               get_user_agent_for_url)
@@ -22,6 +23,7 @@ from ..utils.cache import (invalidate_media_cache, invalidate_tag_cache)
 from ..utils.logger import logger
 from ..utils.media_helpers import get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
+from ..utils.perceptual_hash import phash_to_hex
 from ..utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
 from ..utils.url_fetch import UrlFetchError, safe_request
 from ..utils.url_security import UrlValidationError, validate_url_not_ssrf
@@ -226,6 +228,11 @@ async def download_and_import(
 
         metadata = process_media_file(file_path, precalculated_hash=file_hash)
 
+        new_phash = near_duplicates.compute_phash_for_new_file(
+            file_path, metadata["file_type"], metadata.get("transcoded_path")
+        )
+        near_duplicate_matches = near_duplicates.find_existing_matches(db, new_phash)
+
         thumbnail_name = Path(unique_filename).stem
         thumbnail_filename = f"{thumbnail_name}{THUMBNAIL_EXT}"
         thumbnail_path = settings.THUMBNAIL_DIR / thumbnail_filename
@@ -260,6 +267,7 @@ async def download_and_import(
             width=metadata['width'],
             height=metadata['height'],
             duration=metadata['duration'],
+            phash=phash_to_hex(new_phash) if new_phash is not None else None,
             rating=final_rating,
             source=final_source if final_source else None,
             description=final_description if final_description else None,
@@ -305,8 +313,12 @@ async def download_and_import(
         invalidate_media_cache()
         invalidate_tag_cache()
 
-        from ..schemas import MediaResponse
-        return MediaResponse.model_validate(media)
+        near_duplicates.near_duplicate_index.invalidate()
+
+        from ..schemas import MediaCreatedResponse
+        response = MediaCreatedResponse.model_validate(media)
+        response.near_duplicates = near_duplicate_matches
+        return response
 
     except HTTPException:
         raise
