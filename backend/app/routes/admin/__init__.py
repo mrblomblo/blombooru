@@ -15,6 +15,7 @@ from .backup import router as _backup_router
 from .custom_themes import router as _custom_themes_router
 from .keybindings import router as _keybindings_router
 from .media import router as _media_router
+from .near_duplicates import router as _near_duplicates_router
 from .onboarding import router as _onboarding_router
 from .settings import router as _settings_router
 from .shared_tags import router as _shared_tags_router
@@ -26,6 +27,7 @@ router.include_router(_onboarding_router)
 router.include_router(_auth_router)
 router.include_router(_settings_router)
 router.include_router(_media_router)
+router.include_router(_near_duplicates_router)
 router.include_router(_tags_router)
 router.include_router(_backup_router)
 router.include_router(_api_keys_router)
