@@ -18,6 +18,7 @@ from ..models import (Album, Media, Tag, TagAlias, TagImplication,
                       blombooru_album_hierarchy, blombooru_album_media,
                       blombooru_media_tags)
 from ..routes.media import update_tag_counts
+from ..services import near_duplicates
 from ..services.booru import normalize_domain, upsert_booru_config
 from ..utils.album_utils import recalculate_all_album_metrics
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
@@ -273,6 +274,7 @@ def import_full_backup(zip_source, db: Session) -> dict:
     invalidate_media_cache()
     invalidate_tag_cache()
     invalidate_album_cache()
+    near_duplicates.near_duplicate_index.invalidate()
 
     return {
         "message": "Import completed successfully",
@@ -460,6 +462,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
             transcoded_path=transcoded_rel_path,
             thumbnail_path=str(thumb_path.relative_to(settings.BASE_DIR)) if thumb_path.exists() else None,
             hash=file_hash,
+            phash=near_duplicates.phash_hex_to_db(media_data.get('phash')),
             file_type=file_type_enum,
             mime_type=media_data.get('mime_type'),
             file_size=media_data.get('file_size') or (target_path.stat().st_size if target_path.exists() else 0),

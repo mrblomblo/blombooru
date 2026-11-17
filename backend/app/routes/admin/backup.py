@@ -14,6 +14,7 @@ from ...custom_themes import custom_theme_manager
 from ...database import get_db
 from ...models import (Album, BooruConfig, Media, Tag, TagImplication, User,
                       blombooru_album_hierarchy, blombooru_album_media)
+from ...services import near_duplicates
 from ...utils.backup import (generate_tags_csv_stream,
                              get_custom_theme_files_generator,
                              get_media_files_generator, import_full_backup,
@@ -176,6 +177,7 @@ async def backup_full_db(
         media_list.append({
             "filename": m.filename,
             "hash": m.hash,
+            "phash": near_duplicates.media_phash_hex(m),
             "file_type": file_type_val,
             "mime_type": m.mime_type,
             "file_size": m.file_size,
