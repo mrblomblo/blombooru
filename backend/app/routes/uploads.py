@@ -25,6 +25,7 @@ from ..schemas import (FolderMappingRequest, PendingAlbumEntity, PendingAlbumUpd
                        UploadSessionItemUpdate)
 from ..utils.album_path_resolver import (build_pending_album_tree,
                                          derive_item_suggested_album_path,
+                                         ensure_album_path,
                                          resolve_album_path)
 from ..utils.album_utils import (recalculate_album_metrics,
                                  update_album_last_modified)
@@ -1373,51 +1374,10 @@ async def commit_upload_session(
                     continue
                 suggested_path = item.get("suggested_album_path")
                 if suggested_path:
-                    segments = [s.strip() for s in suggested_path.replace("\\", "/").strip("/").split("/") if s.strip()]
-                    if segments:
-                        current_parent_album = None
-                        path_key = ""
-                        for depth, seg in enumerate(segments):
-                            path_key = f"{path_key}/{seg}" if path_key else seg
-                            if path_key in album_path_cache:
-                                alb = album_path_cache[path_key]
-                            else:
-                                if depth == 0:
-                                    alb = (
-                                        db.query(Album)
-                                        .filter(
-                                            func.lower(Album.name) == seg.lower(),
-                                            ~Album.id.in_(db.query(blombooru_album_hierarchy.c.child_album_id)),
-                                        )
-                                        .first()
-                                    )
-                                else:
-                                    alb = (
-                                        db.query(Album)
-                                        .join(
-                                            blombooru_album_hierarchy,
-                                            Album.id == blombooru_album_hierarchy.c.child_album_id,
-                                        )
-                                        .filter(
-                                            blombooru_album_hierarchy.c.parent_album_id == current_parent_album.id,
-                                            func.lower(Album.name) == seg.lower(),
-                                        )
-                                        .first()
-                                    ) if current_parent_album else None
-
-                                if not alb:
-                                    alb = Album(name=seg)
-                                    db.add(alb)
-                                    db.flush()
-                                if current_parent_album and alb not in current_parent_album.children:
-                                    current_parent_album.children.append(alb)
-                                    db.flush()
-                                album_path_cache[path_key] = alb
-                            all_affected_album_ids.add(alb.id)
-                            current_parent_album = alb
-
+                    leaf_album, touched_ids = ensure_album_path(db, suggested_path, album_path_cache)
+                    if leaf_album:
+                        all_affected_album_ids.update(touched_ids)
                         # Assign leaf album to item's album_ids
-                        leaf_album = album_path_cache[path_key]
                         current_aids = set(item.get("album_ids", []))
                         current_aids.add(leaf_album.id)
                         item["album_ids"] = list(current_aids)

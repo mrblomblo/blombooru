@@ -292,3 +292,62 @@ def build_pending_album_tree(items: dict, db: Session) -> List[Dict[str, Any]]:
         })
 
     return results
+
+def ensure_album_path(
+    db: Session,
+    path: Optional[str],
+    cache: Optional[Dict[str, Album]] = None,
+):
+    """Resolve an album path ("Parent/Child"), creating any missing albums along the way."""
+    if not path:
+        return None, []
+    segments = [s.strip() for s in path.replace("\\", "/").strip("/").split("/") if s.strip()]
+    if not segments:
+        return None, []
+
+    if cache is None:
+        cache = {}
+
+    touched: List[int] = []
+    current_parent: Optional[Album] = None
+    path_key = ""
+    for depth, seg in enumerate(segments):
+        path_key = f"{path_key}/{seg}" if path_key else seg
+        if path_key in cache:
+            album = cache[path_key]
+        else:
+            if depth == 0:
+                album = (
+                    db.query(Album)
+                    .filter(
+                        func.lower(Album.name) == seg.lower(),
+                        ~Album.id.in_(db.query(blombooru_album_hierarchy.c.child_album_id)),
+                    )
+                    .first()
+                )
+            else:
+                album = (
+                    db.query(Album)
+                    .join(
+                        blombooru_album_hierarchy,
+                        Album.id == blombooru_album_hierarchy.c.child_album_id,
+                    )
+                    .filter(
+                        blombooru_album_hierarchy.c.parent_album_id == current_parent.id,
+                        func.lower(Album.name) == seg.lower(),
+                    )
+                    .first()
+                ) if current_parent else None
+
+            if not album:
+                album = Album(name=seg)
+                db.add(album)
+                db.flush()
+            if current_parent and album not in current_parent.children:
+                current_parent.children.append(album)
+                db.flush()
+            cache[path_key] = album
+        touched.append(album.id)
+        current_parent = album
+
+    return cache[path_key], touched
