@@ -506,6 +506,8 @@ class UploadSessionItemUpdate(BaseModel):
     album_ids: Optional[List[int]] = None
     suggested_album_path: Optional[str] = None
     custom_date: Optional[str] = None
+    parent_media_id: Optional[int] = None
+    child_media_ids: Optional[List[int]] = None
 
 class UploadSessionAddUntrackedRequest(BaseModel):
     file_path: str
@@ -540,6 +542,8 @@ class UploadSessionItem(BaseModel):
     mime_type: Optional[str] = None
     hash: Optional[str] = None
     phash: Optional[str] = None
+    parent_media_id: Optional[int] = None
+    child_media_ids: List[int] = []
     rating: RatingEnum = RatingEnum.safe
     source: Optional[str] = None
     description: Optional[str] = None

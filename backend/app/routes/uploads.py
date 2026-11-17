@@ -30,7 +30,9 @@ from ..utils.album_path_resolver import (build_pending_album_tree,
 from ..utils.album_utils import (recalculate_album_metrics,
                                  update_album_last_modified)
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
-                           invalidate_tag_cache)
+                           invalidate_media_item_cache, invalidate_tag_cache)
+from ..utils.media_relations import (apply_pending_relations,
+                                     normalize_child_ids, relation_problem)
 from ..utils.logger import logger
 from ..utils.media_helpers import extract_media_metadata, get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
@@ -791,6 +793,18 @@ async def update_staged_item(
                 item["suggested_album_path"] = update.suggested_album_path
                 item["suggested_album_segments"] = resolve_album_path(db, update.suggested_album_path)
 
+        if "parent_media_id" in fields_set or "child_media_ids" in fields_set:
+            new_parent = update.parent_media_id if "parent_media_id" in fields_set else item.get("parent_media_id")
+            new_children = (
+                normalize_child_ids(update.child_media_ids) if "child_media_ids" in fields_set
+                else item.get("child_media_ids", [])
+            )
+            problem = relation_problem(db, new_parent, new_children)
+            if problem:
+                raise HTTPException(status_code=problem[0], detail=problem[1])
+            item["parent_media_id"] = new_parent or None
+            item["child_media_ids"] = new_children
+
         if "custom_date" in fields_set:
             if update.custom_date is not None and str(update.custom_date).strip() != "":
                 from ..utils.date_extractor import parse_explicit_custom_date
@@ -1358,6 +1372,7 @@ async def commit_upload_session(
 
         all_tag_ids_to_update: set[int] = set()
         all_affected_album_ids: set[int] = set()
+        all_affected_relation_ids: set[int] = set()
 
         try:
             # Pre-scan for duplicate items (both pre-marked and hash collision against DB)
@@ -1552,6 +1567,13 @@ async def commit_upload_session(
                 if implied_by_tag_id:
                     apply_media_tag_implications(db, media, implied_by_tag_id)
 
+                # Pending parent/child relation to existing posts
+                if item.get("parent_media_id") or item.get("child_media_ids"):
+                    all_affected_relation_ids.update(apply_pending_relations(
+                        db, media, item.get("parent_media_id"), item.get("child_media_ids")
+                    ))
+                    db.flush()
+
                 total_created += 1
                 results.append(UploadSessionCommitItemResult(
                     item_id=item_id,
@@ -1578,6 +1600,8 @@ async def commit_upload_session(
 
             invalidate_media_cache()
             invalidate_tag_cache()
+            for related_id in all_affected_relation_ids:
+                invalidate_media_item_cache(related_id)
 
             # Clean up session directory
             shutil.rmtree(session_dir, ignore_errors=True)
