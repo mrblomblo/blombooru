@@ -1,3 +1,4 @@
+
 class UploadQueueGrid {
     constructor(containerElement, session, options = {}) {
         this.container = containerElement;
@@ -7,6 +8,8 @@ class UploadQueueGrid {
         this.activeItemId = null;
         this.lastSelectedId = null;
         this.editor = null;
+        this._nearDuplicateCounts = new Map();
+        this._nearDuplicateNotified = new Set();
 
         this.init();
     }
@@ -50,6 +53,7 @@ class UploadQueueGrid {
                 }
                 if (this.options.onTagsChange) this.options.onTagsChange();
             },
+            onSelectItem: (itemId) => this.focusItem(itemId),
             onItemsDeleted: (deletedIds) => {
                 (deletedIds || []).forEach(id => this.selectedIds.delete(id));
                 const remaining = this.session.getAllItems();
@@ -124,9 +128,63 @@ class UploadQueueGrid {
             this.selectedIds.clear();
             this.activeItemId = null;
             this.lastSelectedId = null;
+            this._nearDuplicateCounts = new Map();
+            this._nearDuplicateNotified = new Set();
             this.renderGrid();
             this.syncEditor();
         });
+
+        this.session.on('nearDuplicatesChanged', () => this.handleNearDuplicatesChanged());
+    }
+
+    handleNearDuplicatesChanged() {
+        const previous = this._nearDuplicateCounts;
+        const current = new Map();
+        this.session.nearDuplicates.forEach((_, itemId) => {
+            current.set(itemId, this.session.getNearDuplicateCount(itemId));
+        });
+        this._nearDuplicateCounts = current;
+
+        // Only repaint cards whose badge changed
+        const changedIds = new Set();
+        current.forEach((count, id) => { if (previous.get(id) !== count) changedIds.add(id); });
+        previous.forEach((count, id) => { if (!current.has(id)) changedIds.add(id); });
+        changedIds.forEach(id => {
+            const item = this.session.getItem(id);
+            if (item) this.renderThumbnail(item);
+        });
+
+
+        // Refresh the open editor's panel in place
+        if (this.editor && changedIds.size > 0 && typeof this.editor.refreshNearDuplicates === 'function') {
+            this.editor.refreshNearDuplicates();
+        }
+
+        const fresh = [...current.keys()].filter(id => !this._nearDuplicateNotified.has(id));
+        if (fresh.length > 0) {
+            fresh.forEach(id => this._nearDuplicateNotified.add(id));
+            if (window.app && typeof window.app.showNotification === 'function') {
+                window.app.showNotification(
+                    window.i18n.t('upload.near_duplicates.notice', { count: fresh.length }),
+                    'warning'
+                );
+            }
+        }
+    }
+
+    /* Select a single queued item */
+    focusItem(itemId) {
+        if (!this.session.getItem(itemId)) return;
+        this.selectedIds.clear();
+        this.selectedIds.add(itemId);
+        this.activeItemId = itemId;
+        this.lastSelectedId = itemId;
+        this.updateSelectionVisuals();
+        this.syncEditor();
+        const card = this.container.querySelector(`.upload-thumb-card[data-item-id="${itemId}"]`);
+        if (card && typeof card.scrollIntoView === 'function') {
+            card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
     }
 
     renderGrid() {
@@ -159,6 +217,12 @@ class UploadQueueGrid {
         const selectClasses = isSelected ? 'border-primary' : '';
 
         const leafAlbum = item.suggested_album_path ? item.suggested_album_path.split('/').pop() : null;
+        const nearDuplicateCount = this.session.getNearDuplicateCount ? this.session.getNearDuplicateCount(item.item_id) : 0;
+        const nearDuplicateBadge = nearDuplicateCount > 0 ? `
+                    <div class="nd-grid-badge absolute top-1 right-1 z-10 flex items-center gap-0.5 px-1 py-0.5 surface border text-[10px]"
+                        title="${escapeHtml(window.i18n.t('upload.near_duplicates.badge_title', { count: nearDuplicateCount }))}">
+                        ${window.Icons.merge({ size: 10 })}<span>${nearDuplicateCount}</span>
+                    </div>` : '';
 
         return `
             <div class="upload-thumb-card surface border relative group flex flex-col cursor-pointer transition-colors ${selectClasses}"
@@ -176,6 +240,8 @@ class UploadQueueGrid {
                             ${window.i18n.t('common.none')}
                         </div>
                     `}
+
+                    ${nearDuplicateBadge}
 
                     <!-- Selection Checkbox (Top-left) -->
                     <div class="absolute top-1 left-1 z-10" onclick="event.stopPropagation();">

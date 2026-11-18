@@ -13,7 +13,12 @@ class UploadSession {
             pendingChanged: [],
             sessionCleared: [],
             statusChanged: [],
+            nearDuplicatesChanged: [],
         };
+        this.nearDuplicates = new Map();
+        this._nearDuplicateTimer = null;
+        this._nearDuplicateInFlight = false;
+        this._nearDuplicateDirty = false;
 
         window.addEventListener('beforeunload', () => {
             if (this.sessionId && !this.isCommitting && this.items.size > 0) {
@@ -165,6 +170,7 @@ class UploadSession {
         }
         this.items.set(item.item_id, item);
         this.emit('itemAdded', item);
+        this.scheduleNearDuplicateRefresh();
         return item;
     }
 
@@ -245,6 +251,7 @@ class UploadSession {
         }
         this.items.set(item.item_id, item);
         this.emit('itemAdded', item);
+        this.scheduleNearDuplicateRefresh();
         return item;
     }
 
@@ -355,9 +362,92 @@ class UploadSession {
             this.emit('itemRemoved', itemId);
             if (this.items.size === 0) {
                 this.sessionId = null;
+                this.clearNearDuplicates();
                 this.emit('sessionCleared', null);
+            } else {
+                this.applyLocalNearDuplicateRemoval(itemId);
+                this.scheduleNearDuplicateRefresh(300);
             }
         }
+    }
+
+    getNearDuplicates(itemId) {
+        return this.nearDuplicates.get(itemId) || null;
+    }
+
+    getNearDuplicateCount(itemId) {
+        const entry = this.nearDuplicates.get(itemId);
+        return entry ? (entry.existing || []).length + (entry.queue || []).length : 0;
+    }
+
+    clearNearDuplicates() {
+        clearTimeout(this._nearDuplicateTimer);
+        this._nearDuplicateDirty = false;
+        if (this.nearDuplicates.size > 0) {
+            this.nearDuplicates = new Map();
+            this.emit('nearDuplicatesChanged', this.nearDuplicates);
+        }
+    }
+
+    applyLocalNearDuplicateRemoval(removedItemId) {
+        let changed = false;
+        const next = new Map();
+        this.nearDuplicates.forEach((entry, id) => {
+            if (id === removedItemId) {
+                changed = true;
+                return;
+            }
+            const queue = (entry.queue || []).filter(m => m.item_id !== removedItemId);
+            if (queue.length !== (entry.queue || []).length) changed = true;
+            if ((entry.existing || []).length || queue.length) {
+                next.set(id, { existing: entry.existing || [], queue });
+            } else {
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.nearDuplicates = next;
+            this.emit('nearDuplicatesChanged', this.nearDuplicates);
+        }
+    }
+
+    scheduleNearDuplicateRefresh(delay = 800) {
+        clearTimeout(this._nearDuplicateTimer);
+        this._nearDuplicateTimer = setTimeout(() => this.fetchNearDuplicates(), delay);
+    }
+
+    async fetchNearDuplicates() {
+        if (!this.sessionId || this.isCommitting || this.isCancelling) return this.nearDuplicates;
+        if (this._nearDuplicateInFlight) {
+            this._nearDuplicateDirty = true;
+            return this.nearDuplicates;
+        }
+
+        this._nearDuplicateInFlight = true;
+        const requestedSession = this.sessionId;
+        try {
+            const response = await fetch(`/api/uploads/sessions/${requestedSession}/near-duplicates`);
+            if (!response.ok) return this.nearDuplicates;
+            const data = await response.json();
+            if (requestedSession !== this.sessionId) return this.nearDuplicates;
+
+            // Ignore entries for items the user removed while the request was in flight
+            const entries = Object.entries(data.items || {}).filter(([id]) => this.items.has(id));
+            this.nearDuplicates = new Map(entries.map(([id, value]) => [id, {
+                existing: value.existing || [],
+                queue: (value.queue || []).filter(m => this.items.has(m.item_id)),
+            }]));
+            this.emit('nearDuplicatesChanged', this.nearDuplicates);
+        } catch (e) {
+            console.warn('Failed to fetch near-duplicates:', e);
+        } finally {
+            this._nearDuplicateInFlight = false;
+            if (this._nearDuplicateDirty) {
+                this._nearDuplicateDirty = false;
+                this.scheduleNearDuplicateRefresh(0);
+            }
+        }
+        return this.nearDuplicates;
     }
 
     async fetchPendingEntities() {
@@ -469,6 +559,7 @@ class UploadSession {
             const result = await response.json();
             this.items.clear();
             this.sessionId = null;
+            this.clearNearDuplicates();
             this.emit('sessionCleared', result);
             return result;
         } finally {
@@ -484,6 +575,7 @@ class UploadSession {
         const targetSessionId = this.sessionId;
         this.sessionId = null;
         this.items.clear();
+        this.clearNearDuplicates();
         this.emit('sessionCleared', null);
 
         if (targetSessionId) {
