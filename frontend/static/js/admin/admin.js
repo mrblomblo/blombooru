@@ -23,12 +23,14 @@ class AdminPanel {
         this.setupEventListeners();
         this.system.loadSettings();
         this.content.loadAITaggerSettings();
+        this.content.loadNearDuplicateSettings();
         this.content.setupTagManagement();
         this.content.setupAlbumManagement();
         this.content.loadTagStats();
         this.content.loadMediaStats();
         this.content.loadAlbumStats();
         this.content.checkTranscodeStatus();
+        this.content.checkNearDuplicateBackfillStatus();
         this.system.setupCustomSelects();
         this.system.loadThemes();
         this.system.loadLanguages();
@@ -96,6 +98,21 @@ class AdminPanel {
                 e.preventDefault();
                 this.content.saveAITaggerSettings();
             });
+        }
+
+        // Near-duplicate detection settings form
+        const nearDuplicatesForm = document.getElementById('near-duplicates-settings-form');
+        if (nearDuplicatesForm) {
+            nearDuplicatesForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.content.saveNearDuplicateSettings();
+            });
+        }
+
+        // Near-duplicate backfill button (lives in media maintenance, always present)
+        const backfillBtn = document.getElementById('near-duplicates-backfill-btn');
+        if (backfillBtn) {
+            backfillBtn.addEventListener('click', () => this.content.startNearDuplicateBackfill());
         }
 
         // Scan media button

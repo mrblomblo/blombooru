@@ -6,6 +6,8 @@ class AdminContent {
         this._scanOriginalText = null;
         this.isTranscoding = false;
         this._transcodeOriginalText = null;
+        this.isNearDuplicateHashing = false;
+        this._nearDuplicateBackfillOriginalText = null;
     }
 
     cancelScan() {
@@ -371,6 +373,171 @@ class AdminContent {
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;
+        }
+    }
+
+    async loadNearDuplicateSettings() {
+        if (!document.getElementById('near-duplicates-settings-form')) return;
+        try {
+            const res = await fetch('/api/admin/near-duplicates');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const enabledEl = document.getElementById('near-duplicates-enabled');
+            if (enabledEl) enabledEl.checked = !!data.enabled;
+            const distanceEl = document.getElementById('near-duplicates-max-distance');
+            if (distanceEl && data.max_distance != null) distanceEl.value = data.max_distance;
+        } catch (e) {
+            console.error('Failed to load near-duplicate settings:', e);
+        }
+    }
+
+    async saveNearDuplicateSettings() {
+        const btn = document.getElementById('save-near-duplicates-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+
+        const enabledEl = document.getElementById('near-duplicates-enabled');
+        const distanceEl = document.getElementById('near-duplicates-max-distance');
+        const body = { enabled: !!(enabledEl && enabledEl.checked) };
+        if (distanceEl && distanceEl.value !== '') {
+            body.max_distance = Math.max(0, Math.min(64, parseInt(distanceEl.value, 10) || 0));
+        }
+
+        try {
+            const res = await fetch('/api/admin/near-duplicates', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to save settings');
+            }
+            const data = await res.json();
+            if (distanceEl) distanceEl.value = data.max_distance;
+            app.showNotification(window.i18n.t('admin.settings.settings_saved'), 'success');
+        } catch (e) {
+            app.showNotification(e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    async checkNearDuplicateBackfillStatus() {
+        if (this.isNearDuplicateHashing) return;
+        try {
+            const data = await app.apiCall('/api/admin/near-duplicates');
+            if (data && data.backfill && data.backfill.running) {
+                await this.pollNearDuplicateBackfill();
+            }
+        } catch (error) {
+            console.error('Error checking near-duplicate backfill status:', error);
+        }
+    }
+
+    async startNearDuplicateBackfill() {
+        if (this.isNearDuplicateHashing) return;
+        const btn = document.getElementById('near-duplicates-backfill-btn');
+        const statusDiv = document.getElementById('near-duplicates-backfill-status');
+        const resultDiv = document.getElementById('near-duplicates-backfill-result');
+        if (!btn) return;
+        const originalText = this._nearDuplicateBackfillOriginalText || btn.textContent;
+        this._nearDuplicateBackfillOriginalText = originalText;
+
+        btn.disabled = true;
+        btn.textContent = window.i18n.t('common.processing');
+        if (statusDiv) statusDiv.style.display = 'block';
+        if (resultDiv) {
+            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(window.i18n.t('common.processing'))}</strong></div>`;
+        }
+
+        try {
+            const res = await fetch('/api/admin/near-duplicates/backfill', { method: 'POST' });
+            if (!res.ok) throw new Error(window.i18n.t('admin.near_duplicates.error_start'));
+            await res.json();
+
+            await this.pollNearDuplicateBackfill();
+        } catch (e) {
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(e.message)}</div>`;
+            }
+            app.showNotification(e.message, 'error');
+            btn.disabled = false;
+            btn.textContent = this._nearDuplicateBackfillOriginalText || originalText;
+        }
+    }
+
+    async pollNearDuplicateBackfill() {
+        if (this.isNearDuplicateHashing) return;
+        this.isNearDuplicateHashing = true;
+
+        const btn = document.getElementById('near-duplicates-backfill-btn');
+        const statusDiv = document.getElementById('near-duplicates-backfill-status');
+        const resultDiv = document.getElementById('near-duplicates-backfill-result');
+        const originalText = this._nearDuplicateBackfillOriginalText || btn?.textContent;
+        if (btn && !this._nearDuplicateBackfillOriginalText) {
+            this._nearDuplicateBackfillOriginalText = originalText;
+        }
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = window.i18n.t('common.processing');
+        }
+        if (statusDiv) statusDiv.style.display = 'block';
+
+        const renderProgress = (backfill) => {
+            if (!resultDiv) return;
+            if (!backfill.total) {
+                resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(window.i18n.t('common.processing'))}</strong></div>`;
+                return;
+            }
+            const fileInfo = backfill.current_file ? ` (${backfill.current_file})` : '';
+            const text = window.i18n.t('admin.near_duplicates.progress', {
+                current: backfill.processed || 0,
+                total: backfill.total,
+                file: fileInfo,
+                hashed: backfill.hashed || 0,
+                failed: backfill.failed || 0,
+            });
+            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(text)}</strong></div>`;
+        };
+
+        try {
+            let data;
+            while (true) {
+                data = await app.apiCall('/api/admin/near-duplicates');
+                const backfill = data.backfill || {};
+                if (backfill.error) {
+                    throw new Error(backfill.error);
+                }
+                if (!backfill.running) break;
+                renderProgress(backfill);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            const backfill = data.backfill || {};
+            const msg = backfill.total
+                ? window.i18n.t('admin.near_duplicates.done', {
+                    hashed: backfill.hashed || 0,
+                    failed: backfill.failed || 0,
+                })
+                : window.i18n.t('admin.near_duplicates.done_nothing');
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="bg-success p-3 tag-text"><strong>${escapeHtml(msg)}</strong></div>`;
+            }
+            app.showNotification(msg, 'success');
+        } catch (error) {
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(error.message)}</div>`;
+            }
+            app.showNotification(error.message, 'error');
+        } finally {
+            this.isNearDuplicateHashing = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = this._nearDuplicateBackfillOriginalText || originalText;
+            }
         }
     }
 
