@@ -10,6 +10,7 @@ class UploadQueueGrid {
         this.editor = null;
         this._nearDuplicateCounts = new Map();
         this._nearDuplicateNotified = new Set();
+        this.filterNearDuplicatesOnly = false;
 
         this.init();
     }
@@ -29,6 +30,7 @@ class UploadQueueGrid {
                         <button type="button" id="upload-deselect-all-btn" class="btn px-3 py-1 cursor-pointer text-xs">
                             ${window.i18n.t('gallery.deselect_all')}
                         </button>
+                        <button type="button" id="upload-filter-near-duplicates-btn" class="btn px-3 py-1 cursor-pointer text-xs hidden" aria-pressed="false"></button>
                     </div>
                 </div>
 
@@ -56,7 +58,11 @@ class UploadQueueGrid {
             onSelectItem: (itemId) => this.focusItem(itemId),
             onItemsDeleted: (deletedIds) => {
                 (deletedIds || []).forEach(id => this.selectedIds.delete(id));
-                const remaining = this.session.getAllItems();
+                let remaining = this.getVisibleItems();
+                if (this.filterNearDuplicatesOnly && remaining.length === 0) {
+                    this.filterNearDuplicatesOnly = false;
+                    remaining = this.getVisibleItems();
+                }
                 if (this.selectedIds.size === 0 && remaining.length > 0) {
                     this.selectedIds.add(remaining[0].item_id);
                     this.activeItemId = remaining[0].item_id;
@@ -107,7 +113,11 @@ class UploadQueueGrid {
         this.session.on('itemRemoved', (itemId) => {
             this.selectedIds.delete(itemId);
             if (this.activeItemId === itemId) {
-                const remaining = this.session.getAllItems();
+                let remaining = this.getVisibleItems();
+                if (this.filterNearDuplicatesOnly && remaining.length === 0) {
+                    this.filterNearDuplicatesOnly = false;
+                    remaining = this.getVisibleItems();
+                }
                 if (this.selectedIds.size > 0) {
                     this.activeItemId = Array.from(this.selectedIds)[0];
                 } else if (remaining.length > 0) {
@@ -130,11 +140,62 @@ class UploadQueueGrid {
             this.lastSelectedId = null;
             this._nearDuplicateCounts = new Map();
             this._nearDuplicateNotified = new Set();
+            this.filterNearDuplicatesOnly = false;
             this.renderGrid();
             this.syncEditor();
         });
 
         this.session.on('nearDuplicatesChanged', () => this.handleNearDuplicatesChanged());
+    }
+
+    getVisibleItems() {
+        const items = this.session.getAllItems();
+        if (!this.filterNearDuplicatesOnly) return items;
+        return items.filter(it => this.session.getNearDuplicateCount && this.session.getNearDuplicateCount(it.item_id) > 0);
+    }
+
+    updateNearDuplicateFilterButton() {
+        const btn = this.container.querySelector('#upload-filter-near-duplicates-btn');
+        if (!btn) return;
+        const ndCount = this._nearDuplicateCounts.size;
+        if (ndCount === 0) {
+            this.filterNearDuplicatesOnly = false;
+            btn.classList.add('hidden');
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn');
+            btn.setAttribute('aria-pressed', 'false');
+            return;
+        }
+        btn.classList.remove('hidden');
+        btn.textContent = window.i18n.t('upload.near_duplicates.filter_only', { count: ndCount });
+        btn.classList.toggle('btn-primary', this.filterNearDuplicatesOnly);
+        btn.classList.toggle('btn', !this.filterNearDuplicatesOnly);
+        btn.setAttribute('aria-pressed', this.filterNearDuplicatesOnly ? 'true' : 'false');
+    }
+
+    toggleNearDuplicateFilter() {
+        if (this._nearDuplicateCounts.size === 0) return;
+        this.filterNearDuplicatesOnly = !this.filterNearDuplicatesOnly;
+        this.updateNearDuplicateFilterButton();
+        this.pruneSelectionToVisible();
+        this.renderGrid();
+        this.syncEditor();
+    }
+
+    pruneSelectionToVisible() {
+        const visible = this.getVisibleItems();
+        const visibleIds = new Set(visible.map(it => it.item_id));
+        Array.from(this.selectedIds).forEach(id => {
+            if (!visibleIds.has(id)) this.selectedIds.delete(id);
+        });
+        if (this.selectedIds.size === 0 && visible.length > 0) {
+            this.selectedIds.add(visible[0].item_id);
+            this.activeItemId = visible[0].item_id;
+            this.lastSelectedId = visible[0].item_id;
+        } else if (this.activeItemId && !visibleIds.has(this.activeItemId)) {
+            this.activeItemId = this.selectedIds.size > 0 ? Array.from(this.selectedIds)[0] : null;
+            this.lastSelectedId = this.activeItemId;
+        }
     }
 
     handleNearDuplicatesChanged() {
@@ -145,19 +206,40 @@ class UploadQueueGrid {
         });
         this._nearDuplicateCounts = current;
 
-        // Only repaint cards whose badge changed
         const changedIds = new Set();
-        current.forEach((count, id) => { if (previous.get(id) !== count) changedIds.add(id); });
-        previous.forEach((count, id) => { if (!current.has(id)) changedIds.add(id); });
-        changedIds.forEach(id => {
-            const item = this.session.getItem(id);
-            if (item) this.renderThumbnail(item);
+        let membershipChanged = false;
+        current.forEach((count, id) => {
+            if (!previous.has(id)) membershipChanged = true;
+            if (previous.get(id) !== count) changedIds.add(id);
+        });
+        previous.forEach((count, id) => {
+            if (!current.has(id)) {
+                membershipChanged = true;
+                changedIds.add(id);
+            }
         });
 
+        const wasFiltering = this.filterNearDuplicatesOnly;
+        if (current.size === 0 && this.filterNearDuplicatesOnly) {
+            this.filterNearDuplicatesOnly = false;
+        }
+        this.updateNearDuplicateFilterButton();
 
-        // Refresh the open editor's panel in place
-        if (this.editor && changedIds.size > 0 && typeof this.editor.refreshNearDuplicates === 'function') {
-            this.editor.refreshNearDuplicates();
+        if (wasFiltering && (membershipChanged || !this.filterNearDuplicatesOnly)) {
+            this.pruneSelectionToVisible();
+            this.renderGrid();
+            this.syncEditor();
+        } else {
+            // Only repaint cards whose badge changed
+            changedIds.forEach(id => {
+                const item = this.session.getItem(id);
+                if (item) this.renderThumbnail(item);
+            });
+
+            // Refresh the open editor's panel in place
+            if (this.editor && changedIds.size > 0 && typeof this.editor.refreshNearDuplicates === 'function') {
+                this.editor.refreshNearDuplicates();
+            }
         }
 
         const fresh = [...current.keys()].filter(id => !this._nearDuplicateNotified.has(id));
@@ -175,6 +257,11 @@ class UploadQueueGrid {
     /* Select a single queued item */
     focusItem(itemId) {
         if (!this.session.getItem(itemId)) return;
+        if (this.filterNearDuplicatesOnly && !(this.session.getNearDuplicateCount && this.session.getNearDuplicateCount(itemId) > 0)) {
+            this.filterNearDuplicatesOnly = false;
+            this.updateNearDuplicateFilterButton();
+            this.renderGrid();
+        }
         this.selectedIds.clear();
         this.selectedIds.add(itemId);
         this.activeItemId = itemId;
@@ -191,7 +278,9 @@ class UploadQueueGrid {
         const grid = this.container.querySelector('#upload-thumbnail-grid');
         if (!grid) return;
 
-        const items = this.session.getAllItems();
+        this.updateNearDuplicateFilterButton();
+
+        const items = this.getVisibleItems();
         if (items.length === 0) {
             grid.innerHTML = '';
             this.updateToolbarCounts();
@@ -442,10 +531,11 @@ class UploadQueueGrid {
     setupToolbarEvents() {
         const selectAllBtn = this.container.querySelector('#upload-select-all-btn');
         const deselectAllBtn = this.container.querySelector('#upload-deselect-all-btn');
+        const filterNdBtn = this.container.querySelector('#upload-filter-near-duplicates-btn');
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => {
-                const items = this.session.getAllItems();
+                const items = this.getVisibleItems();
                 items.forEach(it => this.selectedIds.add(it.item_id));
                 if (items.length > 0) {
                     this.activeItemId = items[0].item_id;
@@ -464,6 +554,10 @@ class UploadQueueGrid {
                 this.updateSelectionVisuals();
                 this.syncEditor();
             });
+        }
+
+        if (filterNdBtn) {
+            filterNdBtn.addEventListener('click', () => this.toggleNearDuplicateFilter());
         }
     }
 
