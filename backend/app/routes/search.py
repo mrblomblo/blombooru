@@ -115,11 +115,18 @@ async def search_media(
         query = apply_custom_filters_or(query, custom_filter_list, db)
 
     # Apply UI sort/order unless the search query specifies its own ordering
+    # (or uses positive similar_to without an explicit UI sort override).
+    has_positive_similar_to = any(
+        not item['negated']
+        for key in ('similar_to', 'similar_to_strict')
+        for item in parsed['meta'].get(key, [])
+    )
     if 'order' not in parsed['meta'] and 'sort' not in parsed['meta']:
-        sort_by = sort if sort else settings.get_default_sort()
-        sort_order = order if order else settings.get_default_order()
-        query = query.order_by(None)
-        query = apply_media_sort(query, sort_by, sort_order, db, seed)
+        if not (has_positive_similar_to and not sort):
+            sort_by = sort if sort else settings.get_default_sort()
+            sort_order = order if order else settings.get_default_order()
+            query = query.order_by(None)
+            query = apply_media_sort(query, sort_by, sort_order, db, seed)
     
     # Pagination
     offset = (page - 1) * limit
@@ -132,7 +139,7 @@ async def search_media(
     if total == 0 and sidebar_filter_applied:
         base_parsed = parse_search_query(q)
         unfiltered_query = db.query(func.count(Media.id))
-        unfiltered_query = apply_search_criteria(unfiltered_query, base_parsed, db)
+        unfiltered_query = apply_search_criteria(unfiltered_query, base_parsed, db).order_by(None)
         unfiltered_total = unfiltered_query.scalar()
     else:
         unfiltered_total = total

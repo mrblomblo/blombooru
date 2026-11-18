@@ -16,7 +16,7 @@ COMBINABLE_KEYS: Set[str] = {
     'rating', 'tagcount', 'gentags', 'arttags', 'chartags', 'copytags', 'metatags',
     'id', 'width', 'height', 'duration', 'filesize', 'date', 'age', 'filetype',
     'source', 'md5', 'album', 'pool', 'album_tree', 'pool_tree', 'parent', 'child',
-    'custom_date', 'custom_age', 'filename', 'name'
+    'custom_date', 'custom_age', 'filename', 'name', 'similar_to', 'similar_to_strict'
 }
 
 SINGULAR_KEYS: Set[str] = {'order', 'sort'}
@@ -304,6 +304,21 @@ def fold_condition_items(items: List[str], key: Optional[str] = None) -> List[st
     - Subsumption clearing: swallowed numbers/ranges (e.g. 5,6,<=15 -> <=15) are cleared.
     - Exact values placed first in order of appearance, followed by operator expressions.
     """
+    if key and key.lower() in ('similar_to', 'similar_to_strict'):
+        tokens: List[str] = []
+        seen_tokens: Set[str] = set()
+        for item in items:
+            if not item:
+                continue
+            for part in re.split(r'[,\s\[\]]+', item.strip('"')):
+                if not part:
+                    continue
+                normalized = part.lower() if re.match(r'^[0-9a-fA-F]{64}$', part) else part
+                if normalized not in seen_tokens:
+                    seen_tokens.add(normalized)
+                    tokens.append(normalized)
+        return tokens
+
     raw_list: List[str] = []
     for item in items:
         if not item:
@@ -833,7 +848,13 @@ def build_filename_condition(column, value_str: str):
         return conditions[0]
     return or_(*conditions)
 
-def apply_sort_ordering(query: Query, order_val: str, db: Session, parsed_meta: Dict[str, Any]) -> Query:
+def apply_sort_ordering(
+    query: Query,
+    order_val: str,
+    db: Session,
+    parsed_meta: Dict[str, Any],
+    similarity_ranked_ids: Optional[List[int]] = None,
+) -> Query:
     """
     Applies comprehensive sorting with full _asc and _desc support for all fields.
     """
@@ -851,7 +872,7 @@ def apply_sort_ordering(query: Query, order_val: str, db: Session, parsed_meta: 
         base_sort = 'random'
     else:
         # Default direction per base_sort
-        if base_sort in ('filename', 'name', 'md5', 'hash', 'rating'):
+        if base_sort in ('filename', 'name', 'md5', 'hash', 'rating', 'similarity', 'similar'):
             ascending = True
         else:
             ascending = False
@@ -958,15 +979,27 @@ def apply_sort_ordering(query: Query, order_val: str, db: Session, parsed_meta: 
                     except (ValueError, TypeError):
                         pass
 
+    if base_sort in ('similarity', 'similar') and similarity_ranked_ids:
+        ordered_ids = similarity_ranked_ids if ascending else list(reversed(similarity_ranked_ids))
+        capped = ordered_ids[:10000]
+        whens = {mid: i for i, mid in enumerate(capped)}
+        return query.order_by(
+            case(whens, value=Media.id, else_=len(capped)),
+            Media.id.asc() if ascending else Media.id.desc(),
+        )
+
     # Fallback to default
     col = Media.uploaded_at
     return query.order_by(col.desc(), Media.id.desc())
 
-def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) -> List[Any]:
+def _build_search_conditions_and_similarity(
+    parsed_query: Dict[str, Any], db: Session
+) -> Tuple[List[Any], List[int]]:
     """
     Builds a list of SQLAlchemy filter conditions for the given parsed search query.
     """
     conditions = []
+    similarity_ranked_ids: List[int] = []
     tags = parsed_query.get('tags', {})
 
     include_names = [name.lower() for name in tags.get('include', [])]
@@ -978,7 +1011,7 @@ def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) 
         # If any included tag is missing, result is empty (AND logic)
         for name in include_names:
             if name not in found_map:
-                return [literal(False)]
+                return [literal(False)], []
             
         # Apply filters for found tags
         for tag in found_tags:
@@ -1260,13 +1293,43 @@ def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) 
                     else:
                         conditions.append(cond)
 
+    if 'similar_to' in meta or 'similar_to_strict' in meta:
+        from ..services.near_duplicates import get_max_distance, similar_to_condition
+        strict_pos_values = [item['value'] for item in meta.get('similar_to_strict', []) if not item['negated']]
+        pos_values = [item['value'] for item in meta.get('similar_to', []) if not item['negated']]
+        neg_values = [
+            item['value']
+            for key in ('similar_to', 'similar_to_strict')
+            for item in meta.get(key, [])
+            if item['negated']
+        ]
+        if strict_pos_values:
+            cond, strict_distances = similar_to_condition(
+                db, strict_pos_values, negated=False, max_distance=get_max_distance()
+            )
+            conditions.append(cond)
+            similarity_ranked_ids = list(strict_distances.keys())
+        if pos_values:
+            cond, distances = similar_to_condition(db, pos_values, negated=False)
+            conditions.append(cond)
+            if not similarity_ranked_ids:
+                similarity_ranked_ids = list(distances.keys())
+        if neg_values:
+            cond, _ = similar_to_condition(db, neg_values, negated=True)
+            conditions.append(cond)
+
+    return conditions, similarity_ranked_ids
+
+def build_search_criteria_conditions(parsed_query: Dict[str, Any], db: Session) -> List[Any]:
+    """Builds a list of SQLAlchemy filter conditions for the given parsed search query."""
+    conditions, _ = _build_search_conditions_and_similarity(parsed_query, db)
     return conditions
 
 def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Session) -> Query:
     """
     Applies the parsed search criteria to a SQLAlchemy query.
     """
-    conditions = build_search_criteria_conditions(parsed_query, db)
+    conditions, similarity_ranked_ids = _build_search_conditions_and_similarity(parsed_query, db)
     for cond in conditions:
         query = query.filter(cond)
 
@@ -1278,7 +1341,9 @@ def apply_search_criteria(query: Query, parsed_query: Dict[str, Any], db: Sessio
         order_val = meta['sort'][-1]['value']
         
     if order_val:
-        query = apply_sort_ordering(query, order_val, db, meta)
+        query = apply_sort_ordering(query, order_val, db, meta, similarity_ranked_ids=similarity_ranked_ids)
+    elif similarity_ranked_ids:
+        query = apply_sort_ordering(query, 'similarity', db, meta, similarity_ranked_ids=similarity_ranked_ids)
 
     return query
 

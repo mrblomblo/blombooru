@@ -555,7 +555,7 @@ async def search_related_tags(
 
     # Build media subquery using the full search pipeline
     media_query = db.query(Media.id)
-    media_query = apply_search_criteria(media_query, parsed, db)
+    media_query = apply_search_criteria(media_query, parsed, db).order_by(None)
 
     # Apply top-level rating filter if not already specified in query string
     if rating and 'rating' not in parsed['meta']:

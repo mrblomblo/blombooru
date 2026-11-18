@@ -1907,7 +1907,14 @@ async def get_adjacent_media(
             if custom_filter:
                 media_query = apply_custom_filters_or(media_query, custom_filter, db)
 
-            if not q or ('order' not in parsed['meta'] and 'sort' not in parsed['meta']):
+            has_positive_similar_to = bool(
+                q and any(
+                    not item['negated']
+                    for key in ('similar_to', 'similar_to_strict')
+                    for item in parsed['meta'].get(key, [])
+                )
+            )
+            if (not q or ('order' not in parsed['meta'] and 'sort' not in parsed['meta'])) and not (has_positive_similar_to and not sort):
                 sort_by = sort
                 if not sort_by:
                     has_manual_media = db.query(blombooru_album_media.c.media_id).filter(
@@ -1960,7 +1967,14 @@ async def get_adjacent_media(
             if custom_filter:
                 media_query = apply_custom_filters_or(media_query, custom_filter, db)
 
-            if 'order' not in parsed['meta'] and 'sort' not in parsed['meta']:
+            has_positive_similar_to = bool(
+                q and any(
+                    not item['negated']
+                    for key in ('similar_to', 'similar_to_strict')
+                    for item in parsed['meta'].get(key, [])
+                )
+            )
+            if 'order' not in parsed['meta'] and 'sort' not in parsed['meta'] and not (has_positive_similar_to and not sort):
                 sort_by = sort if sort else settings.get_default_sort()
                 sort_order = order if order else settings.get_default_order()
                 media_query = media_query.order_by(None)
