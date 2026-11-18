@@ -31,8 +31,10 @@ from ..utils.album_utils import (recalculate_album_metrics,
                                  update_album_last_modified)
 from ..utils.cache import (invalidate_album_cache, invalidate_media_cache,
                            invalidate_media_item_cache, invalidate_tag_cache)
-from ..utils.media_relations import (apply_pending_relations,
-                                     normalize_child_ids, relation_problem)
+from ..utils.media_relations import (apply_pending_queue_relations,
+                                     apply_pending_relations,
+                                     normalize_child_ids,
+                                     staged_relation_problem)
 from ..utils.logger import logger
 from ..utils.media_helpers import extract_media_metadata, get_unique_filename
 from ..utils.media_processor import calculate_file_hash, process_media_file
@@ -702,7 +704,8 @@ async def analyze_staged_item(
     async with _get_session_lock(session_id):
         session_dir = _get_session_dir(session_id)
         meta = _load_session_meta(session_dir)
-        item = meta.get("items", {}).get(item_id)
+        items = meta.get("items", {})
+        item = items.get(item_id)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
@@ -768,7 +771,8 @@ async def update_staged_item(
     async with _get_session_lock(session_id):
         session_dir = _get_session_dir(session_id)
         meta = _load_session_meta(session_dir)
-        item = meta.get("items", {}).get(item_id)
+        items = meta.get("items", {})
+        item = items.get(item_id)
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
@@ -793,16 +797,18 @@ async def update_staged_item(
                 item["suggested_album_path"] = update.suggested_album_path
                 item["suggested_album_segments"] = resolve_album_path(db, update.suggested_album_path)
 
-        if "parent_media_id" in fields_set or "child_media_ids" in fields_set:
+        if "parent_media_id" in fields_set or "child_media_ids" in fields_set or "parent_item_id" in fields_set:
             new_parent = update.parent_media_id if "parent_media_id" in fields_set else item.get("parent_media_id")
+            new_parent_item = update.parent_item_id if "parent_item_id" in fields_set else item.get("parent_item_id")
             new_children = (
                 normalize_child_ids(update.child_media_ids) if "child_media_ids" in fields_set
                 else item.get("child_media_ids", [])
             )
-            problem = relation_problem(db, new_parent, new_children)
+            problem = staged_relation_problem(db, items, item_id, new_parent, new_children, new_parent_item)
             if problem:
                 raise HTTPException(status_code=problem[0], detail=problem[1])
             item["parent_media_id"] = new_parent or None
+            item["parent_item_id"] = new_parent_item or None
             item["child_media_ids"] = new_children
 
         if "custom_date" in fields_set:
@@ -1086,6 +1092,9 @@ async def delete_staged_item(
         (session_dir / "thumbs" / f"{item_id}{THUMBNAIL_EXT}").unlink(missing_ok=True)
 
         del items[item_id]
+        for other in items.values():
+            if other.get("parent_item_id") == item_id:
+                other["parent_item_id"] = None
         if len(items) == 0:
             shutil.rmtree(session_dir, ignore_errors=True)
             _session_locks.pop(Path(session_id).name, None)
@@ -1373,6 +1382,7 @@ async def commit_upload_session(
         all_tag_ids_to_update: set[int] = set()
         all_affected_album_ids: set[int] = set()
         all_affected_relation_ids: set[int] = set()
+        created_media_by_item_id: Dict[str, Media] = {}
 
         try:
             # Pre-scan for duplicate items (both pre-marked and hash collision against DB)
@@ -1574,6 +1584,8 @@ async def commit_upload_session(
                     ))
                     db.flush()
 
+                created_media_by_item_id[item_id] = media
+
                 total_created += 1
                 results.append(UploadSessionCommitItemResult(
                     item_id=item_id,
@@ -1581,6 +1593,12 @@ async def commit_upload_session(
                     media_id=media.id,
                     status="created",
                 ))
+
+            # Apply pending queue-to-queue parent/child relations
+            if created_media_by_item_id:
+                all_affected_relation_ids.update(
+                    apply_pending_queue_relations(db, created_media_by_item_id, items)
+                )
 
             # Commit transaction
             db.commit()

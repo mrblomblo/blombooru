@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,13 @@ from .logger import logger
 def normalize_child_ids(child_media_ids: Optional[Iterable[int]]) -> List[int]:
     """Drop falsy values and duplicates, keeping the order."""
     return list(dict.fromkeys(int(c) for c in (child_media_ids or []) if c))
+
+def queued_children_of(items: Dict[str, dict], item_id: str) -> List[str]:
+    """Return staged item IDs in the session currently pointing at ``item_id`` as their parent."""
+    return [
+        oid for oid, other in items.items()
+        if oid != item_id and other.get("parent_item_id") == item_id
+    ]
 
 def parent_problem(db: Session, parent_media_id: int) -> Optional[Tuple[int, str]]:
     """Why the new post cannot become a child of ``parent_media_id`` as ``(status, message)``."""
@@ -43,6 +50,34 @@ def relation_problem(
             return problem
     return None
 
+def staged_relation_problem(
+    db: Session,
+    items: Dict[str, dict],
+    item_id: str,
+    parent_media_id: Optional[int],
+    child_media_ids: Optional[Iterable[int]],
+    parent_item_id: Optional[str],
+) -> Optional[Tuple[int, str]]:
+    """Validate pending relations for a staged item, including queue-to-queue links."""
+    if parent_media_id and parent_item_id:
+        return 400, "An upload cannot have two parents"
+
+    children = normalize_child_ids(child_media_ids)
+    queued_children = queued_children_of(items, item_id)
+    if (parent_media_id or parent_item_id) and (children or queued_children):
+        return 400, "An upload cannot be both a child and a parent"
+
+    if parent_item_id:
+        if parent_item_id == item_id:
+            return 400, "An upload cannot be its own parent"
+        parent_item = items.get(parent_item_id)
+        if parent_item is None:
+            return 404, "Parent staged item not found"
+        if parent_item.get("parent_media_id") or parent_item.get("parent_item_id"):
+            return 400, "The selected parent is already a child of another item"
+
+    return relation_problem(db, parent_media_id, children)
+
 def apply_pending_relations(
     db: Session,
     new_media: Media,
@@ -71,4 +106,38 @@ def apply_pending_relations(
             affected.add(child.parent_id)  # loses a child
         child.parent_id = new_media.id
         affected.update({new_media.id, child_id})
+    return affected
+
+def apply_pending_queue_relations(
+    db: Session,
+    created_by_item_id: Dict[str, Media],
+    items: Dict[str, dict],
+) -> Set[int]:
+    """Apply pending parent_item_id links between newly created posts from the same session."""
+    affected: Set[int] = set()
+    for item_id, item in items.items():
+        parent_item_id = item.get("parent_item_id")
+        if not parent_item_id:
+            continue
+        child_media = created_by_item_id.get(item_id)
+        parent_media = created_by_item_id.get(parent_item_id)
+        if child_media is None or parent_media is None:
+            logger.warning(
+                f"Skipping queue relation for staged item {item_id} -> {parent_item_id}: target post was not created"
+            )
+            continue
+        if child_media.id == parent_media.id:
+            continue
+        if child_media.parent_id:
+            logger.warning(f"Skipping queue relation for new media {child_media.id}: already has parent {child_media.parent_id}")
+            continue
+        if parent_media.parent_id:
+            logger.warning(f"Skipping queue relation for new media {child_media.id}: parent {parent_media.id} is already a child")
+            continue
+        if db.query(Media.id).filter(Media.parent_id == child_media.id).first() is not None:
+            logger.warning(f"Skipping queue relation for new media {child_media.id}: already has children")
+            continue
+        child_media.parent_id = parent_media.id
+        affected.update({child_media.id, parent_media.id})
+        db.flush()
     return affected
