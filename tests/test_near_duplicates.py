@@ -882,5 +882,85 @@ class TestUploadAsRelated(AsyncBackupTestBase):
         self.assertEqual(self.db.query(Media).filter(Media.parent_id == 1).count(), 2)
         self.assertEqual(result.total_created, 2)
 
+    async def test_queue_to_queue_relation_validation_enforces_two_level_hierarchy(self):
+        from fastapi import HTTPException
+        a = await self._stage("a.png", seed=91)
+        b = await self._stage("b.png", seed=92)
+        c = await self._stage("c.png", seed=93)
+        self._post(1)
+
+        async def rejected(item_id, **fields):
+            with self.assertRaises(HTTPException) as ctx:
+                await self._patch(item_id, **fields)
+            return ctx.exception.status_code
+
+        # Self-parent and missing target are rejected
+        self.assertEqual(await rejected(a["item_id"], parent_item_id=a["item_id"]), 400)
+        self.assertEqual(await rejected(a["item_id"], parent_item_id="missing-id"), 404)
+        # Cannot set both parent_media_id and parent_item_id
+        self.assertEqual(await rejected(a["item_id"], parent_media_id=1, parent_item_id=b["item_id"]), 400)
+
+        # Make b a child of a
+        updated_b = await self._patch(b["item_id"], parent_item_id=a["item_id"])
+        self.assertEqual(updated_b["parent_item_id"], a["item_id"])
+
+        # c cannot make b its parent because b is already going to become a child
+        self.assertEqual(await rejected(c["item_id"], parent_item_id=b["item_id"]), 400)
+        # a cannot become a child of c (or existing post 1) because a already has queued child b
+        self.assertEqual(await rejected(a["item_id"], parent_item_id=c["item_id"]), 400)
+        self.assertEqual(await rejected(a["item_id"], parent_media_id=1), 400)
+        # b cannot also become parent of existing post 1 while b is a child of a
+        self.assertEqual(await rejected(b["item_id"], child_media_ids=[1]), 400)
+
+        # c CAN become a sibling of b under a, and a CAN also become parent of existing post 1
+        updated_c = await self._patch(c["item_id"], parent_item_id=a["item_id"])
+        self.assertEqual(updated_c["parent_item_id"], a["item_id"])
+        updated_a = await self._patch(a["item_id"], child_media_ids=[1])
+        self.assertEqual(updated_a["child_media_ids"], [1])
+
+        # If a is child of existing post 1 instead, another item cannot set a as parent
+        await self._patch(b["item_id"], parent_item_id=None)
+        await self._patch(c["item_id"], parent_item_id=None)
+        await self._patch(a["item_id"], child_media_ids=[], parent_media_id=1)
+        self.assertEqual(await rejected(b["item_id"], parent_item_id=a["item_id"]), 400)
+
+    async def test_deleting_queued_parent_clears_child_parent_item_id(self):
+        from backend.app.routes.uploads import get_upload_session
+        parent_item = await self._stage("parent.png", seed=94)
+        child_item = await self._stage("child.png", seed=95)
+        await self._patch(child_item["item_id"], parent_item_id=parent_item["item_id"])
+        await delete_staged_item(
+            session_id=self.session_id, item_id=parent_item["item_id"], current_user=self.admin_user
+        )
+        session_data = await get_upload_session(session_id=self.session_id, current_user=self.admin_user)
+        remaining = {it["item_id"]: it for it in session_data["items"]}
+        self.assertIsNone(remaining[child_item["item_id"]].get("parent_item_id"))
+
+    async def test_commit_applies_queue_to_queue_relations_regardless_of_order(self):
+        # Stage child BEFORE parent to verify two-pass commit order independence
+        child_a = await self._stage("child_a.png", seed=96)
+        parent = await self._stage("parent.png", seed=97)
+        child_b = await self._stage("child_b.png", seed=98)
+        existing = self._post(1)
+
+        await self._patch(child_a["item_id"], parent_item_id=parent["item_id"])
+        await self._patch(child_b["item_id"], parent_item_id=parent["item_id"])
+        await self._patch(parent["item_id"], child_media_ids=[existing.id])
+
+        result = await self._commit()
+        self.assertEqual((result.total_created, result.total_failed), (3, 0))
+        by_item = {r.item_id: r.media_id for r in result.results}
+
+        self.db.expire_all()
+        parent_media = self.db.get(Media, by_item[parent["item_id"]])
+        child_a_media = self.db.get(Media, by_item[child_a["item_id"]])
+        child_b_media = self.db.get(Media, by_item[child_b["item_id"]])
+        existing_media = self.db.get(Media, existing.id)
+
+        self.assertIsNone(parent_media.parent_id)
+        self.assertEqual(child_a_media.parent_id, parent_media.id)
+        self.assertEqual(child_b_media.parent_id, parent_media.id)
+        self.assertEqual(existing_media.parent_id, parent_media.id)
+
 if __name__ == "__main__":
     unittest.main()
