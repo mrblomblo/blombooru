@@ -1,7 +1,7 @@
 ## Upload Sessions
 
 > [!NOTE]
-> Last updated: `November 18, 2026`
+> Last updated: `November 19, 2026`
 
 **Base path:** `/api/uploads`
 
@@ -233,16 +233,17 @@ Content-Type: application/json
 
 **Response:** Updated `UploadSessionItem`.
 
-#### Pending relation to existing posts
+#### Pending relations
 
-An upload can be related to posts that are already in the library. The relation is only stored on the staged item and applied when the session is committed.
+An upload can be related to posts already in the library or to another staged item in the same upload session. The relation is stored on the staged item and applied when the session is committed.
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `parent_media_id` | integer \| null | The new post becomes a **child** of this existing post. |
+| `parent_item_id` | string \| null | The new post becomes a **child** of another staged item in the same session. |
 | `child_media_ids` | integer[] | The new post becomes the **parent** of these existing posts (a post that already has another parent is moved). |
 
-Send an explicit `null` / `[]` to clear. The two are mutually exclusive, and the usual two-level rules apply: the parent must not itself be a child, and each prospective child must not have children of its own (`400`; `404` if a post does not exist). The same checks run again at commit time, and a relation that is no longer valid by then is skipped (logged) without failing the upload. The `existing` entries returned by `GET .../near-duplicates` include `parent_id` and `children_count` so a client can tell which relations are possible.
+Send an explicit `null` / `[]` to clear. Having a parent (`parent_media_id` or `parent_item_id`) and having children (`child_media_ids` or another staged item pointing at this item via `parent_item_id`) are mutually exclusive, and the usual two-level rules apply: the parent must not itself be a child, and each prospective child must not have children of its own (`400`; `404` if a target does not exist). Deleting a staged parent clears `parent_item_id` on its staged children. The same checks run again at commit time, and a relation that is no longer valid by then is skipped (logged) without failing the upload. The `existing` entries returned by `GET .../near-duplicates` include `parent_id` and `children_count` so a client can tell which relations are possible.
 
 ---
 
