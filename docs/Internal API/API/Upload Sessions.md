@@ -1,7 +1,7 @@
 ## Upload Sessions
 
 > [!NOTE]
-> Last updated: `September 8, 2026`
+> Last updated: `November 18, 2026`
 
 **Base path:** `/api/uploads`
 
@@ -49,6 +49,49 @@ GET /api/uploads/sessions/{session_id}
   "items": [ /* UploadSessionItem[] */ ]
 }
 ```
+
+---
+
+### Get near-duplicates in a session
+
+Requires `require_admin_mode`. Reports perceptually similar media for every staged item. Near-duplicates are never rejected or removed; this is purely informational. Items without matches are omitted. An item can have any number of matches on both sides, and the `queue` relation is symmetric.
+
+```
+GET /api/uploads/sessions/{session_id}/near-duplicates
+```
+
+**Response:**
+
+```json
+{
+  "enabled": true,
+  "max_distance": 31,
+  "items": {
+    "<item_id>": {
+      "existing": [
+        {
+          "media_id": 12, "filename": "a.jpg", "file_type": "image", "mime_type": "image/jpeg",
+          "file_size": 90000, "width": 800, "height": 533, "duration": null, "rating": "safe",
+          "thumbnail_url": "/api/media/12/thumbnail", "file_url": "/api/media/12/file", "page_url": "/media/12",
+          "parent_id": null, "children_count": 0,
+          "distance": 12, "similarity": 95.3, "confidence": "very_similar"
+        }
+      ],
+      "queue": [
+        {
+          "item_id": "...", "filename": "b.png", "file_type": "image", "mime_type": "image/png",
+          "file_size": 5000000, "width": 3000, "height": 2000, "duration": null,
+          "distance": 4, "similarity": 98.4, "confidence": "identical"
+        }
+      ]
+    }
+  }
+}
+```
+
+`distance` is the Hamming distance between the 256-bit PDQ perceptual hashes (considering both direct and horizontally mirrored orientations); `confidence` is `identical` (<= 8), `very_similar` (<= 20) or `similar`. Staged items also carry their hash as `phash` (64 hex characters, or `null`).
+
+Endpoints that create a post directly (`POST /api/media/`, `POST /api/media/url-import/import`) return the same `existing` entries as a `near_duplicates` array in their response without blocking creation.
 
 ---
 
@@ -190,6 +233,17 @@ Content-Type: application/json
 
 **Response:** Updated `UploadSessionItem`.
 
+#### Pending relation to existing posts
+
+An upload can be related to posts that are already in the library. The relation is only stored on the staged item and applied when the session is committed.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `parent_media_id` | integer \| null | The new post becomes a **child** of this existing post. |
+| `child_media_ids` | integer[] | The new post becomes the **parent** of these existing posts (a post that already has another parent is moved). |
+
+Send an explicit `null` / `[]` to clear. The two are mutually exclusive, and the usual two-level rules apply: the parent must not itself be a child, and each prospective child must not have children of its own (`400`; `404` if a post does not exist). The same checks run again at commit time, and a relation that is no longer valid by then is skipped (logged) without failing the upload. The `existing` entries returned by `GET .../near-duplicates` include `parent_id` and `children_count` so a client can tell which relations are possible.
+
 ---
 
 ### Bulk update staged items
@@ -320,7 +374,7 @@ Requires `require_admin_mode`. Executes an atomic database transaction that fina
 3. Moves staged files to `ORIGINAL_DIR` under unique filenames.
 4. Performs automated transcoding for formats requiring it (e.g. MKV/AVI to MP4, HEIC to WebP).
 5. Generates production thumbnails in `THUMBNAIL_DIR`.
-6. Inserts `Media` records, links tags and albums, and updates tag post counts and album timestamps.
+6. Inserts `Media` records, links tags and albums, applies any pending parent/child relation (see above), and updates tag post counts and album timestamps.
 7. Deletes the temporary session directory and cached thumbnails.
 
 ```
