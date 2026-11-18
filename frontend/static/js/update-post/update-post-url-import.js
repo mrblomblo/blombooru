@@ -1,6 +1,19 @@
 class UpdatePostUrlImport extends UpdatePostModalBase {
-    constructor(mediaId, currentMedia) {
+    /**
+     * @param {number} mediaId
+     * @param {object} currentMedia
+     * @param {object} [options]
+     * @param {string} [options.title]
+     * @param {object} [options.staged]
+     * @param {Function} [options.onApplied]
+     */
+    constructor(mediaId, currentMedia, options = {}) {
         super(mediaId, currentMedia);
+        this.options = options;
+        this._staged = options.staged || null;
+        this._stagedBase = null;
+        this._albumIds = new Set();
+        this._albumPath = null;
 
         this._fetchedPost = null;
         this._isFetching = false;
@@ -21,7 +34,7 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
             <div class="surface w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-4xl sm:mx-4 flex flex-col border-t sm:border shadow-2xl safe-area-bottom">
                 <!-- Header -->
                 <div class="flex items-center p-4 border-b border-color flex-shrink-0">
-                    <h2 class="text-base sm:text-lg font-bold truncate">${window.i18n.t('modal.update_post.from_url')}</h2>
+                    <h2 class="text-base sm:text-lg font-bold truncate">${escapeHtml(this.options.title || window.i18n.t('modal.update_post.from_url'))}</h2>
                 </div>
 
                 <!-- Body -->
@@ -31,7 +44,7 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                         <input id="upm-url-input" type="url"
                             class="flex-1 bg px-3 py-2 border text-xs focus:outline-none focus:border-primary hover:border-primary transition-colors"
                             placeholder="${window.i18n.t('common.url_placeholder')}"
-                            value="${escapeHtml(this.currentMedia?.source || '')}">
+                            value="${escapeHtml((this._staged ? this._staged.item.source : this.currentMedia?.source) || '')}">
                         <button id="upm-url-fetch" class="btn-primary whitespace-nowrap cursor-pointer">
                             ${window.i18n.t('admin.media_management.url_import.fetch')}
                         </button>
@@ -82,6 +95,77 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
         q('#upm-url-apply').addEventListener('click', () => this._applyFromUrl());
 
         this._registerEscapeHandler(() => this._onBack());
+
+        if (this._staged) {
+            const item = this._staged.item;
+            this._albumIds = new Set(item.album_ids || []);
+            this._albumPath = (!item.folder_album_removed && item.suggested_album_path) || null;
+            this._stagedBase = this._buildStagedPost();
+            this._fetchedPost = this._stagedBase;
+            this._renderPreview(this._fetchedPost);
+        }
+    }
+
+    _stagedUrl(kind) {
+        const { sessionId, item } = this._staged;
+        return `/api/uploads/sessions/${encodeURIComponent(sessionId)}/items/${encodeURIComponent(item.item_id)}/${kind}`;
+    }
+
+    _buildStagedPost() {
+        const item = this._staged.item;
+        return {
+            is_booru_post: true,
+            tags: (item.tags || []).map(t => ({ ...t })),
+            rating: item.rating || 'safe',
+            source: item.source || null,
+            description: item.description || '',
+            width: item.width,
+            height: item.height,
+            file_size: item.file_size,
+            filename: item.filename,
+            uploaded_at: item.custom_date || null,
+            is_video: item.file_type === 'video',
+            file_url: null,
+        };
+    }
+
+    _mergeFetchedIntoStaged(fetched) {
+        const merged = { ...this._stagedBase };
+        if (fetched.is_booru_post) {
+            const byName = new Map();
+            [...(merged.tags || []), ...(fetched.tags || [])].forEach(t => byName.set(t.name.toLowerCase(), { ...t }));
+            merged.tags = [...byName.values()];
+            if (fetched.rating) merged.rating = fetched.rating;
+            if (fetched.source) merged.source = fetched.source;
+            if (fetched.description) merged.description = fetched.description;
+            if (fetched.uploaded_at) merged.uploaded_at = fetched.uploaded_at;
+        }
+        this._stagedBase = merged;
+        return merged;
+    }
+
+    _hasStagedAlbums() {
+        return this._albumIds.size > 0 || !!this._albumPath;
+    }
+
+    _renderAlbumBadges() {
+        const albums = this._staged.albums || [];
+        const badge = (label, attrs, icon = '') => `
+            <div class="bg px-2 py-0.5 border text-xs flex items-center gap-1.5">
+                ${icon}<span class="font-mono">${escapeHtml(label)}</span>
+                <button type="button" class="upm-remove-album text-danger hover:text-danger transition-colors cursor-pointer p-0.5 flex items-center justify-center" ${attrs}>
+                    ${window.Icons.trash({ size: 12, class: 'transition-colors' })}
+                </button>
+            </div>`;
+        let html = '';
+        this._albumIds.forEach(id => {
+            const album = albums.find(a => a.id == id);
+            if (album) html += badge(album.name, `data-album-id="${id}"`);
+        });
+        if (this._albumPath) {
+            html += badge(this._albumPath, 'data-album-path="1"', `<span class="text-secondary shrink-0">${window.Icons.folder({ size: 12 })}</span>`);
+        }
+        return html;
     }
 
     // ==================== Fetch & preview ====================
@@ -118,7 +202,8 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                 throw new Error(err.detail || res.statusText);
             }
 
-            this._fetchedPost = await res.json();
+            const fetched = await res.json();
+            this._fetchedPost = this._staged ? this._mergeFetchedIntoStaged(fetched) : fetched;
             this._fetchedPost._originalUrl = url;
             this._renderPreview(this._fetchedPost);
             this._setStatus('');
@@ -201,8 +286,10 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
             }
         }
 
-        const proxyUrl = `/api/media/url-import/proxy?url=${encodeURIComponent(post.file_url)}`;
-        const previewImgUrl = post.preview_url ? `/api/media/url-import/proxy?url=${encodeURIComponent(post.preview_url)}` : proxyUrl;
+        const proxyUrl = this._staged ? this._stagedUrl('file') : `/api/media/url-import/proxy?url=${encodeURIComponent(post.file_url)}`;
+        const previewImgUrl = this._staged
+            ? this._stagedUrl('thumbnail')
+            : (post.preview_url ? `/api/media/url-import/proxy?url=${encodeURIComponent(post.preview_url)}` : proxyUrl);
 
         let previewHtml = '';
         if (post.is_video && !post.preview_url) {
@@ -271,6 +358,16 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                     <div id="upm-tags-preview" class="p-2 surface border flex flex-wrap gap-2">
                     </div>
                 </div>
+                ${this._staged && this._hasStagedAlbums() ? `
+                <div class="mb-3" id="upm-albums-block">
+                    <div class="text-xs font-bold mb-1">${window.i18n.t('common.albums')}</div>
+                    <div id="upm-albums" class="flex flex-wrap gap-1.5">${this._renderAlbumBadges()}</div>
+                </div>` : ''}
+                ${this._staged && post.description ? `
+                <div class="mb-3">
+                    <div class="text-xs font-bold mb-1">${window.i18n.t('common.description')}</div>
+                    <div class="bg px-2 py-1 border text-xs whitespace-pre-wrap break-words upm-description">${escapeHtml(post.description)}</div>
+                </div>` : ''}
             `;
 
             const tagsText = this._getTagsText(post.tags || []);
@@ -320,14 +417,18 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
                         </div>
                         ` : ''}
                         <div class="grid grid-cols-1 ${post.is_booru_post ? 'sm:grid-cols-2' : ''} gap-2">
-                            ${this._checkboxRow('upm-upd-source', window.i18n.t('media.info.source_url'), true)}
-                            ${post.is_booru_post ? this._checkboxRow('upm-upd-desc', window.i18n.t('common.description'), false) : ''}
+                            ${this._checkboxRow('upm-upd-source', window.i18n.t('media.info.source_url'), this._staged ? !!post.source : true)}
+                            ${post.is_booru_post ? this._checkboxRow('upm-upd-desc', window.i18n.t('common.description'), this._staged ? !!post.description : false) : ''}
                         </div>
                         <div class="grid grid-cols-1 ${post.uploaded_at ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2">
                             ${this._checkboxRow('upm-upd-file', window.i18n.t('modal.update_post.update_file'), autoCheckFile)}
                             ${this._checkboxRow('upm-upd-filename', window.i18n.t('media.info.filename'), false)}
-                            ${post.uploaded_at ? this._checkboxRow('upm-upd-custom-date', window.i18n.t('media.info.custom_date'), true) : ''}
+                            ${post.uploaded_at ? this._checkboxRow('upm-upd-custom-date', window.i18n.t('media.info.custom_date'), !this._staged) : ''}
                         </div>
+                        ${this._staged && this._hasStagedAlbums() ? `
+                        <div class="grid grid-cols-1 gap-2">
+                            ${this._checkboxRow('upm-upd-albums', window.i18n.t('common.albums'), true)}
+                        </div>` : ''}
                     </div>
                 </div>
 
@@ -414,10 +515,35 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
             }
         }
 
+        if (this._staged) {
+            const albumsContainer = preview.querySelector('#upm-albums');
+            const bindAlbumRemoval = () => {
+                albumsContainer?.querySelectorAll('.upm-remove-album').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (btn.dataset.albumPath) {
+                            this._albumPath = null;
+                        } else {
+                            this._albumIds.delete(Number(btn.dataset.albumId));
+                            this._albumIds.delete(btn.dataset.albumId);
+                        }
+                        albumsContainer.innerHTML = this._renderAlbumBadges();
+                        const chk = preview.querySelector('#upm-upd-albums');
+                        if (!this._hasStagedAlbums()) {
+                            preview.querySelector('#upm-albums-block')?.remove();
+                            chk?.closest('.grid')?.remove();
+                        } else {
+                            bindAlbumRemoval();
+                        }
+                    });
+                });
+            };
+            bindAlbumRemoval();
+        }
+
         const thumb = preview.querySelector('img, video');
-        if (thumb && post.file_url) {
-            const proxyUrl = `/api/media/url-import/proxy?url=${encodeURIComponent(post.file_url)}`;
-            const isVideo = post.is_video || (post.is_booru_post && window.FormatRegistry.isVideo(post.file_url));
+        if (thumb && (post.file_url || this._staged)) {
+            const proxyUrl = this._staged ? this._stagedUrl('file') : `/api/media/url-import/proxy?url=${encodeURIComponent(post.file_url)}`;
+            const isVideo = post.is_video || (post.is_booru_post && !this._staged && window.FormatRegistry.isVideo(post.file_url));
             thumb.style.cursor = 'pointer';
             thumb.addEventListener('click', () => {
                 this._openFullscreen(proxyUrl, isVideo);
@@ -461,8 +587,9 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
         const updateDesc = q('upm-upd-desc')?.checked ?? false;
         const updateFilename = q('upm-upd-filename')?.checked ?? false;
         const updateCustomDate = q('upm-upd-custom-date')?.checked ?? false;
+        const updateAlbums = this._staged ? (q('upm-upd-albums')?.checked ?? false) : false;
 
-        if (!updateTags && !updateRating && !updateFile && !updateSource && !updateDesc && !updateFilename && !updateCustomDate) {
+        if (!updateTags && !updateRating && !updateFile && !updateSource && !updateDesc && !updateFilename && !updateCustomDate && !updateAlbums) {
             if (typeof app !== 'undefined' && app.showNotification) {
                 app.showNotification(window.i18n.t('modal.update_post.error_no_changes'), 'error');
             }
@@ -523,6 +650,17 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
             custom_date: updateCustomDate ? (post.uploaded_at || null) : null
         };
 
+        if (this._staged) {
+            // The file comes from the upload queue, not from a download
+            body.file_url = null;
+            body.staged_file = updateFile
+                ? { session_id: this._staged.sessionId, item_id: this._staged.item.item_id }
+                : null;
+            body.update_albums = updateAlbums;
+            body.album_ids = updateAlbums ? [...this._albumIds].map(Number) : null;
+            body.album_path = updateAlbums ? this._albumPath : null;
+        }
+
         try {
             const res = await fetch(`/api/media/${this.mediaId}/update-from-source`, {
                 method: 'PATCH',
@@ -549,7 +687,11 @@ class UpdatePostUrlImport extends UpdatePostModalBase {
 
             this.hide();
             document.body.style.overflow = '';
-            setTimeout(() => window.location.reload(), 800);
+            if (typeof this.options.onApplied === 'function') {
+                this.options.onApplied();
+            } else {
+                setTimeout(() => window.location.reload(), 800);
+            }
         } catch (e) {
             if (typeof app !== 'undefined' && app.showNotification) {
                 app.showNotification(window.i18n.t(e.message), 'error');

@@ -1316,3 +1316,8 @@ body.reorder-active-mode #nav-next-btn #nav-next-thumb,
 #bulk-wd-tagger-modal img {
     filter: none !important;
 }
+
+.upm-description {
+    max-height: 6rem;
+    overflow-y: auto;
+}
