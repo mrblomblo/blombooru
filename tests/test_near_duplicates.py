@@ -321,6 +321,97 @@ class TestSimilarToBuildingBlocks(BackupTestBase):
         _, distances = nd.similar_to_condition(self.db, ["1"], max_distance=8)
         self.assertEqual(distances, {2: 2, 3: 7})
 
+    def test_multiple_targets_rank_best_overall_match_highest(self):
+        # Two target hashes differing in 6 bits (e.g. two variants of the same image)
+        t_a = self.BASE ^ 0b111_000_000_000_000_000
+        t_b = self.BASE ^ 0b000_111_000_000_000_000
+        # Post 1 is BASE (distance 3 to both -> total 6).
+        # Post 2 is BASE ^ 0b11 (distance 5 to t_a, 5 to t_b -> total 10).
+        # Add post 10 very close to t_a (dist 1) but far from t_b (dist 7).
+        # Add post 11 matching only t_a within max_distance=5? Wait: with max_distance=5,
+        # post 10 (1 + 6(cap)) = 7 > post 1 (3 + 3) = 6!
+        self.db.add(Media(
+            id=10, filename="p10.png", path="media/original/p10.png", hash="s10",
+            file_type=FileTypeEnum.image, rating=RatingEnum.safe, file_size=1,
+            phash=ph.phash_to_hex(t_a ^ 0b1),  # dist 1 from t_a, dist 7 from t_b
+        ))
+        self.db.commit()
+        nd.near_duplicate_index.invalidate()
+        ranked = [mid for mid, _ in nd.find_similar_media(self.db, [t_a, t_b], max_distance=5)]
+        self.assertEqual(ranked, [1, 10, 2])
+
+    def test_similar_to_search_qualifier_and_sorting(self):
+        from starlette.requests import Request
+        from backend.app.routes.search import search_media
+        from backend.app.utils.search_parser import (
+            apply_search_criteria, canonicalize_query, parse_search_query
+        )
+
+        h_upper = ph.phash_to_hex(self.BASE).upper()
+        self.assertEqual(
+            canonicalize_query(f"similar_to:[{h_upper},1] similar_to:2"),
+            f"similar_to:{h_upper.lower()},1,2",
+        )
+
+        # Positive similar_to ranks ALL posts (closest first, unhashed last) and excludes given post IDs
+        parsed = parse_search_query("similar_to:1")
+        ids = [m.id for m in apply_search_criteria(self.db.query(Media), parsed, self.db).all()]
+        self.assertEqual(ids, [2, 3, 4, 5])
+
+        # Positive similar_to by hash ranks all posts including the exact match first
+        parsed_hash = parse_search_query(f"similar_to:{h_upper}")
+        ids_hash = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_hash, self.db).all()]
+        self.assertEqual(ids_hash, [1, 2, 3, 4, 5])
+
+        # Explicit order: overrides default similarity rank while keeping all posts
+        parsed_asc = parse_search_query("similar_to:1 order:id_desc")
+        ids_desc = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_asc, self.db).all()]
+        self.assertEqual(ids_desc, [5, 4, 3, 2])
+
+        # order:similarity_desc reverses similarity rank of hashed posts, keeping unhashed last
+        parsed_rev = parse_search_query("similar_to:1 order:similarity_desc")
+        ids_rev = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_rev, self.db).all()]
+        self.assertEqual(ids_rev, [4, 3, 2, 5])
+
+        # Negated similar_to excludes only posts within NEAR_DUPLICATE_SETTINGS["max_distance"]
+        settings.save_settings({"near_duplicates": {"enabled": True, "max_distance": 8}})
+        parsed_neg = parse_search_query("-similar_to:1 order:id_asc")
+        ids_neg = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_neg, self.db).all()]
+        self.assertEqual(ids_neg, [1, 4, 5])
+
+        # similar_to_strict returns only near-duplicates within NEAR_DUPLICATE_SETTINGS["max_distance"]
+        self.assertEqual(
+            canonicalize_query(f"similar_to_strict:[{h_upper},1] similar_to_strict:2"),
+            f"similar_to_strict:{h_upper.lower()},1,2",
+        )
+        parsed_strict = parse_search_query("similar_to_strict:1")
+        ids_strict = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_strict, self.db).all()]
+        self.assertEqual(ids_strict, [2, 3])
+        parsed_strict_neg = parse_search_query("-similar_to_strict:1 order:id_asc")
+        ids_strict_neg = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_strict_neg, self.db).all()]
+        self.assertEqual(ids_strict_neg, [1, 4, 5])
+
+        # Tightening max_distance updates what similar_to_strict returns
+        settings.save_settings({"near_duplicates": {"enabled": True, "max_distance": 3}})
+        ids_strict_tight = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_strict, self.db).all()]
+        self.assertEqual(ids_strict_tight, [2])
+        settings.save_settings({"near_duplicates": {"enabled": True, "max_distance": 8}})
+
+        # Multiple targets rank all posts by similarity to all targets combined
+        t_a = self.BASE ^ 0b111_000_000_000_000_000
+        t_b = self.BASE ^ 0b000_111_000_000_000_000
+        parsed_multi = parse_search_query(f"similar_to:{ph.phash_to_hex(t_a)},{ph.phash_to_hex(t_b)}")
+        ids_multi = [m.id for m in apply_search_criteria(self.db.query(Media), parsed_multi, self.db).all()]
+        # Post 1 is 3+3=6 bits away; post 2 is 5+5=10; post 3 is 10+10=20; post 4 is 83+83=166; post 5 is unhashed
+        self.assertEqual(ids_multi, [1, 2, 3, 4, 5])
+
+        # search_media route preserves similarity rank when sort param is omitted
+        req = Request({"type": "http", "method": "GET", "path": "/api/search", "headers": [], "query_string": b""})
+        res = asyncio.run(search_media(request=req, q="similar_to:1", rating="s,q,e", page=1, limit=20, sort=None, order=None, db=self.db))
+        self.assertEqual([item.id for item in res["items"]], [2, 3, 4, 5])
+        res_sorted = asyncio.run(search_media(request=req, q="similar_to:1", rating="s,q,e", page=1, limit=20, sort="id", order="desc", db=self.db))
+        self.assertEqual([item.id for item in res_sorted["items"]], [5, 4, 3, 2])
+
 class TestUploaderNearDuplicates(BackupTestBase):
     def setUp(self):
         super().setUp()
