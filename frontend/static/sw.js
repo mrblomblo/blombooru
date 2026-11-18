@@ -52,6 +52,7 @@ const STATIC_ASSETS = [
     '/static/js/components/tag-preview.js',
     '/static/js/components/tag-rating.js',
     '/static/js/components/search-query.js',
+    '/static/js/components/pdq-hasher.js',
     '/static/js/components/changelog-modal.js',
     '/static/js/components/acknowledgements-modal.js',
     '/static/js/components/keybinding-manager.js',

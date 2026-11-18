@@ -1531,3 +1531,8 @@ body.reorder-active-mode #nav-next-btn #nav-next-thumb,
     max-height: 6rem;
     overflow-y: auto;
 }
+
+input.search-drop-active {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
