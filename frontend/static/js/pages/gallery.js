@@ -37,16 +37,19 @@ class Gallery extends BaseGallery {
             // Construct params explicitly to ensure clean API call
             const apiParams = new URLSearchParams();
 
-            // 1. Basic pagination and filters
+            // Handle Search vs Browse
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('q');
+            const hasExplicitSort = urlParams.get('sort') !== null;
+
+            // Basic pagination and filters
             apiParams.set('page', this.currentPage);
             if (this.currentRating) {
                 apiParams.set('rating', this.currentRating);
             }
-            this.appendSortParams(apiParams);
-
-            // 2. Handle Search vs Browse
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('q');
+            if (!(searchQuery && !hasExplicitSort && this._hasPositiveSimilarTo(searchQuery))) {
+                this.appendSortParams(apiParams);
+            }
 
             let endpoint = '/api/media/';
 
@@ -108,6 +111,24 @@ class Gallery extends BaseGallery {
             this.isLoading = false;
             this.hideLoading();
         }
+    }
+
+    _hasPositiveSimilarTo(query) {
+        if (!query) return false;
+        const tokenRegex = /(-?)(?:([a-zA-Z0-9_]+):)?("[^"]*"|[^\s"]+)/g;
+        let hasSimilarTo = false;
+        let hasOrder = false;
+        let match;
+        while ((match = tokenRegex.exec(query)) !== null) {
+            const isNegated = Boolean(match[1]);
+            const key = match[2] ? match[2].toLowerCase() : null;
+            if (key === 'similar_to' || key === 'similar_to_strict') {
+                if (!isNegated) hasSimilarTo = true;
+            } else if (key === 'order' || key === 'sort') {
+                hasOrder = true;
+            }
+        }
+        return hasSimilarTo && !hasOrder;
     }
 
     renderItems(items) {

@@ -9,7 +9,7 @@ function canonicalizeQuery(queryString) {
         'date', 'age', 'filetype', 'source', 'md5',
         'album', 'pool', 'album_tree', 'pool_tree', 'parent', 'child',
         'order', 'sort', 'uploaded_at', 'time', 'created_at',
-        'custom_date', 'custom_age', 'filename', 'name'
+        'custom_date', 'custom_age', 'filename', 'name', 'similar_to', 'similar_to_strict'
     ]);
 
     const orderedKeys = [];
@@ -275,6 +275,23 @@ function canonicalizeQuery(queryString) {
     }
 
     function foldConditionItems(items, key = null) {
+        if (key && (key.toLowerCase() === 'similar_to' || key.toLowerCase() === 'similar_to_strict')) {
+            const tokens = [];
+            const seenTokens = new Set();
+            for (const item of items) {
+                if (!item) continue;
+                const parts = item.replace(/^"|"$/g, '').split(/[,\s\[\]]+/).filter(Boolean);
+                for (const part of parts) {
+                    const normalized = /^[0-9a-fA-F]{64}$/.test(part) ? part.toLowerCase() : part;
+                    if (!seenTokens.has(normalized)) {
+                        seenTokens.add(normalized);
+                        tokens.push(normalized);
+                    }
+                }
+            }
+            return tokens;
+        }
+
         const rawList = [];
         for (const item of items) {
             if (!item) continue;

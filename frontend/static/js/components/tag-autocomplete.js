@@ -1325,6 +1325,8 @@ TagAutocomplete.QUALIFIERS = {
     age: ['<24h', '<7d', '1w..1mo', '>1y'],
     custom_age: ['<24h', '<7d', '1w..1mo', '>1y'],
     md5: ['<checksum>'],
+    similar_to: ['100', '100,200'],
+    similar_to_strict: ['100', '100,200'],
     filename: ['image.png', 'my_image.jpg', '*.png', 'scan_*', '*.mp4'],
     order: [
         'id_desc', 'id_asc', 'date_desc', 'date_asc',
@@ -1334,6 +1336,7 @@ TagAutocomplete.QUALIFIERS = {
         'landscape', 'portrait', 'rating_asc', 'rating_desc',
         'filename_asc', 'filename_desc', 'filetype_desc', 'filetype_asc',
         'md5_asc', 'tagcount_desc', 'tagcount_asc',
+        'similarity', 'similarity_desc',
         'random', 'random:42', 'custom'
     ]
 };
