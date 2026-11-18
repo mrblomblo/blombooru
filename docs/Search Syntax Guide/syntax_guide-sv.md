@@ -50,6 +50,8 @@ OBS: Intervall och flervärdeslistor kan användas med de flesta metaqualifiers.
 - `date`, `age`: Uppladdningsdatum (ÅÅÅÅ-MM-DD) eller relativ ålder (s, mi, h, d, w, mo, y) (`date:>=2024-01-01`, `age:<24h`, `age:1w..1mo`)
 - `custom_date`, `custom_age`: Anpassat mediedatum (ÅÅÅÅ-MM-DD) eller relativ anpassad ålder (s, mi, h, d, w, mo, y) (`custom_date:>=2024-01-01`, `custom_age:<30d`, `custom_date:2024-01-01..2024-12-31`)
 - `md5`: Exakt fil-MD5-hashkontrollsumma (`md5:d34e...`)
+- `similar_to`: Ranka inlägg efter visuell likhet med inläggs-ID och/eller 256-bitars perceptuell PDQ-hash (`similar_to:100`, `similar_to:100,200`), eller exkludera nära dubbletter (`-similar_to:100`)
+- `similar_to_strict`: Visa endast nära visuellt liknande inom den konfigurerade hashavståndsgränsen (`similar_to_strict:100`, `-similar_to_strict:100`)
 
 ### Antal taggar
 
@@ -75,6 +77,7 @@ Använd `order:värde` eller `sort:värde`. Lägg till `_asc` eller `_desc`. De 
 - `tagcount_desc` / `tagcount_asc`: Totalt antal taggar
 - `gentags_desc`, `arttags_desc`, `chartags_desc`...: Kategoriräknare för taggar
 - `random` / `random:<seed>`: Slumpmässig ordning
+- `similarity` / `similarity_desc`: Perceptuell likhetsordning vid användning av `similar_to` (närmast först som standard)
 - `custom`: Bevara exakt ordning från en id-lista (t.ex. `id:5,2,8 order:custom`)
 
 ## Exempelsökningar

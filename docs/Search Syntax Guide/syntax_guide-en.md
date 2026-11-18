@@ -50,6 +50,8 @@ Note: Ranges and multi-value lists can be used with most meta qualifiers.
 - `date`, `age`: Upload date (YYYY-MM-DD) or relative age (s, mi, h, d, w, mo, y) (`date:>=2024-01-01`, `age:<24h`, `age:1w..1mo`)
 - `custom_date`, `custom_age`: Custom media date (YYYY-MM-DD) or relative custom age (s, mi, h, d, w, mo, y) (`custom_date:>=2024-01-01`, `custom_age:<30d`, `custom_date:2024-01-01..2024-12-31`)
 - `md5`: Exact file MD5 hash checksum (`md5:d34e...`)
+- `similar_to`: Rank posts by visual similarity to post IDs and/or 256-bit PDQ hashes (`similar_to:100`, `similar_to:100,200`), or exclude near-duplicates (`-similar_to:100`)
+- `similar_to_strict`: Return only visually similar matching the configured perceptual hash distance threshold (`similar_to_strict:100`, `-similar_to_strict:100`)
 
 ### Tag Counts
 
@@ -75,6 +77,7 @@ Use `order:value` or `sort:value`. Suffix with `_asc` or `_desc`. Most sorts def
 - `tagcount_desc` / `tagcount_asc`: Total tag count
 - `gentags_desc`, `arttags_desc`, `chartags_desc`...: Category tag counts
 - `random` / `random:<seed>`: Randomized order
+- `similarity` / `similarity_desc`: Perceptual similarity rank when using `similar_to` (closest first by default)
 - `custom`: Preserve exact order from an id list (e.g. `id:5,2,8 order:custom`)
 
 ## Example Searches

@@ -1211,7 +1211,9 @@
         "welcome": "欢迎使用 {app_name}！"
     },
     "search": {
-        "random": "手气不错 (随机)"
+        "random": "手气不错 (随机)",
+        "similar_drop_unsupported": "",
+        "similar_drop_featureless": ""
     },
     "shared": {
         "ai_generation_data": "AI 生成数据",

@@ -1211,7 +1211,9 @@
         "welcome": "Welcome to {app_name}!"
     },
     "search": {
-        "random": "I'm Feeling Lucky"
+        "random": "I'm Feeling Lucky",
+        "similar_drop_unsupported": "Could not compute perceptual hash for the dropped file in this browser.",
+        "similar_drop_featureless": "Image has too little detail to compute a perceptual hash."
     },
     "shared": {
         "ai_generation_data": "AI Generation Data",

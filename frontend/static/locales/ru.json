@@ -1211,7 +1211,9 @@
         "welcome": "Добро пожаловать в {app_name}!"
     },
     "search": {
-        "random": "Мне повезет!"
+        "random": "Мне повезет!",
+        "similar_drop_unsupported": "",
+        "similar_drop_featureless": ""
     },
     "shared": {
         "ai_generation_data": "Данные AI-генерации",

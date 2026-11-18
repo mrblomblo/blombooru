@@ -1211,7 +1211,9 @@
         "welcome": "Välkommen till {app_name}!"
     },
     "search": {
-        "random": "Jag Har Tur"
+        "random": "Jag Har Tur",
+        "similar_drop_unsupported": "Kunde inte beräkna perceptuell hash för den släppta filen i den här webbläsaren.",
+        "similar_drop_featureless": "Bilden har för lite detaljer för att beräkna en perceptuell hash."
     },
     "shared": {
         "ai_generation_data": "AI-genereringsdata",
