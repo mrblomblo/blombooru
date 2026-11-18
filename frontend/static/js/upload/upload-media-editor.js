@@ -912,22 +912,64 @@ class UploadMediaEditor {
         const item = this.session.getItem(itemId);
         if (!item) return;
 
-        let parent = item.parent_media_id || null;
-        let children = (item.child_media_ids || []).map(Number);
-
-        if (kind === 'child' || kind === 'sibling') {
-            const targetParentId = Number(kind === 'sibling' ? target.parent_id : target.media_id);
-            if (!targetParentId) return;
-            parent = parent === targetParentId ? null : targetParentId;
-            children = [];
-        } else {
-            const targetId = Number(target.media_id);
-            parent = null;
-            children = children.includes(targetId) ? children.filter(id => id !== targetId) : [...children, targetId];
-        }
-
         try {
-            await this.session.updateItem(itemId, { parent_media_id: parent, child_media_ids: children }, { silent: true });
+            if (target.kind === 'queue') {
+                const liveTarget = this.session.getItem(target.item_id);
+                if (!liveTarget) return;
+
+                if (kind === 'child') {
+                    const isAlreadyChild = item.parent_item_id === liveTarget.item_id;
+                    await this.session.updateItem(itemId, {
+                        parent_item_id: isAlreadyChild ? null : liveTarget.item_id,
+                        parent_media_id: null,
+                        child_media_ids: [],
+                    }, { silent: true });
+                } else if (kind === 'sibling') {
+                    if (liveTarget.parent_media_id) {
+                        const targetParentId = Number(liveTarget.parent_media_id);
+                        const isAlreadySibling = Number(item.parent_media_id) === targetParentId;
+                        await this.session.updateItem(itemId, {
+                            parent_media_id: isAlreadySibling ? null : targetParentId,
+                            parent_item_id: null,
+                            child_media_ids: [],
+                        }, { silent: true });
+                    } else if (liveTarget.parent_item_id) {
+                        const isAlreadySibling = item.parent_item_id === liveTarget.parent_item_id;
+                        await this.session.updateItem(itemId, {
+                            parent_item_id: isAlreadySibling ? null : liveTarget.parent_item_id,
+                            parent_media_id: null,
+                            child_media_ids: [],
+                        }, { silent: true });
+                    }
+                } else if (kind === 'parent') {
+                    const isAlreadyParent = liveTarget.parent_item_id === itemId;
+                    await this.session.updateItem(liveTarget.item_id, {
+                        parent_item_id: isAlreadyParent ? null : itemId,
+                        parent_media_id: null,
+                        child_media_ids: [],
+                    }, { silent: true });
+                }
+            } else {
+                let parent = item.parent_media_id || null;
+                let children = (item.child_media_ids || []).map(Number);
+
+                if (kind === 'child' || kind === 'sibling') {
+                    const targetParentId = Number(kind === 'sibling' ? target.parent_id : target.media_id);
+                    if (!targetParentId) return;
+                    parent = parent === targetParentId ? null : targetParentId;
+                    children = [];
+                } else {
+                    const targetId = Number(target.media_id);
+                    parent = null;
+                    children = children.includes(targetId) ? children.filter(id => id !== targetId) : [...children, targetId];
+                }
+
+                await this.session.updateItem(itemId, {
+                    parent_media_id: parent,
+                    parent_item_id: null,
+                    child_media_ids: children,
+                }, { silent: true });
+            }
             this.refreshNearDuplicatesRelations();
         } catch (e) {
             if (window.app && typeof window.app.showNotification === 'function') {
@@ -1010,7 +1052,7 @@ class UploadMediaEditor {
         const item = this.session.getItem(itemId);
         const slot = this.container.querySelector('#editor-near-duplicates-slot');
         if (!item || !slot) return;
-        if (typeof NearDuplicateView === 'undefined' || !NearDuplicateView.updateRelations(slot, item, this.session)) {
+        if (typeof NearDuplicateView === 'undefined' || !NearDuplicateView.updateRelations(slot, item, this.session, this.getNearDuplicateHandlers())) {
             this.refreshNearDuplicates();
         }
     }

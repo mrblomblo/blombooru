@@ -34,6 +34,11 @@ class NearDuplicateView {
         return `${delta > 0 ? '+' : '-'}${Math.abs(delta)}%`;
     }
 
+    static queuedChildrenOf(itemId, session) {
+        if (!session || typeof session.getAllItems !== 'function') return [];
+        return session.getAllItems().filter(other => other.item_id !== itemId && other.parent_item_id === itemId);
+    }
+
     /* Normalise the current item and its matches into one flat list of comparison entries. */
     static buildEntries(item, matches, session) {
         const queueBase = `/api/uploads/sessions/${session.sessionId}/items`;
@@ -58,16 +63,44 @@ class NearDuplicateView {
             thumbUrl: m.thumbnail_url,
             fileUrl: m.file_url,
         }));
-        const queue = (matches.queue || []).map(m => ({
-            ...m,
-            kind: 'queue',
-            key: m.item_id,
-            thumbUrl: `${queueBase}/${m.item_id}/thumbnail`,
-            fileUrl: `${queueBase}/${m.item_id}/file`,
-        }));
+        const queue = (matches.queue || []).map(m => {
+            const live = session.getItem ? session.getItem(m.item_id) : null;
+            const parentMediaId = live && live.parent_media_id ? Number(live.parent_media_id) : null;
+            const parentItemId = (live && live.parent_item_id) || null;
+            const childMediaIds = ((live && live.child_media_ids) || []).map(Number);
+            const queuedKids = NearDuplicateView.queuedChildrenOf(m.item_id, session);
+            const parentItem = parentItemId && session.getItem ? session.getItem(parentItemId) : null;
+            return {
+                ...m,
+                kind: 'queue',
+                key: m.item_id,
+                thumbUrl: `${queueBase}/${m.item_id}/thumbnail`,
+                fileUrl: `${queueBase}/${m.item_id}/file`,
+                parent_media_id: parentMediaId,
+                parent_item_id: parentItemId,
+                parent_item_filename: parentItem ? parentItem.filename : parentItemId,
+                child_media_ids: childMediaIds,
+                child_item_ids: queuedKids.map(c => c.item_id),
+                children_count: childMediaIds.length + queuedKids.length,
+            };
+        });
+        const selfParentMediaId = item.parent_media_id ? Number(item.parent_media_id) : null;
+        const selfParentItemId = item.parent_item_id || null;
+        const selfParentItem = selfParentItemId && session.getItem ? session.getItem(selfParentItemId) : null;
+        const selfChildMediaIds = (item.child_media_ids || []).map(Number);
+        const selfQueuedKids = NearDuplicateView.queuedChildrenOf(item.item_id, session);
         const relation = {
-            parent: item.parent_media_id || null,
-            children: (item.child_media_ids || []).map(Number),
+            selfItemId: item.item_id,
+            parent: selfParentMediaId,
+            parentMediaId: selfParentMediaId,
+            parentItemId: selfParentItemId,
+            parentItemFilename: selfParentItem ? selfParentItem.filename : selfParentItemId,
+            children: selfChildMediaIds,
+            childMediaIds: selfChildMediaIds,
+            childItemIds: selfQueuedKids.map(c => c.item_id),
+            childItemFilenames: selfQueuedKids.map(c => c.filename),
+            hasParent: Boolean(selfParentMediaId || selfParentItemId),
+            hasChildren: selfChildMediaIds.length > 0 || selfQueuedKids.length > 0,
         };
         return { self, existing, queue, relation, all: [self, ...existing, ...queue] };
     }
@@ -98,12 +131,21 @@ class NearDuplicateView {
     static relationStatusHtml(entry, relation) {
         const t = NearDuplicateView.t;
         if (entry.kind === 'self') {
-            if (relation.parent) {
-                return `<span class="text-primary font-bold">${escapeHtml(t('pending_child_of', { id: relation.parent }))}</span>`;
+            if (relation.parentMediaId) {
+                return `<span class="text-primary font-bold">${escapeHtml(t('pending_child_of', { id: relation.parentMediaId }))}</span>`;
             }
-            if (relation.children.length) {
-                const ids = relation.children.map(id => `#${id}`).join(', ');
-                return `<span class="text-primary font-bold">${escapeHtml(t('pending_parent_of', { ids }))}</span>`;
+            if (relation.parentItemId) {
+                return `<span class="text-primary font-bold">${escapeHtml(t('pending_child_of_queue', { name: relation.parentItemFilename }))}</span>`;
+            }
+            if (relation.hasChildren) {
+                const labels = [
+                    ...relation.childMediaIds.map(id => `#${id}`),
+                    ...relation.childItemFilenames,
+                ];
+                if (labels.length === 1) {
+                    return `<span class="text-primary font-bold">${escapeHtml(t('pending_parent_of', { ids: labels[0] }))}</span>`;
+                }
+                return `<span class="text-primary font-bold" title="${escapeHtml(labels.join(', '))}">${escapeHtml(t('pending_parent_of_count', { count: labels.length }))}</span>`;
             }
             return '';
         }
@@ -113,6 +155,18 @@ class NearDuplicateView {
             }
             if (entry.children_count > 0) {
                 const key = entry.children_count === 1 ? 'existing_parent_of_one' : 'existing_parent_of';
+                return `<span class="text-secondary">${escapeHtml(t(key, { count: entry.children_count }))}</span>`;
+            }
+        }
+        if (entry.kind === 'queue') {
+            if (entry.parent_media_id) {
+                return `<span class="text-secondary">${escapeHtml(t('pending_child_of', { id: entry.parent_media_id }))}</span>`;
+            }
+            if (entry.parent_item_id) {
+                return `<span class="text-secondary">${escapeHtml(t('pending_child_of_queue', { name: entry.parent_item_filename }))}</span>`;
+            }
+            if (entry.children_count > 0) {
+                const key = entry.children_count === 1 ? 'pending_parent_of_one' : 'pending_parent_of_count';
                 return `<span class="text-secondary">${escapeHtml(t(key, { count: entry.children_count }))}</span>`;
             }
         }
@@ -126,37 +180,66 @@ class NearDuplicateView {
         if (entry.kind === 'self') {
             return `<div class="flex flex-wrap gap-1"><button type="button" class="btn-danger flex-1 px-2 py-1.5" data-nd-remove="${escapeHtml(entry.item_id)}">${escapeHtml(remove)}</button></div>`;
         }
+
+        const toggle = (kind, pressed, label, extraClass = '', disabled = false) => `
+            <button type="button" class="${pressed ? 'btn-primary' : 'btn'} px-1.5 py-1.5 whitespace-nowrap ${extraClass}"
+                data-nd-relate="${kind}" data-nd-key="${escapeHtml(entry.key)}" aria-pressed="${pressed ? 'true' : 'false'}"${disabled ? ' disabled' : ''}>
+                ${escapeHtml(label)}
+            </button>`;
+
         if (entry.kind === 'queue') {
-            return `<div class="flex flex-wrap gap-1">
+            const isTargetChildOfSelf = entry.parent_item_id === relation.selfItemId;
+            const targetHasOtherParent = Boolean(
+                entry.parent_media_id || (entry.parent_item_id && entry.parent_item_id !== relation.selfItemId)
+            );
+            let relationButtons;
+            if (isTargetChildOfSelf) {
+                relationButtons = `
+                    ${toggle('child', false, t('upload_as_child'), '', true)}
+                    ${toggle('parent', true, t('upload_as_parent'), '', false)}`;
+            } else if (targetHasOtherParent) {
+                const isSibling = entry.parent_media_id
+                    ? relation.parentMediaId === Number(entry.parent_media_id)
+                    : relation.parentItemId === entry.parent_item_id;
+                relationButtons = toggle(
+                    'sibling', isSibling, t('upload_as_sibling'), 'col-span-full', !isSibling && relation.hasChildren
+                );
+            } else if (entry.children_count > 0) {
+                const isChild = relation.parentItemId === entry.item_id;
+                relationButtons = toggle(
+                    'child', isChild, t('upload_as_child'), 'col-span-full', !isChild && relation.hasChildren
+                );
+            } else {
+                relationButtons = `
+                    ${toggle('child', false, t('upload_as_child'), '', relation.hasChildren)}
+                    ${toggle('parent', false, t('upload_as_parent'), '', relation.hasParent)}`;
+            }
+
+            return `<div class="grid grid-cols-2 gap-1">
                 <button type="button" class="${btn}" data-nd-select="${escapeHtml(entry.item_id)}">${escapeHtml(t('show'))}</button>
                 <button type="button" class="btn-danger flex-1 px-2 py-1.5" data-nd-remove="${escapeHtml(entry.item_id)}">${escapeHtml(remove)}</button>
+                ${relationButtons}
             </div>`;
         }
 
         const mediaId = Number(entry.media_id);
-        const toggle = (kind, pressed, label, extraClass = '') => `
-            <button type="button" class="${pressed ? 'btn-primary' : 'btn'} px-1.5 py-1.5 whitespace-nowrap ${extraClass}"
-                data-nd-relate="${kind}" data-nd-key="${escapeHtml(entry.key)}" aria-pressed="${pressed ? 'true' : 'false'}">
-                ${escapeHtml(label)}
-            </button>`;
-
         let relationButtons;
         if (entry.parent_id) {
-            const isSibling = relation.parent === Number(entry.parent_id);
+            const isSibling = relation.parentMediaId === Number(entry.parent_id);
             relationButtons = toggle(
-                'sibling', isSibling, t('upload_as_sibling'), 'col-span-full'
+                'sibling', isSibling, t('upload_as_sibling'), 'col-span-full', !isSibling && relation.hasChildren
             );
         } else if (entry.children_count > 0) {
-            const isChild = relation.parent === mediaId;
+            const isChild = relation.parentMediaId === mediaId;
             relationButtons = toggle(
-                'child', isChild, t('upload_as_child'), 'col-span-full'
+                'child', isChild, t('upload_as_child'), 'col-span-full', !isChild && relation.hasChildren
             );
         } else {
-            const isChild = relation.parent === mediaId;
-            const isParent = relation.children.includes(mediaId);
+            const isChild = relation.parentMediaId === mediaId;
+            const isParent = relation.childMediaIds.includes(mediaId);
             relationButtons = `
-                ${toggle('child', isChild, t('upload_as_child'))}
-                ${toggle('parent', isParent, t('upload_as_parent'))}`;
+                ${toggle('child', isChild, t('upload_as_child'), '', !isChild && relation.hasChildren)}
+                ${toggle('parent', isParent, t('upload_as_parent'), '', !isParent && relation.hasParent)}`;
         }
 
         return `<div class="grid grid-cols-2 gap-1">
@@ -222,12 +305,10 @@ class NearDuplicateView {
             rows.push(row(window.i18n.t('media.info.duration'), entry =>
                 cell(entry, escapeHtml(NearDuplicateView.formatDuration(entry.duration)))));
         }
-        if (structure.existing.length > 0) {
-            rows.push(row(t('relations_label'), entry =>
-                `<td class="${entry.kind === 'self' ? 'surface ' : ''}" data-nd-relation-cell="${escapeHtml(entry.key)}">${NearDuplicateView.relationStatusHtml(entry, structure.relation) || '<span class="text-secondary">-</span>'}</td>`));
-        }
+        rows.push(row(t('relations_label'), entry =>
+            `<td class="${entry.kind === 'self' ? 'surface ' : ''}" data-nd-relation-cell="${escapeHtml(entry.key)}">${NearDuplicateView.relationStatusHtml(entry, structure.relation) || '<span class="text-secondary">-</span>'}</td>`));
         rows.push(row(window.i18n.t('common.actions'), entry =>
-            cell(entry, NearDuplicateView.renderActions(entry, structure.relation))));
+            `<td class="${entry.kind === 'self' ? 'surface ' : ''}" data-nd-actions="${escapeHtml(entry.key)}">${NearDuplicateView.renderActions(entry, structure.relation)}</td>`));
 
         const cols = [`<col class="nd-label">`, ...entries.map(() => '<col>')];
         return `
@@ -268,7 +349,7 @@ class NearDuplicateView {
                 stats.push(kv(window.i18n.t('media.info.duration'), escapeHtml(NearDuplicateView.formatDuration(entry.duration))));
             }
             const relationHtml = NearDuplicateView.relationStatusHtml(entry, structure.relation);
-            if (entry.kind === 'self' || relationHtml) {
+            if (entry.kind === 'self' || entry.kind === 'queue' || relationHtml) {
                 stats.push(`
                     <div class="min-w-0" data-nd-relation-card="${escapeHtml(entry.key)}" style="${relationHtml ? '' : 'display:none;'}">
                         <div class="text-secondary text-[10px] uppercase tracking-wide">${escapeHtml(t('relations_label'))}</div>
@@ -277,7 +358,7 @@ class NearDuplicateView {
             }
 
             const actions = entry.kind === 'self' ? '' :
-                `<div class="px-2 pb-2">${NearDuplicateView.renderActions(entry, structure.relation)}</div>`;
+                `<div class="px-2 pb-2" data-nd-actions="${escapeHtml(entry.key)}">${NearDuplicateView.renderActions(entry, structure.relation)}</div>`;
 
             return `
                 <section class="nd-card ${entry.kind === 'self' ? 'surface' : 'bg'} border">
@@ -363,19 +444,24 @@ class NearDuplicateView {
                 }
             });
         });
-        panel.querySelectorAll('[data-nd-select]').forEach(btn => {
+        NearDuplicateView.bindActionButtons(panel, byKey, handlers);
+    }
+
+    static bindActionButtons(root, byKey, handlers = {}) {
+        root.querySelectorAll('[data-nd-select]').forEach(btn => {
             btn.addEventListener('click', () => handlers.onSelect?.(btn.dataset.ndSelect));
         });
-        panel.querySelectorAll('[data-nd-remove]').forEach(btn => {
+        root.querySelectorAll('[data-nd-remove]').forEach(btn => {
             btn.addEventListener('click', () => handlers.onRemove?.(btn.dataset.ndRemove));
         });
-        panel.querySelectorAll('[data-nd-relate]').forEach(btn => {
+        root.querySelectorAll('[data-nd-relate]').forEach(btn => {
             btn.addEventListener('click', () => {
+                if (btn.disabled) return;
                 const target = byKey.get(btn.dataset.ndKey);
                 if (target) handlers.onRelate?.(target, btn.dataset.ndRelate);
             });
         });
-        panel.querySelectorAll('[data-nd-update]').forEach(btn => {
+        root.querySelectorAll('[data-nd-update]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = byKey.get(btn.dataset.ndUpdate);
                 if (target) handlers.onUpdatePost?.(target);
@@ -383,7 +469,7 @@ class NearDuplicateView {
         });
     }
 
-    static updateRelations(container, item, session) {
+    static updateRelations(container, item, session, handlers = {}) {
         const panel = container.querySelector('#editor-near-duplicates');
         const matches = session.getNearDuplicates(item.item_id);
         if (!panel || !matches) return false;
@@ -392,21 +478,11 @@ class NearDuplicateView {
         const byKey = new Map(structure.all.map(e => [e.key, e]));
         const relation = structure.relation;
 
-        panel.querySelectorAll('[data-nd-relate]').forEach(btn => {
-            const entry = byKey.get(btn.dataset.ndKey);
+        panel.querySelectorAll('[data-nd-actions]').forEach(el => {
+            const entry = byKey.get(el.dataset.ndActions);
             if (!entry) return;
-            const kind = btn.dataset.ndRelate;
-            let pressed = false;
-            if (kind === 'sibling') {
-                pressed = relation.parent === Number(entry.parent_id);
-            } else if (kind === 'child') {
-                pressed = relation.parent === Number(entry.media_id);
-            } else if (kind === 'parent') {
-                pressed = relation.children.includes(Number(entry.media_id));
-            }
-            btn.classList.toggle('btn-primary', pressed);
-            btn.classList.toggle('btn', !pressed);
-            btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+            el.innerHTML = NearDuplicateView.renderActions(entry, relation);
+            NearDuplicateView.bindActionButtons(el, byKey, handlers);
         });
 
         panel.querySelectorAll('[data-nd-relation-cell]').forEach(td => {

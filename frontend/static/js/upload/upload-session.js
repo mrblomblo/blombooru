@@ -359,6 +359,11 @@ class UploadSession {
 
         if (response.ok) {
             this.items.delete(itemId);
+            this.items.forEach(other => {
+                if (other.parent_item_id === itemId) {
+                    other.parent_item_id = null;
+                }
+            });
             this.emit('itemRemoved', itemId);
             if (this.items.size === 0) {
                 this.sessionId = null;
