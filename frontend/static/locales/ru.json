@@ -1343,7 +1343,11 @@
             "existing_parent_of_one": "",
             "existing_parent_of": "",
             "pending_child_of": "",
-            "pending_parent_of": ""
+            "pending_child_of_queue": "",
+            "pending_parent_of": "",
+            "pending_parent_of_one": "",
+            "pending_parent_of_count": "",
+            "filter_only": ""
         }
     },
     "media_picker": {

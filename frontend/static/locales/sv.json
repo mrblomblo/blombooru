@@ -1343,7 +1343,11 @@
             "existing_parent_of_one": "Förälder till 1 inlägg",
             "existing_parent_of": "Förälder till {count} inlägg",
             "pending_child_of": "Blir barn till #{id}",
-            "pending_parent_of": "Blir förälder till {ids}"
+            "pending_child_of_queue": "Blir barn till {name}",
+            "pending_parent_of": "Blir förälder till {ids}",
+            "pending_parent_of_one": "Blir förälder till 1 inlägg",
+            "pending_parent_of_count": "Blir förälder till {count} inlägg",
+            "filter_only": "Endast nära dubbletter ({count})"
         }
     },
     "media_picker": {

@@ -1343,7 +1343,11 @@
             "existing_parent_of_one": "Parent of 1 post",
             "existing_parent_of": "Parent of {count} posts",
             "pending_child_of": "Will be child of #{id}",
-            "pending_parent_of": "Will be parent of {ids}"
+            "pending_child_of_queue": "Will be child of {name}",
+            "pending_parent_of": "Will be parent of {ids}",
+            "pending_parent_of_one": "Will be parent of 1 post",
+            "pending_parent_of_count": "Will be parent of {count} posts",
+            "filter_only": "Near-duplicates only ({count})"
         }
     },
     "media_picker": {
