@@ -197,6 +197,7 @@ def check_and_migrate_schema(engine):
         migrate_add_custom_date,
         migrate_add_media_tags_implication_columns,
         migrate_add_phash,
+        migrate_source_to_text,
     ]
     
     for migration in migrations:
@@ -216,6 +217,30 @@ def migrate_add_phash(engine, inspector):
     with engine.connect() as conn:
         conn.execute(text(
             "ALTER TABLE blombooru_media ADD COLUMN phash VARCHAR(64)"
+        ))
+        conn.commit()
+
+def migrate_source_to_text(engine, inspector):
+    """Widen source from VARCHAR(500) to TEXT to support long source URLs."""
+    from sqlalchemy import text
+
+    if engine.dialect.name == 'sqlite':
+        return
+
+    columns = inspector.get_columns('blombooru_media')
+    for col in columns:
+        if col['name'] == 'source':
+            type_name = str(col['type']).upper()
+            if 'TEXT' in type_name:
+                return
+            break
+    else:
+        return
+
+    logger.info("Migrating source column to TEXT...")
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE blombooru_media ALTER COLUMN source TYPE TEXT"
         ))
         conn.commit()
 
