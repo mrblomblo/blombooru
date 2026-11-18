@@ -533,6 +533,21 @@
             "title": "Viktning av Likhetsindex",
             "description": "Justera hur mycket varje taggkategori påverkar rekommendationerna för liknande media. Högre värden ökar kategoriens inverkan på likhetspoängen.",
             "reset": "Återställ till standard"
+        },
+        "near_duplicates": {
+            "title": "Detektering av Nära Dubbletter",
+            "description": "Upptäcker visuellt liknande media (till exempel samma bild med annan upplösning, komprimering, letterboxing eller horisontell spegling) med hjälp av perceptuella hashar.",
+            "enable": "Aktivera Detektering av Nära Dubbletter",
+            "enable_hint": "När detta är inaktiverat kontrolleras inte uppladdningar för nära dubbletter.",
+            "max_distance": "Känslighet (maximalt hashavstånd)",
+            "max_distance_hint": "Antal avvikande bitar (0-64, av 256) som fortfarande räknas som en nära dubblett. Lägre värden rapporterar endast mycket nära träffar, högre värden rapporterar lösare träffar och fler falska positiver. Standard: 31.",
+            "hashing_title": "Beräkna Perceptuella Hashar",
+            "hashing_hint": "Beräkna eller räkna om perceptuella hashar för alla inlägg.",
+            "hash_now": "Hasha Inlägg",
+            "progress": "Hashar: {current}/{total}{file} - Hashade: {hashed}, Kunde inte hasha: {failed}",
+            "done": "Klart! Hashade: {hashed}, Kunde inte hasha: {failed}.",
+            "done_nothing": "Inget att hasha. Inga hashbara inlägg hittades.",
+            "error_start": "Kunde inte starta hashning"
         }
     },
     "album_picker": {
@@ -1297,6 +1312,36 @@
             "submit_all": "Ladda upp all media",
             "cancel_confirm": "Är du säker på att du vill avbryta och rensa alla förberedda objekt?",
             "cancel_title": "Avbryt uppladdningssession"
+        },
+        "near_duplicates": {
+            "notice": "{count} uppladdning(ar) liknar befintliga inlägg eller andra uppladdningar i kön. Granska dem innan du skickar in.",
+            "badge_title": "{count} möjlig(a) nära dubblett(er)",
+            "panel_title": "Möjliga nära dubbletter ({count})",
+            "this_upload": "Denna uppladdning",
+            "group_existing": "Redan i biblioteket ({count})",
+            "group_queue": "Annanstans i denna kö ({count})",
+            "match": "Matchning",
+            "confidence_identical": "Visuellt identisk",
+            "confidence_very_similar": "Mycket lik",
+            "confidence_similar": "Liknande",
+            "distance_hint": "Perceptuellt hashavstånd: {distance} av 256 bitar",
+            "compare": "Jämför",
+            "open_post": "Öppna inlägg",
+            "show": "Visa",
+            "in_library": "I biblioteket",
+            "in_queue": "I denna kö",
+            "mode_side": "Sida vid sida",
+            "mode_blink": "Växla",
+            "blink_hint": "Klicka på bilden (eller tryck på Mellanslag) för att växla mellan de två versionerna.",
+            "upload_as_child": "Ladda upp som barn",
+            "upload_as_parent": "Ladda upp som förälder",
+            "upload_as_sibling": "Ladda upp som syskon",
+            "relations_label": "Relationer",
+            "existing_child_of": "Barn till #{id}",
+            "existing_parent_of_one": "Förälder till 1 inlägg",
+            "existing_parent_of": "Förälder till {count} inlägg",
+            "pending_child_of": "Blir barn till #{id}",
+            "pending_parent_of": "Blir förälder till {ids}"
         }
     },
     "media_picker": {

@@ -533,6 +533,21 @@
             "title": "",
             "description": "",
             "reset": ""
+        },
+        "near_duplicates": {
+            "title": "",
+            "description": "",
+            "enable": "",
+            "enable_hint": "",
+            "max_distance": "",
+            "max_distance_hint": "",
+            "hashing_title": "",
+            "hashing_hint": "",
+            "hash_now": "",
+            "progress": "",
+            "done": "",
+            "done_nothing": "",
+            "error_start": ""
         }
     },
     "album_picker": {
@@ -1297,6 +1312,36 @@
             "submit_all": "提交所有媒体",
             "cancel_confirm": "",
             "cancel_title": ""
+        },
+        "near_duplicates": {
+            "notice": "",
+            "badge_title": "",
+            "panel_title": "",
+            "this_upload": "",
+            "group_existing": "",
+            "group_queue": "",
+            "match": "",
+            "confidence_identical": "",
+            "confidence_very_similar": "",
+            "confidence_similar": "",
+            "distance_hint": "",
+            "compare": "",
+            "open_post": "",
+            "show": "",
+            "in_library": "",
+            "in_queue": "",
+            "mode_side": "",
+            "mode_blink": "",
+            "blink_hint": "",
+            "upload_as_child": "",
+            "upload_as_parent": "",
+            "upload_as_sibling": "",
+            "relations_label": "",
+            "existing_child_of": "",
+            "existing_parent_of_one": "",
+            "existing_parent_of": "",
+            "pending_child_of": "",
+            "pending_parent_of": ""
         }
     },
     "media_picker": {

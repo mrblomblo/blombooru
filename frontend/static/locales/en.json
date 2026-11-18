@@ -533,6 +533,21 @@
             "title": "Similarity Index Weights",
             "description": "Adjust how much each tag category influences the Related Media recommendations. Higher values increase the category's impact on similarity scores.",
             "reset": "Reset to default"
+        },
+        "near_duplicates": {
+            "title": "Near-Duplicate Detection",
+            "description": "Detects visually similar media (for example the same image at a different resolution, compression, letterboxing, or horizontal flip) using perceptual hashes.",
+            "enable": "Enable Near-Duplicate Detection",
+            "enable_hint": "When disabled, uploads are not checked for near-duplicates.",
+            "max_distance": "Sensitivity (maximum hash distance)",
+            "max_distance_hint": "Number of differing bits (0-64, out of 256) that still counts as a near-duplicate. Lower values only report very close matches, higher values report looser matches and more false positives. Default: 31.",
+            "hashing_title": "Compute Perceptual Hashes",
+            "hashing_hint": "Compute or recompute perceptual hashes for all posts.",
+            "hash_now": "Hash Posts",
+            "progress": "Hashing: {current}/{total}{file} - Hashed: {hashed}, Could not hash: {failed}",
+            "done": "Done! Hashed: {hashed}, Could not hash: {failed}.",
+            "done_nothing": "Nothing to hash. No hashable posts found.",
+            "error_start": "Failed to start hashing"
         }
     },
     "album_picker": {
@@ -1297,6 +1312,36 @@
             "submit_all": "Submit All Media",
             "cancel_confirm": "Are you sure you want to cancel and clear all staged items?",
             "cancel_title": "Cancel upload session"
+        },
+        "near_duplicates": {
+            "notice": "{count} upload(s) look similar to existing posts or to other uploads in the queue. Review them before submitting.",
+            "badge_title": "{count} possible near-duplicate(s)",
+            "panel_title": "Possible near-duplicates ({count})",
+            "this_upload": "This Upload",
+            "group_existing": "Already in the library ({count})",
+            "group_queue": "Elsewhere in this queue ({count})",
+            "match": "Match",
+            "confidence_identical": "Visually identical",
+            "confidence_very_similar": "Very similar",
+            "confidence_similar": "Similar",
+            "distance_hint": "Perceptual hash distance: {distance} of 256 bits",
+            "compare": "Compare",
+            "open_post": "Open Post",
+            "show": "Show",
+            "in_library": "In the library",
+            "in_queue": "In this queue",
+            "mode_side": "Side by side",
+            "mode_blink": "Blink",
+            "blink_hint": "Click the image (or press Space) to switch between the two versions.",
+            "upload_as_child": "Upload as child",
+            "upload_as_parent": "Upload as parent",
+            "upload_as_sibling": "Upload as sibling",
+            "relations_label": "Relations",
+            "existing_child_of": "Child of #{id}",
+            "existing_parent_of_one": "Parent of 1 post",
+            "existing_parent_of": "Parent of {count} posts",
+            "pending_child_of": "Will be child of #{id}",
+            "pending_parent_of": "Will be parent of {ids}"
         }
     },
     "media_picker": {
