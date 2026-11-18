@@ -12,10 +12,10 @@ from ..config import settings
 from ..enums import FileTypeEnum
 from ..models import Media
 from ..utils.logger import logger
-from ..utils.perceptual_hash import (PHASH_HEX_LENGTH, compute_media_phash,
-                                     mirror_phash, phash_from_hex,
-                                     phash_to_hex, phash_to_words,
-                                     similarity_percent)
+from ..utils.perceptual_hash import (PHASH_BITS, PHASH_HEX_LENGTH,
+                                     compute_media_phash, mirror_phash,
+                                     phash_from_hex, phash_to_hex,
+                                     phash_to_words, similarity_percent)
 
 _POPCOUNT_TABLE = np.array([bin(i).count("1") for i in range(256)], dtype=np.uint8)
 
@@ -209,17 +209,39 @@ def find_similar_media(
     exclude_ids: Iterable[int] = (),
     limit: Optional[int] = None,
 ) -> List[Tuple[int, int]]:
-    """Posts similar to *any* of ``phashes`` as ``[(media_id, closest_distance), ...]``, best first."""
+    """Posts similar to *any* of ``phashes`` as ``[(media_id, closest_distance), ...]``.
+
+    When multiple targets are given, posts matching more targets closely rank first,
+    with ties broken by closest single-target distance and then ``media_id``.
+    """
+    target_phashes = list(dict.fromkeys(phashes))
+    if not target_phashes:
+        return []
     max_distance = get_max_distance() if max_distance is None else max_distance
     exclude = set(exclude_ids)
-    best: Dict[int, int] = {}
-    for value in phashes:
-        for media_id, distance in near_duplicate_index.search(
+    per_target: List[Dict[int, int]] = []
+    for value in target_phashes:
+        hits = dict(near_duplicate_index.search(
             db, value, max_distance, exclude_ids=exclude, limit=None
-        ):
-            if media_id not in best or distance < best[media_id]:
-                best[media_id] = distance
-    ordered = sorted(best.items(), key=lambda pair: (pair[1], pair[0]))
+        ))
+        per_target.append(hits)
+
+    candidates = set().union(*per_target)
+    if not candidates:
+        return []
+
+    cap = max_distance + 1
+    scored: List[Tuple[int, int, int]] = []
+    for media_id in candidates:
+        best_dist = min(hits[media_id] for hits in per_target if media_id in hits)
+        if len(per_target) == 1:
+            score = best_dist
+        else:
+            score = sum(hits.get(media_id, cap) for hits in per_target)
+        scored.append((score, best_dist, media_id))
+
+    scored.sort()
+    ordered = [(media_id, best_dist) for _, best_dist, media_id in scored]
     return ordered[:limit] if limit else ordered
 
 def similar_to_condition(
@@ -229,16 +251,38 @@ def similar_to_condition(
     max_distance: Optional[int] = None,
     exclude_given_posts: bool = True,
 ):
-    """Condition for ``similar_to:<values>`` plus ``{media_id: distance}`` for sorting."""
+    """Condition for ``similar_to:<values>`` plus ``{media_id: distance}`` for sorting.
+
+    When ``negated=False`` and ``max_distance`` is ``None``, no similarity cutoff is applied so
+    that all posts can be ranked by distance (excluding ``targets.media_ids`` if requested).
+    When ``negated=True``, ``max_distance`` defaults to the configured near-duplicate threshold
+    so only near-duplicates are excluded.
+    """
     targets = resolve_similar_to_targets(db, values)
     exclude = targets.media_ids if exclude_given_posts else ()
-    matches = find_similar_media(db, targets.phashes, max_distance, exclude_ids=exclude)
+    if not targets.phashes:
+        return (true() if negated else false()), {}
+
+    effective_max = (
+        max_distance
+        if max_distance is not None
+        else (get_max_distance() if negated else PHASH_BITS)
+    )
+    matches = find_similar_media(db, targets.phashes, effective_max, exclude_ids=exclude)
     distances = dict(matches)
-    if not distances:
-        return (true() if negated else false()), distances
-    ids = list(distances.keys())
-    condition = ~Media.id.in_(ids) if negated else Media.id.in_(ids)
-    return condition, distances
+    if negated:
+        if not distances:
+            return true(), distances
+        return ~Media.id.in_(list(distances.keys())), distances
+
+    if max_distance is not None:
+        if not distances:
+            return false(), distances
+        return Media.id.in_(list(distances.keys())), distances
+
+    if exclude_given_posts and targets.media_ids:
+        return ~Media.id.in_(targets.media_ids), distances
+    return true(), distances
 
 def _enum_value(value):
     return getattr(value, "value", value)
