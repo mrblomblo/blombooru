@@ -74,6 +74,7 @@ const STATIC_ASSETS = [
     '/static/js/update-post/update-post-device-upload.js',
     '/static/js/upload/upload-session.js',
     '/static/js/upload/upload-queue-grid.js',
+    '/static/js/upload/upload-near-duplicates.js',
     '/static/js/upload/upload-media-editor.js',
     '/static/js/upload/pending-entities-panel.js',
     '/static/js/upload/upload-uploader-shell.js',
