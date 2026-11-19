@@ -327,8 +327,6 @@ BLOMBOORU_TAG=pre docker compose up -d
     **Инстанс 1** (`~/blombooru-instance1/.env`):
     ```env
     APP_PORT=8000
-    POSTGRES_PORT=5432
-    REDIS_PORT=6379
     POSTGRES_PASSWORD=your_secure_password_here
     # ... other settings
     ```
@@ -336,8 +334,6 @@ BLOMBOORU_TAG=pre docker compose up -d
     **Инстанс 2** (`~/blombooru-instance2/.env`):
     ```env
     APP_PORT=8001
-    POSTGRES_PORT=5433
-    REDIS_PORT=6380
     POSTGRES_PASSWORD=different_secure_password
     # ... other settings
     ```

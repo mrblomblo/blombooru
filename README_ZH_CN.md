@@ -231,8 +231,6 @@ docker compose -f docker-compose.dev.yml up --build -d
 
     ```env
     APP_PORT=8000
-    POSTGRES_PORT=5432
-    REDIS_PORT=6379
     POSTGRES_PASSWORD=your_secure_password_here
     # ... other settings
     ```
@@ -241,8 +239,6 @@ docker compose -f docker-compose.dev.yml up --build -d
 
     ```env
     APP_PORT=8001
-    POSTGRES_PORT=5433
-    REDIS_PORT=6380
     POSTGRES_PASSWORD=different_secure_password
     # ... other settings
     ```

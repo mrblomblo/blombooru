@@ -212,7 +212,7 @@ class Settings:
         val = self.file_settings.get("redis", {}).get("port")
         if val is not None:
             return int(val)
-        return int(os.getenv("REDIS_PORT", self.settings.get("redis", {}).get("port", 6379)))
+        return int(os.getenv("REDIS_PORT") or self.settings.get("redis", {}).get("port", 6379))
     
     @property
     def REDIS_DB(self) -> int:

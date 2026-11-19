@@ -311,13 +311,11 @@ If you need to run multiple independent Blombooru instances (for example, separa
     ```
 
 3. **Configure unique ports for each instance**  
-    Create a `.env` file in each instance directory (copy from `example.env`) and assign **different port numbers** to avoid conflicts:
+    Create a `.env` file in each instance directory (copy from `example.env`) and assign a **different `APP_PORT`** to avoid conflicts:
 
     **Instance 1** (`~/blombooru-instance1/.env`):
     ```env
     APP_PORT=8000
-    POSTGRES_PORT=5432
-    REDIS_PORT=6379
     POSTGRES_PASSWORD=your_secure_password_here
     # ... other settings
     ```
@@ -325,17 +323,15 @@ If you need to run multiple independent Blombooru instances (for example, separa
     **Instance 2** (`~/blombooru-instance2/.env`):
     ```env
     APP_PORT=8001
-    POSTGRES_PORT=5433
-    REDIS_PORT=6380
     POSTGRES_PASSWORD=different_secure_password
     # ... other settings
     ```
 
 > [!IMPORTANT]
-> Each instance **must** use unique values for `APP_PORT`, `POSTGRES_PORT`, and `REDIS_PORT`. Using the same ports will cause conflicts and prevent instances from starting.
+> Each instance **must** use a unique value for `APP_PORT`. Using the same port will cause conflicts and prevent instances from starting.
 
 > [!NOTE] 
-> `POSTGRES_PORT` and `REDIS_PORT` are **only** used for mapping ports to your host machine, or for if an external PostgreSQL or Redis server is using different ports. Inside Docker, the containers always communicate using the default internal ports (PostgreSQL: `5432`, Redis: `6379`).
+> `db` and `redis` are not published to the host machine and only communicate inside each instance's isolated Docker network on their default ports (`5432` and `6379`). Leave `POSTGRES_PORT=5432` and `REDIS_PORT=6379` as-is unless you are connecting to an external PostgreSQL or Redis server on a different port.
 
 4. **Start each instance independently**  
     Navigate to each instance directory and start it with Docker Compose:

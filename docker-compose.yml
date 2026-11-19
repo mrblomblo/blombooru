@@ -30,8 +30,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
 
   redis:
     image: redis:7-alpine
@@ -43,8 +41,6 @@ services:
     command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
     volumes:
       - redisdata:/data
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
 
 volumes:
   pgdata:

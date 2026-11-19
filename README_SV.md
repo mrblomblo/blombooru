@@ -315,13 +315,11 @@ Om du behöver köra flera oberoende Blombooru-instanser (till exempel separata 
     ```
 
 3. **Konfigurera unika portar för varje instans**  
-    Skapa en `.env`-fil i varje instanskatalog (kopiera från `example.env`) och tilldela **olika portnummer** för att undvika konflikter:
+    Skapa en `.env`-fil i varje instanskatalog (kopiera från `example.env`) och tilldela ett **unikt `APP_PORT`-nummer** för att undvika konflikter:
 
     **Instans 1** (`~/blombooru-instans1/.env`):
     ```env
     APP_PORT=8000
-    POSTGRES_PORT=5432
-    REDIS_PORT=6379
     POSTGRES_PASSWORD=ditt_säkra_lösenord_här
     # ... andra inställningar
     ```
@@ -329,17 +327,15 @@ Om du behöver köra flera oberoende Blombooru-instanser (till exempel separata 
     **Instans 2** (`~/blombooru-instans2/.env`):
     ```env
     APP_PORT=8001
-    POSTGRES_PORT=5433
-    REDIS_PORT=6380
     POSTGRES_PASSWORD=ett_annat_säkert_lösenord
     # ... andra inställningar
     ```
 
 > [!IMPORTANT]
-> Varje instans **måste** använda unika värden för `APP_PORT`, `POSTGRES_PORT` och `REDIS_PORT`. Att använda samma portar kommer att orsaka konflikter och förhindra att instanserna startar.
+> Varje instans **måste** använda ett unikt värde för `APP_PORT`. Att använda samma port kommer att orsaka konflikter och förhindra att instanserna startar.
 
 > [!NOTE] 
-> `POSTGRES_PORT` och `REDIS_PORT` används **endast** för att mappa portar till din värddator, eller ifall en extern PostgreSQL- eller Redis-server använder andra portar. Inuti Docker kommunicerar containrarna alltid med de interna standardportarna (PostgreSQL: `5432`, Redis: `6379`).
+> `db` och `redis` publiceras inte till värddatorn och kommunicerar endast inom varje instans isolerade Docker-nätverk på sina standardportar (`5432` och `6379`). Lämna `POSTGRES_PORT=5432` och `REDIS_PORT=6379` oförändrade om du inte ansluter till en extern PostgreSQL- eller Redis-server på en annan port.
 
 4. **Starta varje instans oberoende av varandra**  
     Navigera till varje instanskatalog och starta den med Docker Compose:
