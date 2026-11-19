@@ -598,13 +598,17 @@ class TagsGallery extends BaseGallery {
                     tagName: tag.name,
                     tagCategory: tag.category,
                     tagRating: tag.rating,
-                    onSaved: (result) => {
+                    onSaved: async (result) => {
+                        const oldName = tag.name;
+                        const oldCategory = tag.category;
+                        const oldRating = tag.rating;
                         tag.name = result.tag_name || tag.name;
                         tag.category = result.category || tag.category;
                         tag.rating = result.rating || tag.rating;
                         tag.aliases = result.aliases || tag.aliases;
                         this.tagCache.set(tagId, tag);
 
+                        card.dataset.tagName = tag.name;
                         card.dataset.tagRating = tag.rating;
                         tagLink.dataset.tagRating = tag.rating;
                         tagLink.textContent = tag.name;
@@ -639,8 +643,27 @@ class TagsGallery extends BaseGallery {
                             ratingElement.title = rObj.label;
                             ratingElement.setAttribute('aria-label', rObj.label);
                         }
+                        this.updateCardRowMode(card);
+
+                        const nameChanged = tag.name !== oldName;
+                        const metadataChanged = nameChanged || tag.category !== oldCategory || tag.rating !== oldRating;
+                        const refreshPromises = [];
                         if (panel && panel.loaded) {
-                            panel.render();
+                            if (nameChanged) {
+                                refreshPromises.push(panel.loadAndRender({ force: true }));
+                            } else {
+                                panel.render();
+                            }
+                        }
+                        if (metadataChanged) {
+                            for (const otherPanel of this.activePanels) {
+                                if (otherPanel !== panel && otherPanel.loaded && otherPanel.referencesTag(tag.id, oldName)) {
+                                    refreshPromises.push(otherPanel.loadAndRender({ force: true }));
+                                }
+                            }
+                        }
+                        if (refreshPromises.length > 0) {
+                            await Promise.all(refreshPromises);
                         }
                     }
                 });

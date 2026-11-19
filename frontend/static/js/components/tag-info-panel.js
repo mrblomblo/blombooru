@@ -16,17 +16,19 @@ class TagInfoPanel {
         this.autocompletes = [];
     }
 
-    async loadAndRender() {
-        if (this.loaded) {
+    async loadAndRender({ force = false } = {}) {
+        if (this.loaded && !force) {
             this.render();
             return;
         }
 
-        this.detailsEl.innerHTML = `
-            <div class="py-4 text-center text-secondary">
-                <div class="spinner inline-block"></div>
-            </div>
-        `;
+        if (!this.loaded) {
+            this.detailsEl.innerHTML = `
+                <div class="py-4 text-center text-secondary">
+                    <div class="spinner inline-block"></div>
+                </div>
+            `;
+        }
 
         try {
             const relatedPromise = fetch(`/api/tags/${encodeURIComponent(this.tag.name)}/related?limit=20`)
@@ -46,8 +48,33 @@ class TagInfoPanel {
             this.render();
         } catch (err) {
             console.error('Error loading tag details:', err);
-            this.detailsEl.innerHTML = `<p class="text-xs text-danger p-3">${window.i18n.t('tags_gallery.load_details_failed')}</p>`;
+            if (!this.loaded) {
+                this.detailsEl.innerHTML = `<p class="text-xs text-danger p-3">${window.i18n.t('tags_gallery.load_details_failed')}</p>`;
+            }
         }
+    }
+
+    referencesTag(tagId, tagName) {
+        const nameLower = tagName ? tagName.toLowerCase() : null;
+        if (Array.isArray(this.relatedData) && nameLower) {
+            if (this.relatedData.some(rel => rel.name && rel.name.toLowerCase() === nameLower)) {
+                return true;
+            }
+        }
+        if (Array.isArray(this.implicationsData)) {
+            for (const imp of this.implicationsData) {
+                const inTargets = imp.target_tags && imp.target_tags.some(
+                    t => t.id === tagId || (nameLower && t.name && t.name.toLowerCase() === nameLower)
+                );
+                const inImplied = imp.implied_tags && imp.implied_tags.some(
+                    t => t.id === tagId || (nameLower && t.name && t.name.toLowerCase() === nameLower)
+                );
+                if (inTargets || inImplied) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     destroy() {
