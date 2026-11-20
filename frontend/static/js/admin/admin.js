@@ -29,8 +29,7 @@ class AdminPanel {
         this.content.loadTagStats();
         this.content.loadMediaStats();
         this.content.loadAlbumStats();
-        this.content.checkTranscodeStatus();
-        this.content.checkNearDuplicateBackfillStatus();
+        this.content.checkMaintenanceStatuses();
         this.system.setupCustomSelects();
         this.system.loadThemes();
         this.system.loadLanguages();

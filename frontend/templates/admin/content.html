@@ -146,6 +146,9 @@
                 <button id="relink-media-btn" class="btn-primary cursor-pointer">
                     {{ t('admin.media_management.maintenance.relink.button') }}
                 </button>
+                <div id="relink-media-status" style="display: none;" class="text-xs mt-3">
+                    <div id="relink-media-result"></div>
+                </div>
             </div>
 
             <div class="pt-4 border-t">
@@ -465,6 +468,18 @@
                         {{ t('admin.tags_management.apply_tag_ratings_to_all') }}
                     </button>
                 </div>
+                <div id="apply-aliases-status" style="display: none;" class="text-xs mt-3">
+                    <div id="apply-aliases-result"></div>
+                </div>
+                <div id="apply-implications-status" style="display: none;" class="text-xs mt-3">
+                    <div id="apply-implications-result"></div>
+                </div>
+                <div id="backfill-implied-tags-status" style="display: none;" class="text-xs mt-3">
+                    <div id="backfill-implied-tags-result"></div>
+                </div>
+                <div id="apply-tag-ratings-status" style="display: none;" class="text-xs mt-3">
+                    <div id="apply-tag-ratings-result"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -563,6 +578,9 @@
                 <button type="button" id="recalculate-album-metrics-btn" class="btn-primary cursor-pointer">
                     {{ t('admin.albums_management.maintenance.recalculate_metrics_btn') }}
                 </button>
+                <div id="recalculate-album-metrics-status" style="display: none;" class="text-xs mt-3">
+                    <div id="recalculate-album-metrics-result"></div>
+                </div>
             </div>
 
             <div class="pt-3 border-t">
@@ -574,6 +592,9 @@
                 <button type="button" id="prune-albums-btn" class="btn-primary cursor-pointer">
                     {{ t('admin.albums_management.maintenance.prune_albums_btn') }}
                 </button>
+                <div id="prune-albums-status" style="display: none;" class="text-xs mt-3">
+                    <div id="prune-albums-result"></div>
+                </div>
             </div>
         </div>
     </div>

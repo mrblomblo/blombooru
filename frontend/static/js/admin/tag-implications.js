@@ -29,7 +29,82 @@ class TagImplicationManager {
         this.init();
     }
 
+    registerMaintenanceJobs() {
+        const runner = window.maintenanceJobRunner;
+        if (!runner) return;
+
+        runner.register('apply_implications', {
+            startUrl: '/api/tag-implications/simulate-apply-all?background=true',
+            statusUrl: '/api/admin/maintenance/status/apply_implications',
+            buttonId: 'apply-all-implications',
+            statusDivId: 'apply-implications-status',
+            resultDivId: 'apply-implications-result',
+            progressLabel: () => window.i18n.t('admin.tags_implications.apply_all_processing'),
+            onComplete: (status) => {
+                const affectedMedia = (status.result && status.result.affected_media) || [];
+                if (affectedMedia.length === 0) {
+                    return {
+                        message: window.i18n.t('admin.tags_implications.apply_all_no_affected'),
+                        type: 'info',
+                    };
+                }
+                if (typeof BulkManualTagEditorModal !== 'undefined') {
+                    const affectedIds = affectedMedia.map((m) => m.media_id);
+                    const prefillTags = {};
+                    const prefillImpliedBy = {};
+                    affectedMedia.forEach((m) => {
+                        prefillTags[m.media_id] = m.added_tags;
+                        prefillImpliedBy[m.media_id] = m.implied_by || {};
+                    });
+
+                    const modal = new BulkManualTagEditorModal({ prefillTags, prefillImpliedBy });
+                    modal.show(affectedIds);
+                    return {
+                        message: window.i18n.t('admin.maintenance.found_affected', { count: affectedMedia.length }),
+                        type: 'success',
+                    };
+                }
+                return {
+                    message: `Found ${affectedMedia.length} affected media items, but bulk editor is not loaded.`,
+                    type: 'error',
+                };
+            },
+        });
+
+        runner.register('backfill_implied_tags', {
+            startUrl: '/api/tag-implications/backfill-implied-tags?background=true',
+            statusUrl: '/api/admin/maintenance/status/backfill_implied_tags',
+            buttonId: 'backfill-implied-tags-btn',
+            statusDivId: 'backfill-implied-tags-status',
+            resultDivId: 'backfill-implied-tags-result',
+            progressLabel: () => window.i18n.t('admin.tags_implications.backfill_implied_processing'),
+            progressStats: (status) => [
+                [window.i18n.t('common.tags'), status.updated_tags || 0],
+                [window.i18n.t('common.media'), status.updated_media || 0],
+            ],
+            onComplete: (status) => {
+                const data = status.result || {};
+                const updatedTags = data.updated_tags_count || 0;
+                const updatedMedia = data.updated_media_count || 0;
+                if (updatedTags === 0) {
+                    return {
+                        message: window.i18n.t('admin.tags_implications.backfill_implied_none'),
+                        type: 'info',
+                    };
+                }
+                return {
+                    message: window.i18n.t('admin.tags_implications.backfill_implied_success', {
+                        tags: updatedTags,
+                        media: updatedMedia,
+                    }),
+                    type: 'success',
+                };
+            },
+        });
+    }
+
     init() {
+        this.registerMaintenanceJobs();
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
 
         if (this.cancelBtn) {
@@ -427,51 +502,8 @@ class TagImplicationManager {
     }
 
     async executeApplyAll() {
-        if (this.applyAllBtn) {
-            this.applyAllBtn.disabled = true;
-        }
-
-        this.showStatus(window.i18n.t('admin.tags_implications.apply_all_processing'), 'info');
-        try {
-            const response = await fetch('/api/tag-implications/simulate-apply-all', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Failed to apply implications');
-            }
-
-            const data = await response.json();
-            const affectedMedia = data.affected_media || [];
-
-            if (affectedMedia.length === 0) {
-                this.showStatus(window.i18n.t('admin.tags_implications.apply_all_no_affected'), 'info');
-                return;
-            }
-
-            if (typeof BulkManualTagEditorModal !== 'undefined') {
-                const affectedIds = affectedMedia.map(m => m.media_id);
-                const prefillTags = {};
-                const prefillImpliedBy = {};
-                affectedMedia.forEach(m => {
-                    prefillTags[m.media_id] = m.added_tags;
-                    prefillImpliedBy[m.media_id] = m.implied_by || {};
-                });
-
-                const modal = new BulkManualTagEditorModal({ prefillTags, prefillImpliedBy });
-                modal.show(affectedIds);
-            } else {
-                this.showStatus(`Found ${affectedMedia.length} affected media items, but bulk editor is not loaded.`, 'error');
-            }
-        } catch (e) {
-            console.error('Error applying tag implications:', e);
-            this.showStatus(e.message, 'error');
-        } finally {
-            if (this.applyAllBtn) {
-                this.applyAllBtn.disabled = false;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('apply_implications');
         }
     }
 
@@ -489,44 +521,8 @@ class TagImplicationManager {
     }
 
     async executeBackfillImpliedTags() {
-        if (this.backfillBtn) {
-            this.backfillBtn.disabled = true;
-        }
-
-        this.showStatus(window.i18n.t('admin.tags_implications.backfill_implied_processing'), 'info');
-        try {
-            const response = await fetch('/api/tag-implications/backfill-implied-tags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.detail || 'Failed to backfill implied tags');
-            }
-
-            const data = await response.json();
-            const updatedTags = data.updated_tags_count || 0;
-            const updatedMedia = data.updated_media_count || 0;
-
-            if (updatedTags === 0) {
-                this.showStatus(window.i18n.t('admin.tags_implications.backfill_implied_none'), 'info');
-            } else {
-                this.showStatus(
-                    window.i18n.t('admin.tags_implications.backfill_implied_success', {
-                        tags: updatedTags,
-                        media: updatedMedia
-                    }),
-                    'success'
-                );
-            }
-        } catch (e) {
-            console.error('Error backfilling implied tags:', e);
-            this.showStatus(e.message, 'error');
-        } finally {
-            if (this.backfillBtn) {
-                this.backfillBtn.disabled = false;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('backfill_implied_tags');
         }
     }
 }

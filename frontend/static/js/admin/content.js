@@ -4,10 +4,299 @@ class AdminContent {
         this.isScanning = false;
         this.scanAbortController = null;
         this._scanOriginalText = null;
-        this.isTranscoding = false;
-        this._transcodeOriginalText = null;
-        this.isNearDuplicateHashing = false;
-        this._nearDuplicateBackfillOriginalText = null;
+        this.registerMaintenanceJobs();
+    }
+
+    registerMaintenanceJobs() {
+        const runner = window.maintenanceJobRunner;
+        if (!runner) return;
+
+        runner.register('near_duplicate_backfill', {
+            startUrl: '/api/admin/near-duplicates/backfill',
+            statusUrl: '/api/admin/near-duplicates',
+            extractStatus: (data) => (data && data.backfill) || {},
+            buttonId: 'near-duplicates-backfill-btn',
+            statusDivId: 'near-duplicates-backfill-status',
+            resultDivId: 'near-duplicates-backfill-result',
+            startErrorMessage: () => window.i18n.t('admin.near_duplicates.error_start'),
+            progressLabel: () => window.i18n.t('admin.near_duplicates.hashing'),
+            progressStats: (backfill) => [
+                [window.i18n.t('admin.maintenance.hashed'), backfill.hashed || 0],
+                [window.i18n.t('admin.maintenance.failed'), backfill.failed || 0],
+            ],
+            renderProgress: (backfill) => {
+                if (!backfill.total) return null;
+                return runner.formatProgress(
+                    window.i18n.t('admin.near_duplicates.hashing'),
+                    { ...backfill, current: backfill.processed || 0 },
+                    [
+                        [window.i18n.t('admin.maintenance.hashed'), backfill.hashed || 0],
+                        [window.i18n.t('admin.maintenance.failed'), backfill.failed || 0],
+                    ]
+                );
+            },
+            onComplete: (backfill) => {
+                const message = backfill.total
+                    ? window.i18n.t('admin.near_duplicates.done', {
+                        hashed: backfill.hashed || 0,
+                        failed: backfill.failed || 0,
+                    })
+                    : window.i18n.t('admin.near_duplicates.done_nothing');
+                return { message, type: 'success' };
+            },
+        });
+
+        runner.register('transcode_media', {
+            startUrl: '/api/admin/transcode-media',
+            statusUrl: '/api/admin/transcode-media/status',
+            buttonId: 'transcode-media-btn',
+            statusDivId: 'transcode-media-status',
+            resultDivId: 'transcode-media-result',
+            progressLabel: () => window.i18n.t('admin.media_management.maintenance.transcoding.transcoding'),
+            progressStats: (status) => [
+                [window.i18n.t('admin.maintenance.transcoded'), status.transcoded || 0],
+                [window.i18n.t('admin.maintenance.skipped'), (status.skipped || 0) + (status.already_transcoded || 0)],
+            ],
+            onComplete: async (status) => {
+                const finalStatus = status.last_result || status;
+                const message = window.i18n.t('admin.media_management.maintenance.transcoding.done', {
+                    transcoded: finalStatus.transcoded,
+                    skipped: finalStatus.skipped + finalStatus.already_transcoded,
+                    failed: finalStatus.failed,
+                });
+                await this.loadMediaStats();
+                return { message, type: 'success' };
+            },
+        });
+
+        runner.register('generate_missing_thumbnails', {
+            startUrl: '/api/admin/generate-missing-thumbnails?background=true',
+            statusUrl: '/api/admin/maintenance/status/generate_missing_thumbnails',
+            buttonId: 'generate-missing-thumbnails-btn',
+            disableButtonIds: ['regenerate-all-thumbnails-btn'],
+            statusDivId: 'thumbnail-regen-status',
+            resultDivId: 'thumbnail-regen-result',
+            processingButtonText: () => window.i18n.t('admin.media_management.maintenance.thumbnails.generating'),
+            progressLabel: () => window.i18n.t('admin.media_management.maintenance.thumbnails.generating'),
+            progressStats: (status) => [
+                [window.i18n.t('admin.maintenance.generated'), status.generated || 0],
+                [window.i18n.t('admin.maintenance.skipped'), status.skipped || 0],
+                [window.i18n.t('admin.maintenance.failed'), status.failed || 0],
+            ],
+            onComplete: (status) => {
+                const result = status.result || status;
+                const message = window.i18n.t('admin.media_management.maintenance.thumbnails.done_missing', {
+                    orphans_deleted: result.orphans_deleted || 0,
+                    generated: result.generated || 0,
+                    skipped: result.skipped || 0,
+                    failed: result.failed || 0,
+                });
+                return { message, type: 'success' };
+            },
+        });
+
+        runner.register('regenerate_all_thumbnails', {
+            startUrl: '/api/admin/regenerate-all-thumbnails?background=true',
+            statusUrl: '/api/admin/maintenance/status/regenerate_all_thumbnails',
+            buttonId: 'regenerate-all-thumbnails-btn',
+            disableButtonIds: ['generate-missing-thumbnails-btn'],
+            statusDivId: 'thumbnail-regen-status',
+            resultDivId: 'thumbnail-regen-result',
+            processingButtonText: () => window.i18n.t('admin.media_management.maintenance.thumbnails.generating'),
+            progressLabel: () => window.i18n.t('admin.media_management.maintenance.thumbnails.generating'),
+            progressStats: (status) => [
+                [window.i18n.t('admin.maintenance.generated'), status.generated || 0],
+                [window.i18n.t('admin.maintenance.failed'), status.failed || 0],
+            ],
+            onComplete: (status) => {
+                const result = status.result || status;
+                const message = window.i18n.t('admin.media_management.maintenance.thumbnails.done_all', {
+                    deleted: result.deleted || 0,
+                    generated: result.generated || 0,
+                    failed: result.failed || 0,
+                });
+                return { message, type: 'success' };
+            },
+        });
+
+        runner.register('relink_media', {
+            startUrl: '/api/admin/relink-media?background=true',
+            statusUrl: '/api/admin/maintenance/status/relink_media',
+            buttonId: 'relink-media-btn',
+            statusDivId: 'relink-media-status',
+            resultDivId: 'relink-media-result',
+            processingButtonText: () => window.i18n.t('admin.media_management.maintenance.relink.relinking'),
+            progressLabel: () => window.i18n.t('admin.media_management.maintenance.relink.relinking'),
+            progressStats: (status) => [
+                [window.i18n.t('admin.maintenance.relinked'), status.relinked || 0],
+                [window.i18n.t('admin.maintenance.remaining'), status.unresolved || 0],
+            ],
+            onComplete: async (status) => {
+                const result = status.result || status;
+                let msg = result.relinked > 0
+                    ? window.i18n.t('admin.media_management.maintenance.relink.done_relinked', { count: result.relinked })
+                    : window.i18n.t('admin.media_management.maintenance.relink.done_none');
+
+                if (result.unresolved > 0) {
+                    const unresolvedMsg = window.i18n.t('admin.media_management.maintenance.relink.unresolved_warning', { count: result.unresolved });
+                    msg += ` ${unresolvedMsg}`;
+                }
+
+                if (result.relinked > 0) {
+                    await this.loadMediaStats();
+                }
+
+                const type = result.relinked > 0 ? 'success' : (result.unresolved > 0 ? 'warning' : 'info');
+                return { message: msg, type };
+            },
+        });
+
+        runner.register('apply_aliases', {
+            startUrl: '/api/admin/simulate-apply-aliases?background=true',
+            statusUrl: '/api/admin/maintenance/status/apply_aliases',
+            buttonId: 'apply-aliases-btn',
+            statusDivId: 'apply-aliases-status',
+            resultDivId: 'apply-aliases-result',
+            progressLabel: () => window.i18n.t('admin.tags_management.apply_aliases_processing'),
+            onComplete: (status) => {
+                const affectedMedia = (status.result && status.result.affected_media) || [];
+                if (affectedMedia.length === 0) {
+                    return {
+                        message: window.i18n.t('admin.tags_management.apply_aliases_no_affected'),
+                        type: 'info',
+                    };
+                }
+                if (typeof BulkManualTagEditorModal !== 'undefined') {
+                    const affectedIds = affectedMedia.map((m) => m.media_id);
+                    const prefillTags = {};
+                    const removeTags = {};
+                    affectedMedia.forEach((m) => {
+                        if (m.added_tags && m.added_tags.length) {
+                            prefillTags[m.media_id] = m.added_tags;
+                        }
+                        if (m.removed_tags && m.removed_tags.length) {
+                            removeTags[m.media_id] = m.removed_tags;
+                        }
+                    });
+
+                    const modal = new BulkManualTagEditorModal({
+                        prefillTags,
+                        removeTags,
+                        onSave: async () => {
+                            try {
+                                await fetch('/api/admin/cleanup-aliased-tags', { method: 'POST' });
+                            } catch (e) {
+                                console.error('Error cleaning up aliased tags:', e);
+                            }
+                        },
+                    });
+                    modal.show(affectedIds);
+                    return {
+                        message: window.i18n.t('admin.maintenance.found_affected', { count: affectedMedia.length }),
+                        type: 'success',
+                    };
+                }
+                console.error('BulkManualTagEditorModal is not loaded');
+                return {
+                    message: `Found ${affectedMedia.length} affected media items, but bulk editor is not loaded.`,
+                    type: 'error',
+                };
+            },
+        });
+
+        runner.register('apply_tag_ratings', {
+            startUrl: '/api/admin/simulate-apply-tag-ratings?background=true',
+            statusUrl: '/api/admin/maintenance/status/apply_tag_ratings',
+            buttonId: 'apply-tag-ratings-btn',
+            statusDivId: 'apply-tag-ratings-status',
+            resultDivId: 'apply-tag-ratings-result',
+            progressLabel: () => window.i18n.t('admin.tags_management.apply_tag_ratings_processing'),
+            onComplete: (status) => {
+                const affectedMedia = (status.result && status.result.affected_media) || [];
+                if (affectedMedia.length === 0) {
+                    return {
+                        message: window.i18n.t('admin.tags_management.apply_tag_ratings_no_affected'),
+                        type: 'info',
+                    };
+                }
+                if (typeof BulkRatingModal !== 'undefined') {
+                    const affectedIds = affectedMedia.map((m) => m.media_id);
+                    const prefillRatings = {};
+                    affectedMedia.forEach((m) => {
+                        if (m.new_rating) {
+                            prefillRatings[m.media_id] = m.new_rating;
+                        }
+                    });
+
+                    const modal = new BulkRatingModal({
+                        prefillRatings,
+                        onSave: () => {
+                            window.adminPanel.content.loadTagStats();
+                        },
+                    });
+                    modal.show(affectedIds);
+                    return {
+                        message: window.i18n.t('admin.maintenance.found_affected', { count: affectedMedia.length }),
+                        type: 'success',
+                    };
+                }
+                console.error('BulkRatingModal is not loaded');
+                return {
+                    message: `Found ${affectedMedia.length} affected media items, but bulk rating editor is not loaded.`,
+                    type: 'error',
+                };
+            },
+        });
+
+        runner.register('recalculate_album_metrics', {
+            startUrl: '/api/albums/recalculate?background=true',
+            statusUrl: '/api/admin/maintenance/status/recalculate_album_metrics',
+            buttonId: 'recalculate-album-metrics-btn',
+            statusDivId: 'recalculate-album-metrics-status',
+            resultDivId: 'recalculate-album-metrics-result',
+            initialProgressText: () => window.i18n.t('admin.albums_management.maintenance.recalculate_metrics_processing'),
+            onComplete: async () => {
+                await this.loadAlbumStats();
+                if (this.albumTree) {
+                    await this.albumTree.loadAlbums();
+                    this.albumTree.render();
+                }
+                return {
+                    message: window.i18n.t('admin.albums_management.maintenance.metrics_recalculated'),
+                    type: 'success',
+                };
+            },
+        });
+
+        runner.register('prune_albums', {
+            startUrl: '/api/albums/prune?background=true',
+            statusUrl: '/api/admin/maintenance/status/prune_albums',
+            buttonId: 'prune-albums-btn',
+            statusDivId: 'prune-albums-status',
+            resultDivId: 'prune-albums-result',
+            initialProgressText: () => window.i18n.t('admin.albums_management.maintenance.prune_albums_processing'),
+            onComplete: async (status) => {
+                const result = status.result || {};
+                await this.loadAlbumStats();
+                if (this.albumTree) {
+                    await this.albumTree.loadAlbums();
+                    this.albumTree.render();
+                }
+                await this.loadAlbums();
+                return {
+                    message: window.i18n.t('admin.albums_management.maintenance.albums_pruned', {
+                        count: result.count || 0,
+                    }),
+                    type: 'success',
+                };
+            },
+        });
+    }
+
+    async checkMaintenanceStatuses() {
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.checkAll();
+        }
     }
 
     cancelScan() {
@@ -426,118 +715,20 @@ class AdminContent {
     }
 
     async checkNearDuplicateBackfillStatus() {
-        if (this.isNearDuplicateHashing) return;
-        try {
-            const data = await app.apiCall('/api/admin/near-duplicates');
-            if (data && data.backfill && data.backfill.running) {
-                await this.pollNearDuplicateBackfill();
-            }
-        } catch (error) {
-            console.error('Error checking near-duplicate backfill status:', error);
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.checkJob('near_duplicate_backfill');
         }
     }
 
     async startNearDuplicateBackfill() {
-        if (this.isNearDuplicateHashing) return;
-        const btn = document.getElementById('near-duplicates-backfill-btn');
-        const statusDiv = document.getElementById('near-duplicates-backfill-status');
-        const resultDiv = document.getElementById('near-duplicates-backfill-result');
-        if (!btn) return;
-        const originalText = this._nearDuplicateBackfillOriginalText || btn.textContent;
-        this._nearDuplicateBackfillOriginalText = originalText;
-
-        btn.disabled = true;
-        btn.textContent = window.i18n.t('common.processing');
-        if (statusDiv) statusDiv.style.display = 'block';
-        if (resultDiv) {
-            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(window.i18n.t('common.processing'))}</strong></div>`;
-        }
-
-        try {
-            const res = await fetch('/api/admin/near-duplicates/backfill', { method: 'POST' });
-            if (!res.ok) throw new Error(window.i18n.t('admin.near_duplicates.error_start'));
-            await res.json();
-
-            await this.pollNearDuplicateBackfill();
-        } catch (e) {
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(e.message)}</div>`;
-            }
-            app.showNotification(e.message, 'error');
-            btn.disabled = false;
-            btn.textContent = this._nearDuplicateBackfillOriginalText || originalText;
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('near_duplicate_backfill');
         }
     }
 
     async pollNearDuplicateBackfill() {
-        if (this.isNearDuplicateHashing) return;
-        this.isNearDuplicateHashing = true;
-
-        const btn = document.getElementById('near-duplicates-backfill-btn');
-        const statusDiv = document.getElementById('near-duplicates-backfill-status');
-        const resultDiv = document.getElementById('near-duplicates-backfill-result');
-        const originalText = this._nearDuplicateBackfillOriginalText || btn?.textContent;
-        if (btn && !this._nearDuplicateBackfillOriginalText) {
-            this._nearDuplicateBackfillOriginalText = originalText;
-        }
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = window.i18n.t('common.processing');
-        }
-        if (statusDiv) statusDiv.style.display = 'block';
-
-        const renderProgress = (backfill) => {
-            if (!resultDiv) return;
-            if (!backfill.total) {
-                resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(window.i18n.t('common.processing'))}</strong></div>`;
-                return;
-            }
-            const fileInfo = backfill.current_file ? ` (${backfill.current_file})` : '';
-            const text = window.i18n.t('admin.near_duplicates.progress', {
-                current: backfill.processed || 0,
-                total: backfill.total,
-                file: fileInfo,
-                hashed: backfill.hashed || 0,
-                failed: backfill.failed || 0,
-            });
-            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(text)}</strong></div>`;
-        };
-
-        try {
-            let data;
-            while (true) {
-                data = await app.apiCall('/api/admin/near-duplicates');
-                const backfill = data.backfill || {};
-                if (backfill.error) {
-                    throw new Error(backfill.error);
-                }
-                if (!backfill.running) break;
-                renderProgress(backfill);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-
-            const backfill = data.backfill || {};
-            const msg = backfill.total
-                ? window.i18n.t('admin.near_duplicates.done', {
-                    hashed: backfill.hashed || 0,
-                    failed: backfill.failed || 0,
-                })
-                : window.i18n.t('admin.near_duplicates.done_nothing');
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-success p-3 tag-text"><strong>${escapeHtml(msg)}</strong></div>`;
-            }
-            app.showNotification(msg, 'success');
-        } catch (error) {
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(error.message)}</div>`;
-            }
-            app.showNotification(error.message, 'error');
-        } finally {
-            this.isNearDuplicateHashing = false;
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = this._nearDuplicateBackfillOriginalText || originalText;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.poll('near_duplicate_backfill');
         }
     }
 
@@ -664,33 +855,8 @@ class AdminContent {
     }
 
     async generateMissingThumbnails() {
-        const btn = document.getElementById('generate-missing-thumbnails-btn');
-        const allBtn = document.getElementById('regenerate-all-thumbnails-btn');
-        const statusDiv = document.getElementById('thumbnail-regen-status');
-        const resultDiv = document.getElementById('thumbnail-regen-result');
-        const originalText = btn.textContent;
-
-        btn.disabled = true;
-        allBtn.disabled = true;
-        btn.textContent = window.i18n.t('admin.media_management.maintenance.thumbnails.generating');
-        statusDiv.style.display = 'block';
-        resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${window.i18n.t('admin.media_management.maintenance.thumbnails.generating')}</strong></div>`;
-
-        try {
-            const result = await app.apiCall('/api/admin/generate-missing-thumbnails', { method: 'POST' });
-            const msg = window.i18n.t('admin.media_management.maintenance.thumbnails.done_missing', {
-                orphans_deleted: result.orphans_deleted,
-                generated: result.generated,
-                skipped: result.skipped,
-                failed: result.failed,
-            });
-            resultDiv.innerHTML = `<div class="bg-success p-3 tag-text"><strong>${escapeHtml(msg)}</strong></div>`;
-        } catch (error) {
-            resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(error.message)}</div>`;
-        } finally {
-            btn.disabled = false;
-            allBtn.disabled = false;
-            btn.textContent = originalText;
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('generate_missing_thumbnails');
         }
     }
 
@@ -705,32 +871,8 @@ class AdminContent {
             confirmId: 'regenerate-thumbnails-confirm-yes',
             cancelId: 'regenerate-thumbnails-confirm-no',
             onConfirm: async () => {
-                const btn = document.getElementById('regenerate-all-thumbnails-btn');
-                const missingBtn = document.getElementById('generate-missing-thumbnails-btn');
-                const statusDiv = document.getElementById('thumbnail-regen-status');
-                const resultDiv = document.getElementById('thumbnail-regen-result');
-                const originalText = btn.textContent;
-
-                btn.disabled = true;
-                missingBtn.disabled = true;
-                btn.textContent = window.i18n.t('admin.media_management.maintenance.thumbnails.generating');
-                statusDiv.style.display = 'block';
-                resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${window.i18n.t('admin.media_management.maintenance.thumbnails.generating')}</strong></div>`;
-
-                try {
-                    const result = await app.apiCall('/api/admin/regenerate-all-thumbnails', { method: 'POST' });
-                    const msg = window.i18n.t('admin.media_management.maintenance.thumbnails.done_all', {
-                        deleted: result.deleted,
-                        generated: result.generated,
-                        failed: result.failed,
-                    });
-                    resultDiv.innerHTML = `<div class="bg-success p-3 tag-text"><strong>${escapeHtml(msg)}</strong></div>`;
-                } catch (error) {
-                    resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${escapeHtml(window.i18n.t('common.error'))}:</strong> ${escapeHtml(error.message)}</div>`;
-                } finally {
-                    btn.disabled = false;
-                    missingBtn.disabled = false;
-                    btn.textContent = originalText;
+                if (window.maintenanceJobRunner) {
+                    await window.maintenanceJobRunner.start('regenerate_all_thumbnails');
                 }
             }
         });
@@ -739,187 +881,26 @@ class AdminContent {
     }
 
     async relinkMedia() {
-        const btn = document.getElementById('relink-media-btn');
-        if (!btn) return;
-        const originalText = btn.textContent;
-
-        btn.disabled = true;
-        btn.textContent = window.i18n.t('admin.media_management.maintenance.relink.relinking');
-
-        try {
-            const result = await app.apiCall('/api/admin/relink-media', { method: 'POST' });
-            let msg = '';
-
-            if (result.relinked > 0) {
-                msg = window.i18n.t('admin.media_management.maintenance.relink.done_relinked', { count: result.relinked });
-            } else {
-                msg = window.i18n.t('admin.media_management.maintenance.relink.done_none');
-            }
-
-            if (result.unresolved > 0) {
-                const unresolvedMsg = window.i18n.t('admin.media_management.maintenance.relink.unresolved_warning', { count: result.unresolved });
-                msg += ` ${unresolvedMsg}`;
-            }
-
-            if (result.relinked > 0) {
-                app.showNotification(msg, 'success');
-                await this.loadMediaStats();
-            } else {
-                app.showNotification(msg, result.unresolved > 0 ? 'warning' : 'info');
-            }
-        } catch (error) {
-            app.showNotification(error.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('relink_media');
         }
     }
 
     async checkTranscodeStatus() {
-        if (this.isTranscoding) return;
-        try {
-            const status = await app.apiCall('/api/admin/transcode-media/status');
-            if (status && status.running) {
-                await this.pollTranscodeJob();
-            }
-        } catch (error) {
-            console.error('Error checking transcode status:', error);
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.checkJob('transcode_media');
         }
     }
 
     async pollTranscodeJob() {
-        if (this.isTranscoding) return;
-        this.isTranscoding = true;
-
-        const btn = document.getElementById('transcode-media-btn');
-        const statusDiv = document.getElementById('transcode-media-status');
-        const resultDiv = document.getElementById('transcode-media-result');
-        const originalText = this._transcodeOriginalText || btn?.textContent;
-        if (btn && !this._transcodeOriginalText) {
-            this._transcodeOriginalText = originalText;
-        }
-
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = window.i18n.t('common.processing');
-        }
-        if (statusDiv) statusDiv.style.display = 'block';
-
-        const updateProgressUI = (status) => {
-            if (!resultDiv) return;
-            if (!status.total) {
-                resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${window.i18n.t('common.processing')}</strong></div>`;
-                return;
-            }
-            const fileInfo = status.current_file ? ` (${escapeHtml(status.current_file)})` : '';
-            const text = window.i18n.t('admin.media_management.maintenance.transcoding.progress', {
-                current: status.current,
-                total: status.total,
-                file: fileInfo,
-                transcoded: status.transcoded,
-                skipped: status.skipped + status.already_transcoded,
-            });
-            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${escapeHtml(text)}</strong></div>`;
-        };
-
-        try {
-            let done = false;
-            let finalStatus = null;
-            while (!done) {
-                const status = await app.apiCall('/api/admin/transcode-media/status');
-                if (status.error) {
-                    throw new Error(status.error);
-                }
-                if (!status.running) {
-                    done = true;
-                    finalStatus = status.last_result || status;
-                } else {
-                    updateProgressUI(status);
-                    await new Promise((resolve) => setTimeout(resolve, 1000));
-                }
-            }
-
-            const msg = window.i18n.t('admin.media_management.maintenance.transcoding.done', {
-                transcoded: finalStatus.transcoded,
-                skipped: finalStatus.skipped + finalStatus.already_transcoded,
-                failed: finalStatus.failed
-            });
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-success p-3 tag-text"><strong>${escapeHtml(msg)}</strong></div>`;
-            }
-            app.showNotification(msg, 'success');
-            await this.loadMediaStats();
-        } catch (error) {
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${window.i18n.t('common.error')}:</strong> ${escapeHtml(error.message)}</div>`;
-            }
-            app.showNotification(error.message, 'error');
-        } finally {
-            this.isTranscoding = false;
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = this._transcodeOriginalText || originalText;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.poll('transcode_media');
         }
     }
 
     async transcodeMedia() {
-        if (this.isTranscoding) return;
-        const btn = document.getElementById('transcode-media-btn');
-        const statusDiv = document.getElementById('transcode-media-status');
-        const resultDiv = document.getElementById('transcode-media-result');
-        if (!btn) return;
-        const originalText = this._transcodeOriginalText || btn.textContent;
-        this._transcodeOriginalText = originalText;
-
-        btn.disabled = true;
-        btn.textContent = window.i18n.t('common.processing');
-        if (statusDiv) statusDiv.style.display = 'block';
-        if (resultDiv) {
-            resultDiv.innerHTML = `<div class="bg-primary primary-text p-3"><strong>${window.i18n.t('common.processing')}</strong></div>`;
-        }
-
-        try {
-            const res = await fetch('/api/admin/transcode-media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (res.status === 409) {
-                // Check if transcoding job is already running to reattach
-                const status = await app.apiCall('/api/admin/transcode-media/status');
-                if (status && status.running) {
-                    await this.pollTranscodeJob();
-                    return;
-                }
-                throw new Error(window.i18n.t('common.processing'));
-            }
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                let errorMsg = errData.detail || 'API call failed';
-                if (typeof errorMsg === 'string') {
-                    const translated = window.i18n.t(`notifications.admin.${errorMsg}`);
-                    if (translated !== `notifications.admin.${errorMsg}`) {
-                        errorMsg = translated;
-                    } else {
-                        const directTranslated = window.i18n.t(errorMsg);
-                        if (directTranslated !== errorMsg) {
-                            errorMsg = directTranslated;
-                        }
-                    }
-                }
-                throw new Error(errorMsg);
-            }
-
-            await this.pollTranscodeJob();
-        } catch (error) {
-            if (resultDiv) {
-                resultDiv.innerHTML = `<div class="bg-danger p-3 tag-text"><strong>${window.i18n.t('common.error')}:</strong> ${escapeHtml(error.message)}</div>`;
-            }
-            app.showNotification(error.message, 'error');
-            btn.disabled = false;
-            btn.textContent = this._transcodeOriginalText || originalText;
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('transcode_media');
         }
     }
 
@@ -1140,8 +1121,6 @@ class AdminContent {
         } catch (error) {
             console.error('Error loading media stats:', error);
         }
-
-        await this.checkTranscodeStatus();
     }
 
     async uploadCSV(file) {
@@ -1467,70 +1446,8 @@ class AdminContent {
     }
 
     async executeApplyAllAliases() {
-        const applyBtn = document.getElementById('apply-aliases-btn');
-        if (applyBtn) {
-            applyBtn.disabled = true;
-        }
-
-        if (typeof app !== 'undefined' && app.showNotification) {
-            app.showNotification(window.i18n.t('admin.tags_management.apply_aliases_processing'), 'info');
-        }
-
-        try {
-            const response = await fetch('/api/admin/simulate-apply-aliases', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Failed to apply aliases');
-            }
-
-            const data = await response.json();
-            const affectedMedia = data.affected_media || [];
-
-            if (affectedMedia.length === 0) {
-                if (typeof app !== 'undefined' && app.showNotification) {
-                    app.showNotification(window.i18n.t('admin.tags_management.apply_aliases_no_affected'), 'info');
-                }
-            } else if (typeof BulkManualTagEditorModal !== 'undefined') {
-                const affectedIds = affectedMedia.map(m => m.media_id);
-                const prefillTags = {};
-                const removeTags = {};
-                affectedMedia.forEach(m => {
-                    if (m.added_tags && m.added_tags.length) {
-                        prefillTags[m.media_id] = m.added_tags;
-                    }
-                    if (m.removed_tags && m.removed_tags.length) {
-                        removeTags[m.media_id] = m.removed_tags;
-                    }
-                });
-
-                const modal = new BulkManualTagEditorModal({
-                    prefillTags,
-                    removeTags,
-                    onSave: async () => {
-                        try {
-                            await fetch('/api/admin/cleanup-aliased-tags', { method: 'POST' });
-                        } catch (e) {
-                            console.error('Error cleaning up aliased tags:', e);
-                        }
-                    }
-                });
-                modal.show(affectedIds);
-            } else {
-                console.error('BulkManualTagEditorModal is not loaded');
-            }
-        } catch (e) {
-            console.error('Error applying tag aliases:', e);
-            if (typeof app !== 'undefined' && app.showNotification) {
-                app.showNotification(e.message, 'error');
-            }
-        } finally {
-            if (applyBtn) {
-                applyBtn.disabled = false;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('apply_aliases');
         }
     }
 
@@ -1548,61 +1465,8 @@ class AdminContent {
     }
 
     async executeApplyTagRatings() {
-        const applyBtn = document.getElementById('apply-tag-ratings-btn');
-        if (applyBtn) {
-            applyBtn.disabled = true;
-        }
-
-        if (typeof app !== 'undefined' && app.showNotification) {
-            app.showNotification(window.i18n.t('admin.tags_management.apply_tag_ratings_processing'), 'info');
-        }
-
-        try {
-            const response = await fetch('/api/admin/simulate-apply-tag-ratings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Failed to simulate applying tag ratings');
-            }
-
-            const data = await response.json();
-            const affectedMedia = data.affected_media || [];
-
-            if (affectedMedia.length === 0) {
-                if (typeof app !== 'undefined' && app.showNotification) {
-                    app.showNotification(window.i18n.t('admin.tags_management.apply_tag_ratings_no_affected'), 'info');
-                }
-            } else if (typeof BulkRatingModal !== 'undefined') {
-                const affectedIds = affectedMedia.map(m => m.media_id);
-                const prefillRatings = {};
-                affectedMedia.forEach(m => {
-                    if (m.new_rating) {
-                        prefillRatings[m.media_id] = m.new_rating;
-                    }
-                });
-
-                const modal = new BulkRatingModal({
-                    prefillRatings,
-                    onSave: () => {
-                        window.adminPanel.content.loadTagStats();
-                    }
-                });
-                modal.show(affectedIds);
-            } else {
-                console.error('BulkRatingModal is not loaded');
-            }
-        } catch (e) {
-            console.error('Error applying tag ratings:', e);
-            if (typeof app !== 'undefined' && app.showNotification) {
-                app.showNotification(e.message, 'error');
-            }
-        } finally {
-            if (applyBtn) {
-                applyBtn.disabled = false;
-            }
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('apply_tag_ratings');
         }
     }
 
@@ -1697,26 +1561,8 @@ class AdminContent {
     }
 
     async recalculateAlbumMetrics() {
-        const btn = document.getElementById('recalculate-album-metrics-btn');
-        if (!btn) return;
-
-        btn.disabled = true;
-
-        try {
-            await app.apiCall('/api/albums/recalculate', { method: 'POST' });
-            app.showNotification(
-                window.i18n.t('admin.albums_management.maintenance.metrics_recalculated'),
-                'success'
-            );
-            await this.loadAlbumStats();
-            if (this.albumTree) {
-                await this.albumTree.loadAlbums();
-                this.albumTree.render();
-            }
-        } catch (error) {
-            app.showNotification(error.message, 'error');
-        } finally {
-            btn.disabled = false;
+        if (window.maintenanceJobRunner) {
+            await window.maintenanceJobRunner.start('recalculate_album_metrics');
         }
     }
 
@@ -1734,26 +1580,8 @@ class AdminContent {
             confirmId: 'prune-albums-confirm-yes',
             cancelId: 'prune-albums-confirm-no',
             onConfirm: async () => {
-                btn.disabled = true;
-
-                try {
-                    const response = await app.apiCall('/api/albums/prune', { method: 'POST' });
-                    app.showNotification(
-                        window.i18n.t('admin.albums_management.maintenance.albums_pruned', {
-                            count: response.count
-                        }),
-                        'success'
-                    );
-                    await this.loadAlbumStats();
-                    if (this.albumTree) {
-                        await this.albumTree.loadAlbums();
-                        this.albumTree.render();
-                    }
-                    await this.loadAlbums();
-                } catch (error) {
-                    app.showNotification(error.message, 'error');
-                } finally {
-                    btn.disabled = false;
+                if (window.maintenanceJobRunner) {
+                    await window.maintenanceJobRunner.start('prune_albums');
                 }
             }
         });
