@@ -225,6 +225,7 @@ All error responses follow the FastAPI default format:
 | **Admin: Backup & Import** | Tag/media export and full backup import | [Admin/Backup](/docs/Internal%20API/API/Admin/Backup.md) |
 | **Admin: Custom Themes** | Custom theme CRUD and import/export | [Admin/Custom Themes](/docs/Internal%20API/API/Admin/Custom%20Themes.md) |
 | **Admin: Keybindings** | Action keybinding registry and customization | [Admin/Keybindings](/docs/Internal%20API/API/Admin/Keybindings.md) |
+| **Admin: Maintenance** | Background maintenance job status polling | [Admin/Maintenance](/docs/Internal%20API/API/Admin/Maintenance.md) |
 | **Admin: Media** | Untracked file scanning, stats, and thumbnail management | [Admin/Media](/docs/Internal%20API/API/Admin/Media.md) |
 | **Admin: Settings** | App configuration, cache management, themes, languages | [Admin/Settings](/docs/Internal%20API/API/Admin/Settings.md) |
 | **Admin: Shared Tags** | Shared tag database sync and status | [Admin/Shared Tags](/docs/Internal%20API/API/Admin/Shared%20Tags.md) |

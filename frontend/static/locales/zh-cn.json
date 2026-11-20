@@ -70,6 +70,16 @@
             "scanning": "正在扫描...",
             "testing": "正在测试..."
         },
+        "maintenance": {
+            "found_affected": "",
+            "generated": "",
+            "hashed": "",
+            "relinked": "",
+            "remaining": "",
+            "skipped": "",
+            "failed": "",
+            "transcoded": ""
+        },
         "albums_management": {
             "album_created": "相册创建成功",
             "album_deleted": "相册已删除",
@@ -83,10 +93,12 @@
                 "recalculate_metrics": "",
                 "recalculate_metrics_description": "",
                 "recalculate_metrics_btn": "",
+                "recalculate_metrics_processing": "",
                 "metrics_recalculated": "",
                 "prune_albums": "",
                 "prune_albums_description": "",
                 "prune_albums_btn": "",
+                "prune_albums_processing": "",
                 "albums_pruned": ""
             },
             "none_root": "无（根相册）",
@@ -193,7 +205,7 @@
                     "title": "",
                     "hint": "",
                     "button": "",
-                    "progress": "",
+                    "transcoding": "",
                     "done": ""
                 }
             },
@@ -544,7 +556,7 @@
             "hashing_title": "",
             "hashing_hint": "",
             "hash_now": "",
-            "progress": "",
+            "hashing": "",
             "done": "",
             "done_nothing": "",
             "error_start": ""

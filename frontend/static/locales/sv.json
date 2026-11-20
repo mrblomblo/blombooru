@@ -70,6 +70,16 @@
             "scanning": "Skannar...",
             "testing": "Testar..."
         },
+        "maintenance": {
+            "found_affected": "Hittade {count} berörda medieobjekt att granska.",
+            "generated": "Skapade",
+            "hashed": "Hashade",
+            "relinked": "Återskapade",
+            "remaining": "Återstående",
+            "skipped": "Överhoppade",
+            "failed": "Misslyckade",
+            "transcoded": "Transkodade"
+        },
         "albums_management": {
             "album_created": "Album skapat",
             "album_deleted": "Album borttaget",
@@ -83,10 +93,12 @@
                 "recalculate_metrics": "Omberäkna Albumstatistik",
                 "recalculate_metrics_description": "Omberäkna mediaräkningar och maxbetyg för alla album i hierarkin.",
                 "recalculate_metrics_btn": "Omberäkna Alla Mätvärden",
+                "recalculate_metrics_processing": "Omberäknar albummätvärden...",
                 "metrics_recalculated": "Alla albummätvärden har omberäknats.",
                 "prune_albums": "Rensa Tomma Album",
                 "prune_albums_description": "Ta bort album som inte innehåller media eller underalbum. Album som saknar media men innehåller andra album med media kommer inte att raderas för att bevara hierarkin.",
                 "prune_albums_btn": "Rensa Alla Tomma Album",
+                "prune_albums_processing": "Rensar tomma album...",
                 "albums_pruned": "Lyckades rensa {count} album."
             },
             "none_root": "Inget (Rotalbum)",
@@ -193,7 +205,7 @@
                     "title": "Mediatranskodning",
                     "hint": "Transkoda media med codecs eller ljud som är inkompatibla med webbläsare till ett webbkompatibelt format.",
                     "button": "Transkoda Inkompatibel Media",
-                    "progress": "Transkodar: {current}/{total}{file} - Transkodade: {transcoded}, Överhoppade: {skipped}",
+                    "transcoding": "Transkodar...",
                     "done": "Klart! Transkodade: {transcoded}, Överhoppade: {skipped}, Misslyckades: {failed}."
                 }
             },
@@ -544,7 +556,7 @@
             "hashing_title": "Beräkna Perceptuella Hashar",
             "hashing_hint": "Beräkna eller räkna om perceptuella hashar för alla inlägg.",
             "hash_now": "Hasha Inlägg",
-            "progress": "Hashar: {current}/{total}{file} - Hashade: {hashed}, Kunde inte hasha: {failed}",
+            "hashing": "Hashar...",
             "done": "Klart! Hashade: {hashed}, Kunde inte hasha: {failed}.",
             "done_nothing": "Inget att hasha. Inga hashbara inlägg hittades.",
             "error_start": "Kunde inte starta hashning"

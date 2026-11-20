@@ -70,6 +70,16 @@
             "scanning": "Scanning...",
             "testing": "Testing..."
         },
+        "maintenance": {
+            "found_affected": "Found {count} affected media item(s) to review.",
+            "generated": "Generated",
+            "hashed": "Hashed",
+            "relinked": "Re-linked",
+            "remaining": "Remaining",
+            "skipped": "Skipped",
+            "failed": "Failed",
+            "transcoded": "Transcoded"
+        },
         "albums_management": {
             "album_created": "Album created successfully",
             "album_deleted": "Album deleted",
@@ -83,10 +93,12 @@
                 "recalculate_metrics": "Recalculate Album Metrics",
                 "recalculate_metrics_description": "Recalculate media counts and maximum ratings for all albums across the hierarchy.",
                 "recalculate_metrics_btn": "Recalculate All Metrics",
+                "recalculate_metrics_processing": "Recalculating album metrics...",
                 "metrics_recalculated": "All album metrics successfully recalculated.",
                 "prune_albums": "Prune Albums",
                 "prune_albums_description": "Remove albums that have no media and no child albums. Albums that have no media but include other albums with media will not be deleted to preserve the hierarchy.",
                 "prune_albums_btn": "Prune All Albums",
+                "prune_albums_processing": "Pruning empty albums...",
                 "albums_pruned": "Successfully pruned {count} albums."
             },
             "none_root": "None (Root Album)",
@@ -193,7 +205,7 @@
                     "title": "Media Transcoding",
                     "hint": "Transcode media files with codecs or audio incompatible with web browsers to a web-compatible format.",
                     "button": "Transcode Incompatible Media",
-                    "progress": "Transcoding: {current}/{total}{file} - Transcoded: {transcoded}, Skipped: {skipped}",
+                    "transcoding": "Transcoding...",
                     "done": "Done! Transcoded: {transcoded}, Skipped: {skipped}, Failed: {failed}."
                 }
             },
@@ -544,7 +556,7 @@
             "hashing_title": "Compute Perceptual Hashes",
             "hashing_hint": "Compute or recompute perceptual hashes for all posts.",
             "hash_now": "Hash Posts",
-            "progress": "Hashing: {current}/{total}{file} - Hashed: {hashed}, Could not hash: {failed}",
+            "hashing": "Hashing...",
             "done": "Done! Hashed: {hashed}, Could not hash: {failed}.",
             "done_nothing": "Nothing to hash. No hashable posts found.",
             "error_start": "Failed to start hashing"

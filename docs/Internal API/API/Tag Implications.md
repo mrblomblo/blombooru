@@ -1,7 +1,7 @@
 ## Tag Implications
 
 > [!NOTE]
-> Last updated: `October 24, 2026`
+> Last updated: `November 20, 2026`
 
 **Base path:** `/api/tag-implications`
 
@@ -131,7 +131,11 @@ Requires `require_admin_mode`. Performs an optimized in-memory simulation evalua
 POST /api/tag-implications/simulate-apply-all
 ```
 
-**Response:**
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the simulation in the background (`apply_implications`) instead of waiting for completion |
+
+**Response (`background=false`):**
 
 ```json
 {
@@ -148,6 +152,8 @@ POST /api/tag-implications/simulate-apply-all
 }
 ```
 
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
+
 ### Backfill implied tags metadata
 
 Requires `require_admin_mode`. Evaluates all active implication rules against existing media posts and retroactively marks tags already present on a post as `implied: true` (and populates `implied_by` with the matching trigger tag IDs) when their rule conditions are met on that post. Does not add new tags to posts.
@@ -156,7 +162,11 @@ Requires `require_admin_mode`. Evaluates all active implication rules against ex
 POST /api/tag-implications/backfill-implied-tags
 ```
 
-**Response:**
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the backfill in the background (`backfill_implied_tags`) instead of waiting for completion |
+
+**Response (`background=false`):**
 
 ```json
 {
@@ -165,3 +175,5 @@ POST /api/tag-implications/backfill-implied-tags
   "updated_tags_count": 12
 }
 ```
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`

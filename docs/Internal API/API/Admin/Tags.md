@@ -1,7 +1,7 @@
 ## Admin: Tags
 
 > [!NOTE]
-> Last updated: `August 11, 2026`
+> Last updated: `November 20, 2026`
 
 **Base path:** `/api/admin`
 
@@ -132,7 +132,11 @@ Requires `require_admin_mode`. **Read-only.** Scans all media to identify tags t
 POST /api/admin/simulate-apply-aliases
 ```
 
-**Response:**
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the simulation in the background (`apply_aliases`) instead of waiting for completion |
+
+**Response (`background=false`):**
 ```json
 {
   "affected_media": [
@@ -144,6 +148,35 @@ POST /api/admin/simulate-apply-aliases
   ]
 }
 ```
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
+
+### Simulate applying tag ratings to all media
+
+Requires `require_admin_mode`. **Read-only.** Scans non-explicit media to identify items whose rating should be escalated based on configured tag ratings. Does not modify any data.
+
+```
+POST /api/admin/simulate-apply-tag-ratings
+```
+
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the simulation in the background (`apply_tag_ratings`) instead of waiting for completion |
+
+**Response (`background=false`):**
+```json
+{
+  "affected_media": [
+    {
+      "media_id": 1,
+      "current_rating": "safe",
+      "new_rating": "questionable"
+    }
+  ]
+}
+```
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
 
 ### Cleanup aliased tags
 

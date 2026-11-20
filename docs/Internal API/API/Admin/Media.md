@@ -1,7 +1,7 @@
 ## Admin: Media
 
 > [!NOTE]
-> Last updated: `September 8, 2026`
+> Last updated: `November 20, 2026`
 
 **Base path:** `/api/admin`
 
@@ -65,30 +65,68 @@ The path must be an absolute path inside `ORIGINAL_DIR`; requests for paths outs
 
 ### Regenerate all thumbnails
 
-Requires `require_admin_mode`. Deletes every existing thumbnail and regenerates all of them from the original source files.
+Requires `require_admin_mode`. Deletes every existing thumbnail and regenerates all of them from the original source files. Shares the media maintenance lock with thumbnail generation, relinking, and transcoding (`409` if another media maintenance job is running).
 
 ```
 POST /api/admin/regenerate-all-thumbnails
 ```
 
-**Response:** `{ "deleted", "generated", "failed", "total" }`
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the job in the background (`regenerate_all_thumbnails`) instead of waiting for completion |
+
+**Response (`background=false`):** `{ "deleted", "generated", "failed", "total" }`
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
 
 ### Generate missing thumbnails
 
-Requires `require_admin_mode`. Removes orphaned thumbnail files and generates thumbnails only for media items that are missing one.
+Requires `require_admin_mode`. Removes orphaned thumbnail files and generates thumbnails only for media items that are missing one. Shares the media maintenance lock (`409` if another media maintenance job is running).
 
 ```
 POST /api/admin/generate-missing-thumbnails
 ```
 
-**Response:** `{ "orphans_deleted", "generated", "failed", "skipped", "total" }`
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the job in the background (`generate_missing_thumbnails`) instead of waiting for completion |
+
+**Response (`background=false`):** `{ "orphans_deleted", "generated", "failed", "skipped", "total" }`
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
 
 ### Re-link media files
 
-Requires `require_admin_mode`. Scans storage (`ORIGINAL_DIR`) and re-links database records for moved or renamed media files based on content hash. Also renames and moves corresponding transcoded files in `media/transcoded/` to maintain synchronization.
+Requires `require_admin_mode`. Scans storage (`ORIGINAL_DIR`) and re-links database records for moved or renamed media files based on content hash. Also renames and moves corresponding transcoded files in `media/transcoded/` to maintain synchronization. Shares the media maintenance lock (`409` if another media maintenance job is running).
 
 ```
 POST /api/admin/relink-media
 ```
 
-**Response:** `{ "relinked": 2, "unresolved": 0, "total_checked": 50, "details": [ { "id": 1, "old_path": "...", "new_path": "...", "filename": "..." } ] }`
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the job in the background (`relink_media`) instead of waiting for completion |
+
+**Response (`background=false`):** `{ "relinked": 2, "unresolved": 0, "total_checked": 50, "details": [ { "id": 1, "old_path": "...", "new_path": "...", "filename": "..." } ] }`
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
+
+### Transcode incompatible media
+
+Requires `require_admin_mode`. Starts a background job to transcode media files with browser-incompatible codecs or containers into web-compatible formats. Shares the media maintenance lock (`409` if another media maintenance job is running).
+
+```
+POST /api/admin/transcode-media
+```
+
+**Response:** `{ "status": "started", "message": "Transcoding job started in background" }`
+
+### Get media transcoding status
+
+Requires `require_admin_mode`. Returns the current progress and last result of the background library transcoding job.
+
+```
+GET /api/admin/transcode-media/status
+```
+
+**Response:** `{ "running": false, "current": 0, "total": 0, "transcoded": 0, "already_transcoded": 0, "skipped": 0, "failed": 0, "current_file": null, "error": null, "last_result": null }`

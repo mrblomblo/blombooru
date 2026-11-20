@@ -1,7 +1,7 @@
 ## Albums
 
 > [!NOTE]
-> Last updated: `October 10, 2026`
+> Last updated: `November 20, 2026`
 
 **Base path:** `/api/albums`
 
@@ -105,23 +105,35 @@ GET /api/albums/stats
 
 ### Recalculate all album metrics
 
-Requires `require_admin_mode`. Re-indexes cached media counts, direct media counts, and rating aggregations across all albums, then purges the album cache.
+Requires `require_admin_mode`. Re-indexes cached media counts, direct media counts, and rating aggregations across all albums, then purges the album cache. Shares the album maintenance lock with album pruning (`409` if pruning is running).
 
 ```
 POST /api/albums/recalculate
 ```
 
-**Response:** `{ "message": "All album metrics successfully recalculated and cache invalidated" }`
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the job in the background (`recalculate_album_metrics`) instead of waiting for completion |
+
+**Response (`background=false`):** `{ "message": "All album metrics successfully recalculated and cache invalidated" }`
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
 
 ### Prune empty leaf albums
 
-Requires `require_admin_mode`. Deletes all empty leaf albums that contain no media and have no child albums.
+Requires `require_admin_mode`. Deletes all empty leaf albums that contain no media and have no child albums. Shares the album maintenance lock with metric recalculation (`409` if recalculation is running).
 
 ```
 POST /api/albums/prune
 ```
 
-**Response:** `{ "message": "Albums have been pruned successfully", "count": 2 }`
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `background` | bool | `false` | When `true`, starts the job in the background (`prune_albums`) instead of waiting for completion |
+
+**Response (`background=false`):** `{ "message": "Albums have been pruned successfully", "count": 2 }`
+
+**Response (`background=true`):** `{ "status": "started" | "already_running", "job": { ... } }`
 
 ### Autocomplete albums
 

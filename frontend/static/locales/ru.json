@@ -70,6 +70,16 @@
             "scanning": "Сканирование...",
             "testing": "Тестирование..."
         },
+        "maintenance": {
+            "found_affected": "",
+            "generated": "",
+            "hashed": "",
+            "relinked": "Перепривязано",
+            "remaining": "",
+            "skipped": "Пропущено",
+            "failed": "Не удалось",
+            "transcoded": "Перекодировано"
+        },
         "albums_management": {
             "album_created": "Альбом успешно создан",
             "album_deleted": "Альбом удален",
@@ -83,10 +93,12 @@
                 "recalculate_metrics": "Пересчитать метрики альбомов",
                 "recalculate_metrics_description": "Пересчитать количество медиафайлов и рейтингов для всей иерархии альбомов.",
                 "recalculate_metrics_btn": "Пересчитать метрики",
+                "recalculate_metrics_processing": "",
                 "metrics_recalculated": "Метрики альбомов успешно пересчитаны",
                 "prune_albums": "Очистить альбомы",
                 "prune_albums_description": "Удалить пустые (без медиафайлов и подальбомов) альбомы. Альбомы без медиафайлов, но имеющие подальбомы, не будут удалены.",
                 "prune_albums_btn": "Очистить альбомы",
+                "prune_albums_processing": "",
                 "albums_pruned": "Успешно удалено {count} пустых альбомов"
             },
             "none_root": "Пусто (Корневой альбом)",
@@ -193,7 +205,7 @@
                     "title": "Перекодирование видео",
                     "hint": "Перекодирование видео может быть полезно для исправления проблем с воспроизведением или для уменьшения размера файлов.",
                     "button": "Перекодировать несовместимые видео",
-                    "progress": "Перекодирование... {current}/{total}{file} - Перекодировано: {transcoded}",
+                    "transcoding": "Перекодирование...",
                     "done": "Перекодирование завершено! Готово: {transcoded}. Пропущено: {skipped}. Не удалось: {failed}."
                 }
             },
@@ -544,7 +556,7 @@
             "hashing_title": "",
             "hashing_hint": "",
             "hash_now": "",
-            "progress": "",
+            "hashing": "",
             "done": "",
             "done_nothing": "",
             "error_start": ""
