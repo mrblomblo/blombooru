@@ -8,6 +8,7 @@ from ...auth import require_admin_mode
 from ...config import settings
 from ...database import get_db
 from ...models import Media, User
+from ...services.maintenance_jobs import maintenance_jobs
 from ...utils.file_scanner import find_untracked_media, relink_media_files
 from ...utils.logger import logger
 from ...utils.thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
@@ -292,12 +293,11 @@ async def get_comprehensive_stats(
         }
     }
 
-def _do_regenerate_all_thumbnails() -> dict:
+def _do_regenerate_all_thumbnails(progress_cb=None) -> dict:
     """Synchronous worker for regenerating all thumbnails."""
     from ...database import SessionLocal
 
     thumbnail_dir = settings.THUMBNAIL_DIR
-    original_dir = settings.ORIGINAL_DIR
     base_dir = settings.BASE_DIR
 
     # Delete all existing thumbnails
@@ -315,16 +315,32 @@ def _do_regenerate_all_thumbnails() -> dict:
     try:
         # Re-generate thumbnails for all media items
         all_media = db.query(Media).all()
+        total = len(all_media)
         generated = 0
         failed = 0
 
-        for item in all_media:
+        if progress_cb:
+            progress_cb(
+                current=0,
+                total=total,
+                deleted=deleted,
+                generated=0,
+                failed=0,
+                current_file=None,
+            )
+
+        for idx, item in enumerate(all_media):
+            if progress_cb:
+                progress_cb(current=idx + 1, current_file=item.filename)
+
             # Paths in DB are relative to BASE_DIR
             source_path = base_dir / item.path
 
             if not source_path.exists():
                 logger.warning(f"Source file missing for media {item.id}: {source_path}")
                 failed += 1
+                if progress_cb:
+                    progress_cb(failed=failed)
                 continue
 
             thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
@@ -343,18 +359,21 @@ def _do_regenerate_all_thumbnails() -> dict:
                 item.thumbnail_path = None
                 failed += 1
 
+            if progress_cb:
+                progress_cb(generated=generated, failed=failed)
+
         db.commit()
 
         return {
             "deleted": deleted,
             "generated": generated,
             "failed": failed,
-            "total": len(all_media),
+            "total": total,
         }
     finally:
         db.close()
 
-def _do_generate_missing_thumbnails() -> dict:
+def _do_generate_missing_thumbnails(progress_cb=None) -> dict:
     """Synchronous worker for generating missing thumbnails only."""
     from ...database import SessionLocal
 
@@ -365,6 +384,7 @@ def _do_generate_missing_thumbnails() -> dict:
     try:
         # Collect all thumbnail paths registered in the DB (resolved to absolute)
         all_media = db.query(Media).all()
+        total = len(all_media)
         registered_paths: set = set()
         for item in all_media:
             if item.thumbnail_path:
@@ -387,7 +407,21 @@ def _do_generate_missing_thumbnails() -> dict:
         failed = 0
         skipped = 0
 
-        for item in all_media:
+        if progress_cb:
+            progress_cb(
+                current=0,
+                total=total,
+                orphans_deleted=orphans_deleted,
+                generated=0,
+                failed=0,
+                skipped=0,
+                current_file=None,
+            )
+
+        for idx, item in enumerate(all_media):
+            if progress_cb:
+                progress_cb(current=idx + 1, current_file=item.filename)
+
             # Check whether the recorded thumbnail file actually exists
             thumb_exists = (
                 item.thumbnail_path is not None
@@ -395,6 +429,8 @@ def _do_generate_missing_thumbnails() -> dict:
             )
             if thumb_exists:
                 skipped += 1
+                if progress_cb:
+                    progress_cb(skipped=skipped)
                 continue
 
             # Source path is relative to BASE_DIR
@@ -403,6 +439,8 @@ def _do_generate_missing_thumbnails() -> dict:
             if not source_path.exists():
                 logger.warning(f"Source file missing for media {item.id}: {source_path}")
                 failed += 1
+                if progress_cb:
+                    progress_cb(failed=failed)
                 continue
 
             thumbnail_filename = f"{item.hash}{THUMBNAIL_EXT}"
@@ -421,6 +459,9 @@ def _do_generate_missing_thumbnails() -> dict:
                 item.thumbnail_path = None
                 failed += 1
 
+            if progress_cb:
+                progress_cb(generated=generated, failed=failed)
+
         db.commit()
 
         return {
@@ -428,16 +469,26 @@ def _do_generate_missing_thumbnails() -> dict:
             "generated": generated,
             "failed": failed,
             "skipped": skipped,
-            "total": len(all_media),
+            "total": total,
         }
     finally:
         db.close()
 
 @router.post("/regenerate-all-thumbnails")
 async def regenerate_all_thumbnails(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
 ):
     """Delete all thumbnails and regenerate them from source files, updating DB paths."""
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "regenerate_all_thumbnails",
+            _do_regenerate_all_thumbnails,
+            execution_lock=_maintenance_lock,
+            initial_fields={"deleted": 0, "generated": 0, "failed": 0},
+        )
+        return {"status": "started" if started else "already_running", "job": status}
+
     try:
         result = await _run_exclusive(_do_regenerate_all_thumbnails)
         return result
@@ -449,9 +500,19 @@ async def regenerate_all_thumbnails(
 
 @router.post("/generate-missing-thumbnails")
 async def generate_missing_thumbnails(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
 ):
     """Remove orphaned thumbnail files and generate thumbnails for media items that are missing one."""
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "generate_missing_thumbnails",
+            _do_generate_missing_thumbnails,
+            execution_lock=_maintenance_lock,
+            initial_fields={"orphans_deleted": 0, "generated": 0, "failed": 0, "skipped": 0},
+        )
+        return {"status": "started" if started else "already_running", "job": status}
+
     try:
         result = await _run_exclusive(_do_generate_missing_thumbnails)
         return result
@@ -463,9 +524,19 @@ async def generate_missing_thumbnails(
 
 @router.post("/relink-media")
 async def relink_media(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
 ):
     """Scan storage and re-link database records for moved or renamed media files based on content hash."""
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "relink_media",
+            lambda cb: relink_media_files(progress_cb=cb),
+            execution_lock=_maintenance_lock,
+            initial_fields={"relinked": 0, "unresolved": 0},
+        )
+        return {"status": "started" if started else "already_running", "job": status}
+
     try:
         result = await _run_exclusive(relink_media_files)
         return result
@@ -612,4 +683,4 @@ async def get_transcode_media_status(
     current_user: User = Depends(require_admin_mode),
 ):
     """Get the current progress status of background library transcoding."""
-    return _transcode_status
+    return dict(_transcode_status)

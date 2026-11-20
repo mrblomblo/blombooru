@@ -1,3 +1,4 @@
+import threading
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..auth import User, require_admin_mode
 from ..config import settings
 from ..database import get_db
+from .. import database
 from ..enums import is_rating_filter_active, parse_rating_filter
 from ..models import (Album, Media, RatingEnum, blombooru_album_hierarchy,
                       blombooru_album_media)
@@ -14,6 +16,7 @@ from ..schemas import (AlbumCreate, AlbumHierarchyResponse, AlbumListResponse,
                         AlbumResponse, AlbumStatsResponse,
                         AlbumUpdate, MediaIds,
                         AlbumReorderRequest, MediaReorderRequest)
+from ..services.maintenance_jobs import maintenance_jobs
 from ..utils.album_utils import (add_media_to_album, apply_media_filters,
                                  delete_album_cascade,
                                  get_album_matching_media_counts,
@@ -199,22 +202,60 @@ async def get_album_statistics(
     """Get aggregate album statistics (total, root, media) in fast queries."""
     return get_album_stats(db)
 
+_album_maintenance_lock = threading.Lock()
+
+def _do_recalculate_all_albums(_progress_cb=None):
+    local_db = database.SessionLocal()
+    try:
+        recalculate_all_album_metrics(local_db)
+        invalidate_album_cache()
+        return {"message": "All album metrics successfully recalculated and cache invalidated"}
+    finally:
+        local_db.close()
+
+def _do_prune_all_albums(_progress_cb=None):
+    local_db = database.SessionLocal()
+    try:
+        pruned = prune_all_albums(local_db)
+        invalidate_album_cache()
+        return {"message": "Albums have been pruned successfully", "count": pruned}
+    finally:
+        local_db.close()
+
 @router.post("/recalculate")
 async def recalculate_all_albums_endpoint(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Recalculate all album cached metrics and purge cache."""
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "recalculate_album_metrics",
+            _do_recalculate_all_albums,
+            execution_lock=_album_maintenance_lock,
+        )
+        return {"status": "started" if started else "already_running", "job": status}
+
     recalculate_all_album_metrics(db)
     invalidate_album_cache()
     return {"message": "All album metrics successfully recalculated and cache invalidated"}
 
 @router.post("/prune")
 async def prune_all_albums_endpoint(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
     """Prune all albums that contains no media and that have no children."""
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "prune_albums",
+            _do_prune_all_albums,
+            execution_lock=_album_maintenance_lock,
+        )
+        return {"status": "started" if started else "already_running", "job": status}
+
     pruned = prune_all_albums(db)
     invalidate_album_cache()
     return {"message": "Albums have been pruned successfully", "count": pruned}

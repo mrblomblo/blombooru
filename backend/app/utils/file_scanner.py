@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from sqlalchemy.orm import Session
 
@@ -98,7 +98,10 @@ def find_untracked_media(db: Session) -> dict:
         'files': untracked_files
     }
 
-def relink_media_files(db: Optional[Session] = None) -> dict:
+def relink_media_files(
+    db: Optional[Session] = None,
+    progress_cb: Optional[Callable[..., Any]] = None,
+) -> dict:
     """Scan original_dir and re-link database records for moved or renamed files based on hash."""
     from .cache import invalidate_media_cache, invalidate_media_item_cache
     from .thumbnail_generator import generate_thumbnail, THUMBNAIL_EXT
@@ -137,8 +140,17 @@ def relink_media_files(db: Optional[Session] = None) -> dict:
                 'details': []
             }
 
-        logger.info(f"Relinking media: {len(missing_media_by_hash)} missing records to search for in {original_dir}")
+        total_missing = len(missing_media_by_hash)
+        logger.info(f"Relinking media: {total_missing} missing records to search for in {original_dir}")
         relinked_details = []
+        if progress_cb:
+            progress_cb(
+                current=0,
+                total=total_missing,
+                relinked=0,
+                unresolved=total_missing,
+                current_file=None,
+            )
 
         for file_path in original_dir.rglob('*'):
             if file_path.is_symlink() or not file_path.is_file():
@@ -155,6 +167,9 @@ def relink_media_files(db: Optional[Session] = None) -> dict:
                 mime_type = get_mime_type(file_path)
                 if not mime_type.startswith('image/') and not mime_type.startswith('video/') and mime_type not in ('application/x-matroska', 'application/vnd.rn-realmedia'):
                     continue
+
+                if progress_cb:
+                    progress_cb(current_file=file_path.name)
 
                 file_hash = calculate_file_hash(file_path)
                 if file_hash in missing_media_by_hash:
@@ -231,6 +246,13 @@ def relink_media_files(db: Optional[Session] = None) -> dict:
                     })
                     existing_tracked_paths.add(abs_path)
                     invalidate_media_item_cache(media.id)
+
+                    if progress_cb:
+                        progress_cb(
+                            current=len(relinked_details),
+                            relinked=len(relinked_details),
+                            unresolved=len(missing_media_by_hash),
+                        )
 
                     if not missing_media_by_hash:
                         break

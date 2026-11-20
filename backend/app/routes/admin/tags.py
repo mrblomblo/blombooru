@@ -12,9 +12,11 @@ from ...auth import require_admin_mode
 from ...config import settings
 from ...utils.request_helpers import safe_error_detail
 from ...database import get_db
+from ... import database
 from ...enums import RatingEnum, TagCategoryEnum
 from ...models import Media, Tag, TagAlias, TagImplication, User
 from ...schemas import BulkRatingUpdateRequest, TagResponse
+from ...services.maintenance_jobs import maintenance_jobs
 from ...utils.cache import invalidate_media_cache, invalidate_tag_cache
 from ...utils.logger import logger
 from ...utils.album_utils import handle_media_rating_changed
@@ -609,102 +611,126 @@ async def cleanup_aliased_tags(
     count = cleanup_aliased_tags_logic(db)
     return {"deleted_count": count}
 
+def _do_simulate_apply_aliases(progress_cb=None):
+    local_db = database.SessionLocal()
+    try:
+        aliases = (
+            local_db.query(TagAlias)
+            .options(joinedload(TagAlias.target_tag))
+            .all()
+        )
+        if not aliases:
+            return []
+
+        # alias tag name -> target tag name
+        alias_map = {a.alias_name: a.target_tag.name for a in aliases if a.target_tag}
+        if not alias_map:
+            return []
+
+        # Only fetch media that actually own at least one alias-named tag,
+        # instead of loading the entire media table.
+        media_items = (
+            local_db.query(Media)
+            .options(joinedload(Media.tags))
+            .filter(Media.tags.any(Tag.name.in_(alias_map.keys())))
+            .all()
+        )
+
+        total = len(media_items)
+        if progress_cb:
+            progress_cb(current=0, total=total, current_file=None)
+
+        affected_media = []
+        for idx, media in enumerate(media_items):
+            if progress_cb:
+                progress_cb(current=idx + 1, current_file=media.filename)
+
+            original_tags = {t.name for t in media.tags}
+            removed_tags = original_tags & alias_map.keys()
+            added_tags = {
+                alias_map[name] for name in removed_tags
+            } - original_tags
+
+            final_tags = (original_tags - removed_tags) | added_tags
+            if final_tags != original_tags:
+                affected_media.append({
+                    "media_id": media.id,
+                    "added_tags": list(added_tags),
+                    "removed_tags": list(removed_tags),
+                })
+
+        return affected_media
+    finally:
+        local_db.close()
+
 @router.post("/simulate-apply-aliases")
 async def simulate_apply_aliases(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
 ):
     """Simulate applying all tag aliases to all media in the database."""
-    from ...database import SessionLocal
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "apply_aliases",
+            lambda cb: {"affected_media": _do_simulate_apply_aliases(progress_cb=cb)},
+        )
+        return {"status": "started" if started else "already_running", "job": status}
 
     loop = asyncio.get_running_loop()
-
-    def do_simulate():
-        local_db = SessionLocal()
-        try:
-            aliases = (
-                local_db.query(TagAlias)
-                .options(joinedload(TagAlias.target_tag))
-                .all()
-            )
-            if not aliases:
-                return []
-
-            # alias tag name -> target tag name
-            alias_map = {a.alias_name: a.target_tag.name for a in aliases if a.target_tag}
-            if not alias_map:
-                return []
-
-            # Only fetch media that actually own at least one alias-named tag,
-            # instead of loading the entire media table.
-            media_items = (
-                local_db.query(Media)
-                .options(joinedload(Media.tags))
-                .filter(Media.tags.any(Tag.name.in_(alias_map.keys())))
-                .all()
-            )
-
-            affected_media = []
-            for media in media_items:
-                original_tags = {t.name for t in media.tags}
-                removed_tags = original_tags & alias_map.keys()
-                added_tags = {
-                    alias_map[name] for name in removed_tags
-                } - original_tags
-
-                final_tags = (original_tags - removed_tags) | added_tags
-                if final_tags != original_tags:
-                    affected_media.append({
-                        "media_id": media.id,
-                        "added_tags": list(added_tags),
-                        "removed_tags": list(removed_tags),
-                    })
-
-            return affected_media
-        finally:
-            local_db.close()
-
-    affected_media = await loop.run_in_executor(None, do_simulate)
+    affected_media = await loop.run_in_executor(None, _do_simulate_apply_aliases)
     return {"affected_media": affected_media}
+
+def _do_simulate_apply_tag_ratings(progress_cb=None):
+    local_db = database.SessionLocal()
+    try:
+        rated_tags_count = local_db.query(Tag.id).filter(Tag.rating.isnot(None)).count()
+        if rated_tags_count == 0:
+            return []
+
+        media_items = (
+            local_db.query(Media)
+            .options(joinedload(Media.tags))
+            .filter(Media.rating != RatingEnum.explicit)
+            .filter(Media.tags.any(Tag.rating.isnot(None)))
+            .all()
+        )
+
+        total = len(media_items)
+        if progress_cb:
+            progress_cb(current=0, total=total, current_file=None)
+
+        affected_media = []
+        for idx, media in enumerate(media_items):
+            if progress_cb:
+                progress_cb(current=idx + 1, current_file=media.filename)
+
+            escalated = get_escalated_rating(media.rating, media.tags)
+            if escalated and escalated != media.rating:
+                affected_media.append({
+                    "media_id": media.id,
+                    "current_rating": media.rating.value if hasattr(media.rating, "value") else media.rating,
+                    "new_rating": escalated.value if hasattr(escalated, "value") else escalated,
+                })
+
+        return affected_media
+    finally:
+        local_db.close()
 
 @router.post("/simulate-apply-tag-ratings")
 async def simulate_apply_tag_ratings(
+    background: bool = False,
     current_user: User = Depends(require_admin_mode),
 ):
     """Simulate retroactively applying/escalating media ratings based on tag ratings."""
-    from ...database import SessionLocal
+    if background:
+        started, status = maintenance_jobs.start_job(
+            "apply_tag_ratings",
+            lambda cb: {"affected_media": _do_simulate_apply_tag_ratings(progress_cb=cb)},
+        )
+        return {"status": "started" if started else "already_running", "job": status}
 
     loop = asyncio.get_running_loop()
-
-    def do_simulate():
-        local_db = SessionLocal()
-        try:
-            rated_tags_count = local_db.query(Tag.id).filter(Tag.rating.isnot(None)).count()
-            if rated_tags_count == 0:
-                return []
-
-            media_items = (
-                local_db.query(Media)
-                .options(joinedload(Media.tags))
-                .filter(Media.rating != RatingEnum.explicit)
-                .filter(Media.tags.any(Tag.rating.isnot(None)))
-                .all()
-            )
-
-            affected_media = []
-            for media in media_items:
-                escalated = get_escalated_rating(media.rating, media.tags)
-                if escalated and escalated != media.rating:
-                    affected_media.append({
-                        "media_id": media.id,
-                        "current_rating": media.rating.value if hasattr(media.rating, "value") else media.rating,
-                        "new_rating": escalated.value if hasattr(escalated, "value") else escalated,
-                    })
-
-            return affected_media
-        finally:
-            local_db.close()
-
-    affected_media = await loop.run_in_executor(None, do_simulate)
+    affected_media = await loop.run_in_executor(None, _do_simulate_apply_tag_ratings)
     return {"affected_media": affected_media}
 
 
