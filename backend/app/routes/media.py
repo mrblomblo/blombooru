@@ -22,10 +22,12 @@ from ..models import (Album, Media, Tag, User, blombooru_album_media,
 from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataRequest,
                        BulkMediaRatingUpdateRequest, BulkMediaRatingUpdateResponse,
                        BulkTagUpdateRequest, BulkTagUpdateResponse,
+                       MediaAlbumContextAlbum, MediaAlbumContextResponse,
                        MediaCreatedResponse, MediaDetailResponse, MediaResponse,
                        MediaUpdate, ProposedTag, ShareSettingsUpdate)
 from ..utils.album_path_resolver import ensure_album_path
-from ..utils.album_utils import (get_bulk_album_thumbnails, get_flattened_media_ids,
+from ..utils.album_utils import (get_bulk_album_thumbnails, get_bulk_parent_ids,
+                                get_flattened_media_ids,
                                 handle_media_deleted, handle_media_rating_changed,
                                 recalculate_album_metrics, set_media_albums,
                                 update_album_last_modified)
@@ -1868,6 +1870,104 @@ async def get_related_media(
 
     return {"items": items, "status": "ready"}
 
+def _build_album_media_id_query(
+    db: Session,
+    album_id: int,
+    q: Optional[str] = None,
+    rating: Optional[str] = None,
+    custom_filter: Optional[List[str]] = None,
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
+    seed: Optional[str] = None,
+    fallback_sort: Optional[str] = None,
+    fallback_order: Optional[str] = None,
+):
+    """Build the ordered query of Media.id within an album matching the given filters and sort."""
+    media_query = db.query(Media.id).join(
+        blombooru_album_media,
+        Media.id == blombooru_album_media.c.media_id
+    ).filter(
+        blombooru_album_media.c.album_id == album_id
+    )
+
+    parsed = None
+    if q:
+        parsed = parse_search_query(q)
+        if rating and 'rating' not in parsed['meta']:
+            parsed['meta']['rating'] = [{'value': rating.lower(), 'negated': False}]
+        media_query = apply_search_criteria(media_query, parsed, db)
+    else:
+        if rating:
+            valid_ratings = parse_rating_filter(rating)
+            if valid_ratings:
+                media_query = media_query.filter(Media.rating.in_(valid_ratings))
+
+    if custom_filter:
+        media_query = apply_custom_filters_or(media_query, custom_filter, db)
+
+    has_positive_similar_to = bool(
+        q and parsed and any(
+            not item['negated']
+            for key in ('similar_to', 'similar_to_strict')
+            for item in parsed['meta'].get(key, [])
+        )
+    )
+    if (not q or not parsed or ('order' not in parsed['meta'] and 'sort' not in parsed['meta'])) and not (has_positive_similar_to and not sort):
+        album_defaults = db.query(Album.default_sort, Album.default_order).filter(Album.id == album_id).first()
+        sort_by = sort
+        if not sort_by:
+            if album_defaults and album_defaults.default_sort:
+                sort_by = album_defaults.default_sort
+            else:
+                has_manual_media = db.query(blombooru_album_media.c.media_id).filter(
+                    blombooru_album_media.c.album_id == album_id,
+                    blombooru_album_media.c.sort_position.isnot(None)
+                ).limit(1).scalar() is not None
+                sort_by = "manual" if has_manual_media else settings.get_default_sort()
+
+        if order:
+            sort_order = order
+        elif sort_by == "manual":
+            sort_order = "asc"
+        elif not sort and album_defaults and album_defaults.default_sort and album_defaults.default_order:
+            sort_order = album_defaults.default_order
+        else:
+            sort_order = settings.get_default_order()
+        media_query = media_query.order_by(None)
+        if sort_by == "manual":
+            fb_sort = fallback_sort if isinstance(fallback_sort, str) and fallback_sort.strip() else "uploaded_at"
+            fb_order = fallback_order.lower() if isinstance(fallback_order, str) and fallback_order.lower() in ("asc", "desc") else "desc"
+            fb_media_clauses = get_media_sort_clauses(
+                fb_sort,
+                fb_order,
+                db,
+                seed,
+                column_overrides={
+                    'uploaded_at': Media.id,
+                    'last_modified': Media.id,
+                    'name': Media.filename,
+                },
+            )
+            media_query = media_query.order_by(
+                blombooru_album_media.c.sort_position.asc().nulls_last(),
+                *fb_media_clauses
+            )
+        else:
+            media_query = apply_media_sort(
+                media_query,
+                sort_by,
+                sort_order,
+                db,
+                seed,
+                column_overrides={
+                    'uploaded_at': Media.id,
+                    'last_modified': Media.id,
+                    'name': Media.filename,
+                },
+            )
+
+    return media_query
+
 @router.get("/{media_id}/adjacent")
 async def get_adjacent_media(
     media_id: int,
@@ -1886,87 +1986,18 @@ async def get_adjacent_media(
     """Get previous and next media IDs relative to media_id within the given context."""
     try:
         if mode == "album" and album_id is not None:
-            media_query = db.query(Media.id).join(
-                blombooru_album_media,
-                Media.id == blombooru_album_media.c.media_id
-            ).filter(
-                blombooru_album_media.c.album_id == album_id
+            media_query = _build_album_media_id_query(
+                db=db,
+                album_id=album_id,
+                q=q,
+                rating=rating,
+                custom_filter=custom_filter,
+                sort=sort,
+                order=order,
+                seed=seed,
+                fallback_sort=fallback_sort,
+                fallback_order=fallback_order,
             )
-
-            if q:
-                parsed = parse_search_query(q)
-                if rating and 'rating' not in parsed['meta']:
-                    parsed['meta']['rating'] = [{'value': rating.lower(), 'negated': False}]
-                media_query = apply_search_criteria(media_query, parsed, db)
-            else:
-                if rating:
-                    valid_ratings = parse_rating_filter(rating)
-                    if valid_ratings:
-                        media_query = media_query.filter(Media.rating.in_(valid_ratings))
-
-            if custom_filter:
-                media_query = apply_custom_filters_or(media_query, custom_filter, db)
-
-            has_positive_similar_to = bool(
-                q and any(
-                    not item['negated']
-                    for key in ('similar_to', 'similar_to_strict')
-                    for item in parsed['meta'].get(key, [])
-                )
-            )
-            if (not q or ('order' not in parsed['meta'] and 'sort' not in parsed['meta'])) and not (has_positive_similar_to and not sort):
-                album_defaults = db.query(Album.default_sort, Album.default_order).filter(Album.id == album_id).first()
-                sort_by = sort
-                if not sort_by:
-                    if album_defaults and album_defaults.default_sort:
-                        sort_by = album_defaults.default_sort
-                    else:
-                        has_manual_media = db.query(blombooru_album_media.c.media_id).filter(
-                            blombooru_album_media.c.album_id == album_id,
-                            blombooru_album_media.c.sort_position.isnot(None)
-                        ).limit(1).scalar() is not None
-                        sort_by = "manual" if has_manual_media else settings.get_default_sort()
-
-                if order:
-                    sort_order = order
-                elif sort_by == "manual":
-                    sort_order = "asc"
-                elif not sort and album_defaults and album_defaults.default_sort and album_defaults.default_order:
-                    sort_order = album_defaults.default_order
-                else:
-                    sort_order = settings.get_default_order()
-                media_query = media_query.order_by(None)
-                if sort_by == "manual":
-                    fb_sort = fallback_sort if isinstance(fallback_sort, str) and fallback_sort.strip() else "uploaded_at"
-                    fb_order = fallback_order.lower() if isinstance(fallback_order, str) and fallback_order.lower() in ("asc", "desc") else "desc"
-                    fb_media_clauses = get_media_sort_clauses(
-                        fb_sort,
-                        fb_order,
-                        db,
-                        seed,
-                        column_overrides={
-                            'uploaded_at': Media.id,
-                            'last_modified': Media.id,
-                            'name': Media.filename,
-                        },
-                    )
-                    media_query = media_query.order_by(
-                        blombooru_album_media.c.sort_position.asc().nulls_last(),
-                        *fb_media_clauses
-                    )
-                else:
-                    media_query = apply_media_sort(
-                        media_query,
-                        sort_by,
-                        sort_order,
-                        db,
-                        seed,
-                        column_overrides={
-                            'uploaded_at': Media.id,
-                            'last_modified': Media.id,
-                            'name': Media.filename,
-                        },
-                    )
         else:
             media_query = db.query(Media.id)
 
@@ -2028,6 +2059,101 @@ async def get_adjacent_media(
     except Exception as e:
         logger.error(f"Error in get_adjacent_media: {e}")
         return {"prev_id": None, "prev_hash": None, "next_id": None, "next_hash": None}
+
+@router.get("/{media_id}/album-context", response_model=MediaAlbumContextResponse)
+async def get_media_album_context(
+    media_id: int,
+    album_id: int = Query(...),
+    q: Optional[str] = Query(default=None),
+    rating: Optional[str] = Query(default=None),
+    custom_filter: Optional[List[str]] = Query(default=None),
+    sort: Optional[str] = Query(default=None),
+    order: Optional[str] = Query(default=None),
+    seed: Optional[str] = Query(default=None),
+    fallback_sort: Optional[str] = Query(default=None),
+    fallback_order: Optional[str] = Query(default=None),
+    limit: int = Query(default=41, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Get a windowed list of media items around media_id in an album's sort order."""
+    media = db.query(Media.id).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    album = db.query(Album).filter(Album.id == album_id).first()
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+
+    if not isinstance(limit, int) or limit <= 0:
+        limit = 41
+    limit = min(limit, 100)
+
+    q_val = q if isinstance(q, str) and q.strip() else None
+    rating_val = rating if isinstance(rating, str) and rating.strip() else None
+    cf_val = list(custom_filter) if isinstance(custom_filter, (list, tuple, set)) else None
+    sort_val = sort if isinstance(sort, str) and sort.strip() else None
+    order_val = order if isinstance(order, str) and order.strip() else None
+    seed_val = seed if isinstance(seed, str) and seed.strip() else None
+    fb_sort_val = fallback_sort if isinstance(fallback_sort, str) and fallback_sort.strip() else None
+    fb_order_val = fallback_order if isinstance(fallback_order, str) and fallback_order.strip() else None
+
+    media_query = _build_album_media_id_query(
+        db=db,
+        album_id=album_id,
+        q=q_val,
+        rating=rating_val,
+        custom_filter=cf_val,
+        sort=sort_val,
+        order=order_val,
+        seed=seed_val,
+        fallback_sort=fb_sort_val,
+        fallback_order=fb_order_val,
+    )
+
+    id_list = [r[0] for r in media_query.all()]
+    total = len(id_list)
+
+    try:
+        idx = id_list.index(media_id)
+    except ValueError:
+        return MediaAlbumContextResponse(
+            album=MediaAlbumContextAlbum(id=album.id, name=album.name),
+            position=None,
+            total=total,
+            start_index=0,
+            has_prev_more=False,
+            has_next_more=False,
+            items=[]
+        )
+
+    if total <= limit:
+        start = 0
+        end = total
+    else:
+        half = limit // 2
+        start = max(0, idx - half)
+        end = start + limit
+        if end > total:
+            end = total
+            start = max(0, end - limit)
+
+    window_ids = id_list[start:end]
+    records = db.query(Media).options(
+        selectinload(Media.tags),
+        selectinload(Media.media_tag_links)
+    ).filter(Media.id.in_(window_ids)).all()
+    media_map = {m.id: m for m in records}
+    ordered_items = [MediaResponse.model_validate(media_map[mid]) for mid in window_ids if mid in media_map]
+
+    return MediaAlbumContextResponse(
+        album=MediaAlbumContextAlbum(id=album.id, name=album.name),
+        position=idx + 1,
+        total=total,
+        start_index=start,
+        has_prev_more=start > 0,
+        has_next_more=end < total,
+        items=ordered_items
+    )
 
 class DescriptionPreviewRequest(BaseModel):
     text: str = Field("", max_length=50000)
@@ -2486,6 +2612,9 @@ async def get_media_albums(
         Album.id == blombooru_album_media.c.album_id
     ).filter(
         blombooru_album_media.c.media_id == media_id
+    ).order_by(
+        Album.name.asc(),
+        Album.id.asc()
     ).all()
     
     if not albums:
@@ -2493,10 +2622,22 @@ async def get_media_albums(
     
     album_ids = [a.id for a in albums]
     thumbnails_map = get_bulk_album_thumbnails(album_ids, db, count=4)
+    parent_crumbs = get_bulk_parent_ids(album_ids, db)
+
+    all_parent_ids = set()
+    for crumbs in parent_crumbs.values():
+        all_parent_ids.update(crumbs)
+
+    parent_names = {}
+    if all_parent_ids:
+        for pid, pname in db.query(Album.id, Album.name).filter(Album.id.in_(all_parent_ids)).all():
+            parent_names[pid] = pname
     
     result = []
     for album in albums:
         thumb_info = thumbnails_map.get(album.id, {"paths": [], "ratings": []})
+        crumbs = parent_crumbs.get(album.id, [])
+        parent_path = " > ".join(parent_names[pid] for pid in crumbs if pid in parent_names) if crumbs else None
         result.append(
             AlbumListResponse(
                 id=album.id,
@@ -2505,7 +2646,8 @@ async def get_media_albums(
                 thumbnail_paths=thumb_info.get("paths", []),
                 thumbnail_ratings=thumb_info.get("ratings", []),
                 rating=album.cached_rating or RatingEnum.safe,
-                media_count=album.cached_media_count or 0
+                media_count=album.cached_media_count or 0,
+                parent_path=parent_path
             )
         )
     

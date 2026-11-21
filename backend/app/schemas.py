@@ -352,8 +352,22 @@ class AlbumListResponse(AlbumBase):
     thumbnail_ratings: List[str] = []
     rating: RatingEnum = RatingEnum.safe
     media_count: int = 0
+    parent_path: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
+
+class MediaAlbumContextAlbum(BaseModel):
+    id: int
+    name: str
+
+class MediaAlbumContextResponse(BaseModel):
+    album: MediaAlbumContextAlbum
+    position: Optional[int] = None
+    total: int = 0
+    start_index: int = 0
+    has_prev_more: bool = False
+    has_next_more: bool = False
+    items: List[MediaResponse] = []
 
 class AlbumTreeNode(AlbumBase):
     id: int
