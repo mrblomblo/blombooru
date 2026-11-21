@@ -829,6 +829,7 @@
     "media": {
         "back_to_album": "",
         "back_to_album_named": "",
+        "open_album": "",
         "actions": {
             "delete_media": "删除媒体",
             "relations": "关联关系",

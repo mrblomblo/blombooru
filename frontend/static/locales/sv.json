@@ -829,6 +829,7 @@
     "media": {
         "back_to_album": "Tillbaka till album",
         "back_to_album_named": "Tillbaka till {name}",
+        "open_album": "Öppna Album",
         "actions": {
             "delete_media": "Radera Media",
             "relations": "Relationer",

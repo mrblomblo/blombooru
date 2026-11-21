@@ -829,6 +829,7 @@
     "media": {
         "back_to_album": "Назад к альбому",
         "back_to_album_named": "Назад к альбому {name}",
+        "open_album": "",
         "actions": {
             "delete_media": "Удалить пост",
             "relations": "Связанные",

@@ -829,6 +829,7 @@
     "media": {
         "back_to_album": "Back to Album",
         "back_to_album_named": "Back to {name}",
+        "open_album": "Open Album",
         "actions": {
             "delete_media": "Delete Media",
             "relations": "Relations",
