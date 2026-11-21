@@ -1915,15 +1915,26 @@ async def get_adjacent_media(
                 )
             )
             if (not q or ('order' not in parsed['meta'] and 'sort' not in parsed['meta'])) and not (has_positive_similar_to and not sort):
+                album_defaults = db.query(Album.default_sort, Album.default_order).filter(Album.id == album_id).first()
                 sort_by = sort
                 if not sort_by:
-                    has_manual_media = db.query(blombooru_album_media.c.media_id).filter(
-                        blombooru_album_media.c.album_id == album_id,
-                        blombooru_album_media.c.sort_position.isnot(None)
-                    ).limit(1).scalar() is not None
-                    sort_by = "manual" if has_manual_media else settings.get_default_sort()
+                    if album_defaults and album_defaults.default_sort:
+                        sort_by = album_defaults.default_sort
+                    else:
+                        has_manual_media = db.query(blombooru_album_media.c.media_id).filter(
+                            blombooru_album_media.c.album_id == album_id,
+                            blombooru_album_media.c.sort_position.isnot(None)
+                        ).limit(1).scalar() is not None
+                        sort_by = "manual" if has_manual_media else settings.get_default_sort()
 
-                sort_order = order if order else ("asc" if sort_by == "manual" else settings.get_default_order())
+                if order:
+                    sort_order = order
+                elif sort_by == "manual":
+                    sort_order = "asc"
+                elif not sort and album_defaults and album_defaults.default_sort and album_defaults.default_order:
+                    sort_order = album_defaults.default_order
+                else:
+                    sort_order = settings.get_default_order()
                 media_query = media_query.order_by(None)
                 if sort_by == "manual":
                     fb_sort = fallback_sort if isinstance(fallback_sort, str) and fallback_sort.strip() else "uploaded_at"

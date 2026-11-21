@@ -33,6 +33,19 @@ from ..utils.search_parser import parse_search_query
 
 router = APIRouter(prefix="/api/albums", tags=["albums"])
 
+VALID_ALBUM_DEFAULT_SORTS = {
+    "uploaded_at",
+    "custom_date",
+    "filename",
+    "file_size",
+    "file_type",
+    "tag_count",
+    "random",
+    "last_modified",
+    "manual",
+}
+VALID_SORT_ORDERS = {"asc", "desc"}
+
 def get_effective_limit(limit: Optional[int]) -> int:
     """Get effective limit, falling back to settings if not provided or invalid."""
     if limit is None or not isinstance(limit, int) or limit <= 0:
@@ -340,7 +353,9 @@ async def get_album(
         media_count=album.cached_media_count or 0,
         children_count=children_count,
         rating=album.cached_rating or RatingEnum.safe,
-        parent_ids=parent_ids
+        parent_ids=parent_ids,
+        default_sort=album.default_sort,
+        default_order=album.default_order,
     )
 
 @router.post("", response_model=AlbumResponse)
@@ -390,7 +405,9 @@ async def create_album(
         media_count=0,
         children_count=0,
         rating=RatingEnum.safe,
-        parent_ids=get_parent_ids(new_album.id, db)
+        parent_ids=get_parent_ids(new_album.id, db),
+        default_sort=new_album.default_sort,
+        default_order=new_album.default_order,
     )
 
 @router.put("/{album_id}", response_model=AlbumResponse)
@@ -400,7 +417,7 @@ async def update_album(
     current_user: User = Depends(require_admin_mode),
     db: Session = Depends(get_db)
 ):
-    """Update album name/parent with deep cycle safety (admin only)"""
+    """Update album name, default sort, or parent with deep cycle safety (admin only)"""
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
@@ -410,8 +427,39 @@ async def update_album(
         album.name = album_data.name
         db.flush()
     
-    # Update parent relationship
     fields_set = album_data.model_fields_set if hasattr(album_data, "model_fields_set") else getattr(album_data, "__fields_set__", set())
+
+    # Update per-album default sort override
+    if "default_sort" in fields_set:
+        if album_data.default_sort is None or not str(album_data.default_sort).strip():
+            album.default_sort = None
+            album.default_order = None
+        else:
+            sort_val = str(album_data.default_sort).strip()
+            if sort_val not in VALID_ALBUM_DEFAULT_SORTS:
+                raise HTTPException(status_code=400, detail="Invalid default sort")
+            album.default_sort = sort_val
+            if sort_val == "manual":
+                album.default_order = "asc"
+            elif "default_order" in fields_set and album_data.default_order is not None:
+                order_val = str(album_data.default_order).strip().lower()
+                if order_val not in VALID_SORT_ORDERS:
+                    raise HTTPException(status_code=400, detail="Invalid default order")
+                album.default_order = order_val
+            elif album.default_order is None:
+                album.default_order = settings.get_default_order()
+        db.flush()
+    elif "default_order" in fields_set:
+        if album_data.default_order is None or not str(album_data.default_order).strip():
+            album.default_order = None
+        else:
+            order_val = str(album_data.default_order).strip().lower()
+            if order_val not in VALID_SORT_ORDERS:
+                raise HTTPException(status_code=400, detail="Invalid default order")
+            album.default_order = "asc" if album.default_sort == "manual" else order_val
+        db.flush()
+
+    # Update parent relationship
     if "parent_album_id" in fields_set:
         reparent_album(db, album_id, album_data.parent_album_id or None)
     else:
@@ -463,8 +511,8 @@ async def get_album_contents(
     rating: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None),
     custom_filter: Optional[List[str]] = Query(default=None),
-    sort: str = Query(default="uploaded_at"),
-    order: str = Query(default="desc"),
+    sort: Optional[str] = Query(default=None),
+    order: Optional[str] = Query(default=None),
     fallback_sort: Optional[str] = Query(default=None),
     fallback_order: Optional[str] = Query(default=None),
     seed: Optional[str] = Query(default=None),
@@ -477,10 +525,18 @@ async def get_album_contents(
     
     if not isinstance(page, int) or page <= 0:
         page = 1
-    if not isinstance(sort, str):
-        sort = "uploaded_at"
-    if not isinstance(order, str):
-        order = "desc"
+
+    sort_provided = isinstance(sort, str) and bool(sort.strip())
+    order_provided = isinstance(order, str) and bool(order.strip())
+    if not sort_provided:
+        sort = album.default_sort or "uploaded_at"
+    if not order_provided:
+        if sort == "manual":
+            order = "asc"
+        elif not sort_provided and album.default_sort and album.default_order:
+            order = album.default_order
+        else:
+            order = "desc"
     
     sort_order = order.lower() if order and order.lower() in ("asc", "desc") else "desc"
     fb_sort = fallback_sort if isinstance(fallback_sort, str) and fallback_sort.strip() else "uploaded_at"

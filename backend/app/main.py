@@ -548,8 +548,15 @@ async def album_detail_page(request: Request, album_id: int, db: Session = Depen
     ).limit(1).scalar() is not None
 
     has_manual_order = has_manual_media or has_manual_subalbums
-    default_sort = "manual" if has_manual_order else settings.get_default_sort()
-    default_order = "asc" if has_manual_order else settings.get_default_order()
+    if album.default_sort:
+        default_sort = album.default_sort
+        default_order = "asc" if album.default_sort == "manual" else (album.default_order or settings.get_default_order())
+    elif has_manual_order:
+        default_sort = "manual"
+        default_order = "asc"
+    else:
+        default_sort = settings.get_default_sort()
+        default_order = settings.get_default_order()
 
     return templates.TemplateResponse("album.html", {
         "request": request,
@@ -557,6 +564,8 @@ async def album_detail_page(request: Request, album_id: int, db: Session = Depen
         "album_id": album_id,
         "default_sort": default_sort,
         "default_order": default_order,
+        "album_default_sort": album.default_sort,
+        "album_default_order": album.default_order,
         "has_manual_order": has_manual_order,
         "popular_tags_mode": settings.get_popular_tags_mode(),
         "popular_tags_limit": settings.get_popular_tags_limit(),
