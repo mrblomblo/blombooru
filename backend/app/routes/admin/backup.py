@@ -110,6 +110,8 @@ async def backup_full_db(
             "id": album.id,
             "name": album.name,
             "sort_position": album.sort_position,
+            "default_sort": album.default_sort,
+            "default_order": album.default_order,
             "created_at": album.created_at.isoformat() if album.created_at else None,
             "updated_at": album.updated_at.isoformat() if album.updated_at else None,
             "last_modified": album.last_modified.isoformat() if album.last_modified else None,

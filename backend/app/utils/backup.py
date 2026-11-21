@@ -645,16 +645,23 @@ def import_albums_logical(db: Session, albums_list: List[dict]) -> dict:
                 last_modified = None
         
         sort_position = alb_data.get('sort_position')
+        default_sort = alb_data.get('default_sort')
+        default_order = alb_data.get('default_order')
         
         if name in existing_albums:
             id_map[json_id] = existing_albums[name].id
             if sort_position is not None:
                 existing_albums[name].sort_position = sort_position
+            if default_sort is not None:
+                existing_albums[name].default_sort = default_sort
+                existing_albums[name].default_order = default_order
             albums_existing += 1
         else:
             new_album = Album(
                 name=name,
                 sort_position=sort_position,
+                default_sort=default_sort,
+                default_order=default_order,
                 created_at=created_at or datetime.now(timezone.utc),
                 updated_at=updated_at or datetime.now(timezone.utc),
                 last_modified=last_modified or datetime.now(timezone.utc)
