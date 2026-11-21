@@ -159,6 +159,8 @@ class Album(Base):
     cached_media_count = Column(Integer, default=0, server_default='0', index=True)
     cached_direct_media_count = Column(Integer, default=0, server_default='0')
     sort_position = Column(Integer, nullable=True, index=True)
+    default_sort = Column(String(32), nullable=True)
+    default_order = Column(String(8), nullable=True)
     
     # Relationships
     media = relationship('Media', secondary=blombooru_album_media, back_populates='albums')

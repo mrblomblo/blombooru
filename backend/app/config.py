@@ -11,7 +11,7 @@ from sqlalchemy.engine import URL
 load_dotenv()
 
 APP_VERSION = "2.1.0"
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 class Settings:
     def __init__(self):

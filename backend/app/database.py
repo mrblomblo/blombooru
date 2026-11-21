@@ -198,6 +198,7 @@ def check_and_migrate_schema(engine):
         migrate_add_media_tags_implication_columns,
         migrate_add_phash,
         migrate_source_to_text,
+        migrate_add_album_default_sort,
     ]
     
     for migration in migrations:
@@ -639,4 +640,22 @@ def migrate_add_media_tags_implication_columns(engine, inspector):
             col_type = "TEXT" if is_sqlite else "JSONB"
             conn.execute(text(f"ALTER TABLE blombooru_media_tags ADD COLUMN implied_by {col_type}"))
 
+        conn.commit()
+
+def migrate_add_album_default_sort(engine, inspector):
+    """Add default_sort and default_order columns to blombooru_albums."""
+    from sqlalchemy import text
+
+    tables = inspector.get_table_names()
+    if 'blombooru_albums' not in tables:
+        return
+
+    album_cols = [c['name'] for c in inspector.get_columns('blombooru_albums')]
+    with engine.connect() as conn:
+        if 'default_sort' not in album_cols:
+            logger.info("Adding default_sort column to blombooru_albums...")
+            conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN default_sort VARCHAR(32)"))
+        if 'default_order' not in album_cols:
+            logger.info("Adding default_order column to blombooru_albums...")
+            conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN default_order VARCHAR(8)"))
         conn.commit()

@@ -328,6 +328,8 @@ class AlbumCreate(AlbumBase):
 class AlbumUpdate(BaseModel):
     name: Optional[str] = None
     parent_album_id: Optional[int] = None
+    default_sort: Optional[str] = None
+    default_order: Optional[str] = None
 
 class AlbumResponse(AlbumBase):
     id: int
@@ -338,6 +340,8 @@ class AlbumResponse(AlbumBase):
     children_count: int = 0
     rating: RatingEnum = RatingEnum.safe
     parent_ids: List[int] = []
+    default_sort: Optional[str] = None
+    default_order: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
