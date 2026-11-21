@@ -14,7 +14,8 @@ from backend.app.routes.albums import (autocomplete_albums, clear_album_media_or
                                        get_albums, get_albums_tree,
                                        reorder_album_media, reorder_root_albums,
                                        reorder_sub_albums, update_album)
-from backend.app.routes.media import get_adjacent_media
+from backend.app.routes.media import (get_adjacent_media, get_media_album_context,
+                                      get_media_albums)
 from backend.app.schemas import AlbumReorderRequest, AlbumUpdate, MediaReorderRequest
 from backend.app.utils.album_utils import (add_media_to_album, delete_album_cascade,
                                           get_bulk_album_thumbnails,
@@ -1046,6 +1047,133 @@ class TestAlbumArchitecture(BackupTestBase):
         adj_manual_fallback = asyncio.run(get_adjacent_media(media_id=m_a.id, mode="album", album_id=alb.id, db=self.db))
         self.assertEqual(adj_manual_fallback["prev_id"], m_c.id)
         self.assertEqual(adj_manual_fallback["next_id"], m_b.id)
+
+    def test_get_media_albums_sorted_and_parent_path(self):
+        from fastapi import HTTPException
+
+        m1 = self._create_media("alone.jpg")
+        empty_res = asyncio.run(get_media_albums(m1.id, db=self.db))
+        self.assertEqual(empty_res["albums"], [])
+
+        with self.assertRaises(HTTPException) as ctx:
+            asyncio.run(get_media_albums(999999, db=self.db))
+        self.assertEqual(ctx.exception.status_code, 404)
+
+        root_comics = self._create_album("Comics")
+        series = self._create_album("Series A", parent_id=root_comics.id)
+        chapter = self._create_album("Chapter 1", parent_id=series.id)
+        favs = self._create_album("Favorites")
+
+        add_media_to_album(self.db, favs.id, [m1.id])
+        add_media_to_album(self.db, chapter.id, [m1.id])
+
+        res = asyncio.run(get_media_albums(m1.id, db=self.db))
+        albums = res["albums"]
+        self.assertEqual([a.name for a in albums], ["Chapter 1", "Favorites"])
+        self.assertEqual(albums[0].parent_path, "Comics > Series A")
+        self.assertIsNone(albums[1].parent_path)
+
+    def test_get_media_album_context_ordering_and_windowing(self):
+        from fastapi import HTTPException
+
+        alb = self._create_album("ComicStrip")
+        m1 = self._create_media("01.jpg")
+        m2 = self._create_media("02.jpg")
+        m3 = self._create_media("03.jpg")
+        m4 = self._create_media("04.jpg")
+        m5 = self._create_media("05.jpg", rating=RatingEnum.explicit)
+        add_media_to_album(self.db, alb.id, [m1.id, m2.id, m3.id, m4.id, m5.id])
+
+        # Manual reorder: [m3, m1, m5, m2, m4]
+        asyncio.run(reorder_album_media(
+            album_id=alb.id,
+            data=MediaReorderRequest(media_ids=[m3.id, m1.id, m5.id, m2.id, m4.id]),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+
+        ctx_full = asyncio.run(get_media_album_context(m5.id, album_id=alb.id, db=self.db))
+        self.assertEqual(ctx_full.album.id, alb.id)
+        self.assertEqual(ctx_full.album.name, "ComicStrip")
+        self.assertEqual(ctx_full.position, 3)
+        self.assertEqual(ctx_full.total, 5)
+        self.assertEqual(ctx_full.start_index, 0)
+        self.assertFalse(ctx_full.has_prev_more)
+        self.assertFalse(ctx_full.has_next_more)
+        self.assertEqual([m.id for m in ctx_full.items], [m3.id, m1.id, m5.id, m2.id, m4.id])
+
+        # Windowed around middle item (m5)
+        ctx_mid = asyncio.run(get_media_album_context(m5.id, album_id=alb.id, limit=3, db=self.db))
+        self.assertEqual(ctx_mid.start_index, 1)
+        self.assertTrue(ctx_mid.has_prev_more)
+        self.assertTrue(ctx_mid.has_next_more)
+        self.assertEqual([m.id for m in ctx_mid.items], [m1.id, m5.id, m2.id])
+
+        # Windowed near start (m3)
+        ctx_start = asyncio.run(get_media_album_context(m3.id, album_id=alb.id, limit=3, db=self.db))
+        self.assertEqual(ctx_start.start_index, 0)
+        self.assertFalse(ctx_start.has_prev_more)
+        self.assertTrue(ctx_start.has_next_more)
+        self.assertEqual([m.id for m in ctx_start.items], [m3.id, m1.id, m5.id])
+
+        # Windowed near end (m4)
+        ctx_end = asyncio.run(get_media_album_context(m4.id, album_id=alb.id, limit=3, db=self.db))
+        self.assertEqual(ctx_end.start_index, 2)
+        self.assertTrue(ctx_end.has_prev_more)
+        self.assertFalse(ctx_end.has_next_more)
+        self.assertEqual([m.id for m in ctx_end.items], [m5.id, m2.id, m4.id])
+
+        # Rating filter excludes explicit m5
+        ctx_safe = asyncio.run(get_media_album_context(m1.id, album_id=alb.id, rating="safe", db=self.db))
+        self.assertEqual(ctx_safe.total, 4)
+        self.assertEqual(ctx_safe.position, 2)
+        self.assertEqual([m.id for m in ctx_safe.items], [m3.id, m1.id, m2.id, m4.id])
+
+        ctx_hidden = asyncio.run(get_media_album_context(m5.id, album_id=alb.id, rating="safe", db=self.db))
+        self.assertIsNone(ctx_hidden.position)
+        self.assertEqual(ctx_hidden.total, 4)
+        self.assertEqual(ctx_hidden.items, [])
+
+        # Album default_sort overrides manual order
+        asyncio.run(update_album(
+            alb.id,
+            AlbumUpdate(default_sort="filename", default_order="asc"),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        ctx_default_sort = asyncio.run(get_media_album_context(m2.id, album_id=alb.id, db=self.db))
+        self.assertEqual(ctx_default_sort.position, 2)
+        self.assertEqual([m.id for m in ctx_default_sort.items], [m1.id, m2.id, m3.id, m4.id, m5.id])
+
+        # Missing media or album raises 404
+        with self.assertRaises(HTTPException) as err_media:
+            asyncio.run(get_media_album_context(999999, album_id=alb.id, db=self.db))
+        self.assertEqual(err_media.exception.status_code, 404)
+
+        with self.assertRaises(HTTPException) as err_album:
+            asyncio.run(get_media_album_context(m1.id, album_id=999999, db=self.db))
+        self.assertEqual(err_album.exception.status_code, 404)
+
+    def test_media_page_renders_album_sidebar_and_strip_markup(self):
+        from backend.app.main import album_media_page, media_page
+
+        alb = self._create_album("RenderAlbum")
+        m1 = self._create_media("render1.jpg")
+        add_media_to_album(self.db, alb.id, [m1.id])
+
+        resp = asyncio.run(media_page(DummyRequest(path=f"/media/{m1.id}"), m1.id, db=self.db))
+        html = resp.body.decode("utf-8")
+        self.assertIn('id="media-albums-section"', html)
+        self.assertIn('id="media-albums-toggle"', html)
+        self.assertIn('id="media-albums-content"', html)
+        self.assertIn('id="media-albums-list"', html)
+        self.assertIn('id="album-media-section"', html)
+        self.assertIn('id="album-media"', html)
+
+        alb_resp = asyncio.run(album_media_page(DummyRequest(path=f"/album/{alb.id}/media/{m1.id}"), alb.id, m1.id, db=self.db))
+        alb_html = alb_resp.body.decode("utf-8")
+        self.assertIn('id="media-albums-section"', alb_html)
+        self.assertIn('id="album-media-section"', alb_html)
 
 if __name__ == "__main__":
     unittest.main()
