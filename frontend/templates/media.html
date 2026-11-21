@@ -95,6 +95,39 @@ download_icon, share_icon, select_arrow_icon, edit_icon, eye_icon, enlarge_icon,
                 </div>
             </div>
 
+            <!-- Active Album Strip (when browsing inside an album) -->
+            <section id="album-media-section" class="surface border" style="display: none;"
+                aria-labelledby="album-media-title">
+                <button type="button" id="album-media-toggle" aria-expanded="true" aria-controls="album-media-content"
+                    class="w-full p-4 flex justify-between items-center gap-2 text-left cursor-pointer hover:surface-light transition-colors">
+                    <h2 id="album-media-title" class="text-base font-bold truncate"></h2>
+                    {{ chevron_down_icon(size=16, id="album-media-chevron", class="transition-transform
+                    duration-200 flex-shrink-0", extra='aria-hidden="true"') }}
+                </button>
+                <div id="album-media-content" class="p-4 border-t relative group">
+                    <div class="carousel-wrapper relative overflow-hidden">
+                        <div id="album-media"
+                            class="album-strip-track flex gap-2 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+                            style="overscroll-behavior-x: contain; touch-action: manipulation;"
+                            role="list"></div>
+
+                        <!-- Carousel Controls -->
+                        <button type="button" id="album-strip-prev-btn"
+                            aria-label="{{ t('common.previous') }}"
+                            class="absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer bg-black/50 hover:bg-black/70 text p-2 transition-opacity opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-0"
+                            style="z-index: 10; touch-action: manipulation;">
+                            {{ chevron_left_icon(size=20, extra='aria-hidden="true"') }}
+                        </button>
+                        <button type="button" id="album-strip-next-btn"
+                            aria-label="{{ t('common.next') }}"
+                            class="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer bg-black/50 hover:bg-black/70 text p-2 transition-opacity opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-0"
+                            style="z-index: 10; touch-action: manipulation;">
+                            {{ chevron_right_icon(size=20, extra='aria-hidden="true"') }}
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             <!-- Enlarged Description Section (Between media card and related media) -->
             <div id="enlarged-description-section" class="surface p-4 border" style="display: none;">
                 <!-- View Description (Non-admin Mode Only) -->
@@ -309,6 +342,22 @@ download_icon, share_icon, select_arrow_icon, edit_icon, eye_icon, enlarge_icon,
                             </button>
                         </form>
                     </div>
+                </div>
+            </div>
+
+            <!-- Albums (if present) -->
+            <div id="media-albums-section" style="display: none;" class="surface border">
+                <button type="button" id="media-albums-toggle" aria-expanded="false" aria-controls="media-albums-content"
+                    class="w-full p-3 flex justify-between items-center text-left hover:text-primary transition-colors cursor-pointer">
+                    <h3 class="text-sm font-bold flex items-center gap-1.5 min-w-0">
+                        <span>{{ t('common.albums') }}</span>
+                        <span id="media-albums-count" class="text-xs text-secondary font-normal"></span>
+                    </h3>
+                    {{ chevron_down_icon(size=16, id="media-albums-chevron",
+                    class="transition-transform duration-200 flex-shrink-0", extra='aria-hidden="true"') }}
+                </button>
+                <div id="media-albums-content" class="text-xs px-3 pb-3" style="display: none;">
+                    <ul id="media-albums-list" class="bg border max-h-60 overflow-y-auto"></ul>
                 </div>
             </div>
 

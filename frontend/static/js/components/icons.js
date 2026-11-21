@@ -96,6 +96,7 @@
         // Folders & Menus
         folder: (opts) => render('folder', opts, 16),
         folderParent: (opts) => render('folder-parent', opts, 16),
+        grid: (opts) => render('grid', opts, 14),
         tagMenu: (opts) => render('tag-menu', opts, 14)
     };
 

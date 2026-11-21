@@ -141,7 +141,11 @@ class MediaViewer extends MediaViewerBase {
             }
 
             await this.renderHierarchy(this.currentMedia.hierarchy);
-            await this.loadRelatedMedia();
+            await Promise.all([
+                this.loadMediaAlbums(),
+                this.albumId ? this.loadAlbumStrip() : Promise.resolve(),
+                this.loadRelatedMedia(),
+            ]);
         } catch (e) {
             console.error('loadMedia error', e);
         }
@@ -265,9 +269,6 @@ class MediaViewer extends MediaViewerBase {
                 await this.updateShareSettings({ share_language: e.detail.value });
             });
         }
-
-        // Load albums
-        this.checkAlbumsExistence();
 
         // Setup relation manager
         this.setupRelationManager();
@@ -409,24 +410,6 @@ class MediaViewer extends MediaViewerBase {
             saveSourceBtn.onclick = async () => {
                 await this.saveSource();
             };
-        }
-    }
-
-    async checkAlbumsExistence() {
-        try {
-            const res = await fetch('/api/albums?limit=1');
-            const data = await res.json();
-            const section = this.el('albums-section');
-
-            if (section) {
-                if (data.total === 0) {
-                    section.style.display = 'none';
-                } else {
-                    section.style.display = 'block';
-                }
-            }
-        } catch (e) {
-            console.error('Error checking albums existence:', e);
         }
     }
 
@@ -1269,32 +1252,17 @@ class MediaViewer extends MediaViewerBase {
         }
     }
 
-    async setupMediaNavigation() {
-        const navBar = document.getElementById('media-nav-bar');
-        const prevBtn = document.getElementById('nav-prev-btn');
-        const nextBtn = document.getElementById('nav-next-btn');
-        const prevThumb = document.getElementById('nav-prev-thumb');
-        const nextThumb = document.getElementById('nav-next-thumb');
-        const prevIdText = document.getElementById('nav-prev-id-text');
-        const nextIdText = document.getElementById('nav-next-id-text');
+    _getResolvedAlbumId() {
+        const albumMatch = window.location.pathname.match(/\/album\/(\d+)\/media\//);
+        if (albumMatch) return parseInt(albumMatch[1], 10);
+        if (this.albumId) return parseInt(this.albumId, 10);
+        return null;
+    }
 
-        if (!prevBtn && !nextBtn) return;
-
+    _appendNavigationContextParams(queryParams) {
         const urlParams = new URLSearchParams(window.location.search);
 
-        let mode = 'search';
-        let albumId = null;
-        const albumMatch = window.location.pathname.match(/\/album\/(\d+)\/media\//);
-        if (albumMatch || this.albumId) {
-            mode = 'album';
-            albumId = albumMatch ? parseInt(albumMatch[1], 10) : parseInt(this.albumId, 10);
-        }
-
-        const queryParams = new URLSearchParams();
-        queryParams.set('mode', mode);
-        if (albumId) queryParams.set('album_id', albumId);
-
-        let q = urlParams.get('q') || '';
+        const q = urlParams.get('q') || '';
         if (q) queryParams.set('q', q);
 
         const sidebarMode = document.body.dataset.sidebarMode || window.SIDEBAR_FILTER_MODE || 'rating';
@@ -1337,6 +1305,268 @@ class MediaViewer extends MediaViewerBase {
 
         const fallbackOrder = urlParams.get('fallback_order');
         if (fallbackOrder) queryParams.set('fallback_order', fallbackOrder);
+    }
+
+    async loadMediaAlbums() {
+        const section = this.el('media-albums-section');
+        const listEl = this.el('media-albums-list');
+        if (!section || !listEl) return;
+
+        try {
+            const res = await fetch(`/api/media/${this.mediaId}/albums`);
+            if (!res.ok) {
+                section.style.display = 'none';
+                return;
+            }
+            const data = await res.json();
+            this.renderMediaAlbums(data.albums || []);
+        } catch (e) {
+            console.error('Error loading media albums:', e);
+            section.style.display = 'none';
+        }
+    }
+
+    renderMediaAlbums(albums) {
+        const section = this.el('media-albums-section');
+        const listEl = this.el('media-albums-list');
+        const countEl = this.el('media-albums-count');
+        if (!section || !listEl) return;
+
+        if (!albums || albums.length === 0) {
+            listEl.innerHTML = '';
+            if (countEl) countEl.textContent = '';
+            section.style.display = 'none';
+            return;
+        }
+
+        if (countEl) {
+            countEl.textContent = `(${albums.length})`;
+        }
+
+        const activeAlbumId = this._getResolvedAlbumId();
+        const currentMediaId = parseInt(this.mediaId, 10);
+
+        const openAlbumLabel = window.i18n.t('media.open_album');
+
+        listEl.innerHTML = albums.map(album => {
+            const isActive = activeAlbumId === album.id;
+            const parentPathHtml = album.parent_path
+                ? `<span class="block text-[10px] text-secondary truncate">${escapeHtml(album.parent_path)}</span>`
+                : '';
+
+            const fullAlbumTitle = album.parent_path ? `${album.parent_path} > ${album.name}` : album.name;
+            const openAriaLabel = `${openAlbumLabel}: ${album.name}`;
+
+            return `
+                <li class="media-album-item flex items-center border-b last:border-b-0 transition-colors ${isActive ? 'is-active bg-primary/10 hover:bg-primary/15' : 'hover:surface'}">
+                    <a href="/album/${album.id}/media/${currentMediaId}"
+                        class="flex items-center gap-2 flex-1 min-w-0 py-1.5 pl-2 pr-1 focus-visible:outline-2 focus-visible:outline-primary"
+                        title="${escapeAttr(fullAlbumTitle)}"${isActive ? ' aria-current="true"' : ''}>
+                        <span class="shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-secondary'}">
+                            ${window.Icons.folder({ size: 14, extra: 'aria-hidden="true"' })}
+                        </span>
+                        <span class="flex-1 min-w-0">
+                            <span class="block text-xs truncate ${isActive ? 'font-bold text-primary' : 'font-medium text'}">${escapeHtml(album.name)}</span>
+                            ${parentPathHtml}
+                        </span>
+                    </a>
+                    <a href="/album/${album.id}"
+                        class="flex items-center justify-center p-1.5 min-w-6 min-h-6 text-secondary hover:text-primary transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-primary"
+                        title="${escapeAttr(openAlbumLabel)}"
+                        aria-label="${escapeAttr(openAriaLabel)}">
+                        ${window.Icons.grid({ size: 14, extra: 'aria-hidden="true"' })}
+                    </a>
+                </li>
+            `;
+        }).join('');
+
+        section.style.display = 'block';
+        this.setupMediaAlbumsToggle();
+    }
+
+    setupMediaAlbumsToggle() {
+        const toggle = this.el('media-albums-toggle');
+        const content = this.el('media-albums-content');
+        if (!toggle || !content) return;
+
+        const isCollapsed = localStorage.getItem('mediaAlbumsCollapsed') === 'true';
+        content.style.display = isCollapsed ? 'none' : 'block';
+
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+        newToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+
+        const liveChevron = newToggle.querySelector('#media-albums-chevron');
+        if (liveChevron) {
+            liveChevron.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        newToggle.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            newToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            localStorage.setItem('mediaAlbumsCollapsed', isHidden ? 'false' : 'true');
+            if (liveChevron) {
+                liveChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        });
+    }
+
+    async loadAlbumStrip() {
+        const albumId = this._getResolvedAlbumId();
+        const section = this.el('album-media-section');
+        if (!albumId || !section) return;
+
+        const queryParams = new URLSearchParams();
+        queryParams.set('album_id', albumId);
+        this._appendNavigationContextParams(queryParams);
+
+        try {
+            const res = await fetch(`/api/media/${this.mediaId}/album-context?${queryParams.toString()}`);
+            if (!res.ok) {
+                section.style.display = 'none';
+                return;
+            }
+            const data = await res.json();
+            this.renderAlbumStrip(data);
+        } catch (e) {
+            console.error('Error loading album strip:', e);
+            section.style.display = 'none';
+        }
+    }
+
+    renderAlbumStrip(data) {
+        const section = this.el('album-media-section');
+        const stripEl = this.el('album-media');
+        const titleEl = this.el('album-media-title');
+
+        if (!section || !stripEl || !titleEl) return;
+
+        const items = data && Array.isArray(data.items) ? data.items : [];
+        if (items.length <= 1 || !data.album) {
+            stripEl.innerHTML = '';
+            section.style.display = 'none';
+            return;
+        }
+
+        const titleText = escapeHtml(data.album.name);
+        const posText = (data.position != null && data.total > 0)
+            ? ` <span class="text-secondary font-normal text-xs">(${data.position} / ${data.total})</span>`
+            : '';
+        titleEl.innerHTML = `${titleText}${posText}`;
+
+        const queryString = new URLSearchParams(window.location.search).toString();
+        const currentId = parseInt(this.mediaId, 10);
+
+        stripEl.innerHTML = '';
+        let currentItemEl = null;
+
+        items.forEach((media) => {
+            const item = this.createRelatedMediaItem(media, queryString, true);
+            item.setAttribute('role', 'listitem');
+            item.style.flex = '0 0 auto';
+            item.style.width = '120px';
+
+            if (media.id === currentId) {
+                item.classList.add('album-strip-current');
+                const link = item.querySelector('a');
+                if (link) link.setAttribute('aria-current', 'page');
+                currentItemEl = item;
+            }
+
+            stripEl.appendChild(item);
+        });
+
+        section.style.display = 'block';
+        this.setupAlbumStripToggle();
+        this._setupHorizontalCarousel(
+            stripEl,
+            this.el('album-strip-prev-btn'),
+            this.el('album-strip-next-btn')
+        );
+
+        if (currentItemEl) {
+            this._centerAlbumStripCurrentItem(stripEl);
+            requestAnimationFrame(() => {
+                this._centerAlbumStripCurrentItem(stripEl);
+            });
+        }
+    }
+
+    _centerAlbumStripCurrentItem(stripEl) {
+        if (!stripEl) return;
+        const currentItemEl = stripEl.querySelector('.album-strip-current');
+        if (!currentItemEl) return;
+
+        const stripRect = stripEl.getBoundingClientRect();
+        const itemRect = currentItemEl.getBoundingClientRect();
+        if (stripRect.width <= 0 || itemRect.width <= 0) return;
+
+        const maxScroll = Math.max(0, stripEl.scrollWidth - stripEl.clientWidth);
+        const targetLeft = stripEl.scrollLeft + (itemRect.left - stripRect.left) - (stripRect.width - itemRect.width) / 2;
+        const clampedLeft = Math.min(maxScroll, Math.max(0, targetLeft));
+
+        const prevBehavior = stripEl.style.scrollBehavior;
+        stripEl.style.scrollBehavior = 'auto';
+        stripEl.scrollLeft = clampedLeft;
+        stripEl.style.scrollBehavior = prevBehavior;
+
+        if (typeof stripEl._carouselUpdateButtons === 'function') {
+            stripEl._carouselUpdateButtons();
+        }
+    }
+
+    setupAlbumStripToggle() {
+        const toggle = this.el('album-media-toggle');
+        const content = this.el('album-media-content');
+        if (!toggle || !content) return;
+
+        const isCollapsed = localStorage.getItem('albumStripCollapsed') === 'true';
+        content.style.display = isCollapsed ? 'none' : 'block';
+
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+        newToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+
+        const liveChevron = newToggle.querySelector('#album-media-chevron');
+        if (liveChevron) {
+            liveChevron.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        newToggle.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            newToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            localStorage.setItem('albumStripCollapsed', isHidden ? 'false' : 'true');
+            if (liveChevron) {
+                liveChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+            if (isHidden) {
+                const stripEl = this.el('album-media');
+                this._centerAlbumStripCurrentItem(stripEl);
+                stripEl?.dispatchEvent(new Event('scroll'));
+            }
+        });
+    }
+
+    async setupMediaNavigation() {
+        const navBar = document.getElementById('media-nav-bar');
+        const prevBtn = document.getElementById('nav-prev-btn');
+        const nextBtn = document.getElementById('nav-next-btn');
+        const prevThumb = document.getElementById('nav-prev-thumb');
+        const nextThumb = document.getElementById('nav-next-thumb');
+        const prevIdText = document.getElementById('nav-prev-id-text');
+        const nextIdText = document.getElementById('nav-next-id-text');
+
+        if (!prevBtn && !nextBtn) return;
+
+        const albumId = this._getResolvedAlbumId();
+        const mode = albumId ? 'album' : 'search';
+
+        const queryParams = new URLSearchParams();
+        queryParams.set('mode', mode);
+        if (albumId) queryParams.set('album_id', albumId);
+        this._appendNavigationContextParams(queryParams);
 
         try {
             const res = await fetch(`/api/media/${this.mediaId}/adjacent?${queryParams.toString()}`);
@@ -1624,6 +1854,13 @@ class MediaViewer extends MediaViewerBase {
                 }
 
                 app.showNotification(window.i18n.t('notifications.media.albums_updated'), 'success');
+                await this.loadMediaAlbums();
+                if (this.albumId) {
+                    await Promise.all([
+                        this.setupMediaNavigation(),
+                        this.loadAlbumStrip(),
+                    ]);
+                }
             } catch (error) {
                 app.showNotification(error.message, 'error', window.i18n.t('notifications.media.error_updating_albums'));
             }
@@ -1641,6 +1878,13 @@ class MediaViewer extends MediaViewerBase {
             });
 
             app.showNotification(window.i18n.t('notifications.media.removed_from_album'), 'success');
+            await this.loadMediaAlbums();
+            if (this.albumId) {
+                await Promise.all([
+                    this.setupMediaNavigation(),
+                    this.loadAlbumStrip(),
+                ]);
+            }
         } catch (error) {
             app.showNotification(error.message, 'error', window.i18n.t('notifications.media.error_removing_from_album'));
         }
@@ -2350,10 +2594,14 @@ class MediaViewer extends MediaViewerBase {
     }
 
     setupCarousel() {
-        const container = this.el('hierarchy-media');
-        const prevBtn = this.el('hierarchy-prev-btn');
-        const nextBtn = this.el('hierarchy-next-btn');
+        this._setupHorizontalCarousel(
+            this.el('hierarchy-media'),
+            this.el('hierarchy-prev-btn'),
+            this.el('hierarchy-next-btn')
+        );
+    }
 
+    _setupHorizontalCarousel(container, prevBtn, nextBtn) {
         if (!container) return;
 
         // Prevent native drag on images and links within the carousel
@@ -2361,23 +2609,55 @@ class MediaViewer extends MediaViewerBase {
             el.draggable = false;
         });
 
-        // Update buttons visibility
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+        // Update buttons visibility and redirect focus if the focused control becomes disabled
         const updateButtons = () => {
+            const prevDisabled = container.scrollLeft <= 0;
+            const nextDisabled = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
+
             if (prevBtn) {
-                const isDisabled = container.scrollLeft <= 0;
-                prevBtn.disabled = isDisabled;
-                prevBtn.style.pointerEvents = isDisabled ? 'none' : 'auto';
+                if (prevDisabled && document.activeElement === prevBtn && nextBtn && !nextDisabled) {
+                    nextBtn.focus();
+                }
+                prevBtn.disabled = prevDisabled;
+                prevBtn.style.pointerEvents = prevDisabled ? 'none' : 'auto';
             }
             if (nextBtn) {
-                const isDisabled = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
-                nextBtn.disabled = isDisabled;
-                nextBtn.style.pointerEvents = isDisabled ? 'none' : 'auto';
+                if (nextDisabled && document.activeElement === nextBtn && prevBtn && !prevDisabled) {
+                    prevBtn.focus();
+                }
+                nextBtn.disabled = nextDisabled;
+                nextBtn.style.pointerEvents = nextDisabled ? 'none' : 'auto';
             }
         };
 
+        if (prevBtn) {
+            prevBtn.onclick = () => {
+                container.scrollBy({ left: -300, behavior: scrollBehavior });
+            };
+        }
+
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                container.scrollBy({ left: 300, behavior: scrollBehavior });
+            };
+        }
+
+        if (container._carouselUpdateButtons) {
+            container.removeEventListener('scroll', container._carouselUpdateButtons);
+            window.removeEventListener('resize', container._carouselUpdateButtons);
+        }
+        container._carouselUpdateButtons = updateButtons;
         container.addEventListener('scroll', updateButtons);
         window.addEventListener('resize', updateButtons);
         setTimeout(updateButtons, 100);
+
+        if (container.dataset.carouselBound === 'true') {
+            return;
+        }
+        container.dataset.carouselBound = 'true';
 
         // Click & Drag logic
         let isDown = false;
@@ -2425,19 +2705,6 @@ class MediaViewer extends MediaViewerBase {
                 hasDragged = false;
             }
         }, true);
-
-        // Button logic
-        if (prevBtn) {
-            prevBtn.onclick = () => {
-                container.scrollBy({ left: -300, behavior: 'smooth' });
-            };
-        }
-
-        if (nextBtn) {
-            nextBtn.onclick = () => {
-                container.scrollBy({ left: 300, behavior: 'smooth' });
-            };
-        }
     }
 
     // ==================== Relation Manager Methods ====================

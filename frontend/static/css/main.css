@@ -1536,3 +1536,27 @@ input.search-drop-active {
     border-color: var(--primary-color) !important;
     box-shadow: 0 0 0 1px var(--primary-color);
 }
+
+/* Active Album Strip & Sidebar Albums */
+@media (prefers-reduced-motion: no-preference) {
+    .album-strip-track {
+        scroll-behavior: smooth;
+    }
+}
+
+.gallery-item.album-strip-current {
+    scroll-initial-target: nearest;
+}
+
+.gallery-item.album-strip-current a img,
+.gallery-item.album-strip-current.blur-content .blur-wrapper::after {
+    border-color: var(--primary-color) !important;
+}
+
+.media-album-item {
+    border-left: 2px solid transparent;
+}
+
+.media-album-item.is-active {
+    border-left-color: var(--primary-color);
+}
