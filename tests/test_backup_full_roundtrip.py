@@ -503,8 +503,8 @@ class TestBackupFullRoundtrip(BackupTestBase):
         self.db.add_all([m_safe, m_quest, m_expl])
         self.db.commit()
 
-        # 2. Setup albums with sort_position
-        root_a = Album(name="Root Album A", sort_position=1)
+        # 2. Setup albums with sort_position and default_sort overrides
+        root_a = Album(name="Root Album A", sort_position=1, default_sort="filename", default_order="asc")
         root_b = Album(name="Root Album B", sort_position=0)
         child_a1 = Album(name="Child A1", sort_position=None)
         child_a2 = Album(name="Child A2", sort_position=None)
@@ -544,7 +544,10 @@ class TestBackupFullRoundtrip(BackupTestBase):
 
         exported_albums = {alb["name"]: alb for alb in meta["albums"]}
         self.assertEqual(exported_albums["Root Album A"]["sort_position"], 1)
+        self.assertEqual(exported_albums["Root Album A"]["default_sort"], "filename")
+        self.assertEqual(exported_albums["Root Album A"]["default_order"], "asc")
         self.assertEqual(exported_albums["Root Album B"]["sort_position"], 0)
+        self.assertIsNone(exported_albums["Root Album B"]["default_sort"])
 
         # Check media sort_position in Root Album A
         root_a_media = {m["hash"]: m for m in exported_albums["Root Album A"]["media"]}
@@ -578,7 +581,11 @@ class TestBackupFullRoundtrip(BackupTestBase):
         self.assertIsNotNone(restored_child_a2)
 
         self.assertEqual(restored_root_a.sort_position, 1)
+        self.assertEqual(restored_root_a.default_sort, "filename")
+        self.assertEqual(restored_root_a.default_order, "asc")
         self.assertEqual(restored_root_b.sort_position, 0)
+        self.assertIsNone(restored_root_b.default_sort)
+        self.assertIsNone(restored_root_b.default_order)
 
         # Verify album_media sort_position
         restored_m_safe = self.db.query(Media).filter(Media.hash == "hash_safe").first()

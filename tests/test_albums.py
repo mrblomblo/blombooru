@@ -941,5 +941,111 @@ class TestAlbumArchitecture(BackupTestBase):
         self.assertEqual(res_none["total"], 0)
         self.assertEqual(res_none["unfiltered_total"], 0)
 
+    def test_album_default_sort_override_and_precedence(self):
+        from fastapi import HTTPException
+        from backend.app.main import album_detail_page
+        from backend.app.routes.albums import get_album
+
+        alb = self._create_album("DefaultSortAlbum")
+        m_b = self._create_media("b_file.jpg")
+        m_a = self._create_media("a_file.jpg")
+        m_c = self._create_media("c_file.jpg")
+        add_media_to_album(self.db, alb.id, [m_b.id, m_a.id, m_c.id])
+
+        # Initially no default sort override
+        info = asyncio.run(get_album(alb.id, db=self.db))
+        self.assertIsNone(info.default_sort)
+        self.assertIsNone(info.default_order)
+
+        # Invalid sort/order rejected
+        with self.assertRaises(HTTPException) as ctx:
+            asyncio.run(update_album(
+                alb.id,
+                AlbumUpdate(default_sort="not_a_sort", default_order="asc"),
+                current_user=self.admin_user,
+                db=self.db
+            ))
+        self.assertEqual(ctx.exception.status_code, 400)
+
+        with self.assertRaises(HTTPException) as ctx:
+            asyncio.run(update_album(
+                alb.id,
+                AlbumUpdate(default_sort="filename", default_order="sideways"),
+                current_user=self.admin_user,
+                db=self.db
+            ))
+        self.assertEqual(ctx.exception.status_code, 400)
+
+        # Set default sort to filename asc
+        updated = asyncio.run(update_album(
+            alb.id,
+            AlbumUpdate(default_sort="filename", default_order="asc"),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        self.assertEqual(updated.default_sort, "filename")
+        self.assertEqual(updated.default_order, "asc")
+
+        # get_album_contents with omitted sort/order uses album default
+        contents = asyncio.run(get_album_contents(DummyRequest(), alb.id, db=self.db))
+        self.assertEqual([m.id for m in contents["media"]], [m_a.id, m_b.id, m_c.id])
+
+        # Explicit sort/order overrides album default
+        contents_desc = asyncio.run(get_album_contents(DummyRequest(), alb.id, sort="filename", order="desc", db=self.db))
+        self.assertEqual([m.id for m in contents_desc["media"]], [m_c.id, m_b.id, m_a.id])
+
+        # get_adjacent_media with omitted sort/order uses album default
+        adj = asyncio.run(get_adjacent_media(media_id=m_b.id, mode="album", album_id=alb.id, db=self.db))
+        self.assertEqual(adj["prev_id"], m_a.id)
+        self.assertEqual(adj["next_id"], m_c.id)
+
+        # Even if manual sort_position is present, explicit album.default_sort overrides it
+        asyncio.run(reorder_album_media(
+            album_id=alb.id,
+            data=MediaReorderRequest(media_ids=[m_c.id, m_a.id, m_b.id]),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        adj_overridden = asyncio.run(get_adjacent_media(media_id=m_b.id, mode="album", album_id=alb.id, db=self.db))
+        self.assertEqual(adj_overridden["prev_id"], m_a.id)
+        self.assertEqual(adj_overridden["next_id"], m_c.id)
+
+        # album_detail_page renders album default_sort/order and pin button for admin only
+        admin_resp = asyncio.run(album_detail_page(self._admin_request(), alb.id, db=self.db))
+        admin_html = admin_resp.body.decode("utf-8")
+        self.assertIn('data-value="filename"', admin_html)
+        self.assertIn('data-default-order="asc"', admin_html)
+        self.assertIn('id="sort-set-default"', admin_html)
+        self.assertIn('aria-pressed="true"', admin_html)
+
+        guest_resp = asyncio.run(album_detail_page(DummyRequest(path=f"/album/{alb.id}"), alb.id, db=self.db))
+        guest_html = guest_resp.body.decode("utf-8")
+        self.assertIn('data-value="filename"', guest_html)
+        self.assertNotIn('id="sort-set-default"', guest_html)
+
+        # Setting default_sort="manual" forces default_order="asc"
+        manual_updated = asyncio.run(update_album(
+            alb.id,
+            AlbumUpdate(default_sort="manual", default_order="desc"),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        self.assertEqual(manual_updated.default_sort, "manual")
+        self.assertEqual(manual_updated.default_order, "asc")
+
+        # Clearing default_sort resets both columns and reverts to manual (via sort_position)
+        cleared = asyncio.run(update_album(
+            alb.id,
+            AlbumUpdate(default_sort=None, default_order=None),
+            current_user=self.admin_user,
+            db=self.db
+        ))
+        self.assertIsNone(cleared.default_sort)
+        self.assertIsNone(cleared.default_order)
+
+        adj_manual_fallback = asyncio.run(get_adjacent_media(media_id=m_a.id, mode="album", album_id=alb.id, db=self.db))
+        self.assertEqual(adj_manual_fallback["prev_id"], m_c.id)
+        self.assertEqual(adj_manual_fallback["next_id"], m_b.id)
+
 if __name__ == "__main__":
     unittest.main()
