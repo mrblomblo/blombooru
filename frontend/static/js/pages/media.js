@@ -1329,19 +1329,7 @@ class MediaViewer extends MediaViewerBase {
     renderMediaAlbums(albums) {
         const section = this.el('media-albums-section');
         const listEl = this.el('media-albums-list');
-        const countEl = this.el('media-albums-count');
         if (!section || !listEl) return;
-
-        if (!albums || albums.length === 0) {
-            listEl.innerHTML = '';
-            if (countEl) countEl.textContent = '';
-            section.style.display = 'none';
-            return;
-        }
-
-        if (countEl) {
-            countEl.textContent = `(${albums.length})`;
-        }
 
         const activeAlbumId = this._getResolvedAlbumId();
         const currentMediaId = parseInt(this.mediaId, 10);
@@ -1450,10 +1438,7 @@ class MediaViewer extends MediaViewerBase {
         }
 
         const titleText = escapeHtml(data.album.name);
-        const posText = (data.position != null && data.total > 0)
-            ? ` <span class="text-secondary font-normal text-xs">(${data.position} / ${data.total})</span>`
-            : '';
-        titleEl.innerHTML = `${titleText}${posText}`;
+        titleEl.innerHTML = `${titleText}`;
 
         const queryString = new URLSearchParams(window.location.search).toString();
         const currentId = parseInt(this.mediaId, 10);
