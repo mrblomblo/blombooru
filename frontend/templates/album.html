@@ -14,7 +14,10 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
     'tag_count': t('gallery.sort_tag_count'),
     'random': t('gallery.sort_random')
 } %}
-{% if has_manual_order or is_admin(request) %}
+{% if default_sort == 'last_modified' %}
+    {% set _ = album_view_sort_options.update({'last_modified': t('albums.sort_last_modified')}) %}
+{% endif %}
+{% if has_manual_order or default_sort == 'manual' or is_admin(request) %}
     {% set _ = album_view_sort_options.update({'manual': t('gallery.sort_manual')}) %}
 {% endif %}
 <div class="container mx-auto px-4 py-4">
@@ -29,7 +32,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
             </div>
 
             {{ rating_filter('mobile', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
-            {{ sorting_options(sort_options=album_view_sort_options, default_sort=default_sort, default_order=default_order, location='mobile', is_admin=is_admin(request)) }}
+            {{ sorting_options(sort_options=album_view_sort_options, default_sort=default_sort, default_order=default_order, location='mobile', is_admin=is_admin(request), show_set_default=true, album_default_sort=album_default_sort, album_default_order=album_default_order) }}
             {{ bulk_actions(['select_all', 'deselect_all', 'remove', 'album', 'manage_tags', 'rating', 'delete']) }}
 
             <!-- Sub-albums Section -->
@@ -63,7 +66,7 @@ loading_indicator, page_navigation, popular_tags_section, sidebar_start, sidebar
         <div id="album-details" class="text-xs mb-4"></div>
 
         {{ rating_filter('desktop', mode=sidebar_filter_mode, custom_buttons=sidebar_custom_buttons) }}
-        {{ sorting_options(sort_options=album_view_sort_options, default_sort=default_sort, default_order=default_order, is_admin=is_admin(request)) }}
+        {{ sorting_options(sort_options=album_view_sort_options, default_sort=default_sort, default_order=default_order, is_admin=is_admin(request), show_set_default=true, album_default_sort=album_default_sort, album_default_order=album_default_order) }}
         {{ popular_tags_section() }}
         {{ sidebar_end() }}
     </div>

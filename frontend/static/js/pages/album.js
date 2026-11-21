@@ -14,6 +14,7 @@ class AlbumViewer extends BaseGallery {
 
     async init() {
         this.initCommon();
+        this.setupDefaultSortButton();
 
         // Get page from URL
         this.currentPage = parseInt(this.getUrlParam('page', '1'));
@@ -32,6 +33,7 @@ class AlbumViewer extends BaseGallery {
 
             this.album = await response.json();
             document.getElementById('album-name').textContent = this.album.name;
+            this.updateDefaultSortButtonState();
             await this.loadBreadcrumb();
             this.updateDetails();
         } catch (error) {
@@ -166,6 +168,87 @@ class AlbumViewer extends BaseGallery {
         this.loadPopularTagsFromAPI();
     }
 
+    onSortChange() {
+        this.updateDefaultSortButtonState();
+        super.onSortChange();
+    }
+
+    setupDefaultSortButton() {
+        this.sortSetDefaultBtns = document.querySelectorAll('.js-sort-set-default');
+        this.isSavingDefaultSort = false;
+        this.sortSetDefaultBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.toggleAlbumDefaultSort());
+        });
+    }
+
+    isCurrentSortAlbumDefault() {
+        if (!this.album || !this.album.default_sort) return false;
+        if (this.album.default_sort !== this.currentSort) return false;
+        if (this.currentSort === 'manual' || this.currentSort === 'random') {
+            return true;
+        }
+        return this.album.default_order === this.getOrderValue();
+    }
+
+    updateDefaultSortButtonState() {
+        if (!this.sortSetDefaultBtns || this.sortSetDefaultBtns.length === 0) return;
+
+        const isDefault = this.isCurrentSortAlbumDefault();
+        const label = window.i18n.t(isDefault ? 'albums.clear_default_sort' : 'albums.set_default_sort');
+
+        this.sortSetDefaultBtns.forEach(btn => {
+            btn.classList.toggle('border-primary', isDefault);
+            btn.classList.toggle('bg-primary', isDefault);
+            btn.classList.toggle('primary-text', isDefault);
+            btn.classList.toggle('bg', !isDefault);
+            btn.classList.toggle('text', !isDefault);
+            btn.classList.toggle('hover:border-primary', !isDefault);
+            btn.setAttribute('title', label);
+            btn.setAttribute('aria-label', label);
+            btn.setAttribute('aria-pressed', isDefault ? 'true' : 'false');
+        });
+    }
+
+    async toggleAlbumDefaultSort() {
+        if (!this.album || this.isSavingDefaultSort) return;
+
+        const shouldClear = this.isCurrentSortAlbumDefault();
+        const payload = shouldClear
+            ? { default_sort: null, default_order: null }
+            : {
+                default_sort: this.currentSort,
+                default_order: this.currentSort === 'manual' ? 'asc' : this.getOrderValue()
+            };
+
+        this.isSavingDefaultSort = true;
+        this.sortSetDefaultBtns.forEach(btn => { btn.disabled = true; });
+
+        try {
+            const updated = await app.apiCall(`/api/albums/${this.albumId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (updated) {
+                this.album = updated;
+            } else {
+                this.album.default_sort = payload.default_sort;
+                this.album.default_order = payload.default_order;
+            }
+
+            this.updateDefaultSortButtonState();
+            app.showNotification(
+                window.i18n.t(shouldClear ? 'albums.default_sort_cleared' : 'albums.default_sort_saved'),
+                shouldClear ? 'info' : 'success'
+            );
+        } catch (error) {
+            app.showNotification(error.message, 'error');
+        } finally {
+            this.isSavingDefaultSort = false;
+            this.sortSetDefaultBtns.forEach(btn => { btn.disabled = false; });
+        }
+    }
+
     renderContents(data) {
         const subAlbumsContainer = document.getElementById('sub-albums-container');
         const subAlbumsGrid = document.getElementById('sub-albums-grid');
@@ -270,6 +353,12 @@ class AlbumViewer extends BaseGallery {
         if (typeof ManualReorder === 'undefined') return;
 
         this.initManualReorder({
+            onSaveSuccess: () => {
+                this.updateDefaultSortButtonState();
+            },
+            onClearSuccess: () => {
+                this.updateDefaultSortButtonState();
+            },
             onCancel: () => {
                 const subAlbumsGrid = document.getElementById('sub-albums-grid');
                 const subAlbumsContainer = document.getElementById('sub-albums-container');

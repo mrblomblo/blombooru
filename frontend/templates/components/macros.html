@@ -132,7 +132,7 @@
 {# Sorting Options Component #}
 
 {% macro sorting_options(sort_options=none, default_sort='uploaded_at', default_order='desc', show_wrapper=true,
-location='desktop', is_admin=false) %}
+location='desktop', is_admin=false, show_set_default=false, album_default_sort=none, album_default_order=none) %}
 {% set standard_sort_options = {
 'uploaded_at': t('admin.settings.upload_date'),
 'custom_date': t('gallery.sort_custom_date'),
@@ -190,6 +190,16 @@ location='desktop', is_admin=false) %}
                     class="js-sort-edit-order sort-edit-order p-1 border bg text hover:border-primary transition-colors flex-shrink-0 cursor-pointer hidden"
                     aria-label="{{ t('gallery.sort_edit_order') }}" title="{{ t('gallery.sort_edit_order') }}">
                     {{ icon_use("edit", size=16) }}
+                </button>
+                {% endif %}
+                {% if is_admin and show_set_default %}
+                {% set is_current_album_default = album_default_sort is not none and album_default_sort == default_sort and (default_sort in ['manual', 'random'] or album_default_order == default_order) %}
+                <button id="sort-set-default{{ suffix }}" type="button"
+                    class="js-sort-set-default sort-set-default p-1 border transition-colors flex-shrink-0 cursor-pointer {{ 'border-primary bg-primary primary-text' if is_current_album_default else 'bg text hover:border-primary' }}"
+                    aria-label="{{ t('albums.clear_default_sort') if is_current_album_default else t('albums.set_default_sort') }}"
+                    title="{{ t('albums.clear_default_sort') if is_current_album_default else t('albums.set_default_sort') }}"
+                    aria-pressed="{{ 'true' if is_current_album_default else 'false' }}">
+                    {{ icon_use("pin", size=16) }}
                 </button>
                 {% endif %}
             </div>
