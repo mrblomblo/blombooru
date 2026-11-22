@@ -1331,6 +1331,12 @@ class MediaViewer extends MediaViewerBase {
         const listEl = this.el('media-albums-list');
         if (!section || !listEl) return;
 
+        if (!albums || albums.length === 0) {
+            listEl.innerHTML = '';
+            section.style.display = 'none';
+            return;
+        }
+
         const activeAlbumId = this._getResolvedAlbumId();
         const currentMediaId = parseInt(this.mediaId, 10);
 
