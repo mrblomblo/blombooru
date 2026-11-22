@@ -407,7 +407,7 @@ class TestShareCacheRework(AsyncBackupTestBase):
             await asyncio.sleep(0.05)
             return await real_run(func, *args, **kwargs)
 
-        with patch("backend.app.utils.media_helpers.run_in_threadpool", side_effect=slow_run):
+        with patch("backend.app.utils.media_helpers.stripped_cache.run_in_threadpool", side_effect=slow_run):
             # Run two concurrent tasks
             task1 = asyncio.create_task(create_stripped_media_cache(media, "image/png"))
             task2 = asyncio.create_task(create_stripped_media_cache(media, "image/png"))
@@ -745,7 +745,7 @@ class TestShareCacheRework(AsyncBackupTestBase):
             target.write_bytes(b"MIGRATED_POST_LOCK_DATA")
             return True
 
-        with patch("backend.app.utils.media_helpers.find_and_migrate_legacy_cache_file", side_effect=selective_migrate):
+        with patch("backend.app.utils.media_helpers.stripped_cache.find_and_migrate_legacy_cache_file", side_effect=selective_migrate):
             with patch("PIL.Image.open") as mock_open:
                 res = await create_stripped_media_cache(media, "image/png")
                 self.assertEqual(res, target_cache)

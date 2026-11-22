@@ -812,7 +812,7 @@ class TestMetadataParsers(BackupTestBase):
             real = original_open(fp, *args, **kwargs)
             return MockImgContext(real)
 
-        with patch("backend.app.utils.media_helpers.Image.open", side_effect=mock_open):
+        with patch("backend.app.utils.media_helpers.metadata.Image.open", side_effect=mock_open):
             meta = extract_image_metadata(jpeg_path)
             encoded = jsonable_encoder(meta)
             self.assertEqual(encoded["dpi"], [300.0, 300.0])
