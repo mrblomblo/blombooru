@@ -200,7 +200,8 @@ async def backup_full_db(
             "tags": [t.name for t in m.tags],
             "implied_tags": implied_tags_meta,
             "archive_path": archive_path,
-            "parent_hash": m.parent.hash if m.parent else None
+            "parent_hash": m.parent.hash if m.parent else None,
+            "parent_sort_position": m.parent_sort_position
         })
         
     # 3. Tag Implications export

@@ -369,7 +369,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
     
     imported_count = 0
     skipped_count = 0
-    parent_links: List[Tuple[int, str]] = []
+    parent_links: List[Tuple[int, str, Any]] = []
     affected_tag_ids: Set[int] = set()
     
     for media_data in media_list:
@@ -486,7 +486,7 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         # Track parent for linking
         parent_hash = media_data.get('parent_hash')
         if parent_hash:
-            parent_links.append((new_media.id, parent_hash))
+            parent_links.append((new_media.id, parent_hash, media_data.get('parent_sort_position')))
 
         tag_names = media_data.get('tags', [])
         raw_implied_tags = media_data.get('implied_tags')
@@ -590,11 +590,15 @@ def import_media_logical(db: Session, zf: zipfile.ZipFile, media_list: List[dict
         logger.info(f"Linking {len(parent_links)} parent/child relationships...")
         all_media_map = {m.hash: m.id for m in db.query(Media.hash, Media.id).all()}
         updates = []
-        for child_id, parent_h in parent_links:
+        for child_id, parent_h, parent_sort_pos in parent_links:
             if parent_h in all_media_map:
                 parent_id = all_media_map[parent_h]
                 if child_id != parent_id:
-                    updates.append({'id': child_id, 'parent_id': parent_id})
+                    updates.append({
+                        'id': child_id,
+                        'parent_id': parent_id,
+                        'parent_sort_position': parent_sort_pos,
+                    })
         if updates:
             db.bulk_update_mappings(Media, updates)
             db.commit()
