@@ -850,7 +850,7 @@ class TestUploadSessions(BackupTestBase):
         thumb_name = "post_commit_test.webp"
         expected_thumb = settings.THUMBNAIL_DIR / thumb_name
 
-        with patch("backend.app.routes.media.set_media_albums", side_effect=RuntimeError("Forced post-commit failure")):
+        with patch("backend.app.routes.media.ingestion.set_media_albums", side_effect=RuntimeError("Forced post-commit failure")):
             with self.assertRaises(RuntimeError):
                 process_and_save_media(
                     db=self.db,

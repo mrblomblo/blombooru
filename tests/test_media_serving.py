@@ -75,7 +75,7 @@ class TestMediaServingAndTranscoding(AsyncBackupTestBase):
             await serve_media_file(missing_file, "image/jpeg")
         self.assertEqual(ctx.exception.status_code, 404)
 
-    @patch("backend.app.routes.media.get_db")
+    @patch("backend.app.routes.media.crud.get_db")
     async def test_get_media_file_route_serves_transcoded_for_view(self, mock_get_db):
         # Create media with both path and transcoded_path
         orig_file = self.base_path / "orig_clip.mkv"

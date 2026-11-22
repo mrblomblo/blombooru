@@ -2,6 +2,6 @@ venv*
 .env
 .pytest_cache/
 __pycache__
-data/
-media/
+/data/
+/media/
 tailwind/tailwindcss*

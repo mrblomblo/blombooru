@@ -183,9 +183,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.safe_request", return_value=mock_resp), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.safe_request", return_value=mock_resp), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.return_value = {
                 "file_type": FileTypeEnum.image,
@@ -286,9 +286,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.MEDIA_CHUNKS_DIR", self.chunks_dir), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.side_effect = lambda f, precalculated_hash=None: {
                 "file_type": FileTypeEnum.image,
@@ -345,9 +345,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.MEDIA_CHUNKS_DIR", self.chunks_dir), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.side_effect = lambda f, precalculated_hash=None: {
                 "file_type": FileTypeEnum.image,
@@ -405,9 +405,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.MEDIA_CHUNKS_DIR", self.chunks_dir), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.side_effect = lambda f, precalculated_hash=None: {
                 "file_type": FileTypeEnum.video,
@@ -468,9 +468,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.MEDIA_CHUNKS_DIR", self.chunks_dir), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.side_effect = lambda f, precalculated_hash=None: {
                 "file_type": FileTypeEnum.video,
@@ -645,9 +645,9 @@ class TestRelinkAndUpdater(AsyncBackupTestBase):
              patch.object(settings, "ORIGINAL_DIR", self.original_dir), \
              patch.object(settings, "TRANSCODED_DIR", self.transcoded_dir), \
              patch.object(settings, "THUMBNAIL_DIR", self.thumbnail_dir), \
-             patch("backend.app.routes.media.MEDIA_CHUNKS_DIR", self.chunks_dir), \
-             patch("backend.app.routes.media.process_media_file") as mock_process, \
-             patch("backend.app.routes.media.generate_thumbnail", return_value=True):
+             patch("backend.app.routes.media.update_source.MEDIA_CHUNKS_DIR", self.chunks_dir), \
+             patch("backend.app.routes.media.update_source.process_media_file") as mock_process, \
+             patch("backend.app.routes.media.update_source.generate_thumbnail", return_value=True):
 
             mock_process.side_effect = lambda f, precalculated_hash=None: {
                 "file_type": FileTypeEnum.image,
