@@ -63,6 +63,7 @@ class Media(Base):
     description = Column(Text, nullable=True)
     description_enlarged = Column(Boolean, default=False, nullable=False, server_default='0')
     parent_id = Column(Integer, ForeignKey('blombooru_media.id', ondelete='SET NULL'), nullable=True, index=True)
+    parent_sort_position = Column(Integer, nullable=True, index=True)
     
     tags = relationship('Tag', secondary=blombooru_media_tags, back_populates='media')
     media_tag_links = relationship('MediaTag', viewonly=True, lazy='select')

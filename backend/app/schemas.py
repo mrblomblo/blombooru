@@ -101,6 +101,7 @@ class MediaResponse(MediaBase):
     description: Optional[str] = None
     description_enlarged: Optional[bool] = False
     parent_id: Optional[int] = None
+    parent_sort_position: Optional[int] = None
     has_children: bool = False
     tags: List[MediaTagResponse] = []
     

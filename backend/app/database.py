@@ -199,6 +199,7 @@ def check_and_migrate_schema(engine):
         migrate_add_phash,
         migrate_source_to_text,
         migrate_add_album_default_sort,
+        migrate_add_parent_sort_position,
     ]
     
     for migration in migrations:
@@ -658,4 +659,21 @@ def migrate_add_album_default_sort(engine, inspector):
         if 'default_order' not in album_cols:
             logger.info("Adding default_order column to blombooru_albums...")
             conn.execute(text("ALTER TABLE blombooru_albums ADD COLUMN default_order VARCHAR(8)"))
+        conn.commit()
+
+def migrate_add_parent_sort_position(engine, inspector):
+    """Add parent_sort_position column and index to blombooru_media."""
+    from sqlalchemy import text
+
+    columns = [c['name'] for c in inspector.get_columns('blombooru_media')]
+    if 'parent_sort_position' in columns:
+        return
+
+    logger.info("Adding parent_sort_position column to blombooru_media...")
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE blombooru_media ADD COLUMN parent_sort_position INTEGER"))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_blombooru_media_parent_sort_position "
+            "ON blombooru_media(parent_sort_position)"
+        ))
         conn.commit()
