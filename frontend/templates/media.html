@@ -22,12 +22,20 @@ download_icon, share_icon, select_arrow_icon, edit_icon, eye_icon, enlarge_icon,
         <div class="lg:col-span-3 flex flex-col gap-4">
             <!-- Parent/Sibling Media -->
             <div id="hierarchy-media-section" class="surface border" style="display: none;">
-                <button type="button" id="hierarchy-media-toggle"
-                    class="w-full p-4 flex justify-between items-center text-left cursor-pointer hover:surface-light transition-colors">
-                    <h2 id="hierarchy-media-title" class="text-base font-bold"></h2>
-                    {{ chevron_down_icon(size=16, id="hierarchy-media-chevron", class="transition-transform
-                    duration-200") }}
-                </button>
+                <div class="relative">
+                    <button type="button" id="hierarchy-media-toggle"
+                        class="w-full p-4 flex justify-between items-center gap-2 text-left cursor-pointer hover:surface-light transition-colors">
+                        <h2 id="hierarchy-media-title" class="text-base font-bold truncate"></h2>
+                        {{ chevron_down_icon(size=16, id="hierarchy-media-chevron", class="transition-transform
+                        duration-200 flex-shrink-0") }}
+                    </button>
+                    <button type="button" id="hierarchy-edit-order-btn"
+                        class="absolute right-11 top-1/2 -translate-y-1/2 p-1.5 border bg text hover:border-primary transition-colors cursor-pointer z-10"
+                        style="display: none;" aria-label="{{ t('gallery.sort_edit_order') }}"
+                        title="{{ t('gallery.sort_edit_order') }}">
+                        {{ edit_icon(size=16) }}
+                    </button>
+                </div>
                 <div id="hierarchy-media-content" class="p-4 border-t relative group">
                     <div class="carousel-wrapper relative overflow-hidden">
                         <div id="hierarchy-media"
@@ -476,6 +484,7 @@ download_icon, share_icon, select_arrow_icon, edit_icon, eye_icon, enlarge_icon,
 <script src="/static/js/components/album-picker.js?v={{ cache_buster }}"></script>
 <script src="/static/js/components/ai-tag-utils.js?v={{ cache_buster }}"></script>
 <script src="/static/js/components/media-viewer-base.js?v={{ cache_buster }}"></script>
+<script src="/static/js/components/manual-reorder.js?v={{ cache_buster }}"></script>
 <script src="/static/js/update-post/update-post-modal-base.js?v={{ cache_buster }}"></script>
 <script src="/static/js/update-post/update-post-url-import.js?v={{ cache_buster }}"></script>
 <script src="/static/js/update-post/update-post-device-upload.js?v={{ cache_buster }}"></script>

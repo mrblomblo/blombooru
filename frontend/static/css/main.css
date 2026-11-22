@@ -1197,6 +1197,18 @@ body.reorder-active-mode .gallery-item .select-checkbox {
     -webkit-touch-callout: none !important;
 }
 
+body.reorder-active-mode #hierarchy-media {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    cursor: default;
+}
+
+body.reorder-active-mode #hierarchy-prev-btn,
+body.reorder-active-mode #hierarchy-next-btn,
+body.reorder-active-mode #hierarchy-edit-order-btn {
+    display: none !important;
+}
+
 /* Blur Explicit Thumbnails */
 .gallery-item.blur-content .blur-wrapper {
     position: relative;

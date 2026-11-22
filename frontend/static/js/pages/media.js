@@ -2550,6 +2550,101 @@ class MediaViewer extends MediaViewerBase {
 
         this.setupHierarchyToggle();
         this.setupCarousel();
+        this.updateHierarchyEditOrderButton(items);
+        this.setupHierarchyReorder();
+    }
+
+    updateHierarchyEditOrderButton(items) {
+        const editOrderBtn = this.el('hierarchy-edit-order-btn');
+        const titleEl = this.el('hierarchy-media-title');
+        if (!editOrderBtn) return;
+
+        const canReorder = Boolean(
+            app.isAdminMode &&
+            this.currentMedia &&
+            !this.currentMedia.parent_id &&
+            Array.isArray(items) &&
+            items.length > 1
+        );
+        editOrderBtn.style.display = canReorder ? 'inline-flex' : 'none';
+        if (titleEl) {
+            titleEl.classList.toggle('mr-10', canReorder);
+        }
+    }
+
+    setupHierarchyReorder() {
+        if (typeof ManualReorder === 'undefined') return;
+
+        if (!this._hierarchyReorder) {
+            this._hierarchyReorder = new ManualReorder({
+                dragClasses: ['opacity-30'],
+                sections: [
+                    {
+                        name: window.i18n.t('media.relations.title'),
+                        grid: () => this.el('hierarchy-media'),
+                        itemSelector: '.gallery-item',
+                        idExtractor: (el) => parseInt(el.dataset.id),
+                        saveEndpoint: `/api/media/${this.mediaId}/children/reorder`,
+                        clearEndpoint: `/api/media/${this.mediaId}/children/reorder`,
+                        savePayloadKey: 'media_ids'
+                    }
+                ],
+                onActivate: () => {
+                    const content = this.el('hierarchy-media-content');
+                    const chevron = this.el('hierarchy-media-chevron');
+                    if (content && content.style.display === 'none') {
+                        content.style.display = 'block';
+                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                    }
+                    if (this.tooltipHelper && typeof this.tooltipHelper.hide === 'function') {
+                        this.tooltipHelper.hide();
+                    }
+                },
+                onSaveSuccess: async () => {
+                    await this.reloadHierarchy();
+                },
+                onClearSuccess: async () => {
+                    await this.reloadHierarchy();
+                },
+                onCancel: () => {
+                    this.renderHierarchy(this.currentMedia?.hierarchy || []);
+                }
+            });
+        }
+
+        const editOrderBtn = this.el('hierarchy-edit-order-btn');
+        if (editOrderBtn && editOrderBtn.dataset.reorderBound !== 'true') {
+            editOrderBtn.dataset.reorderBound = 'true';
+            editOrderBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.activateHierarchyReorder();
+            });
+        }
+    }
+
+    activateHierarchyReorder() {
+        this.setupHierarchyReorder();
+        if (this._hierarchyReorder && !this._hierarchyReorder.isActive) {
+            this.el('hierarchy-media-section')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            this._hierarchyReorder.activate();
+        }
+    }
+
+    async reloadHierarchy() {
+        try {
+            const res = await fetch(`/api/media/${this.mediaId}`);
+            if (!res.ok) return;
+            const updated = await res.json();
+            this.currentMedia = updated;
+            this.relationChildIds = new Set();
+            if (this.currentMedia.hierarchy && !this.currentMedia.parent_id) {
+                this.currentMedia.hierarchy.forEach(item => this.relationChildIds.add(item.id));
+            }
+            await this.renderHierarchy(this.currentMedia.hierarchy);
+            this.renderRelationStatusDisplay();
+        } catch (e) {
+            console.error('Error reloading hierarchy:', e);
+        }
     }
 
     setupHierarchyToggle() {
@@ -2570,6 +2665,7 @@ class MediaViewer extends MediaViewerBase {
         }
 
         newToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('reorder-active-mode')) return;
             const isHidden = content.style.display === 'none';
             content.style.display = isHidden ? 'block' : 'none';
             if (liveChevron) {
@@ -2652,6 +2748,7 @@ class MediaViewer extends MediaViewerBase {
         const dragThreshold = 5;
 
         container.addEventListener('mousedown', (e) => {
+            if (document.body.classList.contains('reorder-active-mode')) return;
             isDown = true;
             hasDragged = false;
             container.classList.add('grabbing');
@@ -2670,7 +2767,7 @@ class MediaViewer extends MediaViewerBase {
         });
 
         container.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
+            if (!isDown || document.body.classList.contains('reorder-active-mode')) return;
             e.preventDefault();
             const x = e.pageX - container.offsetLeft;
             const walk = x - startX;
@@ -2761,6 +2858,7 @@ class MediaViewer extends MediaViewerBase {
             return `
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <span><span class="font-medium">${window.i18n.t('media.relations.children_label')}</span> ${childCount === 1 ? window.i18n.t('media.relations.children_items', { count: childCount }) : window.i18n.t('common.items_count', { count: childCount })}</span>
+                    ${childCount > 1 ? `<button id="relation-reorder-children-btn" type="button" class="btn px-3 py-1 cursor-pointer">${window.i18n.t('gallery.sort_edit_order')}</button>` : ''}
                 </div>
                 <p class="text-xs text-secondary mt-2">${infoIcon}${window.i18n.t('media.relations.info_has_children')}</p>
             `;
@@ -2814,6 +2912,8 @@ class MediaViewer extends MediaViewerBase {
                 if (isChild) return { text: window.i18n.t('media.relations.child_badge'), className: 'bg-[var(--child-outline)] tag-text' };
                 return null;
             },
+            showSelectionOrder: !this.currentMedia.parent_id,
+            selectionOrderFilter: (id) => !this.relationChildIds.has(id),
             onCancel: () => { },
         });
 
@@ -2830,6 +2930,15 @@ class MediaViewer extends MediaViewerBase {
         const removeParentBtn = this._relationPicker.root?.querySelector('#relation-remove-parent-btn');
         if (removeParentBtn) {
             removeParentBtn.addEventListener('click', () => this.removeParent());
+        }
+
+        // Attach reorder-children listener in the status bar
+        const reorderChildrenBtn = this._relationPicker.root?.querySelector('#relation-reorder-children-btn');
+        if (reorderChildrenBtn) {
+            reorderChildrenBtn.addEventListener('click', () => {
+                this.closeRelationModal();
+                this.activateHierarchyReorder();
+            });
         }
     }
 
@@ -3103,6 +3212,9 @@ class MediaViewer extends MediaViewerBase {
         }
         if (this.tagInputHelper) {
             this.tagInputHelper.destroy();
+        }
+        if (this._hierarchyReorder) {
+            this._hierarchyReorder.deactivate();
         }
         this.unloadAllGifs();
     }
