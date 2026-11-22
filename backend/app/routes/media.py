@@ -9,7 +9,7 @@ from fastapi import (APIRouter, BackgroundTasks, Depends, File, Form,
                      HTTPException, Query, Request, UploadFile)
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from ..auth import require_admin_mode
@@ -23,7 +23,8 @@ from ..schemas import (AlbumListResponse, BatchMediaRequest, BatchMetadataReques
                        BulkMediaRatingUpdateRequest, BulkMediaRatingUpdateResponse,
                        BulkTagUpdateRequest, BulkTagUpdateResponse,
                        MediaAlbumContextAlbum, MediaAlbumContextResponse,
-                       MediaCreatedResponse, MediaDetailResponse, MediaResponse,
+                       MediaCreatedResponse, MediaDetailResponse,
+                       MediaReorderRequest, MediaResponse,
                        MediaUpdate, ProposedTag, ShareSettingsUpdate)
 from ..utils.album_path_resolver import ensure_album_path
 from ..utils.album_utils import (get_bulk_album_thumbnails, get_bulk_parent_ids,
@@ -44,6 +45,7 @@ from ..utils.media_helpers import (create_stripped_media_cache,
                                    serve_media_file)
 from ..services import near_duplicates
 from ..utils.media_processor import calculate_file_hash, process_media_file
+from ..utils.media_relations import next_child_sort_position
 from ..utils.perceptual_hash import phash_to_hex
 from ..utils.media_sort import apply_media_sort, get_media_sort_clauses
 from ..utils.search_parser import (apply_custom_filters_or,
@@ -2184,16 +2186,32 @@ async def get_media(media_id: int, db: Session = Depends(get_db)):
     hierarchy = []
     if media.parent_id:
         # I am a child
-        related = db.query(Media).options(selectinload(Media.tags), selectinload(Media.media_tag_links)).filter(
-            or_(
-                Media.id == media.parent_id,
-                and_(Media.parent_id == media.parent_id, Media.id != media.id)
+        related = (
+            db.query(Media)
+            .options(selectinload(Media.tags), selectinload(Media.media_tag_links))
+            .filter(
+                or_(
+                    Media.id == media.parent_id,
+                    and_(Media.parent_id == media.parent_id, Media.id != media.id)
+                )
             )
-        ).all()
+            .order_by(
+                case((Media.id == media.parent_id, 0), else_=1).asc(),
+                Media.parent_sort_position.asc().nulls_last(),
+                Media.id.asc(),
+            )
+            .all()
+        )
         hierarchy = [MediaResponse.model_validate(r).model_dump() for r in related]
     else:
         # I might be a parent
-        children = db.query(Media).options(selectinload(Media.tags), selectinload(Media.media_tag_links)).filter(Media.parent_id == media.id).all()
+        children = (
+            db.query(Media)
+            .options(selectinload(Media.tags), selectinload(Media.media_tag_links))
+            .filter(Media.parent_id == media.id)
+            .order_by(Media.parent_sort_position.asc().nulls_last(), Media.id.asc())
+            .all()
+        )
         hierarchy = [MediaResponse.model_validate(c).model_dump() for c in children]
     
     result['hierarchy'] = hierarchy
@@ -2423,11 +2441,13 @@ async def update_media(
             
             if media.parent_id != updates.parent_id:
                 parent_id_changed = True
-            media.parent_id = updates.parent_id
+                media.parent_sort_position = next_child_sort_position(db, updates.parent_id)
+                media.parent_id = updates.parent_id
         else:
             if media.parent_id is not None:
                 parent_id_changed = True
             media.parent_id = None
+            media.parent_sort_position = None
     
     db.flush()
     if implied_by_tag_id_update is not None:
@@ -2460,6 +2480,63 @@ async def update_media(
     
     return MediaDetailResponse.model_validate(media)
 
+@router.put("/{media_id}/children/reorder")
+async def reorder_media_children(
+    media_id: int,
+    data: MediaReorderRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Set manual sort positions for children of a media item."""
+    media = db.query(Media).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    ordered_ids = list(dict.fromkeys(data.media_ids))
+    existing_children = (
+        db.query(Media)
+        .filter(Media.parent_id == media_id)
+        .order_by(Media.parent_sort_position.asc().nulls_last(), Media.id.asc())
+        .all()
+    )
+    children_by_id = {c.id: c for c in existing_children}
+
+    pos = 0
+    updated_ids = set()
+    for child_id in ordered_ids:
+        child = children_by_id.get(child_id)
+        if child is not None:
+            child.parent_sort_position = pos
+            pos += 1
+            updated_ids.add(child_id)
+
+    for child in existing_children:
+        if child.id not in updated_ids:
+            child.parent_sort_position = pos
+            pos += 1
+
+    db.commit()
+    invalidate_media_cache(rebuild_similarity=False)
+    return {"message": "Child media order updated"}
+
+@router.delete("/{media_id}/children/reorder")
+async def clear_media_children_order(
+    media_id: int,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Clear manual sort order for children of a media item."""
+    media = db.query(Media).filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    db.query(Media).filter(Media.parent_id == media_id).update(
+        {Media.parent_sort_position: None},
+        synchronize_session=False,
+    )
+    db.commit()
+    invalidate_media_cache(rebuild_similarity=False)
+    return {"message": "Manual child media order cleared"}
 
 @router.delete("/{media_id}")
 async def delete_media(
@@ -2487,6 +2564,10 @@ async def delete_media(
         thumb_path.unlink(missing_ok=True)
     
     handle_media_deleted(db, [media_id])
+    db.query(Media).filter(Media.parent_id == media_id).update(
+        {Media.parent_sort_position: None},
+        synchronize_session=False,
+    )
     db.delete(media)
     db.commit()
     

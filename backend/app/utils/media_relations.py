@@ -78,6 +78,22 @@ def staged_relation_problem(
 
     return relation_problem(db, parent_media_id, children)
 
+def next_child_sort_position(db: Session, parent_id: int) -> int:
+    """Return the next sort position for a new child of ``parent_id``, backfilling legacy NULLs."""
+    existing = (
+        db.query(Media)
+        .filter(Media.parent_id == parent_id)
+        .order_by(Media.parent_sort_position.asc().nulls_last(), Media.id.asc())
+        .all()
+    )
+    if not existing:
+        return 0
+    if any(child.parent_sort_position is None for child in existing):
+        for idx, child in enumerate(existing):
+            child.parent_sort_position = idx
+        return len(existing)
+    return max(child.parent_sort_position for child in existing) + 1
+
 def apply_pending_relations(
     db: Session,
     new_media: Media,
@@ -92,10 +108,12 @@ def apply_pending_relations(
         if problem:
             logger.warning(f"Skipping relation of new media {new_media.id} to parent {parent_media_id}: {problem[1]}")
         else:
+            new_media.parent_sort_position = next_child_sort_position(db, parent_media_id)
             new_media.parent_id = parent_media_id
             affected.update({new_media.id, parent_media_id})
         return affected
 
+    next_pos = next_child_sort_position(db, new_media.id)
     for child_id in normalize_child_ids(child_media_ids):
         problem = child_problem(db, child_id)
         if problem:
@@ -105,6 +123,8 @@ def apply_pending_relations(
         if child.parent_id:
             affected.add(child.parent_id)  # loses a child
         child.parent_id = new_media.id
+        child.parent_sort_position = next_pos
+        next_pos += 1
         affected.update({new_media.id, child_id})
     return affected
 
@@ -137,6 +157,7 @@ def apply_pending_queue_relations(
         if db.query(Media.id).filter(Media.parent_id == child_media.id).first() is not None:
             logger.warning(f"Skipping queue relation for new media {child_media.id}: already has children")
             continue
+        child_media.parent_sort_position = next_child_sort_position(db, parent_media.id)
         child_media.parent_id = parent_media.id
         affected.update({child_media.id, parent_media.id})
         db.flush()
