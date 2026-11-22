@@ -13,6 +13,8 @@ class MediaPickerModal {
             statusHtml: options.statusHtml || '',
             extraButtons: options.extraButtons || [],
             badgeFn: options.badgeFn || null, // (media) => {text, className} | null
+            showSelectionOrder: Boolean(options.showSelectionOrder),
+            selectionOrderFilter: options.selectionOrderFilter || null,
         };
 
         // Internal state
@@ -496,6 +498,7 @@ class MediaPickerModal {
             }
 
             this.selectedItems.set(media.id, media);
+            this._updateVisibleSelectionState();
             this._updateFooter();
 
             // For single mode, immediately confirm
@@ -563,6 +566,8 @@ class MediaPickerModal {
                     const itemEl = this._createGalleryItem(media);
                     gallery.appendChild(itemEl);
                 });
+
+                this._updateSelectionOrderBadges();
 
                 if (this.isSearchMode && this.currentPage < totalPages) {
                     loadMore.style.display = 'block';
@@ -712,8 +717,35 @@ class MediaPickerModal {
             confirmBtn.style.display = count > 0 ? 'inline-block' : 'none';
         }
 
+        this._updateSelectionOrderBadges();
+
         // Let consumers update extra buttons via the extraButtons[].onClick callback
         // They can use this.getButton(id) and this.selectedItems
+    }
+
+    _updateSelectionOrderBadges() {
+        if (!this.root || !this.options.showSelectionOrder) return;
+
+        const orderMap = new Map();
+        let idx = 1;
+        for (const [id, media] of this.selectedItems.entries()) {
+            if (!this.options.selectionOrderFilter || this.options.selectionOrderFilter(id, media)) {
+                orderMap.set(id, idx++);
+            }
+        }
+
+        this._getGalleryItems().forEach(item => {
+            const id = parseInt(item.dataset.id);
+            const indicator = item.querySelector('.select-indicator');
+            if (!indicator) return;
+
+            const order = orderMap.get(id);
+            if (order !== undefined) {
+                indicator.innerHTML = `<span class="text-xs font-bold leading-none select-none">${order}</span>`;
+            } else {
+                indicator.innerHTML = window.Icons.check({ size: 24 });
+            }
+        });
     }
 }
 

@@ -22,6 +22,9 @@ class ManualReorder {
         this.onClearSuccess = options.onClearSuccess || (() => { });
         this.onCancel = options.onCancel || (() => { });
         this.onActivate = options.onActivate || (() => { });
+        this.dragClasses = Array.isArray(options.dragClasses)
+            ? options.dragClasses
+            : ['opacity-30', 'ring-2', 'ring-primary'];
 
         this.isActive = false;
         this.activeSections = [];
@@ -44,6 +47,8 @@ class ManualReorder {
         this._boundDragEnter = this._handleDragEnter.bind(this);
         this._boundDragLeave = this._handleDragLeave.bind(this);
         this._boundDrop = this._handleDrop.bind(this);
+        this._boundGridDragOver = this._handleGridDragOver.bind(this);
+        this._boundGridDrop = this._handleDrop.bind(this);
         this._boundDragEnd = this._handleDragEnd.bind(this);
         this._boundPreventClick = this._handlePreventClick.bind(this);
         this._boundContextMenu = this._handleContextMenu.bind(this);
@@ -290,6 +295,11 @@ class ManualReorder {
 
     setupSectionItems(section) {
         if (!section || !section.grid) return;
+        section.grid.removeEventListener('dragover', this._boundGridDragOver);
+        section.grid.removeEventListener('drop', this._boundGridDrop);
+        section.grid.addEventListener('dragover', this._boundGridDragOver);
+        section.grid.addEventListener('drop', this._boundGridDrop);
+
         const items = section.grid.querySelectorAll(section.itemSelector);
         items.forEach((item, index) => {
             this._bindItemEvents(item);
@@ -306,6 +316,9 @@ class ManualReorder {
 
     teardownSectionItems(section) {
         if (!section || !section.grid) return;
+        section.grid.removeEventListener('dragover', this._boundGridDragOver);
+        section.grid.removeEventListener('drop', this._boundGridDrop);
+
         const items = section.grid.querySelectorAll(section.itemSelector);
         items.forEach(item => {
             item.removeAttribute('draggable');
@@ -315,9 +328,7 @@ class ManualReorder {
                 'active:cursor-grabbing',
                 'select-none',
                 'relative',
-                'opacity-30',
-                'ring-2',
-                'ring-primary'
+                ...this.dragClasses
             );
 
             const badge = item.querySelector('.reorder-badge');
@@ -384,9 +395,17 @@ class ManualReorder {
 
         setTimeout(() => {
             if (this.draggedItem) {
-                this.draggedItem.classList.add('opacity-30', 'ring-2', 'ring-primary');
+                this.draggedItem.classList.add(...this.dragClasses);
             }
         }, 0);
+    }
+
+    _handleGridDragOver(e) {
+        if (!this.draggedItem || !this.currentSection) return;
+        const section = this._getSectionForElement(e.target);
+        if (section !== this.currentSection) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
     }
 
     _handleDragOver(e) {
@@ -428,13 +447,13 @@ class ManualReorder {
         this._lastInsertTarget = null;
 
         if (this.draggedItem) {
-            this.draggedItem.classList.remove('opacity-30', 'ring-2', 'ring-primary');
+            this.draggedItem.classList.remove(...this.dragClasses);
             this.draggedItem = null;
         }
 
         if (this.currentSection) {
             const items = this.currentSection.grid.querySelectorAll(this.currentSection.itemSelector);
-            items.forEach(item => item.classList.remove('opacity-30', 'ring-2', 'ring-primary'));
+            items.forEach(item => item.classList.remove(...this.dragClasses));
             this.updateSectionBadges(this.currentSection);
             this.currentSection = null;
         }
@@ -492,7 +511,7 @@ class ManualReorder {
             this._touchDraggedItem = item;
             this.currentSection = section;
             document.body.classList.add('is-dragging');
-            item.classList.add('opacity-30', 'ring-2', 'ring-primary');
+            item.classList.add(...this.dragClasses);
             if (navigator.vibrate) {
                 navigator.vibrate(50);
             }
@@ -541,7 +560,7 @@ class ManualReorder {
 
         if (this._touchDraggedItem) {
             e.preventDefault();
-            this._touchDraggedItem.classList.remove('opacity-30', 'ring-2', 'ring-primary');
+            this._touchDraggedItem.classList.remove(...this.dragClasses);
             this.updateSectionBadges(this._touchSection);
 
             this._touchJustDragged = true;
