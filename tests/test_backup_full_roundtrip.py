@@ -75,6 +75,7 @@ class TestBackupFullRoundtrip(BackupTestBase):
 
         # Parent-child relationship (m2 is child of m1)
         m2.parent_id = m1.id
+        m2.parent_sort_position = 3
         self.db.commit()
 
         # Albums
@@ -183,7 +184,8 @@ class TestBackupFullRoundtrip(BackupTestBase):
                         "rating": "questionable",
                         "tags": [],
                         "archive_path": "media/sample2.jpg",
-                        "parent_hash": "hash111"
+                        "parent_hash": "hash111",
+                        "parent_sort_position": 3
                     }
                 ],
                 "albums": [
@@ -278,6 +280,7 @@ class TestBackupFullRoundtrip(BackupTestBase):
         restored_m2 = self.db.query(Media).filter(Media.hash == "hash222").first()
         self.assertIsNotNone(restored_m2)
         self.assertEqual(restored_m2.parent_id, restored_m1.id)
+        self.assertEqual(restored_m2.parent_sort_position, 3)
 
         # Verify Albums and Hierarchy
         restored_album = self.db.query(Album).filter(Album.name == "Main Art Collection").first()
@@ -503,6 +506,13 @@ class TestBackupFullRoundtrip(BackupTestBase):
         self.db.add_all([m_safe, m_quest, m_expl])
         self.db.commit()
 
+        # Parent-child relation with explicit parent_sort_position
+        m_quest.parent_id = m_safe.id
+        m_quest.parent_sort_position = 1
+        m_expl.parent_id = m_safe.id
+        m_expl.parent_sort_position = 0
+        self.db.commit()
+
         # 2. Setup albums with sort_position and default_sort overrides
         root_a = Album(name="Root Album A", sort_position=1, default_sort="filename", default_order="asc")
         root_b = Album(name="Root Album B", sort_position=0)
@@ -558,6 +568,10 @@ class TestBackupFullRoundtrip(BackupTestBase):
         self.assertEqual(root_a_children[child_a1.id], 2)
         self.assertEqual(root_a_children[child_a2.id], 0)
 
+        exported_media = {m["hash"]: m for m in meta["media"]}
+        self.assertEqual(exported_media["hash_quest"]["parent_sort_position"], 1)
+        self.assertEqual(exported_media["hash_expl"]["parent_sort_position"], 0)
+
         # 4. Clean database and media directories
         self.wipe_database()
         for p in [self.original_dir / "m_safe.jpg", self.original_dir / "m_quest.jpg", self.original_dir / "m_expl.jpg"]:
@@ -591,6 +605,11 @@ class TestBackupFullRoundtrip(BackupTestBase):
         restored_m_safe = self.db.query(Media).filter(Media.hash == "hash_safe").first()
         restored_m_quest = self.db.query(Media).filter(Media.hash == "hash_quest").first()
         restored_m_expl = self.db.query(Media).filter(Media.hash == "hash_expl").first()
+
+        self.assertEqual(restored_m_quest.parent_id, restored_m_safe.id)
+        self.assertEqual(restored_m_quest.parent_sort_position, 1)
+        self.assertEqual(restored_m_expl.parent_id, restored_m_safe.id)
+        self.assertEqual(restored_m_expl.parent_sort_position, 0)
 
         row_safe = self.db.query(blombooru_album_media).filter(
             blombooru_album_media.c.album_id == restored_root_a.id,
