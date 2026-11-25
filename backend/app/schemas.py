@@ -497,6 +497,19 @@ class BulkMediaRatingUpdateResponse(BaseModel):
     updated_count: int
     updated_media_ids: List[int]
 
+class BulkMediaMetadataItem(BaseModel):
+    id: int
+    custom_date: Optional[Union[datetime, str]] = None
+    source: Optional[str] = None
+
+class BulkMediaMetadataUpdateRequest(BaseModel):
+    items: List[BulkMediaMetadataItem]
+
+class BulkMediaMetadataUpdateResponse(BaseModel):
+    status: str = "success"
+    updated_count: int
+    updated_media_ids: List[int]
+
 class ProposedTag(BaseModel):
     name: str
     category: TagCategoryEnum = TagCategoryEnum.general

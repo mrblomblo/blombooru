@@ -1,3 +1,5 @@
+from pathlib import Path
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from fastapi import (
     APIRouter,
@@ -6,6 +8,7 @@ from fastapi import (
     Query,
     Request,
 )
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 from ...auth import require_admin_mode
@@ -21,6 +24,8 @@ from ...models import (
 from ...schemas import (
     BatchMediaRequest,
     BatchMetadataRequest,
+    BulkMediaMetadataUpdateRequest,
+    BulkMediaMetadataUpdateResponse,
     BulkMediaRatingUpdateRequest,
     BulkMediaRatingUpdateResponse,
     BulkTagUpdateRequest,
@@ -34,6 +39,7 @@ from ...utils.cache import (
     invalidate_media_item_cache,
     invalidate_tag_cache,
 )
+from ...utils.date_extractor import parse_explicit_custom_date, resolve_custom_date
 from ...utils.logger import logger
 from ...utils.media_helpers import extract_media_metadata
 from ...utils.media_sort import apply_media_sort
@@ -244,6 +250,35 @@ def _fetch_media_batch_tags_only(db: Session, media_ids: List[int], include_meta
                 results.append(media_map[m_id])
     return results
 
+def _normalize_dt_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
+def _fetch_media_batch_info(db: Session, media_ids: List[int]) -> List[dict]:
+    """Fast projection returning basic fields for bulk date/source editors."""
+    results = []
+    for i in range(0, len(media_ids), BATCH_CHUNK_SIZE):
+        chunk_ids = media_ids[i:i + BATCH_CHUNK_SIZE]
+        rows = (
+            db.query(Media.id, Media.filename, Media.file_type, Media.uploaded_at, Media.custom_date, Media.source)
+            .filter(Media.id.in_(chunk_ids))
+            .all()
+        )
+        media_map = {
+            m_id: {
+                "id": m_id,
+                "filename": filename,
+                "file_type": file_type.value if hasattr(file_type, 'value') else file_type,
+                "uploaded_at": _normalize_dt_utc(uploaded_at).isoformat() if uploaded_at else None,
+                "custom_date": _normalize_dt_utc(custom_date or uploaded_at).isoformat() if (custom_date or uploaded_at) else None,
+                "source": source,
+            }
+            for m_id, filename, file_type, uploaded_at, custom_date, source in rows
+        }
+        results.extend(media_map[m_id] for m_id in chunk_ids if m_id in media_map)
+    return results
+
 def _fetch_media_batch_full(db: Session, media_ids: List[int]) -> List[dict]:
     """Full MediaResponse batch serialization in chunks to respect parameter limits."""
     results = []
@@ -259,7 +294,7 @@ def _fetch_media_batch_full(db: Session, media_ids: List[int]) -> List[dict]:
 @router.get("/batch")
 async def get_media_batch(
     ids: str = Query(..., description="Comma-separated list of media IDs"),
-    projection: Optional[str] = Query(None, description="Optional projection, e.g. 'tags_only' or 'ai_metadata'"),
+    projection: Optional[str] = Query(None, description="Optional projection, e.g. 'tags_only', 'ai_metadata', or 'info'"),
     db: Session = Depends(get_db)
 ):
     """Get multiple media items by their IDs in a single request"""
@@ -272,6 +307,8 @@ async def get_media_batch(
             items = _fetch_media_batch_tags_only(db, media_ids, include_metadata=False)
         elif projection in ("ai_metadata", "tags_and_metadata"):
             items = _fetch_media_batch_tags_only(db, media_ids, include_metadata=True)
+        elif projection == "info":
+            items = _fetch_media_batch_info(db, media_ids)
         else:
             items = _fetch_media_batch_full(db, media_ids)
             
@@ -294,6 +331,8 @@ async def post_media_batch(
             items = _fetch_media_batch_tags_only(db, payload.ids, include_metadata=False)
         elif payload.projection in ("ai_metadata", "tags_and_metadata"):
             items = _fetch_media_batch_tags_only(db, payload.ids, include_metadata=True)
+        elif payload.projection == "info":
+            items = _fetch_media_batch_info(db, payload.ids)
         else:
             items = _fetch_media_batch_full(db, payload.ids)
             
@@ -330,6 +369,85 @@ async def post_media_batch_metadata(
     except Exception as e:
         logger.error(f"Error in post_media_batch_metadata: {e}")
         raise HTTPException(status_code=500, detail=safe_error_detail("Failed to retrieve media metadata batch", e))
+
+def _scan_media_dates_batch(entries: List[tuple]) -> Dict[str, dict]:
+    """Scan media items for dates using the same booru, sidecar, and EXIF/container pipeline as the uploader."""
+    from ...services.metadata_parsers import get_parser_for_file
+
+    results: Dict[str, dict] = {}
+    dir_sidecars: Dict[Path, List[Path]] = {}
+
+    for mid, file_path, source, booru_client in entries:
+        booru_date = None
+        if booru_client and source:
+            try:
+                post = booru_client.fetch_post_by_url(source)
+                if post and getattr(post, "uploaded_at", None):
+                    booru_date = post.uploaded_at
+            except Exception as e:
+                logger.debug(f"Booru date scan failed for media {mid}: {e}")
+
+        sidecar_date = None
+        valid_path = file_path if (file_path and file_path.is_file()) else None
+        if valid_path is not None:
+            parent = valid_path.parent
+            if parent not in dir_sidecars:
+                try:
+                    dir_sidecars[parent] = [
+                        p for p in parent.iterdir()
+                        if p.is_file() and p.suffix.lower() in (".json", ".xmp")
+                    ]
+                except Exception:
+                    dir_sidecars[parent] = []
+            try:
+                parser = get_parser_for_file(valid_path, dir_sidecars[parent])
+                parsed = parser.parse(valid_path, dir_sidecars[parent]) if parser else None
+                sidecar_date = parsed.date if parsed else None
+            except Exception as e:
+                logger.debug(f"Sidecar date scan failed for media {mid}: {e}")
+
+        resolved_dt, origin = resolve_custom_date(
+            file_path=valid_path,
+            booru_date=booru_date,
+            sidecar_date=sidecar_date,
+        )
+        if origin == "default":
+            results[str(mid)] = {"custom_date": None, "origin": None}
+        else:
+            results[str(mid)] = {
+                "custom_date": _normalize_dt_utc(resolved_dt).isoformat(),
+                "origin": origin,
+            }
+
+    return results
+
+@router.post("/batch-scan-dates")
+async def post_media_batch_scan_dates(
+    payload: BatchMetadataRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Scan media items for dates from booru source, sidecar metadata, or embedded EXIF/container metadata."""
+    try:
+        if not payload.ids:
+            return {"items": {}}
+
+        from ...services.booru import get_client_for_url
+
+        entries = []
+        for i in range(0, len(payload.ids), BATCH_CHUNK_SIZE):
+            chunk = payload.ids[i:i + BATCH_CHUNK_SIZE]
+            rows = db.query(Media.id, Media.path, Media.source).filter(Media.id.in_(chunk)).all()
+            for mid, rel_path, source in rows:
+                file_path = (settings.BASE_DIR / rel_path) if rel_path else None
+                booru_client = get_client_for_url(source, db=db) if source else None
+                entries.append((mid, file_path, source, booru_client))
+
+        results = await run_in_threadpool(_scan_media_dates_batch, entries)
+        return {"items": results}
+    except Exception as e:
+        logger.error(f"Error in post_media_batch_scan_dates: {e}")
+        raise HTTPException(status_code=500, detail=safe_error_detail("Failed to scan media dates", e))
 
 @router.post("/bulk-update-tags", response_model=BulkTagUpdateResponse)
 async def bulk_update_tags(
@@ -615,6 +733,76 @@ async def bulk_update_ratings(
             invalidate_media_item_cache(m_id)
 
     return BulkMediaRatingUpdateResponse(
+        status="success",
+        updated_count=len(updated_ids),
+        updated_media_ids=updated_ids
+    )
+
+@router.post("/bulk-update-metadata", response_model=BulkMediaMetadataUpdateResponse)
+async def bulk_update_metadata(
+    payload: BulkMediaMetadataUpdateRequest,
+    current_user: User = Depends(require_admin_mode),
+    db: Session = Depends(get_db)
+):
+    """Atomically update custom dates and/or sources across multiple media items."""
+    if not payload.items:
+        return BulkMediaMetadataUpdateResponse(status="success", updated_count=0, updated_media_ids=[])
+
+    requested_ids = [item.id for item in payload.items]
+    if len(requested_ids) != len(set(requested_ids)):
+        raise HTTPException(status_code=400, detail="Duplicate media IDs in update request")
+
+    # Pre-validate all explicit custom dates before mutating any rows
+    parsed_dates: Dict[int, Optional[datetime]] = {}
+    for item in payload.items:
+        if "custom_date" in item.model_fields_set:
+            if item.custom_date is None or str(item.custom_date).strip() == "":
+                parsed_dates[item.id] = None
+            else:
+                parsed = parse_explicit_custom_date(item.custom_date)
+                if parsed is None:
+                    raise HTTPException(status_code=422, detail=f"Invalid custom_date format for media ID {item.id}")
+                parsed_dates[item.id] = parsed
+
+    existing_media_map = {}
+    for i in range(0, len(requested_ids), BATCH_CHUNK_SIZE):
+        for m in db.query(Media).filter(Media.id.in_(requested_ids[i:i + BATCH_CHUNK_SIZE])).all():
+            existing_media_map[m.id] = m
+
+    missing_ids = set(requested_ids) - set(existing_media_map.keys())
+    if missing_ids:
+        raise HTTPException(status_code=400, detail=f"Media items not found: {sorted(list(missing_ids))[:10]}")
+
+    updated_ids = []
+    for item in payload.items:
+        media = existing_media_map[item.id]
+        changed = False
+
+        if "custom_date" in item.model_fields_set:
+            target_dt = parsed_dates[item.id] if parsed_dates[item.id] is not None else media.uploaded_at
+            new_dt_utc = _normalize_dt_utc(target_dt)
+            if _normalize_dt_utc(media.custom_date) != new_dt_utc:
+                media.custom_date = new_dt_utc if new_dt_utc is not None else target_dt
+                changed = True
+
+        if "source" in item.model_fields_set:
+            new_source = item.source.strip() if isinstance(item.source, str) else None
+            new_source = new_source or None
+            if media.source != new_source:
+                media.source = new_source
+                changed = True
+
+        if changed:
+            updated_ids.append(media.id)
+
+    db.commit()
+
+    if updated_ids:
+        invalidate_media_cache()
+        for m_id in updated_ids:
+            invalidate_media_item_cache(m_id)
+
+    return BulkMediaMetadataUpdateResponse(
         status="success",
         updated_count=len(updated_ids),
         updated_media_ids=updated_ids
