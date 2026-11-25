@@ -67,13 +67,13 @@ Object.assign(BaseGallery.prototype, {
             bulkManageTagsBtn.addEventListener('click', () => this.openBulkManageTagsModal());
         }
         if (bulkRatingBtn) {
-            bulkRatingBtn.addEventListener('click', () => this.bulkChangeRating());
+            bulkRatingBtn.addEventListener('click', () => this.openBulkModal('bulkRatingModal', BulkRatingModal));
         }
         if (bulkCustomDateBtn) {
-            bulkCustomDateBtn.addEventListener('click', () => this.openBulkFieldModal('custom_date'));
+            bulkCustomDateBtn.addEventListener('click', () => this.openBulkModal('bulkCustomDateModal', BulkCustomDateModal));
         }
         if (bulkSourceBtn) {
-            bulkSourceBtn.addEventListener('click', () => this.openBulkFieldModal('source'));
+            bulkSourceBtn.addEventListener('click', () => this.openBulkModal('bulkSourceModal', BulkSourceModal));
         }
     },
 
@@ -541,39 +541,17 @@ Object.assign(BaseGallery.prototype, {
         // Override in subclass if needed
     },
 
-    bulkChangeRating() {
-        const itemCount = this.selectedItems.size;
-        if (itemCount === 0) return;
-
-        if (typeof BulkRatingModal === 'undefined') {
-            console.warn('BulkRatingModal not loaded');
-            return;
-        }
-
-        if (!this.bulkRatingModal) {
-            this.bulkRatingModal = new BulkRatingModal({
+    openBulkModal(instanceKey, ModalClass) {
+        if (this.selectedItems.size === 0) return;
+        if (!this[instanceKey]) {
+            this[instanceKey] = new ModalClass({
                 onSave: () => {
                     this.clearSelection();
                     this.loadContent();
                 }
             });
         }
-
-        this.bulkRatingModal.show(this.selectedItems);
-    },
-
-    openBulkFieldModal(field) {
-        if (this.selectedItems.size === 0 || typeof BulkFieldModal === 'undefined') return;
-        this.bulkFieldModals = this.bulkFieldModals || {};
-        if (!this.bulkFieldModals[field]) {
-            this.bulkFieldModals[field] = new BulkFieldModal(field, {
-                onSave: () => {
-                    this.clearSelection();
-                    this.loadContent();
-                }
-            });
-        }
-        this.bulkFieldModals[field].show(this.selectedItems);
+        this[instanceKey].show(this.selectedItems);
     },
 
     toggleItemSelection(item, mediaId, event = null) {
