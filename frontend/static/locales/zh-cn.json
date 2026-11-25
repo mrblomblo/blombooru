@@ -625,6 +625,16 @@
             "review_ratings": "",
             "reset_rating": ""
         },
+        "custom_date": {
+            "review_dates": "",
+            "scan": "",
+            "scan_all": "",
+            "no_date_found": "",
+            "scan_complete": ""
+        },
+        "source": {
+            "review_sources": ""
+        },
         "ai_tags": {
             "default_media_name": "媒体 {id}",
             "empty_message": "在选定项目的元数据中未找到新的 AI 标签。",
@@ -972,6 +982,12 @@
             "title": "从相册移除"
         },
         "bulk_rating": {
+            "title": ""
+        },
+        "bulk_custom_date": {
+            "title": ""
+        },
+        "bulk_source": {
             "title": ""
         },
         "buttons": {

@@ -625,6 +625,16 @@
             "review_ratings": "Просмотреть и отредактировать рейтинг для каждого элемента",
             "reset_rating": "Сбросить рейгинг"
         },
+        "custom_date": {
+            "review_dates": "",
+            "scan": "",
+            "scan_all": "",
+            "no_date_found": "",
+            "scan_complete": ""
+        },
+        "source": {
+            "review_sources": ""
+        },
         "ai_tags": {
             "default_media_name": "Медиафайл {id}",
             "empty_message": "Новые AI-теги не найдены в метаданных выбранных элементов",
@@ -973,6 +983,12 @@
         },
         "bulk_rating": {
             "title": "Изменить рейтинг"
+        },
+        "bulk_custom_date": {
+            "title": ""
+        },
+        "bulk_source": {
+            "title": ""
         },
         "buttons": {
             "save_all": "Сохранить всё",

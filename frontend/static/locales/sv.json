@@ -625,6 +625,16 @@
             "review_ratings": "Granska och ändra betyg för alla objekt.",
             "reset_rating": "Återställ betyg"
         },
+        "custom_date": {
+            "review_dates": "Granska och ändra datum för varje objekt.",
+            "scan": "Skanna efter datum",
+            "scan_all": "Skanna Alla",
+            "no_date_found": "Inget datum hittades",
+            "scan_complete": "Hittade datum för {found} av {total} objekt"
+        },
+        "source": {
+            "review_sources": "Granska och ändra källor för varje objekt."
+        },
         "ai_tags": {
             "default_media_name": "Media {id}",
             "empty_message": "Inga nya AI-taggar hittades i de valda objektens metadata.",
@@ -973,6 +983,12 @@
         },
         "bulk_rating": {
             "title": "Ändra betyg"
+        },
+        "bulk_custom_date": {
+            "title": "Ändra datum"
+        },
+        "bulk_source": {
+            "title": "Ändra källa"
         },
         "buttons": {
             "save_all": "Spara alla",

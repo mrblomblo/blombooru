@@ -625,6 +625,16 @@
             "review_ratings": "Review and change ratings for each item.",
             "reset_rating": "Reset rating"
         },
+        "custom_date": {
+            "review_dates": "Review and change dates for each item.",
+            "scan": "Scan for date",
+            "scan_all": "Scan All",
+            "no_date_found": "No date found",
+            "scan_complete": "Found dates for {found} of {total} item(s)"
+        },
+        "source": {
+            "review_sources": "Review and change sources for each item."
+        },
         "ai_tags": {
             "default_media_name": "Media {id}",
             "empty_message": "No new AI tags found in the selected items' metadata.",
@@ -973,6 +983,12 @@
         },
         "bulk_rating": {
             "title": "Change Rating"
+        },
+        "bulk_custom_date": {
+            "title": "Change Date"
+        },
+        "bulk_source": {
+            "title": "Change Source"
         },
         "buttons": {
             "save_all": "Save All",
