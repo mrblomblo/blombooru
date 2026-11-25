@@ -81,6 +81,7 @@ const STATIC_ASSETS = [
     '/static/js/bulk/bulk-ai-tags-modal.js',
     '/static/js/bulk/bulk-wd-tagger-modal.js',
     '/static/js/bulk/bulk-rating-modal.js',
+    '/static/js/bulk/bulk-field-modal.js',
     '/static/js/update-post/update-post-modal-base.js',
     '/static/js/update-post/update-post-modal.js',
     '/static/js/update-post/update-post-url-import.js',

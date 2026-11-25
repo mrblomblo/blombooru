@@ -45,6 +45,8 @@ Object.assign(BaseGallery.prototype, {
         const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
         const bulkManageTagsBtn = document.getElementById('bulk-manage-tags-btn');
         const bulkRatingBtn = document.getElementById('bulk-rating-btn');
+        const bulkCustomDateBtn = document.getElementById('bulk-custom-date-btn');
+        const bulkSourceBtn = document.getElementById('bulk-source-btn');
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => this.handleSelectAll());
@@ -66,6 +68,12 @@ Object.assign(BaseGallery.prototype, {
         }
         if (bulkRatingBtn) {
             bulkRatingBtn.addEventListener('click', () => this.bulkChangeRating());
+        }
+        if (bulkCustomDateBtn) {
+            bulkCustomDateBtn.addEventListener('click', () => this.openBulkFieldModal('custom_date'));
+        }
+        if (bulkSourceBtn) {
+            bulkSourceBtn.addEventListener('click', () => this.openBulkFieldModal('source'));
         }
     },
 
@@ -552,6 +560,20 @@ Object.assign(BaseGallery.prototype, {
         }
 
         this.bulkRatingModal.show(this.selectedItems);
+    },
+
+    openBulkFieldModal(field) {
+        if (this.selectedItems.size === 0 || typeof BulkFieldModal === 'undefined') return;
+        this.bulkFieldModals = this.bulkFieldModals || {};
+        if (!this.bulkFieldModals[field]) {
+            this.bulkFieldModals[field] = new BulkFieldModal(field, {
+                onSave: () => {
+                    this.clearSelection();
+                    this.loadContent();
+                }
+            });
+        }
+        this.bulkFieldModals[field].show(this.selectedItems);
     },
 
     toggleItemSelection(item, mediaId, event = null) {

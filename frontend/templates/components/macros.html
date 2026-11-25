@@ -291,6 +291,16 @@ location='desktop', is_admin=false, show_set_default=false, album_default_sort=n
             {{ t('modal.bulk_rating.title') }}
         </button>
         {% endif %}
+        {% if 'custom_date' in buttons %}
+        <button id="bulk-custom-date-btn" class="btn px-3 py-1 flex items-center gap-1.5 cursor-pointer">
+            {{ t('modal.bulk_custom_date.title') }}
+        </button>
+        {% endif %}
+        {% if 'source' in buttons %}
+        <button id="bulk-source-btn" class="btn px-3 py-1 flex items-center gap-1.5 cursor-pointer">
+            {{ t('modal.bulk_source.title') }}
+        </button>
+        {% endif %}
         {% if 'tag_category' in buttons %}
         <button id="bulk-tag-category-btn" class="btn px-3 py-1 cursor-pointer">
             {{ t('admin.tags_management.tag_category') }}
