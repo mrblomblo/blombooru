@@ -16,7 +16,7 @@ class BulkRatingModal extends BulkTagModalBase {
     getContentHTML() {
         const prefix = this.options.classPrefix;
         const reviewText = window.i18n.t('bulk_modal.rating.review_ratings');
-        const applyText = window.i18n.t('bulk_modal.rating.quick_apply');
+        const applyText = window.i18n.t('common.apply');
 
         return `
             <div class="${prefix}-content flex-1 flex flex-col min-h-0" style="display: none;">
@@ -149,7 +149,7 @@ class BulkRatingModal extends BulkTagModalBase {
         const safeFilename = escapeHtml(item.filename || '');
         const currentLabel = window.i18n.t('common.' + currentRating);
         const activeLabel = window.i18n.t('common.' + activeRating);
-        const resetTitle = window.i18n.t('bulk_modal.rating.reset_rating') || 'Reset rating';
+        const resetTitle = window.i18n.t('common.discard_changes');
 
         return `
             <div class="${prefix}-item surface-light p-3 border mb-3" data-index="${index}" style="content-visibility: auto; contain-intrinsic-size: auto 120px;">
@@ -272,7 +272,7 @@ class BulkRatingModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.error('Error fetching media ratings:', e);
-            this.showError(window.i18n.t('bulk_modal.messages.error_occurred'));
+            this.showError(window.i18n.t('notifications.error_occurred'));
         }
     }
 

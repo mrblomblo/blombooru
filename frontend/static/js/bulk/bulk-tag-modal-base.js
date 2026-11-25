@@ -313,7 +313,7 @@ class BulkTagModalBase {
         const prefix = this.options.classPrefix;
         return `
             <div class="${prefix}-error flex items-center justify-center h-full py-12" style="display: none;">
-                <p class="text-danger ${prefix}-error-message text-center">${window.i18n.t('bulk_modal.messages.error_occurred')}</p>
+                <p class="text-danger ${prefix}-error-message text-center">${window.i18n.t('notifications.error_occurred')}</p>
             </div>
         `;
     }
@@ -439,7 +439,7 @@ class BulkTagModalBase {
 
         if (failedIds.length > 0 && successfulItems.length > 0) {
             if (typeof app !== 'undefined' && app.showNotification) {
-                app.showNotification(window.i18n.t('bulk_modal.messages.error_occurred'), 'warning');
+                app.showNotification(window.i18n.t('notifications.error_occurred'), 'warning');
             }
         }
 
@@ -521,7 +521,7 @@ class BulkTagModalBase {
 
         if (failedIds.length > 0 && metadataMap.size > 0) {
             if (typeof app !== 'undefined' && app.showNotification) {
-                app.showNotification(window.i18n.t('bulk_modal.messages.error_occurred'), 'warning');
+                app.showNotification(window.i18n.t('notifications.error_occurred'), 'warning');
             }
         }
 
@@ -1143,7 +1143,7 @@ class BulkTagModalBase {
     renderItem(item, index) {
         const prefix = this.options.classPrefix;
         const currentTagsDisplay = item.currentTags && item.currentTags.length > 0
-            ? item.currentTags.slice(0, 3).join(', ') + (item.currentTags.length > 3 ? ` (${window.i18n.t('bulk_modal.messages.tag_overflow', { count: item.currentTags.length - 3 })})` : '')
+            ? item.currentTags.slice(0, 3).join(', ') + (item.currentTags.length > 3 ? ` (+${item.currentTags.length - 3})` : '')
             : window.i18n.t('common.no_tags');
 
         const tagsToShow = item.newTags || [];

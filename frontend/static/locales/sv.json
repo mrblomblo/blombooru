@@ -616,14 +616,10 @@
         },
         "manual": {
             "empty_message": "Inga filer valda.",
-            "quick_apply_placeholder": "Taggar att lägga till/ta bort från alla objekt...",
-            "add_tags": "Lägg till",
-            "remove_tags": "Ta bort"
+            "quick_apply_placeholder": "Taggar att lägga till/ta bort från alla objekt..."
         },
         "rating": {
-            "quick_apply": "Tillämpa betyg på alla",
-            "review_ratings": "Granska och ändra betyg för alla objekt.",
-            "reset_rating": "Återställ betyg"
+            "review_ratings": "Granska och ändra betyg för alla objekt."
         },
         "custom_date": {
             "review_dates": "Granska och ändra datum för varje objekt.",
@@ -649,10 +645,8 @@
         },
         "messages": {
             "current": "Nuvarande: ",
-            "error_occurred": "Ett fel uppstod.",
             "operation_cancelled": "Åtgärd avbruten.",
-            "review_tags": "Granska och redigera taggar för varje objekt. Ogiltiga taggar markeras i rött.",
-            "tag_overflow": "+{count}"
+            "review_tags": "Granska och redigera taggar för varje objekt. Ogiltiga taggar markeras i rött."
         },
         "notifications": {
             "updated_failed": "Kunde inte uppdatera {count} objekt",

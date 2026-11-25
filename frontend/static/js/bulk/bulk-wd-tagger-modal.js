@@ -217,7 +217,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.error('Error fetching media info batch:', e);
-            this.showError(window.i18n.t('bulk_modal.messages.error_occurred'));
+            this.showError(window.i18n.t('notifications.error_occurred'));
             return;
         }
 
@@ -535,7 +535,7 @@ class BulkWDTaggerModal extends BulkTagModalBase {
             this.updateProgressCounters(
                 this.processedMediaIds.size,
                 this.totalCount,
-                window.i18n.t('bulk_modal.messages.error_occurred'),
+                window.i18n.t('notifications.error_occurred'),
                 false
             );
             const prefix = this.options.classPrefix;

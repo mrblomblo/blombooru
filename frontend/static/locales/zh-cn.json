@@ -616,14 +616,10 @@
         },
         "manual": {
             "empty_message": "未选择任何项目。",
-            "quick_apply_placeholder": "",
-            "add_tags": "",
-            "remove_tags": ""
+            "quick_apply_placeholder": ""
         },
         "rating": {
-            "quick_apply": "",
-            "review_ratings": "",
-            "reset_rating": ""
+            "review_ratings": ""
         },
         "custom_date": {
             "review_dates": "",
@@ -649,10 +645,8 @@
         },
         "messages": {
             "current": "当前: ",
-            "error_occurred": "发生错误。",
             "operation_cancelled": "操作已取消。",
-            "review_tags": "为每个项目查看并编辑标签。无效标签将以红色高亮显示。",
-            "tag_overflow": "+{count}"
+            "review_tags": "为每个项目查看并编辑标签。无效标签将以红色高亮显示。"
         },
         "notifications": {
             "updated_failed": "更新 {count} 个项目失败",

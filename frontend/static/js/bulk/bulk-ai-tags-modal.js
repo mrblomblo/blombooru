@@ -44,7 +44,7 @@ class BulkAITagsModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.error('Error fetching media batch or metadata:', e);
-            this.showError(window.i18n.t('bulk_modal.messages.error_occurred'));
+            this.showError(window.i18n.t('notifications.error_occurred'));
             return;
         }
         if (this.isCancelled) return;

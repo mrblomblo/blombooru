@@ -28,8 +28,8 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
                             class="bulk-manual-quick-input w-full bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary min-h-[34px]"
                             style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;"></div>
                     </div>
-                    <button id="${prefix}-quick-add" class="btn-primary px-3 py-2 text-xs flex-shrink-0 cursor-pointer">${window.i18n.t('bulk_modal.manual.add_tags')}</button>
-                    <button id="${prefix}-quick-remove" class="btn-danger px-3 py-2 text-xs flex-shrink-0 cursor-pointer">${window.i18n.t('bulk_modal.manual.remove_tags')}</button>
+                    <button id="${prefix}-quick-add" class="btn-primary px-3 py-2 text-xs flex-shrink-0 cursor-pointer">${window.i18n.t('common.add')}</button>
+                    <button id="${prefix}-quick-remove" class="btn-danger px-3 py-2 text-xs flex-shrink-0 cursor-pointer">${window.i18n.t('common.remove')}</button>
                 </div>
                 <div class="${prefix}-items space-y-3 overflow-y-auto flex-1 -mx-4 px-4 pb-2" style="overscroll-behavior: contain;"></div>
             </div>
@@ -381,7 +381,7 @@ class BulkManualTagEditorModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.error('Error fetching tags:', e);
-            this.showError(window.i18n.t('bulk_modal.messages.error_occurred'));
+            this.showError(window.i18n.t('notifications.error_occurred'));
         }
     }
 

@@ -336,7 +336,7 @@ class BulkFieldModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.error('Error scanning date:', e);
-                app?.showNotification?.(window.i18n.t('bulk_modal.messages.error_occurred'), 'error');
+                app?.showNotification?.(window.i18n.t('notifications.error_occurred'), 'error');
             }
         } finally {
             if (btn.isConnected) {
@@ -386,7 +386,7 @@ class BulkFieldModal extends BulkTagModalBase {
             if (e.name !== 'AbortError') {
                 failed = true;
                 console.error('Error scanning dates in bulk:', e);
-                app?.showNotification?.(window.i18n.t('bulk_modal.messages.error_occurred'), 'error');
+                app?.showNotification?.(window.i18n.t('notifications.error_occurred'), 'error');
             }
         } finally {
             this._isScanningAll = false;
@@ -475,12 +475,12 @@ class BulkFieldModal extends BulkTagModalBase {
                                 data-index="${index}"
                                 aria-label="${escapeAttr(window.i18n.t('bulk_modal.custom_date.scan'))}"
                                 title="${escapeAttr(window.i18n.t('bulk_modal.custom_date.scan'))}">
-                                ${window.Icons?.search ? window.Icons.search({ size: 14 }) : ''}
+                                ${window.Icons.search({ size: 14 })}
                             </button>` : ''}
                             <button type="button"
                                 class="${prefix}-reset w-8 h-8 shrink-0 surface hover:surface-light text-secondary hover:text flex items-center justify-center transition-colors border ${isModified ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed pointer-events-none'}"
                                 data-index="${index}" title="${escapeAttr(window.i18n.t('common.discard_changes'))}">
-                                ${window.Icons?.reset ? window.Icons.reset({ size: 14 }) : '↺'}
+                                ${window.Icons.reset({ size: 14 })}
                             </button>
                         </div>
                     </div>
@@ -528,7 +528,7 @@ class BulkFieldModal extends BulkTagModalBase {
         } catch (e) {
             if (e.name === 'AbortError') return;
             console.error('Error fetching media info:', e);
-            this.showError(window.i18n.t('bulk_modal.messages.error_occurred'));
+            this.showError(window.i18n.t('notifications.error_occurred'));
         }
     }
 

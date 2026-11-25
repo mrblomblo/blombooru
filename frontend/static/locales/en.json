@@ -616,14 +616,10 @@
         },
         "manual": {
             "empty_message": "No items selected.",
-            "quick_apply_placeholder": "Tags to add/remove from all items...",
-            "add_tags": "Add",
-            "remove_tags": "Remove"
+            "quick_apply_placeholder": "Tags to add/remove from all items..."
         },
         "rating": {
-            "quick_apply": "Apply rating to all",
-            "review_ratings": "Review and change ratings for each item.",
-            "reset_rating": "Reset rating"
+            "review_ratings": "Review and change ratings for each item."
         },
         "custom_date": {
             "review_dates": "Review and change dates for each item.",
@@ -649,10 +645,8 @@
         },
         "messages": {
             "current": "Current: ",
-            "error_occurred": "An error occurred.",
             "operation_cancelled": "Operation cancelled.",
-            "review_tags": "Review and edit tags for each item. Invalid tags are highlighted in red.",
-            "tag_overflow": "+{count}"
+            "review_tags": "Review and edit tags for each item. Invalid tags are highlighted in red."
         },
         "notifications": {
             "updated_failed": "Failed to update {count} item(s)",
