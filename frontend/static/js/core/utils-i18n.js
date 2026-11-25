@@ -73,6 +73,13 @@ function formatBytes(bytes, options = {}) {
     return formatFileSize(bytes, options);
 }
 
+function formatDateTime(dateOrIso, fallback = '') {
+    if (!dateOrIso) return fallback;
+    const d = (dateOrIso instanceof Date) ? dateOrIso : new Date(dateOrIso);
+    if (isNaN(d.getTime())) return fallback;
+    return `${new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(d)} ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short', hour12: false }).format(d)}`;
+}
+
 function toLocalInputDateTime(dateOrIso) {
     if (!dateOrIso) return '';
     const d = (dateOrIso instanceof Date) ? dateOrIso : new Date(dateOrIso);
@@ -112,6 +119,7 @@ window.escapeHtml = escapeHtml;
 window.escapeAttr = escapeAttr;
 window.formatFileSize = formatFileSize;
 window.formatBytes = formatBytes;
+window.formatDateTime = formatDateTime;
 window.toLocalInputDateTime = toLocalInputDateTime;
 window.parseLocalInputDateTime = parseLocalInputDateTime;
 window.formatCustomDateOriginBadge = formatCustomDateOriginBadge;

@@ -105,10 +105,7 @@ class TagInfoPanel {
     }
 
     _renderMetadataRow() {
-        const creationDate = this.tag.created_at ? new Date(this.tag.created_at) : null;
-        const creationDateStr = creationDate && !isNaN(creationDate.getTime())
-            ? `${new Intl.DateTimeFormat(undefined, { dateStyle: 'short' }).format(creationDate)} ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short', hour12: false }).format(creationDate)}`
-            : '';
+        const creationDateStr = formatDateTime(this.tag.created_at);
 
         const metaRow = document.createElement('div');
         metaRow.className = 'flex items-center justify-between text-secondary pb-1';

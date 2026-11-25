@@ -32,14 +32,7 @@ Object.assign(AdminContent.prototype, {
                 isSelectable: false,
                 expandOnRowClick: true,
                 renderExtraActions: (album) => {
-                    let dateStr = '';
-                    const dateVal = album.created_at || album.last_modified;
-                    if (dateVal) {
-                        const d = new Date(dateVal);
-                        if (!isNaN(d.getTime())) {
-                            dateStr = `${new Intl.DateTimeFormat(undefined, { dateStyle: "short" }).format(d)} ${new Intl.DateTimeFormat(undefined, { timeStyle: "short", hour12: false }).format(d)}`;
-                        }
-                    }
+                    const dateStr = formatDateTime(album.created_at || album.last_modified);
                     const parentId = album.parents && album.parents.length > 0 ? album.parents[album.parents.length - 1].id : '';
 
                     return `

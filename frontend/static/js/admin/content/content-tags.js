@@ -452,13 +452,7 @@ Object.assign(AdminContent.prototype, {
             }
 
             resultsDiv.innerHTML = data.tags.map((tag, i, arr) => {
-                let creationDateStr = '';
-                if (tag.created_at) {
-                    const d = new Date(tag.created_at);
-                    if (!isNaN(d.getTime())) {
-                        creationDateStr = `${new Intl.DateTimeFormat(undefined, { dateStyle: "short" }).format(d)} ${new Intl.DateTimeFormat(undefined, { timeStyle: "short", hour12: false }).format(d)}`;
-                    }
-                }
+                const creationDateStr = formatDateTime(tag.created_at);
 
                 const tagRatingVal = tag.rating || 'none';
                 const ratingBadgeHtml = (typeof TagRating !== 'undefined')
