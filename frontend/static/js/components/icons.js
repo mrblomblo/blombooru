@@ -77,6 +77,7 @@
         link: (opts) => render('link', opts, 16),
         close: (opts) => render('close', opts, 14),
         dots: (opts) => render('dots', opts, 16),
+        gripVertical: (opts) => render('grip-vertical', opts, 16),
         wand: (opts) => render('wand', opts, 16),
         camera: (opts) => render('camera', opts, 16),
         messageSquare: (opts) => render('message-square', opts, 16),
