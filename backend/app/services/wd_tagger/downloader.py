@@ -12,7 +12,7 @@ class DownloadCancelledException(Exception):
     pass
 
 def cleanup_orphaned_model_temp_files():
-    """Remove any orphaned tmp* files in MODELS_DIR left by aborted downloads."""
+    """Remove any orphaned tmp* files in MODELS_DIR and custom model staging folders."""
     try:
         models_dir = settings.MODELS_DIR
         if models_dir.exists():
@@ -25,6 +25,12 @@ def cleanup_orphaned_model_temp_files():
                         logger.warning(f"Could not remove orphaned model temp file {p.name}: {e}")
     except Exception as e:
         logger.warning(f"Error cleaning up orphaned model temp files: {e}")
+
+    try:
+        from .custom_models import custom_model_manager
+        custom_model_manager.cleanup_orphaned_staging()
+    except Exception as e:
+        logger.warning(f"Error cleaning up custom model staging files: {e}")
 
 @contextmanager
 def cancellable_hf_download(
