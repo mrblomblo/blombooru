@@ -155,12 +155,441 @@ Object.assign(AdminSystem.prototype, {
     },
 
     cleanupCustomButtons() {
+        this._teardownCustomButtonDragState();
+
         if (this.customButtonInstances) {
             this.customButtonInstances.forEach(instance => {
                 if (instance.autocomplete) instance.autocomplete.destroy();
             });
             this.customButtonInstances = [];
         }
+    },
+
+    _getCustomButtonDragClasses() {
+        return ['opacity-30', 'ring-2', 'ring-primary'];
+    },
+
+    _hideCustomButtonAutocompletes() {
+        if (!this.customButtonInstances) return;
+        this.customButtonInstances.forEach(instance => {
+            if (instance.autocomplete && typeof instance.autocomplete.hideSuggestions === 'function') {
+                instance.autocomplete.hideSuggestions();
+            }
+        });
+    },
+
+    _teardownCustomButtonDragState() {
+        window.autoScroll?.stop();
+
+        if (this._customButtonAnnounceTimer) {
+            clearTimeout(this._customButtonAnnounceTimer);
+            this._customButtonAnnounceTimer = null;
+        }
+
+        if (this._customButtonDocMouseUp) {
+            document.removeEventListener('mouseup', this._customButtonDocMouseUp);
+            this._customButtonDocMouseUp = null;
+        }
+
+        if (this._customButtonDocTouchMove) {
+            document.removeEventListener('touchmove', this._customButtonDocTouchMove);
+            this._customButtonDocTouchMove = null;
+        }
+
+        if (this._customButtonDocTouchEnd) {
+            document.removeEventListener('touchend', this._customButtonDocTouchEnd);
+            document.removeEventListener('touchcancel', this._customButtonDocTouchEnd);
+            this._customButtonDocTouchEnd = null;
+        }
+
+        const dragClasses = this._getCustomButtonDragClasses();
+
+        if (this._draggedCustomButtonRow) {
+            this._draggedCustomButtonRow.classList.remove(...dragClasses);
+            this._draggedCustomButtonRow.removeAttribute('draggable');
+            this._draggedCustomButtonRow = null;
+        }
+
+        if (this._customButtonDragArmedRow) {
+            this._customButtonDragArmedRow.removeAttribute('draggable');
+            this._customButtonDragArmedRow = null;
+        }
+
+        if (this._touchDraggedCustomButtonRow) {
+            this._touchDraggedCustomButtonRow.classList.remove(...dragClasses);
+            this._touchDraggedCustomButtonRow = null;
+        }
+        this._touchCustomButtonId = null;
+
+        if (this._kbGrabbedCustomButtonRow) {
+            this._kbGrabbedCustomButtonRow.classList.remove('ring-2', 'ring-primary');
+            const handle = this._kbGrabbedCustomButtonRow.querySelector('.custom-button-drag-handle');
+            if (handle) handle.setAttribute('aria-pressed', 'false');
+            this._kbGrabbedCustomButtonRow = null;
+            this._kbOriginalNextSibling = null;
+        }
+
+        document.body.classList.remove('is-dragging', 'custom-buttons-dragging');
+    },
+
+    _moveCustomButtonRow(container, row, referenceNode) {
+        if (typeof container.moveBefore === 'function') {
+            container.moveBefore(row, referenceNode);
+        } else {
+            container.insertBefore(row, referenceNode);
+        }
+    },
+
+    _moveCustomButtonRowWithFlip(container, row, referenceNode, options = {}) {
+        const { animateMovedRow = false } = options;
+        if (!container || !row) return false;
+        if (referenceNode === row || row.nextElementSibling === referenceNode) return false;
+
+        const rows = Array.from(container.querySelectorAll('.custom-button-row'));
+        const oldTops = new Map();
+        rows.forEach(el => {
+            oldTops.set(el, el.getBoundingClientRect().top);
+        });
+
+        this._isMovingCustomButton = true;
+        try {
+            this._moveCustomButtonRow(container, row, referenceNode);
+        } finally {
+            this._isMovingCustomButton = false;
+        }
+
+        if (animateMovedRow) {
+            row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+
+        const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reducedMotion) {
+            rows.forEach(el => {
+                if (!animateMovedRow && el === row) return;
+                if (el._flipAnim) {
+                    el._flipAnim.cancel();
+                    el._flipAnim = null;
+                }
+                const newTop = el.getBoundingClientRect().top;
+                const dy = oldTops.get(el) - newTop;
+                if (Math.abs(dy) > 0.5 && typeof el.animate === 'function') {
+                    const anim = el.animate(
+                        [{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0)' }],
+                        { duration: 150, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+                    );
+                    el._flipAnim = anim;
+                    anim.onfinish = () => { if (el._flipAnim === anim) el._flipAnim = null; };
+                    anim.oncancel = () => { if (el._flipAnim === anim) el._flipAnim = null; };
+                }
+            });
+        }
+
+        return true;
+    },
+
+    _syncCustomButtonsOrder(container) {
+        if (!container) return;
+        const ordered = Array.from(container.querySelectorAll('.custom-button-row'))
+            .map(row => row._customButtonData)
+            .filter(Boolean);
+        if (ordered.length === this.customButtons.length) {
+            this.customButtons = ordered;
+        }
+    },
+
+    _updateCustomButtonDropTarget(container, draggedRow, clientY) {
+        if (!container || !draggedRow) return;
+
+        const siblings = Array.from(container.querySelectorAll('.custom-button-row'))
+            .filter(r => r !== draggedRow);
+        if (siblings.length === 0) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const pointerY = clientY - containerRect.top - container.clientTop + container.scrollTop;
+
+        let nextTarget = null;
+        for (const sibling of siblings) {
+            const midpoint = sibling.offsetTop + sibling.offsetHeight / 2;
+            if (pointerY < midpoint) {
+                nextTarget = sibling;
+                break;
+            }
+        }
+
+        if (this._moveCustomButtonRowWithFlip(container, draggedRow, nextTarget)) {
+            this._syncCustomButtonsOrder(container);
+        }
+    },
+
+    _announceCustomButtonStatus(message) {
+        const wrapper = document.getElementById('custom-buttons-container');
+        if (!wrapper) return;
+        let liveRegion = document.getElementById('custom-buttons-live-region');
+        if (!liveRegion) {
+            liveRegion = document.createElement('div');
+            liveRegion.id = 'custom-buttons-live-region';
+            liveRegion.className = 'sr-only';
+            liveRegion.setAttribute('aria-live', 'polite');
+            liveRegion.setAttribute('aria-atomic', 'true');
+            wrapper.appendChild(liveRegion);
+        }
+
+        liveRegion.textContent = '';
+        if (this._customButtonAnnounceTimer) {
+            clearTimeout(this._customButtonAnnounceTimer);
+        }
+        this._customButtonAnnounceTimer = setTimeout(() => {
+            liveRegion.textContent = message;
+            this._customButtonAnnounceTimer = null;
+        }, 350);
+    },
+
+    _setupCustomButtonsContainerEvents(container) {
+        const dropZone = document.getElementById('custom-buttons-container') || container;
+        if (dropZone.dataset.reorderContainerBound === 'true') return;
+        dropZone.dataset.reorderContainerBound = 'true';
+
+        dropZone.addEventListener('dragover', (e) => {
+            if (!this._draggedCustomButtonRow) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            window.autoScroll?.check(e.clientX, e.clientY, {
+                onScroll: (x, y) => this._updateCustomButtonDropTarget(container, this._draggedCustomButtonRow, y)
+            });
+            this._updateCustomButtonDropTarget(container, this._draggedCustomButtonRow, e.clientY);
+        });
+
+        dropZone.addEventListener('dragenter', (e) => {
+            if (!this._draggedCustomButtonRow) return;
+            e.preventDefault();
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            if (!this._draggedCustomButtonRow) return;
+            e.preventDefault();
+            window.autoScroll?.stop();
+        });
+
+        container.addEventListener('focusin', (e) => {
+            const handle = e.target.closest('.custom-button-drag-handle');
+            if (!handle || !handle.matches(':focus-visible')) return;
+            const row = handle.closest('.custom-button-row');
+            if (row && !row._flipAnim) {
+                row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+        });
+    },
+
+    _releaseKeyboardGrabCustomButton(announce = false) {
+        if (!this._kbGrabbedCustomButtonRow) return;
+        const row = this._kbGrabbedCustomButtonRow;
+        const handle = row.querySelector('.custom-button-drag-handle');
+        row.classList.remove('ring-2', 'ring-primary');
+        if (handle) handle.setAttribute('aria-pressed', 'false');
+        this._kbGrabbedCustomButtonRow = null;
+        this._kbOriginalNextSibling = null;
+
+        if (announce) {
+            const container = document.getElementById('custom-buttons-list');
+            const rows = container ? Array.from(container.querySelectorAll('.custom-button-row')) : [];
+            const pos = rows.indexOf(row) + 1;
+            const label = (row._customButtonData?.title || '').trim() || `#${pos}`;
+            this._announceCustomButtonStatus(`${label}: ${pos} / ${rows.length}`);
+        }
+    },
+
+    _bindCustomButtonDragEvents(container, row, handle) {
+        const dragClasses = this._getCustomButtonDragClasses();
+
+        // Arm HTML5 dragging only when grabbing the left handle with primary mouse button
+        handle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            this._customButtonDragArmedRow = row;
+            row.setAttribute('draggable', 'true');
+
+            if (!this._customButtonDocMouseUp) {
+                this._customButtonDocMouseUp = () => {
+                    if (!this._draggedCustomButtonRow && this._customButtonDragArmedRow) {
+                        this._customButtonDragArmedRow.removeAttribute('draggable');
+                        this._customButtonDragArmedRow = null;
+                    }
+                    if (this._customButtonDocMouseUp) {
+                        document.removeEventListener('mouseup', this._customButtonDocMouseUp);
+                        this._customButtonDocMouseUp = null;
+                    }
+                };
+                document.addEventListener('mouseup', this._customButtonDocMouseUp);
+            }
+        });
+
+        row.addEventListener('dragstart', (e) => {
+            if (this._customButtonDragArmedRow !== row) {
+                e.preventDefault();
+                return;
+            }
+
+            this._releaseKeyboardGrabCustomButton(false);
+            this._hideCustomButtonAutocompletes();
+            if (row.contains(document.activeElement) && document.activeElement !== handle) {
+                document.activeElement.blur();
+            }
+
+            this._draggedCustomButtonRow = row;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+
+            document.body.classList.add('is-dragging', 'custom-buttons-dragging');
+
+            setTimeout(() => {
+                if (this._draggedCustomButtonRow === row) {
+                    row.classList.add(...dragClasses);
+                }
+            }, 0);
+        });
+
+        row.addEventListener('dragend', () => {
+            window.autoScroll?.stop();
+            row.classList.remove(...dragClasses);
+            row.removeAttribute('draggable');
+            document.body.classList.remove('is-dragging', 'custom-buttons-dragging');
+            this._draggedCustomButtonRow = null;
+            this._customButtonDragArmedRow = null;
+            this._syncCustomButtonsOrder(container);
+        });
+
+        // Touch drag directly on the dedicated handle
+        handle.addEventListener('touchstart', (e) => {
+            if (this._touchCustomButtonId !== null) return;
+            const touch = e.changedTouches[0];
+            if (!touch) return;
+
+            e.preventDefault();
+            this._releaseKeyboardGrabCustomButton(false);
+            this._hideCustomButtonAutocompletes();
+            if (row.contains(document.activeElement) && document.activeElement !== handle) {
+                document.activeElement.blur();
+            }
+
+            this._touchCustomButtonId = touch.identifier;
+            this._touchDraggedCustomButtonRow = row;
+
+            document.body.classList.add('is-dragging', 'custom-buttons-dragging');
+            row.classList.add(...dragClasses);
+            if (navigator.vibrate) {
+                navigator.vibrate(25);
+            }
+
+            this._customButtonDocTouchMove = (moveEvent) => {
+                if (this._touchDraggedCustomButtonRow !== row) return;
+                const activeTouch = Array.from(moveEvent.touches).find(t => t.identifier === this._touchCustomButtonId);
+                if (!activeTouch) return;
+
+                moveEvent.preventDefault();
+                window.autoScroll?.check(activeTouch.clientX, activeTouch.clientY, {
+                    onScroll: (x, y) => this._updateCustomButtonDropTarget(container, row, y)
+                });
+                this._updateCustomButtonDropTarget(container, row, activeTouch.clientY);
+            };
+
+            this._customButtonDocTouchEnd = (endEvent) => {
+                const ended = Array.from(endEvent.changedTouches).some(t => t.identifier === this._touchCustomButtonId);
+                if (!ended) return;
+
+                window.autoScroll?.stop();
+                row.classList.remove(...dragClasses);
+                document.body.classList.remove('is-dragging', 'custom-buttons-dragging');
+                this._syncCustomButtonsOrder(container);
+                this._touchCustomButtonId = null;
+                this._touchDraggedCustomButtonRow = null;
+
+                if (this._customButtonDocTouchMove) {
+                    document.removeEventListener('touchmove', this._customButtonDocTouchMove);
+                    this._customButtonDocTouchMove = null;
+                }
+                if (this._customButtonDocTouchEnd) {
+                    document.removeEventListener('touchend', this._customButtonDocTouchEnd);
+                    document.removeEventListener('touchcancel', this._customButtonDocTouchEnd);
+                    this._customButtonDocTouchEnd = null;
+                }
+            };
+
+            document.addEventListener('touchmove', this._customButtonDocTouchMove, { passive: false });
+            document.addEventListener('touchend', this._customButtonDocTouchEnd);
+            document.addEventListener('touchcancel', this._customButtonDocTouchEnd);
+        }, { passive: false });
+
+        // Keyboard grab-move-drop + Alt+Arrow reordering on the handle
+        handle.addEventListener('keydown', (e) => {
+            const isGrabbed = this._kbGrabbedCustomButtonRow === row;
+
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                if (isGrabbed) {
+                    this._releaseKeyboardGrabCustomButton(true);
+                } else {
+                    this._releaseKeyboardGrabCustomButton(false);
+                    this._hideCustomButtonAutocompletes();
+                    this._kbGrabbedCustomButtonRow = row;
+                    this._kbOriginalNextSibling = row.nextElementSibling;
+                    row.classList.add('ring-2', 'ring-primary');
+                    handle.setAttribute('aria-pressed', 'true');
+                    const rows = Array.from(container.querySelectorAll('.custom-button-row'));
+                    const pos = rows.indexOf(row) + 1;
+                    const label = (row._customButtonData?.title || '').trim() || `#${pos}`;
+                    this._announceCustomButtonStatus(`${label}: ${pos} / ${rows.length}`);
+                }
+                return;
+            }
+
+            if (e.key === 'Escape' && isGrabbed) {
+                e.preventDefault();
+                const originalNext = this._kbOriginalNextSibling;
+                const moved = this._moveCustomButtonRowWithFlip(
+                    container,
+                    row,
+                    originalNext && originalNext.parentNode === container ? originalNext : null,
+                    { animateMovedRow: true }
+                );
+                if (moved) {
+                    this._syncCustomButtonsOrder(container);
+                }
+                this._releaseKeyboardGrabCustomButton(false);
+                handle.focus({ preventScroll: true });
+                return;
+            }
+
+            if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && (isGrabbed || e.altKey)) {
+                e.preventDefault();
+                let referenceNode = undefined;
+                if (e.key === 'ArrowUp') {
+                    const prev = row.previousElementSibling;
+                    if (prev) referenceNode = prev;
+                } else {
+                    const next = row.nextElementSibling;
+                    if (next) referenceNode = next.nextElementSibling;
+                }
+
+                if (referenceNode !== undefined) {
+                    const moved = this._moveCustomButtonRowWithFlip(container, row, referenceNode, { animateMovedRow: true });
+                    if (moved) {
+                        this._syncCustomButtonsOrder(container);
+                        handle.focus({ preventScroll: true });
+                        const rows = Array.from(container.querySelectorAll('.custom-button-row'));
+                        const pos = rows.indexOf(row) + 1;
+                        const label = (row._customButtonData?.title || '').trim() || `#${pos}`;
+                        this._announceCustomButtonStatus(`${label}: ${pos} / ${rows.length}`);
+                    }
+                }
+            }
+        });
+
+        handle.addEventListener('blur', () => {
+            if (this._isMovingCustomButton) return;
+            if (this._kbGrabbedCustomButtonRow === row) {
+                this._releaseKeyboardGrabCustomButton(false);
+            }
+        });
     },
 
     addCustomButton() {
@@ -183,24 +612,40 @@ Object.assign(AdminSystem.prototype, {
         const container = document.getElementById('custom-buttons-list');
         if (!container) return;
 
+        container.classList.add('relative');
+        this._setupCustomButtonsContainerEvents(container);
+
         this.cleanupCustomButtons();
         container.innerHTML = '';
 
-        this.customButtons.forEach((btn, index) => {
+        this.customButtons.forEach((btn) => {
             const row = document.createElement('div');
-            row.className = 'flex gap-2 items-start mb-3';
+            row.className = 'custom-button-row surface border p-2 flex gap-2 items-stretch relative';
+            row._customButtonData = btn;
+
+            const handle = document.createElement('div');
+            handle.setAttribute('role', 'button');
+            handle.tabIndex = 0;
+            handle.className = 'custom-button-drag-handle flex items-center justify-center flex-shrink-0 self-stretch -my-2 py-2 min-h-[34px] px-1 text-secondary cursor-grab active:cursor-grabbing select-none transition-colors';
+            handle.setAttribute('aria-pressed', 'false');
+            handle.innerHTML = window.Icons.gripVertical({ size: 16 });
+
+            const fieldsWrapper = document.createElement('div');
+            fieldsWrapper.className = 'flex-1 min-w-0 flex flex-col sm:flex-row gap-2 sm:items-start';
 
             const titleInput = document.createElement('input');
             titleInput.type = 'text';
             titleInput.placeholder = window.i18n.t('admin.settings.button_title');
             titleInput.value = btn.title || '';
-            titleInput.className = 'w-1/3 bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary';
-            titleInput.addEventListener('change', (e) => {
-                this.updateCustomButton(index, 'title', e.target.value);
-            });
+            titleInput.className = 'w-full sm:w-1/3 min-w-0 bg px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary';
+            const syncTitle = (e) => {
+                btn.title = e.target.value;
+            };
+            titleInput.addEventListener('input', syncTitle);
+            titleInput.addEventListener('change', syncTitle);
 
             const tagContainer = document.createElement('div');
-            tagContainer.className = 'flex-1 relative';
+            tagContainer.className = 'w-full sm:flex-1 min-w-0 relative';
 
             const tagInput = document.createElement('div');
             tagInput.contentEditable = true;
@@ -219,7 +664,7 @@ Object.assign(AdminSystem.prototype, {
 
             tagInput.addEventListener('input', () => {
                 const text = tagInput.textContent || '';
-                this.updateCustomButton(index, 'tags', text);
+                btn.tags = text;
                 if (!text) tagInput.classList.add('empty');
                 else tagInput.classList.remove('empty');
             });
@@ -246,13 +691,23 @@ Object.assign(AdminSystem.prototype, {
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'btn-danger p-2 flex items-center justify-center flex-shrink-0 text-xs cursor-pointer h-[34px] w-[34px]';
+            removeBtn.className = 'btn-danger p-2 flex items-center justify-center flex-shrink-0 self-center sm:self-start text-xs cursor-pointer h-[34px] w-[34px]';
             removeBtn.title = window.i18n.t('common.delete');
             removeBtn.innerHTML = window.Icons.trash({ size: 14 });
-            removeBtn.onclick = () => this.removeCustomButton(index);
+            removeBtn.onclick = () => {
+                const currentIndex = this.customButtons.indexOf(btn);
+                if (currentIndex !== -1) {
+                    this.removeCustomButton(currentIndex);
+                }
+            };
 
-            row.appendChild(titleInput);
-            row.appendChild(tagContainer);
+            this._bindCustomButtonDragEvents(container, row, handle);
+
+            fieldsWrapper.appendChild(titleInput);
+            fieldsWrapper.appendChild(tagContainer);
+
+            row.appendChild(handle);
+            row.appendChild(fieldsWrapper);
             row.appendChild(removeBtn);
             container.appendChild(row);
         });
