@@ -24,6 +24,7 @@ class Settings:
         self.STRIPPED_CACHE_DIR = self.CACHE_DIR / "stripped"
         self.DATA_DIR = self.BASE_DIR / "data"
         self.MODELS_DIR = self.DATA_DIR / "models"
+        self.CUSTOM_MODELS_DIR = self.DATA_DIR / "custom_models"
         self.SETTINGS_FILE = self.DATA_DIR / "settings.json"
         
         self.ORIGINAL_DIR.mkdir(parents=True, exist_ok=True)
@@ -33,6 +34,7 @@ class Settings:
         self.STRIPPED_CACHE_DIR.mkdir(parents=True, exist_ok=True)
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        self.CUSTOM_MODELS_DIR.mkdir(parents=True, exist_ok=True)
         
         self.file_settings = self._load_file_settings()
         self.settings = self._get_default_settings()
@@ -103,7 +105,8 @@ class Settings:
                 "character_threshold": 0.85,
                 "model_name": "wd-eva02-large-tagger-v3",
                 "blacklisted_tags": [],
-                "blacklisted_categories": []
+                "blacklisted_categories": [],
+                "model_settings": {}
             },
             "custom_background": {
                 "enabled": False,
@@ -329,16 +332,20 @@ class Settings:
 
     @property
     def WD_TAGGER_SETTINGS(self) -> dict:
-        """Get WD tagger settings (thresholds and model name)."""
+        """Get WD tagger settings (thresholds, model name, and per-model overrides)."""
         defaults = {
             "general_threshold": 0.35,
             "character_threshold": 0.85,
             "model_name": "wd-eva02-large-tagger-v3",
             "blacklisted_tags": [],
-            "blacklisted_categories": []
+            "blacklisted_categories": [],
+            "model_settings": {}
         }
         saved = self.file_settings.get("wd_tagger") or self.settings.get("wd_tagger", {})
-        return {**defaults, **saved}
+        merged = {**defaults, **(saved if isinstance(saved, dict) else {})}
+        if not isinstance(merged.get("model_settings"), dict):
+            merged["model_settings"] = {}
+        return merged
 
     @property
     def NEAR_DUPLICATE_SETTINGS(self) -> dict:
