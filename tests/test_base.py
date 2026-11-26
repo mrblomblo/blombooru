@@ -61,6 +61,7 @@ class BlombooruTestSandboxMixin:
         self.chunks_dir = self.cache_dir / "media-chunks"
         self.data_dir = self.tmp_path / "data"
         self.custom_themes_dir = self.data_dir / "custom_themes"
+        self.custom_models_dir = self.data_dir / "custom_models"
 
         self.original_dir.mkdir(parents=True, exist_ok=True)
         self.thumbnail_dir.mkdir(parents=True, exist_ok=True)
@@ -69,6 +70,7 @@ class BlombooruTestSandboxMixin:
         self.stripped_cache_dir.mkdir(parents=True, exist_ok=True)
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
         self.custom_themes_dir.mkdir(parents=True, exist_ok=True)
+        self.custom_models_dir.mkdir(parents=True, exist_ok=True)
 
         self.upload_sessions_dir = self.cache_dir / "upload-sessions"
         self.upload_sessions_dir.mkdir(parents=True, exist_ok=True)
@@ -85,6 +87,7 @@ class BlombooruTestSandboxMixin:
         self.old_cache_dir = settings.CACHE_DIR
         self.old_stripped_cache_dir = getattr(settings, "STRIPPED_CACHE_DIR", None)
         self.old_data_dir = settings.DATA_DIR
+        self.old_custom_models_dir = getattr(settings, "CUSTOM_MODELS_DIR", None)
         self.old_settings_file = settings.SETTINGS_FILE
         self.old_settings_dict = dict(settings.settings)
         self.old_file_settings_dict = dict(settings.file_settings)
@@ -97,6 +100,7 @@ class BlombooruTestSandboxMixin:
         settings.CACHE_DIR = self.cache_dir
         settings.STRIPPED_CACHE_DIR = self.stripped_cache_dir
         settings.DATA_DIR = self.data_dir
+        settings.CUSTOM_MODELS_DIR = self.custom_models_dir
         settings.SETTINGS_FILE = self.data_dir / "settings.json"
         settings.file_settings = {}
         settings.settings = settings._get_default_settings()
@@ -127,6 +131,8 @@ class BlombooruTestSandboxMixin:
         if self.old_stripped_cache_dir is not None:
             settings.STRIPPED_CACHE_DIR = self.old_stripped_cache_dir
         settings.DATA_DIR = self.old_data_dir
+        if self.old_custom_models_dir is not None:
+            settings.CUSTOM_MODELS_DIR = self.old_custom_models_dir
         settings.SETTINGS_FILE = self.old_settings_file
         settings.file_settings = self.old_file_settings_dict
         settings.settings = self.old_settings_dict
