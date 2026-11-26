@@ -82,6 +82,7 @@
         messageSquare: (opts) => render('message-square', opts, 16),
         merge: (opts) => render('merge', opts, 16),
         pin: (opts) => render('pin', opts, 16),
+        wrench: (opts) => render('wrench', opts, 14),
 
         // Status & Alerts
         primary: (opts) => render('info', opts, 64),

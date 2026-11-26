@@ -47,12 +47,41 @@ class CustomSelect {
         });
     }
 
+    _renderOptionDisplay(targetEl, label, iconName) {
+        targetEl.textContent = '';
+        if (iconName) {
+            const wrapper = document.createElement('span');
+            wrapper.className = 'inline-flex items-center gap-1.5 min-w-0 max-w-full';
+            wrapper.insertAdjacentHTML(
+                'afterbegin',
+                window.Icons[iconName]({
+                    size: 12,
+                    class: 'flex-shrink-0 text-secondary',
+                    extra: 'aria-hidden="true"'
+                })
+            );
+            const textSpan = document.createElement('span');
+            textSpan.className = 'truncate';
+            textSpan.textContent = label;
+            wrapper.appendChild(textSpan);
+            targetEl.appendChild(wrapper);
+        } else {
+            targetEl.textContent = label;
+        }
+    }
+
     initializeExistingOptions() {
         const options = this.dropdown.querySelectorAll('.custom-select-option');
         options.forEach(option => {
             // Remove old listeners to prevent duplicates if called multiple times
             const newOption = option.cloneNode(true);
             option.parentNode.replaceChild(newOption, option);
+
+            const label = newOption.dataset.display || newOption.dataset.baseLabel || newOption.textContent.trim();
+            if (newOption.dataset.icon) {
+                newOption.dataset.display = label;
+                this._renderOptionDisplay(newOption, label, newOption.dataset.icon);
+            }
 
             this._bindOptionEvents(newOption);
 
@@ -64,7 +93,7 @@ class CustomSelect {
                 newOption.classList.add('selected');
                 this.selectedValue = newOption.dataset.value;
                 this.element.dataset.value = newOption.dataset.value;
-                this.valueDisplay.textContent = newOption.dataset.display || newOption.textContent;
+                this._renderOptionDisplay(this.valueDisplay, label, newOption.dataset.icon || '');
             }
         });
     }
@@ -146,14 +175,15 @@ class CustomSelect {
         option.setAttribute('aria-selected', 'true');
         this.selectedValue = option.dataset.value;
         this.element.dataset.value = this.selectedValue;
-        this.valueDisplay.textContent = option.dataset.display || option.textContent;
+        const label = option.dataset.display || option.dataset.baseLabel || option.textContent;
+        this._renderOptionDisplay(this.valueDisplay, label, option.dataset.icon || '');
 
         if (triggerEvent) {
             this.element.dispatchEvent(new CustomEvent('change', {
                 detail: {
                     value: this.selectedValue,
-                    text: option.textContent,
-                    display: option.dataset.display || option.textContent
+                    text: label,
+                    display: label
                 }
             }));
         }
@@ -270,37 +300,43 @@ class CustomSelect {
     setOptions(optionsData) {
         this.dropdown.innerHTML = '';
         optionsData.forEach(optionData => {
-            this.addOption(optionData.value, optionData.text, optionData.selected);
+            this.addOption(optionData.value, optionData.text, optionData.selected, optionData.icon || '');
         });
     }
 
     /**
      * Add a single option dynamically
      */
-    addOption(value, text, isSelected = false) {
+    addOption(value, text, isSelected = false, icon = '') {
         // Prevent duplicates
-        if (this.dropdown.querySelector(`[data-value="${value}"]`)) return;
+        if (this.dropdown.querySelector(`[data-value="${CSS.escape(value)}"]`)) return;
 
         const option = document.createElement('div');
         option.className = 'custom-select-option px-3 py-2 cursor-pointer hover:surface text text-xs';
         option.dataset.value = value;
         option.dataset.baseLabel = text;
-        option.textContent = text;
+        option.dataset.display = text;
+        if (icon) {
+            option.dataset.icon = icon;
+        }
+        this._renderOptionDisplay(option, text, icon);
 
         this._bindOptionEvents(option);
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
 
         if (isSelected) {
             option.classList.add('selected');
             this.selectedValue = value;
             this.element.dataset.value = value;
-            this.valueDisplay.textContent = text;
+            this._renderOptionDisplay(this.valueDisplay, text, icon);
         }
 
         this.dropdown.appendChild(option);
     }
 
     removeOption(value) {
-        const option = this.dropdown.querySelector(`[data-value="${value}"]`);
+        const option = this.dropdown.querySelector(`[data-value="${CSS.escape(value)}"]`);
         if (option) {
             option.remove();
 

@@ -34,7 +34,7 @@ class ModelDownloadModal {
         this.isCancelled = true;
 
         if (this.currentModelName) {
-            fetch(`/api/ai-tagger/download/${this.currentModelName}/cancel`, {
+            fetch(`/api/ai-tagger/download/${encodeURIComponent(this.currentModelName)}/cancel`, {
                 method: 'POST',
                 keepalive: true
             }).catch(() => { });
@@ -208,7 +208,7 @@ class ModelDownloadModal {
         this.showDownloadingState();
 
         try {
-            const response = await fetch(`/api/ai-tagger/download/${this.currentModelName}`, {
+            const response = await fetch(`/api/ai-tagger/download/${encodeURIComponent(this.currentModelName)}`, {
                 method: 'POST',
                 signal: this.abortController ? this.abortController.signal : undefined
             });
@@ -309,7 +309,7 @@ class ModelDownloadModal {
         this.abortController = new AbortController();
 
         try {
-            const response = await fetch(`/api/ai-tagger/model-status/${modelName}`);
+            const response = await fetch(`/api/ai-tagger/model-status/${encodeURIComponent(modelName)}`);
             if (response.ok) {
                 const status = await response.json();
                 this.downloadSizeMb = status.download_size_mb;
