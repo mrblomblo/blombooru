@@ -1,4 +1,4 @@
-{% from "components/icons.html" import select_arrow_icon, upload_icon %}
+{% from "components/icons.html" import select_arrow_icon, upload_icon, chevron_down_icon, reset_icon %}
 <!-- Media Management Section -->
 <div class="surface p-2 sm:p-6 border mb-4" id="media-management">
     <h2 class="text-base font-bold mb-4 pb-3 border-b">{{ t('admin.media_management.title') }}</h2>
@@ -614,7 +614,7 @@
                             class="custom-select-trigger w-full flex items-center justify-between gap-3 px-3 py-2 bg border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
                             type="button">
                             <span class="custom-select-value text truncate"></span>
-                            {{ select_arrow_icon(size=12) }}
+                            {{ select_arrow_icon(size=12, extra='aria-hidden="true"') }}
                         </button>
                         <div class="custom-select-dropdown bg border border-primary max-h-60 overflow-y-auto shadow-lg"
                             id="wd-model-dropdown">
@@ -681,9 +681,187 @@
                 {% endfor %}
             </div>
         </div>
-        <button type="submit" class="btn-primary w-full md:w-auto px-6 cursor-pointer" id="save-ai-tagger-btn">
-            {{ t('admin.settings.save_settings') }}
-        </button>
+
+        <!-- Advanced Model Configuration & Custom ONNX Model Upload -->
+        <details id="wd-advanced-details" class="group border bg mb-4">
+            <summary
+                class="flex items-center justify-between px-4 py-3 cursor-pointer font-bold text-xs hover:text-primary transition-colors list-none [&::-webkit-details-marker]:hidden select-none">
+                <span>{{ t('admin.ai_tagger.advanced') }}</span>
+                {{ chevron_down_icon(size=14, class="transition-transform duration-200 group-open:rotate-180
+                flex-shrink-0", extra='aria-hidden="true"') }}
+            </summary>
+            <div class="p-4 border-t space-y-6">
+                <div>
+                    <h3 class="text-sm font-bold mb-1">{{ t('admin.ai_tagger.model_parameters_title') }}</h3>
+                    <p class="text-xs text-secondary mb-3">{{ t('admin.ai_tagger.model_parameters_hint') }}</p>
+                    <p id="wd-fixed-batch-hint" class="text-xs text-warning mb-3" style="display: none;">
+                        {{ t('admin.ai_tagger.fixed_batch_one_hint') }}
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% set numeric_params = [
+                        ('batch_size', 'wd-param-batch-size', '1', '64', '1'),
+                        ('temperature', 'wd-param-temperature', '0.05', '5', '0.05'),
+                        ('input_size', 'wd-param-input-size', '64', '2048', '1'),
+                        ('output_index', 'wd-param-output-index', '0', '15', '1'),
+                        ] %}
+                        {% for param_name, input_id, min_val, max_val, step_val in numeric_params %}
+                        <div>
+                            <label class="block text-xs font-bold mb-1" for="{{ input_id }}">{{ param_name }}</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="{{ input_id }}" min="{{ min_val }}" max="{{ max_val }}"
+                                    step="{{ step_val }}"
+                                    class="w-full flex-1 min-w-0 surface px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                                <button type="button"
+                                    class="btn wd-param-reset-btn p-2 text-xs text-secondary flex items-center justify-center hover:border-primary transition-colors shrink-0 cursor-pointer"
+                                    data-param="{{ param_name }}"
+                                    aria-label="{{ t('admin.similarity.reset') }}: {{ param_name }}"
+                                    title="{{ t('admin.similarity.reset') }}">
+                                    {{ reset_icon(size=14, extra='aria-hidden="true"') }}
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% set select_params = [
+                        ('input_layout', 'wd-param-input-layout', ['auto', 'nhwc', 'nchw']),
+                        ('color_space', 'wd-param-color-space', ['bgr', 'rgb']),
+                        ('resize_mode', 'wd-param-resize-mode', ['pad_white', 'pad_black', 'stretch']),
+                        ('interpolation', 'wd-param-interpolation', ['bicubic', 'bilinear', 'lanczos']),
+                        ('normalization', 'wd-param-normalization', ['none_255', 'zero_to_one', 'minus_one_to_one',
+                        'imagenet', 'custom']),
+                        ('output_activation', 'wd-param-output-activation', ['auto', 'sigmoid', 'none']),
+                        ] %}
+                        {% for param_name, select_id, options in select_params %}
+                        <div>
+                            <label class="block text-xs font-bold mb-1">{{ param_name }}</label>
+                            <div class="flex gap-2">
+                                <div id="{{ select_id }}" class="custom-select flex-1 min-w-0"
+                                    data-value="{{ options[0] }}">
+                                    <button
+                                        class="custom-select-trigger w-full flex items-center justify-between gap-2 px-3 py-2 surface border text-xs cursor-pointer focus:outline-none hover:border-primary transition-colors focus:border-primary"
+                                        type="button">
+                                        <span class="custom-select-value text font-mono truncate">
+                                            {{ options[0] }}
+                                        </span>
+                                        {{ select_arrow_icon(size=12, extra='aria-hidden="true"') }}
+                                    </button>
+                                    <div
+                                        class="custom-select-dropdown surface border border-primary max-h-60 overflow-y-auto shadow-lg">
+                                        {% for opt in options %}
+                                        <div class="custom-select-option px-3 py-2 cursor-pointer hover:bg text-xs font-mono{% if loop.first %} selected{% endif %}"
+                                            data-value="{{ opt }}">{{ opt }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <button type="button"
+                                    class="btn wd-param-reset-btn p-2 text-xs text-secondary flex items-center justify-center hover:border-primary transition-colors shrink-0 cursor-pointer"
+                                    data-param="{{ param_name }}"
+                                    aria-label="{{ t('admin.similarity.reset') }}: {{ param_name }}"
+                                    title="{{ t('admin.similarity.reset') }}">
+                                    {{ reset_icon(size=14, extra='aria-hidden="true"') }}
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Conditional Custom Mean/Std Row -->
+                    <div id="wd-custom-norm-row" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t"
+                        style="display: none;">
+                        {% set vec3_params = [
+                        ('norm_mean', 'wd-param-norm-mean-', '-10', '10', '0.001'),
+                        ('norm_std', 'wd-param-norm-std-', '0.001', '10', '0.001'),
+                        ] %}
+                        {% for param_name, id_prefix, min_val, max_val, step_val in vec3_params %}
+                        <div>
+                            <label class="block text-xs font-bold mb-1" for="{{ id_prefix }}0">
+                                {{ param_name }} (R, G, B)
+                            </label>
+                            <div class="flex gap-2">
+                                {% for ch in ['R', 'G', 'B'] %}
+                                <input type="number" id="{{ id_prefix }}{{ loop.index0 }}" min="{{ min_val }}"
+                                    max="{{ max_val }}" step="{{ step_val }}" aria-label="{{ param_name }} {{ ch }}"
+                                    class="w-full flex-1 min-w-0 surface px-2 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                                {% endfor %}
+                                <button type="button"
+                                    class="btn wd-param-reset-btn p-2 text-xs text-secondary flex items-center justify-center hover:border-primary transition-colors shrink-0 cursor-pointer"
+                                    data-param="{{ param_name }}"
+                                    aria-label="{{ t('admin.similarity.reset') }}: {{ param_name }}"
+                                    title="{{ t('admin.similarity.reset') }}">
+                                    {{ reset_icon(size=14, extra='aria-hidden="true"') }}
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" id="wd-reset-model-defaults-btn"
+                            class="btn-danger text-xs px-4 py-2 cursor-pointer">
+                            {{ t('admin.keybindings.reset_all') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload Custom ONNX Model -->
+                <div class="pt-4 border-t">
+                    <h3 class="text-sm font-bold mb-1">{{ t('admin.ai_tagger.custom_upload_title') }}</h3>
+                    <p class="text-xs text-secondary mb-3">{{ t('admin.ai_tagger.custom_upload_hint') }}</p>
+
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold mb-1" for="wd-custom-model-name">
+                            {{ t('admin.ai_tagger.custom_model_name') }}
+                        </label>
+                        <input type="text" id="wd-custom-model-name" maxlength="80" autocorrect="off"
+                            autocapitalize="none" spellcheck="false"
+                            placeholder="{{ t('admin.ai_tagger.custom_model_name_placeholder') }}"
+                            class="w-full surface px-3 py-2 border text-xs focus:outline-none hover:border-primary transition-colors focus:border-primary">
+                    </div>
+
+                    <div id="wd-custom-model-upload-area" role="button" tabindex="0"
+                        class="upload-area flex flex-col items-center justify-center gap-2 focus:outline-none focus:border-primary">
+                        {{ upload_icon(size=28, class="text-secondary", extra='aria-hidden="true"') }}
+                        <p class="text-xs text-secondary">{{ t('admin.ai_tagger.drop_custom_model') }}</p>
+                        <input type="file" id="wd-custom-model-files" multiple
+                            accept=".onnx,.data,.onnx_data,.csv,.json,.txt,.pb,.bin,.weights">
+                    </div>
+
+                    <ul id="wd-custom-model-file-list" class="mt-3 space-y-1.5 text-xs empty:hidden"></ul>
+
+                    <div id="wd-custom-model-upload-status" class="mt-3 text-xs" style="display: none;" role="status"
+                        aria-live="polite">
+                        <div id="wd-custom-model-progress-track"
+                            class="w-full surface h-2.5 overflow-hidden border mb-1.5" role="progressbar"
+                            aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                            aria-label="{{ t('admin.ai_tagger.custom_upload_title') }}">
+                            <div id="wd-custom-model-progress" class="h-full bg-primary transition-all duration-150"
+                                style="width: 0%;"></div>
+                        </div>
+                        <div id="wd-custom-model-status-text" class="text-secondary"></div>
+                    </div>
+
+                    <div class="mt-3">
+                        <button type="button" id="wd-upload-custom-model-btn"
+                            class="btn-primary w-full sm:w-auto px-5 cursor-pointer">
+                            {{ t('admin.ai_tagger.custom_upload_title') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="submit" class="btn-primary w-full md:w-auto px-6 cursor-pointer" id="save-ai-tagger-btn">
+                {{ t('admin.settings.save_settings') }}
+            </button>
+            <button type="button" class="btn w-full md:w-auto px-6 cursor-pointer" id="test-ai-tagger-btn">
+                {{ t('admin.ai_tagger.test_model') }}
+            </button>
+        </div>
+
+        <div id="wd-model-test-result" class="mt-4 p-4 border bg text-xs space-y-3" style="display: none;" role="status"
+            aria-live="polite"></div>
     </form>
 </div>
 
